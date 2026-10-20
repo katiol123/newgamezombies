@@ -12,7 +12,7 @@
   const W = {
     progress: 450, complete: 500, evac: 600, fallen: 2200, dist: 22, wound: 40, nearDeath: 70,
     unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 3, cardValue: 0.7, hand: 1.5,
-    zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, adrenaline: 9, trap: 14, block: 2,
+    zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, partDmg: 6, adrenaline: 9, trap: 14, block: 2,
   };
   ZG.BotWeights = W;
 
@@ -32,7 +32,7 @@
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat;
-      if (d.big) s += (z.dmg / d.hp) * d.threat * W.bigDmg;
+      s += (z.dmg / d.hp) * d.threat * (d.big ? W.bigDmg : W.partDmg);
       if (d.dmg <= 0) return;
       const sp = z.suppressed ? 0 : E.zombieSpeed(g, z);
       const dz = reach[z.pos] || (reach[z.pos] = E.dist(g, z.pos, noBarr));
@@ -96,6 +96,7 @@
     while (g.pending && guard++ < 20) {
       const p = g.pending;
       if (p.type === 'block') E.act(g, { t: 'block', cards: chooseBlock(g, p) });
+      else if (p.type === 'loot') E.act(g, { t: 'loot', id: chooseLoot(g, p) });
       else if (p.type === 'talent') {
         let best = p.options[0], bv = -Infinity;
         p.options.forEach((id) => { const c = E.clone(g); E.act(c, { t: 'talent', id }); const v = evaluate(c) + ZG.Rng.next(g) * 4; if (v > bv) { bv = v; best = id; } });
@@ -103,6 +104,10 @@
       }
       else break;
     }
+  }
+
+  function chooseLoot(g, p) {
+    return p.options.slice().sort((a, b) => (ZG.Cards.get(b).value || 0) - (ZG.Cards.get(a).value || 0))[0];
   }
 
   function chooseBlock(g, p) {
@@ -188,5 +193,5 @@
     return g;
   }
 
-  ZG.Bot = { evaluate, bestAction, playTurn, playGame, chooseBlock, autoPending };
+  ZG.Bot = { evaluate, bestAction, playTurn, playGame, chooseBlock, chooseLoot, autoPending };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

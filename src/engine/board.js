@@ -53,6 +53,10 @@
         const [a1, b1] = rotPoint(x1, y1, p.rot), [a2, b2] = rotPoint(x2, y2, p.rot);
         doors.push([(p.ty * T + b1) * W + p.tx * T + a1, (p.ty * T + b2) * W + p.tx * T + a2]);
       });
+      if (def.manhole) {
+        const [mx, my] = rotPoint(def.manhole[0], def.manhole[1], p.rot);
+        cells[(p.ty * T + my) * W + p.tx * T + mx].manhole = true;
+      }
       def.search.forEach(([sx, sy, kind]) => {
         const [rx, ry] = rotPoint(sx, sy, p.rot);
         cells[(p.ty * T + ry) * W + p.tx * T + rx].tileSearch = kind || 'normal';

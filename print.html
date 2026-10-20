@@ -76,14 +76,16 @@
     return s;
   }
   // карты по 9 на лист
-  function cardSheets(title, items) {
+  // каждая копия печатается отдельно
+  function cardSheets(title, list) {
+    const items = [];
+    list.forEach((it) => { for (let k = 0; k < (it.count || 1); k++) items.push({ el: k ? it.el.cloneNode(true) : it.el }); });
     for (let i = 0; i < items.length; i += 9) {
       const s = sheet(title + (items.length > 9 ? ` (${i / 9 + 1})` : ''), 'Вырежьте по пунктиру. Рубашки — на последних листах.');
       const grid = document.createElement('div'); grid.className = 'grid';
       items.slice(i, i + 9).forEach((it) => {
         const slot = document.createElement('div'); slot.className = 'slot';
         slot.appendChild(it.el);
-        if (it.count > 1) { const c = document.createElement('div'); c.className = 'count'; c.textContent = '×' + it.count; slot.appendChild(c); }
         grid.appendChild(slot);
       });
       s.appendChild(grid);
@@ -146,9 +148,7 @@
     const cv = document.createElement('canvas');
     cv.width = Math.round(C * 3); cv.height = Math.round(C * 3);
     const ctx = cv.getContext('2d');
-    ZG.TileRender.drawBoard(ctx, board, 0, C, { noFrame: true, labels: true });
-    // значки мест обыска
-    board.cells.forEach((c) => { if (c.tileSearch) ZG.Art.draw(ctx, 'tok_search', c.x * C + C * 0.06, c.y * C + C * 0.06, C * 0.22, C * 0.22, { armory: c.tileSearch === 'armory' }); });
+    ZG.TileRender.drawBoard(ctx, board, 0, C, { noFrame: true, labels: true, printSearch: true });
     const slot = document.createElement('div'); slot.className = 'tile-slot';
     slot.appendChild(cv); s.appendChild(slot);
   });
@@ -157,7 +157,7 @@
   const ts = sheet('Жетоны', 'Вырежьте по контуру. Числа — сколько штук нужно.');
   const tw = document.createElement('div'); tw.className = 'tokens';
   const tok = (key, n, label, cls, opts) => {
-    for (let i = 0; i < Math.min(n, cls === 'small' ? 12 : 6); i++) {
+    for (let i = 0; i < n; i++) {
       const d = document.createElement('div'); d.className = 'tok ' + (cls || '');
       d.appendChild(canvasOf(key, cls === 'big' ? 30 : cls === 'small' ? 16 : 22, opts));
       if (i === 0) d.appendChild(Object.assign(document.createElement('span'), { textContent: `${label} ×${n}` }));
@@ -170,6 +170,9 @@
   tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
   tok('tok_trap', 3, 'Растяжка', 'small'); tok('tok_lure', 2, 'Приманка', 'small'); tok('noiseIcon', 8, 'Шум', 'small'); tok('shieldIcon', 8, 'Блок', 'small');
   tok('energy', 6, 'Адреналин', 'small'); tok('skull', 8, 'Урон (крупные цели)', 'small', { color: '#e8a090' });
+  tok('tok_crate', 5, 'Ящик (рубашка)');
+  tok('cargo_fuel', 2, 'Ящик: канистра', '', { noBg: true }); tok('cargo_meds', 4, 'Ящик: медикаменты', '', { noBg: true }); tok('cargo_radio', 1, 'Ящик: рация', '', { noBg: true }); tok('tok_crate', 3, 'Ящик: пусто', '', { opened: true });
+  tok('tok_barricade', 4, 'Баррикада', 'big'); tok('tok_round', 1, 'Маркер раунда', 'small'); tok('tok_alarm', 1, 'Маркер Тревоги', 'small'); tok('tok_start', 1, 'Старт', 'small');
   tok('exit_car', 1, 'Машина', 'big'); tok('exit_ambulance', 1, 'Скорая', 'big'); tok('exit_heli', 1, 'Вертолёт', 'big'); tok('tok_tower', 1, 'Вышка', 'big');
   ts.appendChild(tw);
 
@@ -185,6 +188,18 @@
   html += '<div>ПОРЯДОК ФАЗЫ ЗОМБИ</div><div style="font: 12pt var(--font-t)">1. Движение → 2. Атака → 3. Особые свойства → 4. Появление (+Волна) → 5. Конец раунда</div>';
   trk.innerHTML = html;
   tk.appendChild(trk);
+
+  // ------------------------------------------------------------ памятка
+  const ref = sheet('Памятка (2 копии)');
+  for (let k = 0; k < 2; k++) {
+    const d = document.createElement('div');
+    d.style.cssText = 'border:1px dashed #aaa;padding:5mm;margin-bottom:5mm;font:11pt var(--font-t);color:#1d1712;columns:2;column-gap:8mm';
+    d.innerHTML = `<b style="font:13pt var(--font-d)">РАУНД</b><br>1. Ходы героев (порядок любой)<br>2. Фаза зомби: движение → атака → свойства (Орда: +1 Тревога за 8 зомби) → появление (+Волна)<br>3. Конец раунда: убрать урон, шум, приманки; сдвинуть раунд<br><br>
+      <b style="font:13pt var(--font-d)">ХОД ГЕРОЯ</b><br>Добери до лимита (макс. 3) → 3 ⚡ → действуй. Карты в руке — щиты.<br>Связка: та же масть подряд. Эстафета: первая карта продолжает масть прошлого героя.<br>Хватка: выход из зоны с зомби +1 ⚡.<br><br>
+      <b style="font:13pt var(--font-d)">БАЗОВЫЕ ДЕЙСТВИЯ</b><br>Ход 1 · Обыск 1 (2 добычи, 1 оставь) · Кулак 1 · Баррикада 2 · Подобрать 1 · Передать 0 · Отдышаться 3<br><br>
+      <b style="font:13pt var(--font-d)">ЗОМБИ</b><br>Идут к ближайшей цели: приманка → шум → меньше Ран. Атака: блок → снаряжение → щиты → Раны в сброс.<br>Глухая ночь: +1 к скорости. Опыт: 4 ★ и 10 ★ — талант.`;
+    ref.appendChild(d);
+  }
 
   // ---------------------------------------------------------- рубашки
   cardSheets('Рубашки: действия', Array.from({ length: 9 }, () => ({ el: CV.cardBack('hero') })));

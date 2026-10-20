@@ -161,9 +161,9 @@
     },
     {
       id: 'buttstroke', name: 'Приклад', suit: 'rage', cost: 1, shield: 1, type: 'Атака', tags: ['melee'], hero: 'viktor',
-      text: 'Ближний бой: 2 урона. Если цель выжила — отбрось её в соседнюю зону.', chainText: '+1 урон.', art: 'butt', value: 8,
+      text: 'Ближний бой: 2 урона. Если цель выжила — она Прижата: не двигается в этот раунд.', chainText: '+1 урон.', art: 'butt', value: 8,
       target: MELEE,
-      play(c) { c.melee(c.target, 2 + (c.chain ? 1 : 0)); c.push(c.target); },
+      play(c) { c.melee(c.target, 2 + (c.chain ? 1 : 0)); const z = c.zombie(c.target); if (z) z.suppressed = true; },
     },
   ]);
 
@@ -292,7 +292,7 @@
     },
     {
       id: 'flashlight', name: 'Фонарик', suit: 'mind', cost: 1, shield: 1, type: 'Снаряжение', tags: ['equip'], loot: true, equip: true,
-      text: 'Снаряжение. Обыск: тяни 2 карты добычи, оставь лучшую, другую — под низ колоды.', art: 'flashlight', value: 8,
+      text: 'Снаряжение. Обыск: тяни на 1 карту добычи больше.', art: 'flashlight', value: 8,
       target: null,
       mods: { searchDraw: 1 },
       play(c) { c.equip(); },

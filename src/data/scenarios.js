@@ -84,13 +84,12 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 3 раунда и улетай.',
+      id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
-        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 3, on: false };
+        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 2, on: false };
         g.tower = E.placeTower(g);
-        E.placeExitNear(g, g.tower, 3, 4);
         E.placeCrates(g, this.crates, this.real, this.cargo, [g.tower]);
       },
       goals(g) {
@@ -158,14 +157,13 @@
         return nests.length ? E.nearest(g, hero.pos, nests) : null;
       },
       progress(g) { return (g.obj.nests - this.nestsLeft(g)) * 2; },
-      mods: { searchCount: 2 },
     },
   ]);
 
   // ------------------------------------------------------- Условия партии ---
   ZG.Conditions.addAll([
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
-    { id: 'fog', name: 'Туман', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби, до чьей цели больше 4 зон, стоят на месте.', tone: 0, mods: { rangeBonus: -1, zombieSight: 4 }, art: 'cond_fog' },
+    { id: 'fog', name: 'Туман', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
     { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше.', tone: -1, mods: { phaseShift: 1 }, art: 'cond_moon' },
     {

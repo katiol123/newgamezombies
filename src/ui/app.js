@@ -302,6 +302,9 @@
       } else if (p.type === 'talent') {
         const id = await Modal.talent(g, p);
         await this.act({ t: 'talent', id });
+      } else if (p.type === 'loot') {
+        const id = await Modal.loot(g, p);
+        await this.act({ t: 'loot', id });
       }
     },
 
@@ -328,8 +331,16 @@
       if (cost > h.energy) return toast(`Нужно ${cost} ⚡, а осталось ${h.energy}.`);
       const targets = E.targetsFor(g, h, def);
       if (!targets.length) return toast('Нет подходящей цели для этой карты.');
+      if (!def.target) {
+        // карты без цели — второй клик (или Enter) разыгрывает, чтобы не сыграть случайно
+        if (this.sel && this.sel.uid === uid) return this.act({ t: 'play', card: uid, target: null }, { cardEl });
+        this.sel = { mode: 'confirm', uid, def, targets: [], cardEl };
+        this.applyHighlights();
+        this.refreshHand();
+        this.setHelp(`«${esc(def.name)}»: кликните по карте ещё раз или нажмите Enter, чтобы сыграть. <span class="muted">Esc — отмена</span>`);
+        return;
+      }
       if (this.sel && this.sel.uid === uid) return this.cancelSel();
-      if (!def.target) return this.act({ t: 'play', card: uid, target: null }, { cardEl });
       this.sel = { mode: 'card', uid, def, targets, cardEl };
       this.applyHighlights();
       this.refreshHand();
@@ -386,6 +397,7 @@
         this.view.setHighlights({ cells, costs, color: 'rgba(240,192,64,.08)', stroke: 'rgba(240,192,64,.45)' });
         return;
       }
+      if (s.mode === 'confirm') { this.view.setHighlights({ cells: [h.pos], color: 'rgba(240,192,64,.15)' }); return; }
       if (s.mode === 'card') {
         const k = s.def.target.kind;
         if (k === 'zombie') this.view.setHighlights({ zombies: s.targets });
@@ -447,8 +459,11 @@
     },
 
     onKey(ev) {
-      if (App.screen !== 'game' || Modal.open) return;
-      if (ev.key === 'Escape') this.cancelSel();
+      if (Modal.open) { if (ev.key === 'Escape') Modal.escape(); return; }
+      if ($('#rules').classList.contains('show')) { if (ev.key === 'Escape') $('#rules').classList.remove('show'); return; }
+      if (App.screen !== 'game') return;
+      if (ev.key === 'Enter' && this.sel && this.sel.mode === 'confirm') this.act({ t: 'play', card: this.sel.uid, target: null }, { cardEl: this.sel.cardEl });
+      else if (ev.key === 'Escape') this.cancelSel();
       else if (ev.key === 'e' || ev.key === 'у') this.endTurn();
       else if (ev.key === 'h' || ev.key === 'р') this.hint();
       else if (/^[1-9]$/.test(ev.key)) {
@@ -783,6 +798,7 @@
     async turn(ev) {
       const h = this.g.heroes[ev.hero];
       this.refresh();
+      if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && this.lastPlayer !== h.player) {
         this.lastPlayer = h.player;
         await Banner.show('ИГРОК ' + h.player, 'ход: ' + E.heroName(h), 'player');
@@ -916,8 +932,13 @@
   // ================================================================= модалки
   const Modal = {
     open: false,
+    escape() {
+      if (this.onEscape) this.onEscape();
+    },
     show(html, buttons, extraEl, cls) {
       return new Promise((resolve) => {
+        const escBtn = (buttons || []).find((b) => b.label === 'Закрыть' || b.label === 'Отмена');
+        this.onEscape = escBtn ? () => { this.close(); resolve(escBtn.value); } : null;
         const m = $('#modal');
         const box = $('#modal-box');
         box.className = 'modal-box ' + (cls || '');
@@ -989,6 +1010,22 @@
           wrap.appendChild(c);
         });
         this.show(`<div class="kicker gold">Новый уровень</div><h2>${esc(E.heroName(h))} закаляется</h2><p>Выберите талант — он останется до конца партии.</p>`, [], wrap, 'wide');
+      });
+    },
+
+    loot(g, p) {
+      const h = g.heroes[p.hero];
+      return new Promise((resolve) => {
+        const wrap = el('div', 'block-cards loot-pick');
+        p.options.forEach((id, i) => {
+          const c = CV.card(id);
+          c.classList.add('pickable', 'deal');
+          c.style.animationDelay = (i * 0.12) + 's';
+          c.onclick = () => { this.close(); resolve(id); };
+          c.oncontextmenu = (ev) => ev.preventDefault();
+          wrap.appendChild(c);
+        });
+        this.show(`<div class="kicker gold">Обыск</div><h2>${esc(E.heroName(h))} находит…</h2><p>Возьмите одну карту в руку. Остальные уйдут под низ колоды добычи.</p>`, [], wrap, 'wide');
       });
     },
 

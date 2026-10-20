@@ -29,21 +29,28 @@ const out = process.argv[2] || '.';
   await page.hover('#hand .card:nth-child(1)').catch(() => {});
   await page.waitForTimeout(500);
   await page.screenshot({ path: out + '/07-hover.png' });
-  // автоходы на несколько раундов
-  for (let i = 0; i < 6; i++) {
-    await page.evaluate(async () => {
+  // автоходы на несколько ходов (модалки закрываем «как игрок»)
+  for (let i = 0; i < 8; i++) {
+    await page.evaluate(() => {
+      window.__done = false;
       const G = window.ZG.Game;
-      if (G.g.phase === 'heroes' && G.g.active == null) { const h = G.g.heroes.find((x) => x.onBoard && !x.acted); if (h) await G.act({ t: 'begin', hero: h.idx }); }
-      await G.autoTurn();
+      (async () => {
+        if (G.g.phase === 'heroes' && G.g.active == null) { const h = G.g.heroes.find((x) => x.onBoard && !x.acted); if (h) await G.act({ t: 'begin', hero: h.idx }); }
+        await G.autoTurn();
+      })().finally(() => { window.__done = true; });
     });
-    for (let k = 0; k < 20; k++) {
-      const pending = await page.evaluate(() => !!(window.ZG.Game.g.pending) && document.querySelector('#modal').classList.contains('show'));
-      if (pending) { await page.click('#modal .btn.primary').catch(() => {}); await page.click('#modal .talent-card').catch(() => {}); }
-      const busy = await page.evaluate(() => window.ZG.Game.busy);
-      if (!busy) break;
-      await page.waitForTimeout(400);
+    for (let k = 0; k < 120; k++) {
+      if (await page.evaluate(() => document.querySelector('#modal').classList.contains('show'))) {
+        if (i === 2) await page.screenshot({ path: out + '/09-modal.png' });
+        await page.click('#modal .loot-pick .card', { timeout: 300 }).catch(() => {});
+        await page.click('#modal .talent-card', { timeout: 300 }).catch(() => {});
+        await page.click('#modal .btn.primary', { timeout: 300 }).catch(() => {});
+      }
+      const done = await page.evaluate(() => window.__done && !window.ZG.Game.busy && !window.ZG.Game.g.pending);
+      if (done) break;
+      await page.waitForTimeout(300);
     }
-    await page.waitForTimeout(300);
+    if (await page.evaluate(() => !!window.ZG.Game.g.result)) break;
   }
   await page.screenshot({ path: out + '/08-later.png' });
   console.log(errors.join('\n') || 'no errors');

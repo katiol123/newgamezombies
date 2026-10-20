@@ -601,8 +601,12 @@
       // точки появления
       g.spawnPoints.forEach((p, i) => {
         const c = this.cellXY(p);
-        const s = C * 0.5;
-        Art.draw(ctx, 'tok_spawn', c.x - s / 2 + C * 0.22, c.y - s / 2 - C * 0.22, s * 0.62, s * 0.62, {});
+        const x = c.x + C * 0.22, y = c.y - C * 0.22, s = C * 0.42;
+        const pulse = 0.5 + Math.sin(t * 3 + i) * 0.5;
+        const gl = ctx.createRadialGradient(x, y, s * 0.2, x, y, s);
+        gl.addColorStop(0, `rgba(200,40,20,${0.25 + pulse * 0.25})`); gl.addColorStop(1, 'rgba(200,40,20,0)');
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y, s, 0, TAU); ctx.fill();
+        Art.draw(ctx, 'tok_spawn', x - s / 2, y - s / 2, s, s, {});
       });
       // выход
       const sc = ZG.Scenarios.get(g.scenarioId);

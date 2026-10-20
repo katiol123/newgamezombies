@@ -112,7 +112,7 @@
 
     g.heroes.forEach((h) => { h.pos = g.start; });
     E.scenario(g).setup(g, E);
-    placeSearch(g, Mods.value(g, null, 'searchCount', level.searchCount));
+    placeSearch(g);
     const diff = ZG.Difficulties.get(g.difficultyId);
     if (diff.startWounds) g.heroes.forEach((h) => { for (let i = 0; i < diff.startWounds; i++) { const u = E.newUid(g, 'w'); g.cards[u] = 'wound'; h.deck.push(u); } Rng.shuffle(g, h.deck); });
     if (diff.startLoot) g.heroes.forEach((h) => { for (let i = 0; i < diff.startLoot; i++) E.giveLoot(g, h); });
@@ -131,102 +131,86 @@
     return b.cells.filter((c) => c.type === 'street' && (c.x === 0 || c.y === 0 || c.x === b.w - 1 || c.y === b.h - 1));
   }
 
+  // Подготовка воспроизводима руками (см. правила, «Подготовка»):
+  //   старт — уличная зона левого края, выход — уличная зона правого края,
+  //   люки — на значках люков тайлов, начиная с правого столбца.
+  const tileOf = (g, cell) => g.board.cells[cell].tile;
+  E.tileOf = tileOf;
+  function tilesByColumn(g, exclude) {
+    // тайлы от дальнего (правого) столбца к ближнему, внутри столбца — случайно
+    const tiles = g.board.tiles.map((t, i) => ({ t, i })).filter((x) => !(exclude || []).includes(x.i));
+    const cols = {};
+    tiles.forEach((x) => { (cols[x.t.tx] = cols[x.t.tx] || []).push(x.i); });
+    return Object.keys(cols).map(Number).sort((a, b) => b - a).reduce((acc, k) => acc.concat(Rng.shuffle(g, cols[k])), []);
+  }
+  E.tilesByColumn = tilesByColumn;
   function placeStartExit(g, level) {
-    const edges = edgeStreets(g);
-    const left = edges.filter((c) => c.x === 0);
-    g.start = Rng.pick(g, left.length ? left : edges).i;
-    const d = E.dist(g, g.start);
-    let maxD = 0;
-    edges.forEach((c) => { if (d[c.i] > maxD) maxD = d[c.i]; });
-    const far = edges.filter((c) => d[c.i] >= maxD - 2);
-    const s0 = g.board.cells[g.start];
-    const man = (c) => Math.abs(c.x - s0.x) + Math.abs(c.y - s0.y);
-    let bestMan = 0;
-    far.forEach((c) => { bestMan = Math.max(bestMan, man(c)); });
-    g.exit = Rng.pick(g, far.filter((c) => man(c) >= bestMan - 1)).i;
-    const de = E.dist(g, g.exit);
+    const b = g.board;
+    const streets = b.cells.filter((c) => c.type === 'street');
+    const minX = Math.min.apply(null, streets.map((c) => c.x)), maxX = Math.max.apply(null, streets.map((c) => c.x));
+    g.start = Rng.pick(g, streets.filter((c) => c.x === minX)).i;
+    g.exit = Rng.pick(g, streets.filter((c) => c.x === maxX && c.i !== g.start)).i;
     const n = level.spawnPoints[Math.min(4, g.heroes.length)] + Mods.value(g, null, 'spawnPointsBonus', 0);
-    const cands = edges.filter((c) => d[c.i] >= 4 && de[c.i] >= 2 && c.i !== g.exit).map((c) => c.i);
-    const chosen = [];
-    for (let k = 0; k < n && cands.length; k++) {
-      let best = [], bestScore = -1;
-      cands.forEach((c) => {
-        if (chosen.includes(c)) return;
-        let s = Math.min(d[c], 6);
-        chosen.forEach((o) => { s = Math.min(s, E.dist(g, o)[c]); });
-        if (s > bestScore) { bestScore = s; best = [c]; } else if (s === bestScore) best.push(c);
-      });
-      if (!best.length) break;
-      chosen.push(Rng.pick(g, best));
-    }
-    g.spawnPoints = chosen;
+    const startTile = tileOf(g, g.start);
+    g.spawnPoints = [];
+    tilesByColumn(g, [startTile, tileOf(g, g.exit)]).slice(0, n).forEach((ti) => {
+      let cell = b.cells.find((c) => c.tile === ti && c.manhole);
+      if (!cell || cell.i === g.exit) cell = Rng.pick(g, b.cells.filter((c) => c.tile === ti && c.type === 'street' && c.i !== g.exit));
+      g.spawnPoints.push(cell.i);
+    });
   }
 
-  // расстановка по принципу «как можно дальше друг от друга»
-  function spreadPick(g, cands, n, anchors) {
-    const chosen = [];
-    const dists = {};
-    const distOf = (c) => (dists[c] = dists[c] || E.dist(g, c));
-    for (let k = 0; k < n && cands.length > chosen.length; k++) {
-      let best = [], bestScore = -1;
-      cands.forEach((c) => {
-        if (chosen.includes(c)) return;
-        let s = 99;
-        anchors.concat(chosen).forEach((o) => { s = Math.min(s, distOf(o)[c]); });
-        s = Math.min(s, 5) + Rng.next(g) * 2.5;
-        if (s > bestScore) { bestScore = s; best = [c]; }
-      });
-      chosen.push(best[0]);
-    }
-    return chosen;
-  }
-
+  // Ящики: по одному на N разных тайлах (кроме стартового), от дальнего столбца;
+  // на тайле — место обыска в здании (иначе любое место обыска).
   E.placeCrates = function (g, n, real, cargoId, avoid) {
-    const d = E.dist(g, g.start);
+    const b = g.board;
     const taken = new Set([g.start, g.exit].concat(g.spawnPoints, avoid || []));
-    let cands = g.board.cells.filter((c) => c.type === 'building' && d[c.i] >= 3 && !taken.has(c.i)).map((c) => c.i);
-    if (cands.length < n) cands = g.board.cells.filter((c) => c.type !== 'blocked' && d[c.i] >= 2 && !taken.has(c.i)).map((c) => c.i);
-    const picks = spreadPick(g, cands, n, [g.start]);
+    const picks = [];
+    tilesByColumn(g, [tileOf(g, g.start)]).forEach((ti) => {
+      if (picks.length >= n) return;
+      const on = b.cells.filter((c) => c.tile === ti && !taken.has(c.i));
+      const cell = on.find((c) => c.tileSearch && c.type === 'building') || on.find((c) => c.tileSearch) || on.find((c) => c.type === 'building') || on.find((c) => c.type === 'street');
+      if (cell) picks.push(cell.i);
+    });
     const realIdx = Rng.shuffle(g, picks.map((_, i) => i)).slice(0, real);
     picks.forEach((pos, i) => g.crates.push({ pos, card: realIdx.includes(i) ? cargoId : null, opened: false }));
   };
-  E.drawFor = function (g, h, n) { return drawCards(g, h, n); };
-  // перенести выход ближе к точке (для заданий с вертолётом)
-  E.placeExitNear = function (g, cell, dmin, dmax) {
-    const d = E.dist(g, cell), ds = E.dist(g, g.start);
-    const bad = new Set([g.start].concat(g.spawnPoints));
-    let c = g.board.cells.filter((x) => x.type === 'street' && !bad.has(x.i) && d[x.i] >= dmin && d[x.i] <= dmax);
-    if (!c.length) c = g.board.cells.filter((x) => x.type === 'street' && !bad.has(x.i) && d[x.i] >= 2);
-    let best = -1, pick = [];
-    c.forEach((x) => { if (ds[x.i] > best) { best = ds[x.i]; pick = [x.i]; } else if (ds[x.i] === best) pick.push(x.i); });
-    if (pick.length) g.exit = Rng.pick(g, pick);
-  };
+  // Вышка: в здании на тайле среднего столбца (в ряду без старта, если можно)
   E.placeTower = function (g) {
-    const ds = E.dist(g, g.start), de = E.dist(g, g.exit);
-    let best = [], bs = -1;
-    g.board.cells.forEach((c) => {
-      if (c.type !== 'building') return;
-      const s = Math.min(ds[c.i], de[c.i]);
-      if (s > bs) { bs = s; best = [c.i]; } else if (s === bs) best.push(c.i);
-    });
-    return Rng.pick(g, best);
+    const b = g.board;
+    const midX = Math.floor(b.tiles.reduce((m, t) => Math.max(m, t.tx), 0) / 2);
+    const startRow = b.tiles[tileOf(g, g.start)].ty;
+    const mids = b.tiles.map((t, i) => ({ t, i })).filter((x) => x.t.tx === midX).sort((x, y) => (x.t.ty === startRow) - (y.t.ty === startRow));
+    for (const m of mids) {
+      const c = b.cells.filter((x) => x.tile === m.i && x.type === 'building');
+      if (c.length) return (c.find((x) => x.tileSearch) || c[0]).i;
+    }
+    return b.cells.find((x) => x.type === 'building').i;
   };
+  // Гнёзда: в центре тайлов, начиная с правого столбца (центр непроходим — соседняя зона)
   E.placeNests = function (g, n) {
-    const d = E.dist(g, g.start);
-    const taken = new Set([g.start, g.exit].concat(g.spawnPoints));
-    const cands = g.board.cells.filter((c) => c.type !== 'blocked' && d[c.i] >= 5 && !taken.has(c.i)).map((c) => c.i);
-    spreadPick(g, cands, n, [g.start]).forEach((p) => E.spawnZombie(g, 'nest', p, null, true));
+    const b = g.board;
+    tilesByColumn(g, [tileOf(g, g.start)]).slice(0, n).forEach((ti) => {
+      const t = b.tiles[ti];
+      const center = (t.ty * 3 + 1) * b.w + t.tx * 3 + 1;
+      let cell = center;
+      if (b.cells[center].type === 'blocked' || g.spawnPoints.includes(center) || center === g.exit) {
+        cell = b.cells.find((c) => c.tile === ti && c.type !== 'blocked' && !g.spawnPoints.includes(c.i) && c.i !== g.exit && Math.abs(c.x - b.cells[center].x) + Math.abs(c.y - b.cells[center].y) === 1).i;
+      }
+      E.spawnZombie(g, 'nest', cell, null, true);
+    });
   };
-  function placeSearch(g, n) {
+  function placeSearch(g) {
     const taken = new Set([g.start, g.exit].concat(g.crates.map((c) => c.pos), g.spawnPoints));
-    const cells = g.board.cells.filter((c) => c.tileSearch && !taken.has(c.i));
-    Rng.shuffle(g, cells).slice(0, n).forEach((c) => g.search.push({ pos: c.i, kind: c.tileSearch }));
+    g.board.cells.forEach((c) => { if (c.tileSearch && !taken.has(c.i)) g.search.push({ pos: c.i, kind: c.tileSearch }); });
   }
   E.addStreetSearch = function (g, n) {
     const taken = new Set([g.start, g.exit].concat(g.crates.map((c) => c.pos), g.spawnPoints, g.search.map((s) => s.pos)));
     const cells = g.board.cells.filter((c) => c.type === 'street' && !taken.has(c.i));
     Rng.shuffle(g, cells).slice(0, n).forEach((c) => g.search.push({ pos: c.i, kind: 'normal' }));
   };
+
+  E.drawFor = function (g, h, n) { return drawCards(g, h, n); };
 
   // ============================================================== колоды
   function drawLootId(g) {
@@ -324,6 +308,13 @@
 
   // ============================================================== зомби
   E.spawnZombie = function (g, type, pos, why, silent) {
+    const pool = (ZG.Levels.get(g.levelId).pool || {})[type];
+    if (pool && g.zombies.filter((x) => x.type === type).length >= pool) {
+      // жетоны кончились: вместо появления каждый такой зомби делает лишний шаг
+      E.log(g, `Жетоны «${ZG.Zombies.get(type).name}» кончились — все они делают лишний шаг!`, 'bad');
+      g.zombies.filter((x) => x.type === type).forEach((x) => moveZombieStep(g, x));
+      return null;
+    }
     const z = { uid: E.newUid(g, 'z'), type, pos, dmg: 0, suppressed: false };
     g.zombies.push(z);
     g.stats.spawned++;
@@ -427,8 +418,8 @@
       if (!h.onBoard || h.hidden) return;
       t.push({ pos: h.pos, noise: 1 + (g.noise[h.pos] || 0), wounds: E.woundCount(g, h), idx: h.idx });
     });
-    g.lures.forEach((l) => t.push({ pos: l.pos, noise: 3 + (g.noise[l.pos] || 0), wounds: 99, idx: 99 }));
-    g.traps.forEach((tr) => { if (tr.owner != null && Mods.flag(g, g.heroes[tr.owner], 'trapLure')) t.push({ pos: tr.pos, noise: 2, wounds: 99, idx: 98 }); });
+    g.lures.forEach((l) => t.push({ pos: l.pos, lure: true, noise: g.noise[l.pos] || 0, wounds: 99, idx: 99 }));
+    g.traps.forEach((tr) => { if (tr.owner != null && Mods.flag(g, g.heroes[tr.owner], 'trapLure')) t.push({ pos: tr.pos, lure: true, noise: g.noise[tr.pos] || 0, wounds: 99, idx: 98 }); });
     return t;
   }
 
@@ -443,11 +434,18 @@
     let best = null;
     targets.forEach((t) => {
       if (dz[t.pos] === Infinity) return;
-      if (!best || dz[t.pos] < dz[best.pos] || (dz[t.pos] === dz[best.pos] && (t.noise > best.noise || (t.noise === best.noise && (t.wounds < best.wounds || (t.wounds === best.wounds && t.idx < best.idx)))))) best = t;
+      // ближайшая цель; ничья → приманка, затем больше шума, затем меньше Ран
+      const key = (x) => [dz[x.pos], x.lure ? 0 : 1, -x.noise, x.wounds, x.idx];
+      if (!best) { best = t; return; }
+      const a = key(t), b = key(best);
+      for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) { if (a[i] < b[i]) best = t; break; } }
     });
     if (!best) return false;
-    const sight = Mods.value(g, null, 'zombieSight', 0);
-    if (sight > 0 && dz[best.pos] > sight) return false;
+    // Туман: зомби видит цель только на своём или соседнем (по стороне) тайле
+    if (Mods.flag(g, null, 'fogTiles')) {
+      const a = g.board.tiles[tileOf(g, z.pos)], b = g.board.tiles[tileOf(g, best.pos)];
+      if (Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) > 1) return false;
+    }
     const dt = E.dist(g, best.pos, viaBarricade ? null : noBarr);
     const next = g.board.adj[z.pos].find((n) => dt[n] === dt[z.pos] - 1 && (viaBarricade || noBarr(z.pos, n)));
     if (next == null) return false;
@@ -506,6 +504,9 @@
         if (zs.queue.length) { prepareBlock(g, zs.queue[0]); continue; }
         zs.step = 'special';
       } else if (zs.step === 'special') {
+        const horde = ZG.Levels.get(g.levelId).hordeAlarm;
+        const mobile = g.zombies.filter((z) => !ZG.Zombies.get(z.type).immobile).length;
+        if (horde && mobile >= horde) E.raiseAlarm(g, Math.floor(mobile / horde), `Орда (${mobile} на поле) гудит`);
         g.zombies.slice().forEach((z) => {
           const def = ZG.Zombies.get(z.type);
           if (def.hooks && def.hooks.zombiePhase) def.hooks.zombiePhase(g, z, E);
@@ -612,7 +613,8 @@
     if (sc.roundEnd) sc.roundEnd(g, E);
     g.lures = [];
     g.noise = {};
-    g.zombies.forEach((z) => { z.suppressed = false; });
+    g.relaySuit = null;
+    g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big) z.dmg = 0; });
     if (g.round >= E.maxRounds(g)) {
       finish(g, false, 'Рассвет не наступил: Орда поглотила квартал.');
       return;
@@ -637,9 +639,10 @@
     h.block = 0;
     h.thorns = 0;
     h.hidden = false;
-    g.turn = { lastSuit: null, played: 0, moves: 0, searched: 0, healUsed: 0, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
+    g.turn = { lastSuit: g.relaySuit || null, relay: g.relaySuit || null, played: 0, moves: 0, searched: 0, healUsed: 0, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
     const hs = E.handSize(g, h);
-    if (h.hand.length < hs) drawCards(g, h, hs - h.hand.length);
+    const cap = ZG.Levels.get(g.levelId).drawMax || 99;
+    if (h.hand.length < hs) drawCards(g, h, Math.min(cap, hs - h.hand.length));
     let en = Mods.value(g, h, 'energy', ZG.Heroes.get(h.id).energy) + h.adrenaline;
     if (E.woundCount(g, h) === E.maxHp(g, h) - 1) {
       en += 1;
@@ -655,7 +658,8 @@
   function endTurn(g) {
     const h = E.activeHero(g);
     if (h) h.acted = true;
-    g.zombies.forEach((z) => { if (!ZG.Zombies.get(z.type).big) z.dmg = 0; });
+    // Эстафета: следующий герой может продолжить Связку мастью последней карты
+    g.relaySuit = g.turn && g.turn.played ? g.turn.lastSuit : null;
     g.active = null; g.turn = null;
     if (g.result) return;
     if (g.heroes.every((x) => x.acted || !x.onBoard)) startZombiePhase(g);
@@ -751,6 +755,7 @@
     if (g.pending) {
       if (g.pending.type === 'talent') g.pending.options.forEach((id) => out.push({ t: 'talent', id }));
       if (g.pending.type === 'block') out.push({ t: 'block', cards: [] });
+      if (g.pending.type === 'loot') g.pending.options.forEach((id) => out.push({ t: 'loot', id }));
       return out;
     }
     if (g.phase !== 'heroes') return out;
@@ -800,6 +805,13 @@
     if (g.pending) {
       const p = g.pending;
       if (a.t === 'block' && p.type === 'block') { resolveBlock(g, a.cards || []); }
+      else if (a.t === 'loot' && p.type === 'loot') {
+        const i = p.options.indexOf(a.id);
+        if (i < 0) return fail(g, 'Такой карты нет.');
+        const rest = p.options.slice(); rest.splice(i, 1);
+        g.pending = null;
+        keepLoot(g, g.heroes[p.hero], a.id, rest);
+      }
       else if (a.t === 'talent' && p.type === 'talent') {
         const h = g.heroes[p.hero];
         h.talents.push(a.id);
@@ -968,8 +980,9 @@
     lootFor(g, h, s.kind === 'armory' ? 1 : 0);
   }
 
+  // Обыск: тяните 2 карты добычи (+бонусы), одну оставьте, остальные — под низ колоды
   function lootFor(g, h, extraDraw) {
-    const n = 1 + extraDraw + Mods.value(g, h, 'searchDraw', 0);
+    const n = 2 + extraDraw + Mods.value(g, h, 'searchDraw', 0);
     const got = [];
     for (let guard = 0; got.length < n && guard < 12; guard++) {
       const id = drawLootId(g);
@@ -980,14 +993,16 @@
         E.log(g, `Засада! Из темноты выскакивает ${ZG.Zombies.get(type).name}.`, 'bad');
         E.fx(g, { t: 'ambush', pos: h.pos });
         E.spawnZombie(g, type, h.pos, null, true);
-        continue;
+        break; // засада прерывает обыск
       }
       got.push(id);
     }
-    if (!got.length) { E.log(g, 'Ничего не найдено.', 'dim'); return; }
-    got.sort((a, b) => (ZG.Cards.get(b).value || 0) - (ZG.Cards.get(a).value || 0));
-    const keep = got.shift();
-    got.forEach((id) => g.lootDeck.push(id));
+    if (!got.length) { E.log(g, 'Ничего полезного не найдено.', 'dim'); return; }
+    if (got.length === 1) return keepLoot(g, h, got[0], []);
+    g.pending = { type: 'loot', hero: h.idx, options: got };
+  }
+  function keepLoot(g, h, keep, rest) {
+    rest.forEach((id) => g.lootDeck.push(id));
     const u = E.newUid(g, 'c'); g.cards[u] = keep; h.hand.push(u);
     E.log(g, `${E.heroName(h)} находит: «${ZG.Cards.get(keep).name}».`, 'good');
     E.fx(g, { t: 'loot', hero: h.idx, card: u, pos: h.pos });
@@ -1097,10 +1112,11 @@
         if (opts.length) enterCell(g, z, opts[0]);
       },
       pull(radius) {
-        const d = E.dist(g, h.pos);
+        const open = (a, b) => !E.barricadeAt(g, a, b);
+        const d = E.dist(g, h.pos, open);
         g.zombies.slice().forEach((z) => {
           if (!g.zombies.includes(z) || d[z.pos] === 0 || d[z.pos] > radius || ZG.Zombies.get(z.type).immobile) return;
-          const next = g.board.adj[z.pos].find((n) => d[n] === d[z.pos] - 1);
+          const next = g.board.adj[z.pos].find((n) => d[n] === d[z.pos] - 1 && open(z.pos, n));
           if (next != null) enterCell(g, z, next);
         });
       },

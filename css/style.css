@@ -100,7 +100,7 @@ small { opacity: .75; }
   animation: logoIn 1.2s cubic-bezier(.2,.8,.2,1) both;
 }
 .logo h1 span { color: var(--red); display: inline-block; animation: flicker 4s infinite; }
-.logo-kicker { font-family: var(--font-t); text-transform: uppercase; letter-spacing: .4em; color: var(--amber); margin-bottom: 10px; animation: fadeUp .8s .3s both; }
+.logo-kicker { text-shadow: 0 2px 6px #000, 0 0 12px #000; font-family: var(--font-t); text-transform: uppercase; letter-spacing: .4em; color: var(--amber); margin-bottom: 10px; animation: fadeUp .8s .3s both; }
 .logo-sub { font-family: var(--font-d); color: var(--paper2); margin-top: 12px; letter-spacing: .2em; animation: fadeUp .8s .5s both; }
 .menu-buttons { display: flex; flex-direction: column; gap: 12px; min-width: 280px; }
 .menu-buttons .btn { animation: fadeUp .6s both; }
@@ -309,7 +309,9 @@ small { opacity: .75; }
 .card-cost { flex: none; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd36b, #c88a1a); border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-size: 14px; color: var(--ink); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 .card-cost.cheaper { background: radial-gradient(circle at 35% 35%, #b8ffc4, #3a9a50); }
 .card-cost.pricier { background: radial-gradient(circle at 35% 35%, #ffb0a0, #c0392b); }
-.card-name { flex: 1; font-family: var(--font-d); font-size: 13px; line-height: 1; text-transform: uppercase; color: var(--ink); }
+.card-name { flex: 1; min-width: 0; font-family: var(--font-d); font-size: 13px; line-height: 1; text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; }
+.card-name.long { font-size: 10.5px; }
+.card.zoomed .card-name.long { font-size: 18px; }
 .card-suit { width: 20px; height: 20px; flex: none; }
 .card-art { margin: 1px 3px; height: 33%; border-radius: 3px; overflow: hidden; border: 2px solid var(--ink); background: #222; flex: none; }
 .card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -337,6 +339,8 @@ small { opacity: .75; }
 .card.flying { position: fixed; z-index: 70; margin: 0; pointer-events: none; }
 .card.pickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
 .card.pickable:hover { transform: translateY(-6px); }
+.card.deal { animation: dealIn .5s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes dealIn { from { opacity: 0; transform: translateY(-60px) rotateY(90deg) scale(.7); } }
 .card.pickable.picked { transform: translateY(-14px); box-shadow: 0 0 0 3px var(--blue), 0 0 24px rgba(63,167,214,.6); }
 .card-back { background: repeating-linear-gradient(45deg, #3a1a14 0 8px, #2a120e 8px 16px); }
 .card-back::before { display: none; }

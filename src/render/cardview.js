@@ -54,7 +54,7 @@
       if (opts.cost != null && opts.cost !== def.cost) cost.classList.add(opts.cost < def.cost ? 'cheaper' : 'pricier');
       head.appendChild(cost);
     }
-    head.appendChild(el('div', 'card-name', esc(def.name)));
+    head.appendChild(el('div', 'card-name' + (def.name.length > 11 ? ' long' : ''), esc(def.name)));
     if (suit.icon) head.appendChild(iconImg(suit.icon, 'card-suit', 32));
     c.appendChild(head);
     const art = el('div', 'card-art');

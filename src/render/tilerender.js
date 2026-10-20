@@ -234,6 +234,19 @@
     b.cells.forEach((c) => { if (c.type === 'blocked') drawBlocked(ctx, c, cellRect(pad, C, c), C); });
     drawDecor(ctx, b, pad, C);
     drawEdges(ctx, b, pad, C);
+    // напечатанные значки люков и мест обыска
+    b.cells.forEach((c) => {
+      const r = cellRect(pad, C, c);
+      if (c.manhole) {
+        ctx.save(); ctx.globalAlpha = 0.55;
+        ctx.beginPath(); ctx.arc(r.x + C * 0.72, r.y + C * 0.28, C * 0.15, 0, TAU);
+        ctx.fillStyle = '#26221e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#e0a83a'; ctx.stroke();
+        ctx.strokeStyle = '#4a3f36'; ctx.lineWidth = 1.5;
+        for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(r.x + C * 0.62, r.y + C * 0.28 + i * C * 0.05); ctx.lineTo(r.x + C * 0.82, r.y + C * 0.28 + i * C * 0.05); ctx.stroke(); }
+        ctx.restore();
+      }
+      if (c.tileSearch && opts.printSearch) Art.draw(ctx, 'tok_search', r.x + C * 0.06, r.y + C * 0.06, C * 0.22, C * 0.22, { armory: c.tileSearch === 'armory' });
+    });
     // швы тайлов и подписи
     b.tiles.forEach((p) => {
       const def = ZG.Tiles.get(p.id);

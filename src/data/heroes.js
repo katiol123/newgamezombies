@@ -91,7 +91,7 @@
       mods: { energy: (g, h) => Math.min(2, g.heroes.filter((o) => o.onBoard && o.pos === h.pos && ZG.Engine.woundCount(g, o) > 0).length) },
     },
     // Лиза
-    { id: 'quick_fingers', name: 'Ловкие пальцы', text: 'Обыск: тяни 2 карты добычи, оставь лучшую.', mods: { searchDraw: 1 } },
+    { id: 'quick_fingers', name: 'Ловкие пальцы', text: 'Обыск: тяни на 1 карту добычи больше. Первый Обыск за ход — 0 ⚡.', mods: { searchDraw: 1, freeFirstSearch: 1 } },
     {
       id: 'sprint', name: 'Спринт', text: '+1 ⚡ в начале хода, если в твоей зоне нет зомби.',
       mods: { energy: (g, h) => (ZG.Engine.zombiesAt(g, h.pos).length === 0 ? 1 : 0) },

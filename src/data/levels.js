@@ -26,6 +26,8 @@
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
     alarmThreshold: 6,
     spawnPoints: { 1: 1, 2: 2, 3: 3, 4: 3 },
-    searchCount: 9,
+    drawMax: 3, // добор в начале хода — до размера руки, но не больше 3 карт
+    hordeAlarm: 8, // в шаге «Особые свойства»: Тревога +1 за каждые 8 зомби на поле
+    pool: { walker: 24, runner: 10, fatso: 6, screamer: 4, brute: 2 }, // жетонов в коробке
   });
 })(typeof globalThis !== 'undefined' ? globalThis : window);
