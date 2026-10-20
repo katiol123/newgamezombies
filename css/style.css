@@ -131,6 +131,8 @@ small { opacity: .75; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips.diff { flex-direction: column; }
 .desc { margin-top: 10px; color: var(--muted); font-size: 14px; min-height: 40px; }
+.fog-toggle { display: block; margin-top: 14px; color: var(--paper2); font-family: var(--font-t); font-size: 15px; cursor: pointer; }
+.fog-toggle input { accent-color: var(--amber); transform: scale(1.2); margin-right: 6px; }
 .seed { display: block; margin-top: 14px; color: var(--muted); font-size: 14px; }
 .seed input { background: var(--panel); border: 1px solid var(--line); color: var(--paper); padding: 6px 8px; width: 160px; font-family: var(--font-t); }
 .setup-go { margin-top: 26px; text-align: center; }

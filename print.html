@@ -141,6 +141,18 @@
     });
   }
 
+  // -------------------------------------------- рубашка тайлов (туман)
+  const tb = sheet('Рубашка тайлов (печатайте на обороте каждого тайла)', '150×150 мм. Для режима «Туман войны».');
+  const backC = document.createElement('canvas'); const BS = Math.round(150 * MM * 2); backC.width = BS; backC.height = BS;
+  (function (c) {
+    const gr = c.createLinearGradient(0, 0, BS, BS); gr.addColorStop(0, '#2b211a'); gr.addColorStop(1, '#1a1410'); c.fillStyle = gr; c.fillRect(0, 0, BS, BS);
+    c.strokeStyle = 'rgba(224,168,58,.08)'; c.lineWidth = BS / 40; for (let i = -BS; i < BS * 2; i += BS / 9) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i - BS, BS); c.stroke(); }
+    c.strokeStyle = 'rgba(224,168,58,.5)'; c.lineWidth = 4; c.setLineDash([24, 14]); c.strokeRect(20, 20, BS - 40, BS - 40); c.setLineDash([]);
+    c.fillStyle = 'rgba(232,220,192,.25)'; c.font = `${BS / 3}px 'Russo One', sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', BS / 2, BS / 2 - BS / 20);
+    c.fillStyle = 'rgba(232,220,192,.7)'; c.font = `${BS / 22}px 'Russo One', sans-serif`; c.fillText('НЕ РАЗВЕДАНО', BS / 2, BS * 0.78);
+  })(backC.getContext('2d'));
+  const tbs = document.createElement('div'); tbs.className = 'tile-slot'; tbs.appendChild(backC); tb.appendChild(tbs);
+
   // ----------------------------------------------------------- тайлы
   lvl.tiles.forEach((id) => {
     const def = ZG.Tiles.get(id);

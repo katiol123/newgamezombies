@@ -126,6 +126,8 @@
         db.appendChild(b);
       });
       $('#setup-seed').value = s.seed || '';
+      $('#setup-fog').checked = s.fog !== false;
+      $('#setup-fog').onchange = (ev) => { s.fog = ev.target.checked; };
       $('#setup-seed').oninput = (ev) => { s.seed = ev.target.value.trim(); };
       $('#btn-setup-back').onclick = () => this.show('menu');
       $('#btn-start').onclick = () => {
@@ -138,6 +140,7 @@
           scenarioId: s.scenario === 'random' ? undefined : s.scenario,
           conditionId: s.condition === 'random' ? undefined : s.condition,
           difficultyId: s.difficulty,
+          fog: s.fog !== false,
           players: s.players,
         });
       };
@@ -817,8 +820,8 @@
         <div><b>${st.waves}</b><span>волн</span></div>
         <div><b>${st.searches}</b><span>обысков</span></div>`;
       $('#end-seed').textContent = `Сид: ${g.seed} · ${E.scenario(g).name} · ${ZG.Conditions.get(g.conditionId).name} · ${ZG.Difficulties.get(g.difficultyId).name}`;
-      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), difficultyId: g.difficultyId, players: this.players });
-      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, players: this.players });
+      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), difficultyId: g.difficultyId, fog: g.fog, players: this.players });
+      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
       App.show('end');
     },
