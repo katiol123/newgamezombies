@@ -40,6 +40,17 @@
   E.maxHp = (g, h) => Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp);
   // «Одиночка»: в соло герой держит на 1 карту больше
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0);
+  // из чего складывается размер руки (для подсказки в интерфейсе)
+  E.handSizeParts = function (g, h) {
+    const parts = [{ name: 'База героя', n: ZG.Heroes.get(h.id).hand }];
+    Mods.sources(g, h).forEach((src) => {
+      const m = src.mods && src.mods.handSize;
+      const n = m == null ? 0 : typeof m === 'function' ? m(g, h) : m;
+      if (n) parts.push({ name: src.name, n });
+    });
+    if (g.heroes.length === 1) parts.push({ name: 'Одиночка (соло)', n: 1 });
+    return parts;
+  };
   E.activeHero = (g) => (g.active == null ? null : g.heroes[g.active]);
   E.maxRounds = (g) => Mods.value(g, null, 'maxRounds', ZG.Levels.get(g.levelId).rounds);
   E.alarmThreshold = (g) => Math.max(3, Mods.value(g, null, 'alarmThreshold', ZG.Levels.get(g.levelId).alarmThreshold));

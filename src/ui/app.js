@@ -614,6 +614,7 @@
           <div class="hp-pips" title="Стойкость: ${hp - w} из ${hp}">${pips.join('')}</div>
           <div class="hp-meta">
             <span title="Опыт / уровень">★ ${h.xp}${xpNext ? '/' + xpNext : ''} · ур.${h.level}</span>
+            <span title="Размер руки: до стольких карт герой добирает в начале хода (не больше 3 за раз)">✋ ${E.handSize(g, h)}</span>
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>
             ${h.block ? `<span title="Блок до следующего хода">🛡 ${h.block}</span>` : ''}
             ${h.adrenaline ? `<span title="Адреналин">+${h.adrenaline}⚡</span>` : ''}
@@ -637,6 +638,13 @@
       const prev = new Set($$('.card', hand).map((c) => c.dataset.uid));
       hand.innerHTML = '';
       $('#hand-owner').innerHTML = h ? `${esc(E.heroName(h))}${this.players === 2 ? ` <small>· Игрок ${h.player}</small>` : ''}` : (g.phase === 'heroes' ? 'Выберите героя' : 'Ход зомби…');
+      if (h) {
+        const hs = E.handSize(g, h);
+        const parts = E.handSizeParts(g, h).map((p, i) => (i ? `+${p.n} ${p.name}` : `${p.n} ${p.name}`)).join(', ');
+        const hc = el('span', 'hand-size', `🂠 ${h.hand.length}/${hs}`);
+        hc.title = `Размер руки ${hs} = ${parts}.\nВ начале хода герой добирает карты до этого числа, но не больше 3 за раз. Лишние карты (сверх лимита) не сбрасываются.`;
+        $('#hand-owner').appendChild(hc);
+      }
       // энергия
       const en = $('#energy');
       en.innerHTML = '';

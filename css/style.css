@@ -248,6 +248,7 @@ small { opacity: .75; }
 .handbar::before { content: ''; position: absolute; left: 0; right: 0; top: -30px; height: 30px; background: linear-gradient(transparent, rgba(0,0,0,.5)); pointer-events: none; }
 .hand-left { display: flex; flex-direction: column; gap: 8px; }
 .hand-owner { font-family: var(--font-d); font-size: 18px; color: var(--gold); }
+.hand-size { margin-left: 10px; font-size: 14px; color: var(--paper2); cursor: help; border-bottom: 1px dashed var(--muted); }
 .energy { display: flex; gap: 4px; min-height: 34px; }
 .energy .orb { width: 32px; height: 32px; transition: transform .3s, opacity .3s; animation: orbIn .4s both; }
 .energy .orb.spent { opacity: .45; transform: scale(.85); }
