@@ -43,6 +43,7 @@
   ZG.Levels = makeRegistry('level');
   ZG.Difficulties = makeRegistry('difficulty');
   ZG.Bonuses = makeRegistry('bonus');
+  ZG.Events = makeRegistry('event');
 
   // ---------------------------------------------------------------------------
   // Детерминированный ГСЧ (mulberry32). Состояние лежит в объекте игры,
@@ -93,6 +94,7 @@
       if (g.conditionId) list.push(ZG.Conditions.get(g.conditionId));
       if (g.difficultyId) list.push(ZG.Difficulties.get(g.difficultyId));
       if (g.scenarioId) list.push(ZG.Scenarios.get(g.scenarioId));
+      if (g.event) list.push(ZG.Events.get(g.event)); // событие раунда
       return list;
     },
     value(g, hero, key, base, ctx) {

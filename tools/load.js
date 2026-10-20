@@ -9,6 +9,7 @@ const FILES = [
   'src/data/tiles.js',
   'src/data/spawns.js',
   'src/data/scenarios.js',
+  'src/data/events.js',
   'src/data/levels.js',
   'src/engine/board.js',
   'src/engine/engine.js',

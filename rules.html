@@ -115,6 +115,7 @@
 
   <h2 id="s3"><span class="n">3</span>Раунд</h2>
   <div class="flow">
+    <div style="grid-column: 1 / -1; background:#fff1c4"><b>0. Событие (со 2-го раунда)</b>Бросьте кубик. На «6» тяните карту события и выполните её — она действует до конца раунда (если не сказано иное). На 1–5 — затишье. В среднем 1–2 события за партию.</div>
     <div><b>1. Ход героев</b>Каждый герой делает свой ход. <b>Порядок выбираете вы</b> — это важная часть тактики.</div>
     <div class="z"><b>2. Фаза зомби</b>Движение → Атака → Особые свойства → Появление (и Волна, если Тревога полна).</div>
     <div><b>3. Конец раунда</b>Уберите приманки, шум и «прижатие». Сдвиньте маркер раунда. Если это был последний раунд — поражение.</div>
@@ -206,6 +207,8 @@
   <p><b>Звёзды:</b> ★ — победа; ★ — никто не пал; ★ — выполнена <b>бонусная цель</b> (карта тянется при подготовке).</p>
   <div id="bonuses"></div>
   <p>Для бонусных целей со счётом («Охотник», «Мародёр», «Слаженность», «Ни царапины», «Крупная дичь») используйте <b>счётчик бонуса</b> на планшете треков (0–24): двигайте маркер каждый раз, когда происходит указанное событие.</p>
+  <h3>События раунда (10 карт)</h3>
+  <div id="events"></div>
   <h3>Условия партии</h3>
   <div id="conditions"></div>
   <h3>Сложность</h3>
@@ -218,6 +221,7 @@
 
   <h2 id="s12"><span class="n">12</span>Памятка</h2>
   <div class="ref box">
+    <p><b>Начало раунда:</b> кубик; на 6 — карта события.</p>
     <p><b>Ход героя:</b> добрать до лимита (макс. 3 карты) → 3 ⚡ → действовать → карты в руке = защита.</p>
     <p><b>Связка:</b> та же масть, что у предыдущей карты → бонус. Эстафета: первая карта хода продолжает масть предыдущего героя.</p>
     <p><b>Хватка:</b> выход из зоны с зомби +1 ⚡. Сквозь зомби не пройти.</p>
@@ -242,6 +246,7 @@
 <script src="src/data/tiles.js"></script>
 <script src="src/data/spawns.js"></script>
 <script src="src/data/scenarios.js"></script>
+<script src="src/data/events.js"></script>
 <script src="src/data/levels.js"></script>
 <script src="src/engine/board.js"></script>
 <script src="src/engine/engine.js"></script>
@@ -258,6 +263,7 @@
     sc.innerHTML = '<table><tr><th>Задание</th><th>Что сделать</th></tr>' + lvl.scenarios.map((id) => { const s = ZG.Scenarios.get(id); return `<tr><td><b>${s.name}</b></td><td>${s.brief}<br><i>${s.short}</i></td></tr>`; }).join('') + '</table>';
     document.getElementById('conditions').innerHTML = '<table>' + lvl.conditions.map((id) => { const c = ZG.Conditions.get(id); return `<tr><td><b>${c.name}</b></td><td>${c.text}</td></tr>`; }).join('') + '</table>';
     document.getElementById('bonuses').innerHTML = '<table>' + lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); return `<tr><td><b>★ ${b.name}</b></td><td>${b.text}</td></tr>`; }).join('') + '</table>';
+    document.getElementById('events').innerHTML = '<table>' + lvl.events.map((id) => { const e = ZG.Events.get(id); return `<tr><td><b>${e.name}</b></td><td>${e.text}</td></tr>`; }).join('') + '</table>';
     document.getElementById('difficulty').innerHTML = '<table>' + ZG.Difficulties.all().map((d) => `<tr><td><b>${d.name}</b></td><td>${d.text}</td></tr>`).join('') + '</table>';
     const zw = document.getElementById('zombies');
     ZG.Zombies.all().forEach((z) => zw.appendChild(CV.zombieCard(z.id)));

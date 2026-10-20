@@ -196,6 +196,13 @@
     return c;
   }
 
+  function eventCard(id) {
+    const def = ZG.Events.get(id);
+    const c = el('div', 'scen-card event-card tone' + (def.tone > 0 ? 'pos' : def.tone < 0 ? 'neg' : 'neu'));
+    c.innerHTML = `<div class="scen-kicker">СОБЫТИЕ РАУНДА</div><div class="scen-name">${esc(def.name)}</div><div class="scen-brief">${esc(def.text)}</div>`;
+    return c;
+  }
+
   function scenarioCard(id) {
     const def = ZG.Scenarios.get(id);
     const c = el('div', 'scen-card');
@@ -224,5 +231,5 @@
     if (c.isConnected) run(); else requestAnimationFrame(run);
   }
 
-  ZG.CardView = { fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
+  ZG.CardView = { eventCard, fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

@@ -57,6 +57,7 @@
 <script src="src/data/tiles.js"></script>
 <script src="src/data/spawns.js"></script>
 <script src="src/data/scenarios.js"></script>
+<script src="src/data/events.js"></script>
 <script src="src/data/levels.js"></script>
 <script src="src/engine/board.js"></script>
 <script src="src/render/art.js"></script>
@@ -115,12 +116,19 @@
   cardSheets('Карты появления', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
 
   // ------------------------------------------------- задания и условия
-  const sc = sheet('Задания и условия');
-  const wc = document.createElement('div'); wc.className = 'wide-cards';
-  lvl.scenarios.forEach((id) => wc.appendChild(CV.scenarioCard(id)));
-  lvl.conditions.forEach((id) => wc.appendChild(CV.conditionCard(id)));
-  lvl.bonuses.forEach((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; wc.appendChild(d); });
-  sc.appendChild(wc);
+  // широкие карты (88 мм) — по 6 на лист
+  const wideSheets = (title, els) => {
+    for (let i = 0; i < els.length; i += 6) {
+      const sc = sheet(title + (els.length > 6 ? ` (${i / 6 + 1})` : ''));
+      const wc = document.createElement('div'); wc.className = 'wide-cards';
+      els.slice(i, i + 6).forEach((e) => wc.appendChild(e));
+      sc.appendChild(wc);
+    }
+  };
+  wideSheets('Задания', lvl.scenarios.map((id) => CV.scenarioCard(id)));
+  wideSheets('Условия партии', lvl.conditions.map((id) => CV.conditionCard(id)));
+  wideSheets('События раунда', lvl.events.map((id) => CV.eventCard(id)));
+  wideSheets('Бонусные цели', lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; return d; }));
 
   // ---------------------------------------------------- планшеты героев
   const heroes = ZG.Heroes.all();
@@ -168,10 +176,20 @@
   });
 
   // ---------------------------------------------------------- жетоны
-  const ts = sheet('Жетоны', 'Вырежьте по контуру. Числа — сколько штук нужно.');
-  const tw = document.createElement('div'); tw.className = 'tokens';
+  // жетоны переносятся на новый лист, когда текущий заполнен (оценка по площади)
+  let tw = null, used = 0, tokSheets = 0;
+  const CAP = 52;
+  const newTokSheet = () => {
+    tokSheets++;
+    const ts = sheet('Жетоны' + (tokSheets > 1 ? ` (${tokSheets})` : ''), 'Вырежьте по контуру. Числа — сколько штук нужно.');
+    tw = document.createElement('div'); tw.className = 'tokens'; ts.appendChild(tw); used = 0;
+  };
+  newTokSheet();
   const tok = (key, n, label, cls, opts) => {
     for (let i = 0; i < n; i++) {
+      const cost = cls === 'big' ? 1.9 : cls === 'small' ? 0.55 : 1;
+      if (used + cost > CAP) newTokSheet();
+      used += cost;
       const d = document.createElement('div'); d.className = 'tok ' + (cls || '');
       d.appendChild(canvasOf(key, cls === 'big' ? 30 : cls === 'small' ? 16 : 22, opts));
       if (i === 0) d.appendChild(Object.assign(document.createElement('span'), { textContent: `${label} ×${n}` }));
@@ -188,7 +206,6 @@
   tok('cargo_fuel', 2, 'Ящик: канистра', '', { noBg: true }); tok('cargo_meds', 4, 'Ящик: медикаменты', '', { noBg: true }); tok('cargo_radio', 1, 'Ящик: рация', '', { noBg: true }); tok('tok_crate', 3, 'Ящик: пусто', '', { opened: true });
   tok('tok_barricade', 4, 'Баррикада', 'big'); tok('tok_round', 1, 'Маркер раунда', 'small'); tok('tok_alarm', 1, 'Маркер Тревоги', 'small'); tok('tok_start', 1, 'Старт', 'small');
   tok('exit_car', 1, 'Машина', 'big'); tok('exit_ambulance', 1, 'Скорая', 'big'); tok('exit_heli', 1, 'Вертолёт', 'big'); tok('tok_tower', 1, 'Вышка', 'big');
-  ts.appendChild(tw);
 
   // ----------------------------------------------------- планшет треков
   const tk = sheet('Планшет треков');

@@ -618,7 +618,11 @@
       const cond = ZG.Conditions.get(g.conditionId);
       const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
       $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> <span class="cond-full">${esc(cond.text)}</span>` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> <span class="cond-full">${esc(bonus.text)}</span> <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
-      $('#cond').title = `${cond.name}: ${cond.text}` + (bonus ? `\n★ ${bonus.name}: ${bonus.text}` : '');
+      if (g.event) {
+        const ev = ZG.Events.get(g.event);
+        $('#cond').innerHTML += `<div class="event-line tone${ev.tone > 0 ? 'pos' : ev.tone < 0 ? 'neg' : 'neu'}">⚑ <b>Событие: ${esc(ev.name)}.</b> <span class="cond-full">${esc(ev.text)}</span></div>`;
+      }
+      $('#cond').title = `${cond.name}: ${cond.text}` + (bonus ? `\n★ ${bonus.name}: ${bonus.text}` : '') + (g.event ? `\n⚑ ${ZG.Events.get(g.event).name}: ${ZG.Events.get(g.event).text}` : '');
       $('#zcount').textContent = g.zombies.length;
     },
 
@@ -786,6 +790,7 @@
       const sa = legal.filter((a) => a.t === 'scenario');
       sa.forEach((a) => icon('task', a.label, a.cost, true, '', () => this.act(a), ' gold'));
       if (E.isComplete(g)) icon('evac', 'Эвакуация', 0, has('evac'), 'дойдите до зоны выхода', () => this.act({ t: 'evac' }), ' gold');
+      if (g.survivor) icon('heal', 'Спасти', 1, has('rescue'), 'дойдите до выжившего (SOS на поле)', () => this.act({ t: 'rescue' }), ' gold');
     },
 
     async giveDialog() {
@@ -867,6 +872,13 @@
         await Banner.show('ИГРОК ' + h.player, 'ход: ' + E.heroName(h), 'player');
       }
     },
+    async event(ev) {
+      const e = ZG.Events.get(ev.id);
+      ZG.Sound.play('reveal');
+      this.refreshTop();
+      await Banner.show('СОБЫТИЕ: ' + e.name.toUpperCase(), e.tone > 0 ? 'удача улыбается' : e.tone < 0 ? 'становится хуже' : 'будьте начеку', e.tone < 0 ? 'wave' : 'night');
+      toast(e.text, 6000);
+    },
     async reveal(ev) {
       this.view.play([ev]);
       if (ev.n >= (ZG.Levels.get(this.g.levelId).fogBreak || 4) && this.g.phase === 'zombies') await Banner.show('ПРОРЫВ!', `из тумана выходят ${ev.n} зомби`, 'wave');
@@ -917,6 +929,7 @@
       case 'give': return `передать «${E.cardDef(g, a.card).name}» → ${E.heroName(g.heroes[a.hero])}`;
       case 'scenario': return a.label;
       case 'evac': return 'эвакуироваться!';
+      case 'rescue': return 'спасти выжившего';
       case 'pickup': return 'подобрать груз';
       default: return a.t;
     }
@@ -961,6 +974,9 @@
     if (g.traps.some((t) => t.pos === cell)) parts.push('<div class="tt-red">Растяжка</div>');
     if (g.lures.some((l) => l.pos === cell)) parts.push('<div>Приманка</div>');
     if (g.drops.some((d) => d.pos === cell)) parts.push('<div class="tt-gold">Брошенный груз</div>');
+    if (g.survivor && g.survivor.pos === cell) parts.push('<div class="tt-gold">Выживший зовёт на помощь: «Спасти» за 1 ⚡</div>');
+    if (g.hazard && g.hazard.pos === cell) parts.push('<div class="tt-red">Утечка газа: взрыв в конце раунда (3 урона зомби, 1 Рана героям)</div>');
+    if (cr && !cr.opened && cr.known) parts.push('<div class="tt-gold">Радиоперехват: здесь груз!</div>');
     if (g.noise[cell]) parts.push(`<div>Шум: ${g.noise[cell]}</div>`);
     return parts.length > 1 || c.type !== 'street' ? parts.join('') : '';
   }

@@ -230,6 +230,8 @@ small { opacity: .75; }
 .goal-evac { margin-top: 6px; padding: 6px; border-radius: 4px; background: rgba(111,224,138,.12); color: var(--green); font-size: 13px; font-family: var(--font-t); animation: readyPulse 1.6s infinite; }
 .cond { font-family: var(--font-t); font-size: 13px; color: var(--paper2); }
 .cond b { color: var(--amber); }
+.event-line { margin-top: 5px; padding: 4px 6px; border-radius: 4px; background: rgba(224,168,58,.12); }
+.event-line.toneneg { background: rgba(192,57,43,.18); } .event-line.tonepos { background: rgba(111,224,138,.12); }
 .bonus-line { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); }
 .bonus-line b { color: var(--gold); } .bonus-line .ok { color: var(--green); }
 .log-panel { flex: 1; display: flex; flex-direction: column; min-height: 120px; }
@@ -414,6 +416,9 @@ small { opacity: .75; }
 .scen-brief { color: var(--paper2); font-size: 14px; }
 .scen-short { margin-top: 10px; font-weight: 700; color: var(--gold); padding-right: 50px; }
 .scen-card { padding-bottom: 60px !important; }
+.event-card.toneneg { border-color: #7a2a1a; background: linear-gradient(160deg, #3a1a14, #1d100c); }
+.event-card.tonepos { border-color: #3a7a4a; background: linear-gradient(160deg, #1a3a24, #0e1d12); }
+.event-card { padding-bottom: 14px !important; }
 .scen-setup { margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: rgba(0,0,0,.25); font-size: 13px; color: var(--paper); }
 .scen-exit { position: absolute; right: 10px; bottom: 10px; width: 40px; }
 .talent-pick { display: flex; gap: 16px; justify-content: center; margin-top: 10px; }

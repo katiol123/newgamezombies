@@ -716,6 +716,27 @@
         for (let i = 0; i < bz.hp; i++) { ctx.beginPath(); ctx.arc(-C * 0.3 + i * C * 0.1, -C * 0.12, C * 0.03, 0, TAU); ctx.fill(); }
         ctx.restore();
       });
+      // события: газ, выживший, помеченный ящик
+      if (g.hazard) {
+        const c = this.cellXY(g.hazard.pos);
+        const pulse = 0.5 + Math.sin(t * 5) * 0.5;
+        const gr = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, C * 0.5);
+        gr.addColorStop(0, `rgba(140,220,60,${0.35 + pulse * 0.25})`); gr.addColorStop(1, 'rgba(140,220,60,0)');
+        ctx.fillStyle = gr; ctx.fillRect(c.x - C / 2, c.y - C / 2, C, C);
+        this._label(ctx, c.x, c.y - C * 0.4, '☢ ГАЗ', '#c8ff7a');
+      }
+      if (g.survivor) {
+        const c = this.cellXY(g.survivor.pos);
+        const s = C * 0.34 * (1 + Math.sin(t * 6) * 0.06);
+        ctx.save(); ctx.beginPath(); ctx.arc(c.x + C * 0.24, c.y + C * 0.22, s / 2, 0, TAU); ctx.fillStyle = '#e8e8e8'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f0c040'; ctx.stroke();
+        ctx.fillStyle = '#c0392b'; ctx.font = `bold ${Math.round(C * 0.11)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOS', c.x + C * 0.24, c.y + C * 0.23); ctx.restore();
+      }
+      g.crates.forEach((cr) => {
+        if (!cr.known || cr.opened) return;
+        const c = this.cellXY(cr.pos);
+        ctx.strokeStyle = `rgba(240,192,64,${0.6 + Math.sin(t * 4) * 0.4})`; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(c.x - C * 0.24, c.y - C * 0.24, C * 0.24, 0, TAU); ctx.stroke();
+      });
       // шум
       Object.keys(g.noise).forEach((cell) => {
         const c = this.cellXY(+cell);

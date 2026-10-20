@@ -132,7 +132,7 @@
       const h = {
         idx, id: def.id, player: hs.player || 1, pos: null, deck: [], hand: [], discard: [], equip: [],
         energy: 0, adrenaline: 0, block: 0, xp: 0, level: 1, talents: [], talentQueue: [],
-        acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
+        ai: !!hs.ai, acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
       };
       def.deck.forEach((cid) => { const u = E.newUid(g, 'c'); g.cards[u] = cid; h.deck.push(u); });
       Rng.shuffle(g, h.deck);
@@ -147,6 +147,8 @@
     Rng.shuffle(g, g.lootDeck);
     Object.entries(level.spawnDeck).forEach(([id, n]) => { for (let i = 0; i < n; i++) g.spawnDeck.push(id); });
     Rng.shuffle(g, g.spawnDeck);
+    g.eventDeck = Rng.shuffle(g, (level.events || []).slice());
+    g.event = null;
 
     g.heroes.forEach((h) => { h.pos = g.start; });
     E.scenario(g).setup(g, E);
@@ -597,6 +599,11 @@
         }
         zs.step = 'spawn';
       } else if (zs.step === 'spawn') {
+        if (Mods.flag(g, null, 'noSpawn')) {
+          E.log(g, 'Мёртвая тишина: никто не появляется.', 'good');
+          zs.step = 'end';
+          continue;
+        }
         const th = E.alarmThreshold(g);
         let extra = 0;
         while (g.alarm >= th) { g.alarm -= th; extra++; }
@@ -695,6 +702,18 @@
   function endRound(g) {
     const sc = E.scenario(g);
     if (sc.roundEnd) sc.roundEnd(g, E);
+    // газ из события взрывается в конце раунда
+    if (g.hazard) {
+      const p = g.hazard.pos;
+      E.log(g, 'Газ взрывается!', 'warn');
+      E.fx(g, { t: 'explode', pos: p });
+      killOrder(g, E.zombiesAt(g, p), g.hazard.dmg).forEach((z) => damageZombie(g, z, g.hazard.dmg, null, 'fire'));
+      E.heroesAt(g, p).forEach((h) => { E.log(g, `${E.heroName(h)} задет взрывом.`, 'bad'); addWounds(g, h, 1); });
+      g.hazard = null;
+      if (g.result) return;
+    }
+    if (g.survivor && g.round >= g.survivor.until) { E.log(g, 'Крики стихли — выжившего не спасли.', 'dim'); g.survivor = null; }
+    g.event = null;
     g.lures = [];
     g.noise = {};
     g.relaySuit = null;
@@ -714,7 +733,25 @@
     }
     E.log(g, `— Раунд ${g.round} из ${E.maxRounds(g)} —`, 'phase');
     E.fx(g, { t: 'phase', name: 'heroes', round: g.round });
+    rollEvent(g);
   }
+
+  // События раунда: кубик d6, на 6 — карта события (колода без повторов, потом перемешивается)
+  function rollEvent(g) {
+    const lvl = ZG.Levels.get(g.levelId);
+    if (!lvl.events || !lvl.events.length || g.round < 2) return;
+    const roll = 1 + Rng.int(g, 6);
+    if (roll < 7 - Math.round((lvl.eventChance || 0) * 6)) return; // затишье
+    if (!g.eventDeck.length) g.eventDeck = Rng.shuffle(g, lvl.events.slice());
+    const id = g.eventDeck.shift();
+    const ev = ZG.Events.get(id);
+    g.event = id;
+    g.stats.events = (g.stats.events || 0) + 1;
+    E.log(g, `Событие: «${ev.name}». ${ev.text}`, ev.tone < 0 ? 'bad' : 'warn');
+    E.fx(g, { t: 'event', id });
+    if (ev.start) ev.start(g, E);
+  }
+  E.rollEvent = rollEvent;
 
   // ============================================================== ход героя
   function beginTurn(g, idx) {
@@ -880,6 +917,7 @@
     }
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
     if (E.isComplete(g) && h.pos === g.exit) out.push({ t: 'evac' });
+    if (g.survivor && g.survivor.pos === h.pos && h.energy >= 1) out.push({ t: 'rescue' });
     return out;
   };
 
@@ -1024,6 +1062,16 @@
         if (!sa || sa.cost > h.energy) return fail(g, 'Нельзя.');
         spend(g, h, sa.cost);
         E.scenario(g).doAction(g, h, a.key, E);
+        return true;
+      }
+      case 'rescue': {
+        if (!g.survivor || g.survivor.pos !== h.pos || h.energy < 1) return fail(g, 'Здесь некого спасать.');
+        spend(g, h, 1);
+        g.survivor = null;
+        E.log(g, `${E.heroName(h)} спасает выжившего! Тот делится припасами.`, 'good');
+        E.fx(g, { t: 'objective', pos: h.pos, text: 'СПАСЁН' });
+        E.giveLoot(g, h);
+        gainXp(g, h, 2);
         return true;
       }
       case 'evac': {

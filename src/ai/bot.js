@@ -107,6 +107,11 @@
       s += val * W.cardValue + h.hand.length * W.hand;
     });
     s -= g.alarm * W.alarm;
+    // событие «Утечка газа»: героям там стоять опасно, зомби там — хорошо
+    if (g.hazard) {
+      g.heroes.forEach((h) => { if (h.onBoard && h.pos === g.hazard.pos) s -= 60; });
+      s += E.zombiesAt(g, g.hazard.pos).length * 6;
+    }
     return s;
   }
 
