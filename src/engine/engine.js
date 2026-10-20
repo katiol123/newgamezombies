@@ -176,6 +176,17 @@
     const realIdx = Rng.shuffle(g, picks.map((_, i) => i)).slice(0, real);
     picks.forEach((pos, i) => g.crates.push({ pos, card: realIdx.includes(i) ? cargoId : null, opened: false }));
   };
+  // Выход у точки: ближайшая (по шагам) уличная зона; при равенстве — правее
+  E.placeExitNear = function (g, cell) {
+    const d = E.dist(g, cell);
+    const bad = new Set([g.start].concat(g.spawnPoints));
+    let best = null;
+    g.board.cells.forEach((c) => {
+      if (c.type !== 'street' || bad.has(c.i) || d[c.i] === Infinity) return;
+      if (!best || d[c.i] < d[best.i] || (d[c.i] === d[best.i] && c.x > best.x)) best = c;
+    });
+    if (best) g.exit = best.i;
+  };
   // Вышка: в здании на тайле среднего столбца (в ряду без старта, если можно)
   E.placeTower = function (g) {
     const b = g.board;

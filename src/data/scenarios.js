@@ -84,12 +84,13 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца. Выход — Вертолёт.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
+      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца. Выход (Вертолёт) — ближайшая к вышке уличная зона.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
         g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 2, on: false };
         g.tower = E.placeTower(g);
+        E.placeExitNear(g, g.tower);
         E.placeCrates(g, this.crates, this.real, this.cargo, [g.tower]);
       },
       goals(g) {
@@ -137,10 +138,10 @@
       progress(g) { return (g.obj.on ? 2 : cargoInHands(g, this.cargo)) + g.obj.transmit * 1.5; },
     },
     {
-      setupText: 'Гнёзда: 2 (центры тайлов правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь 2 гнезда и уходи.',
+      setupText: 'Гнёзда: 2, в соло 1 (центры тайлов правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь гнёзда (2, в соло 1) и уходи.',
       brief: 'Зараза разрастается из гнёзд. Пока они живы, квартал не очистить. Гнёзда сами порождают мертвецов.',
       exitLabel: 'Пикап', exitArt: 'exit_car',
-      setup(g, E) { g.obj = { nests: 2 }; E.placeNests(g, 2); },
+      setup(g, E) { const n = g.heroes.length === 1 ? 1 : 2; g.obj = { nests: n }; E.placeNests(g, n); },
       nestsLeft(g) { return g.zombies.filter((z) => z.type === 'nest').length; },
       goals(g) {
         const left = this.nestsLeft(g);
@@ -187,7 +188,7 @@
     { track: 'Счётчик: +1 за каждый Обыск (вскрытие ящика тоже).', id: 'scavenger', name: 'Мародёр', text: 'Сделать 4 Обыска.', check: (g) => g.stats.searches >= 4, progress: (g) => `${g.stats.searches}/4` },
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
     { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
-    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив не больше 2 Ран на героя (соло — не больше 1) и без павших.', check: (g) => g.stats.wounds <= (g.heroes.length === 1 ? 1 : 2 * g.heroes.length) && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/${g.heroes.length === 1 ? 1 : 2 * g.heroes.length}` },
+    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив не больше 1 Раны на героя и без павших.', check: (g) => g.stats.wounds <= g.heroes.length && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/${g.heroes.length}` },
     { track: 'Счётчик: +1 за каждый урон по Толстякам, Громилам и Гнёздам.', id: 'biggame', name: 'Крупная дичь', text: 'Нанести 6 урона Толстякам, Громилам и Гнёздам.', check: (g) => (g.stats.bigDmg || 0) >= 6, progress: (g) => `${g.stats.bigDmg || 0}/6` },
   ]);
 
