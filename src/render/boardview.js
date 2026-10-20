@@ -126,21 +126,27 @@
       const extras = new Set();
       this.g.crates.forEach((c) => { if (!c.opened) extras.add(c.pos); });
       this.g.search.forEach((s) => extras.add(s.pos));
+      this.overflow = new Map();
       groups.forEach((list, cell) => {
         const c = this.cellXY(cell);
-        const n = list.length;
-        const cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+        // не больше 9 мест в зоне: герои, затем самые опасные зомби; остальные — «+N» в последнем месте
+        list.sort((a, b) => (a.uid ? 1 : 0) - (b.uid ? 1 : 0) || (b.uid ? ZG.Zombies.get(b.type).threat : 0) - (a.uid ? ZG.Zombies.get(a.type).threat : 0));
+        const n = Math.min(9, list.length);
+        const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
         const rows = Math.ceil(n / cols);
         const span = this.cell * (n === 1 ? 0 : 0.56);
-        const r = this.cell * (n <= 1 ? 0.3 : n <= 4 ? 0.22 : n <= 9 ? 0.16 : 0.125);
+        const r = this.cell * (n <= 1 ? 0.3 : n <= 4 ? 0.22 : 0.16);
         list.forEach((e, k) => {
-          const cx = cols === 1 ? 0 : ((k % cols) / (cols - 1) - 0.5) * span;
-          const cy = rows === 1 ? 0 : (Math.floor(k / cols) / (rows - 1) - 0.5) * span;
+          const slot = Math.min(k, 8);
+          const cx = cols === 1 ? 0 : ((slot % cols) / (cols - 1) - 0.5) * span;
+          const cy = rows === 1 ? 0 : (Math.floor(slot / cols) / (rows - 1) - 0.5) * span;
           e.tx = c.x + cx;
           e.ty = c.y + cy + (n === 1 && extras.has(cell) ? this.cell * 0.08 : 0);
-          e.r = r;
+          e.r = r * (e.uid && ZG.Zombies.get(e.type).big ? 1.35 : 1);
+          e.over = list.length > 9 && k > 8;
           if (snap) { e.x = e.tx; e.y = e.ty; }
         });
+        if (list.length > 9) this.overflow.set(cell, { x: list[8].tx, y: list[8].ty, n: list.length - 8, r });
       });
     }
 
@@ -572,11 +578,21 @@
         e.flash = Math.max(0, (e.flash || 0) - dt * 3);
         if (e.scale < 1 && !e.dying && !e.fallT && !e.evacT) e.scale = Math.min(1, e.scale + dt * 3.5);
       });
-      ents.sort((a, b) => a.y - b.y);
+      // зомби снизу вверх по экрану, герои — всегда поверх зомби
+      ents.sort((a, b) => (a.uid ? 0 : 1) - (b.uid ? 0 : 1) || a.y - b.y);
       ents.forEach((e) => (e.uid ? this._drawZombie(ctx, e) : this._drawHero(ctx, e)));
       // удалить умерших
       this.zombies.forEach((e, uid) => { if (e.dying && this.time - e.dying.t0 > 0.6) this.zombies.delete(uid); });
 
+      (this.overflow || new Map()).forEach((o, cell) => {
+        if (this.hiddenCell(cell)) return;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 1.05, 0, TAU); ctx.fillStyle = 'rgba(60,8,4,.92)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#ff6a5a'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = `${Math.round(o.r * 0.9)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('+' + o.n, o.x, o.y + 1);
+        ctx.restore();
+      });
       this._drawEffects(ctx, dt);
       this._drawParticles(ctx, dt);
       this._drawLighting(ctx, dt);
@@ -646,7 +662,7 @@
       ctx.globalAlpha = open ? 1 : 0.85;
       Art.draw(ctx, sc.exitArt || 'exit_car', ex.x - C * 0.32, ex.y - C * 0.42, C * 0.64, C * 0.84, { arrived: open, t });
       ctx.restore();
-      this._label(ctx, ex.x, ex.y + C * 0.42, (sc.exitLabel || 'Выход').toUpperCase(), open ? '#7dffa0' : '#e8dcc0');
+      this._label(ctx, ex.x, ex.y - C * 0.44, (sc.exitLabel || 'Выход').toUpperCase(), open ? '#7dffa0' : '#e8dcc0');
       // вышка
       if (g.tower != null) {
         const c = this.cellXY(g.tower);
@@ -736,6 +752,16 @@
         ctx.setLineDash([8, 6]); ctx.lineDashOffset = -t * 30;
         ctx.strokeRect(c.x - C / 2 + 4, c.y - C / 2 + 4, C - 8, C - 8);
         ctx.setLineDash([]);
+        if (h.explore && h.explore.includes(cell)) {
+          ctx.save();
+          ctx.font = `${Math.round(C * 0.42)}px 'Russo One', sans-serif`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.globalAlpha = 0.55 + pulse * 0.4;
+          ctx.fillStyle = '#ffd36b'; ctx.fillText('?', c.x, c.y);
+          ctx.font = `bold ${Math.round(C * 0.1)}px 'Russo One', sans-serif`;
+          ctx.fillText('РАЗВЕДКА', c.x, c.y + C * 0.28);
+          ctx.restore();
+        }
         if (h.costs && h.costs[cell] != null) {
           ctx.font = `bold ${Math.round(C * 0.14)}px 'Russo One', sans-serif`;
           ctx.fillStyle = '#ffd36b'; ctx.textAlign = 'right';
@@ -832,6 +858,7 @@
     _drawZombie(ctx, e) {
       const g = this.g;
       if (this.hiddenCell(e.cell) && !e.dying) return;
+      if (e.over && !e.dying) return;
       const z = g.zombies.find((q) => q.uid === e.uid);
       const def = ZG.Zombies.get(e.type);
       let x = e.x, y = e.y;
@@ -938,7 +965,8 @@
       // имя
       ctx.font = `bold ${Math.round(Math.max(9, R * 0.32))}px 'Russo One', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(def.name, x + 1, y + R * 1.12 + 1);
+      const nw = ctx.measureText(def.name).width + 8, nh = Math.max(11, R * 0.4);
+      ctx.fillStyle = 'rgba(10,8,6,.85)'; Art.rr(ctx, x - nw / 2, y + R * 1.08, nw, nh, 3); ctx.fill();
       ctx.fillStyle = active ? '#ffd36b' : '#e8dcc0'; ctx.fillText(def.name, x, y + R * 1.12);
       ctx.restore();
     }

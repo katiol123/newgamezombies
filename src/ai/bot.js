@@ -16,6 +16,31 @@
   };
   ZG.BotWeights = W;
 
+  // Честное расстояние в тумане: по открытым тайлам — как есть, закрытые тайлы считаются
+  // проходимыми насквозь (бот не знает, где там стены), цель на закрытом тайле — его центр.
+  function fogTarget(g, cell) {
+    if (cell == null || !E.hidden(g, cell)) return cell;
+    const t = g.board.tiles[g.board.cells[cell].tile];
+    return (t.ty * 3 + 1) * g.board.w + t.tx * 3 + 1;
+  }
+  function fogDist(g, from) {
+    if (!g.revealed) return E.dist(g, from);
+    const b = g.board, dist = new Array(b.cells.length).fill(Infinity), q = [from];
+    dist[from] = 0;
+    for (let qi = 0; qi < q.length; qi++) {
+      const c = q[qi], cc = b.cells[c];
+      const next = E.hidden(g, c) ? [] : b.adj[c].filter((n) => !E.hidden(g, n));
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+        const x = cc.x + dx, y = cc.y + dy;
+        if (x < 0 || y < 0 || x >= b.w || y >= b.h) return;
+        const n = y * b.w + x;
+        if (E.hidden(g, n) || E.hidden(g, c)) next.push(n);
+      });
+      next.forEach((n) => { if (dist[n] === Infinity) { dist[n] = dist[c] + 1; q.push(n); } });
+    }
+    return dist;
+  }
+
   function evaluate(g) {
     if (g.result) return g.result.win ? 1e6 + g.result.stars * 1e4 : -1e6;
     const sc = E.scenario(g);
@@ -47,8 +72,9 @@
     g.heroes.forEach((h) => {
       if (h.fallen) { s -= W.fallen; return; }
       if (h.evacuated) { s += W.evac; return; }
-      const goal = E.goalFor(g, h);
-      const d = E.dist(g, h.pos);
+      if (E.isComplete(g) && h.pos === g.exit) { s += W.evac * 0.9; return; } // эвакуация стоит 0⚡ — почти спасён
+      const goal = fogTarget(g, E.goalFor(g, h));
+      const d = fogDist(g, h.pos);
       const left = E.maxRounds(g) - g.round;
       const urg = (E.isComplete(g) ? 2.5 : 1) * (left <= 3 ? 1.8 : 1);
       if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist * urg;
@@ -132,6 +158,15 @@
     const scored = [];
     candidateActions(g).forEach((a) => {
       if (a.t === 'end') return;
+      if (a.explore) {
+        // шаг в туман оцениваем без подглядывания: насколько ближе к цели + любопытство
+        const h = g.heroes[g.active];
+        const goal = fogTarget(g, E.goalFor(g, h));
+        if (goal == null) return;
+        const d0 = fogDist(g, h.pos)[goal], d1 = fogDist(g, a.to)[goal];
+        scored.push({ a, c: null, v: base + (d0 - d1) * W.dist + 4 - E.moveCost(g, h, a.to) });
+        return;
+      }
       const c = tryAct(g, a);
       if (!c) return;
       // ход завершился (эвакуация/смерть) — оцениваем как есть
@@ -141,7 +176,7 @@
     scored.sort((x, y) => y.v - x.v);
     if (depth2) {
       scored.slice(0, 4).forEach((s) => {
-        if (s.c.active == null || s.c.phase !== 'heroes') return;
+        if (!s.c || s.c.active == null || s.c.phase !== 'heroes') return;
         let best = s.v;
         candidateActions(s.c).forEach((a2) => {
           if (a2.t === 'end') return;

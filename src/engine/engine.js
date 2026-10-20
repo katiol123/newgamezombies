@@ -157,6 +157,11 @@
     const cond = ZG.Conditions.get(g.conditionId);
     if (cond.setup) cond.setup(g, E);
 
+    // большой отряд шумит: Тревога в начале партии выше (уровень: startAlarm по числу героев)
+    g.alarm += (level.startAlarm || {})[Math.min(4, g.heroes.length)] || 0;
+    // стартовая рука: каждый герой сразу набирает полную руку
+    g.heroes.forEach((h) => drawCards(g, h, Math.max(0, E.handSize(g, h) - h.hand.length)));
+    g.fx = [];
     // начальное появление
     g.spawnPoints.forEach((p) => drawSpawn(g, p));
     E.log(g, `Уровень ${level.num}: ${level.name}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
@@ -184,10 +189,17 @@
   E.tilesByColumn = tilesByColumn;
   function placeStartExit(g, level) {
     const b = g.board;
-    const streets = b.cells.filter((c) => c.type === 'street');
-    const minX = Math.min.apply(null, streets.map((c) => c.x)), maxX = Math.max.apply(null, streets.map((c) => c.x));
-    g.start = Rng.pick(g, streets.filter((c) => c.x === minX)).i;
-    g.exit = Rng.pick(g, streets.filter((c) => c.x === maxX && c.i !== g.start)).i;
+    // старт: случайный тайл левого столбца, зона у левого края поля; выход — так же справа
+    const maxTx = Math.max.apply(null, b.tiles.map((t) => t.tx));
+    const edgeZone = (tx, x) => {
+      const tiles = b.tiles.map((t, i) => ({ t, i })).filter((o) => o.t.tx === tx).map((o) => o.i);
+      const ti = Rng.pick(g, tiles);
+      const on = b.cells.filter((c) => c.tile === ti && c.x === x && c.type !== 'blocked');
+      const st = on.filter((c) => c.type === 'street');
+      return Rng.pick(g, st.length ? st : on).i;
+    };
+    g.start = edgeZone(0, 0);
+    g.exit = edgeZone(maxTx, b.w - 1);
     const n = level.spawnPoints[Math.min(4, g.heroes.length)] + Mods.value(g, null, 'spawnPointsBonus', 0);
     const startTile = tileOf(g, g.start);
     g.spawnPoints = [];
@@ -217,9 +229,12 @@
   E.placeExitNear = function (g, cell) {
     const d = E.dist(g, cell);
     const bad = new Set([g.start].concat(g.spawnPoints));
+    const ti = g.board.cells[cell].tile;
+    const onTile = g.board.cells.some((c) => c.tile === ti && c.type === 'street' && !bad.has(c.i));
     let best = null;
     g.board.cells.forEach((c) => {
       if (c.type !== 'street' || bad.has(c.i) || d[c.i] === Infinity) return;
+      if (onTile && c.tile !== ti) return; // посадка — на тайле вышки (он открыт)
       if (!best || d[c.i] < d[best.i] || (d[c.i] === d[best.i] && c.x > best.x)) best = c;
     });
     if (best) g.exit = best.i;

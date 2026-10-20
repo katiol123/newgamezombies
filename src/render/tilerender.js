@@ -164,7 +164,14 @@
           const ex = dx !== 0 ? x0 : x0 + C, ey = dy !== 0 ? y0 : y0 + C;
           const sx = dx !== 0 ? x0 : pad + x * C, sy = dy !== 0 ? y0 : pad + y * C;
           if (out) {
-            if (c.type === 'building') { ctx.strokeStyle = INK; ctx.lineWidth = wallW; edgeLine(ctx, sx, sy, ex, ey); }
+            if (c.type === 'building') {
+              ctx.strokeStyle = INK; ctx.lineWidth = wallW;
+              if (c.sideMid) {
+                // вход прямо с края тайла: проём в стене
+                const L = C * 0.3, mx = (sx + ex) / 2, my = (sy + ey) / 2, ux = dx !== 0 ? 0 : 1, uy = dy !== 0 ? 0 : 1;
+                edgeLine(ctx, sx, sy, mx - ux * L, my - uy * L); edgeLine(ctx, mx + ux * L, my + uy * L, ex, ey);
+              } else edgeLine(ctx, sx, sy, ex, ey);
+            }
             return;
           }
           const isB = c.type === 'building' || n.type === 'building';

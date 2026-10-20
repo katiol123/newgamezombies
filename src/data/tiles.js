@@ -6,6 +6,12 @@
  *   manhole: место люка (точки появления), напечатанное на тайле
  *   decor:  чисто визуальные элементы (для отрисовки)
  * Тайл поворачивается на 0/90/180/270°.
+ *
+ * ПРАВИЛО ДИЗАЙНА ТАЙЛА (гарантирует связность любой раскладки, в т.ч. в тумане):
+ *   1) середина каждой стороны (зоны [1,0] [0,1] [2,1] [1,2]) проходима: улица
+ *      или помещение — тогда у него есть вход прямо с этой стороны тайла;
+ *   2) все зоны тайла достижимы друг из друга внутри тайла.
+ * Проверяется автоматически (tools/test.js).
  */
 (function (G) {
   'use strict';
@@ -44,16 +50,16 @@
     },
     {
       id: 'park', name: 'Сквер', num: '06',
-      manhole: [0, 0], map: ['.#.', '...', '#..'], doors: [], search: [[2, 2]],
+      manhole: [2, 0], map: ['#..', '...', '..#'], doors: [], search: [[2, 0]],
       buildings: {},
-      decor: [{ k: 'trees', x: 1, y: 0 }, { k: 'trees', x: 0, y: 2 }, { k: 'bench', x: 2, y: 2 }, { k: 'fountain', x: 1, y: 1 }],
+      decor: [{ k: 'trees', x: 0, y: 0 }, { k: 'trees', x: 2, y: 2 }, { k: 'bench', x: 2, y: 0 }, { k: 'fountain', x: 1, y: 1 }],
       ground: 'grass',
     },
     {
       id: 'garages', name: 'Гаражи', num: '07',
-      manhole: [1, 0], map: ['A.B', '...', '.#.'], doors: [[0, 0, 0, 1], [2, 0, 2, 1]], search: [[0, 0], [2, 0]],
+      manhole: [1, 0], map: ['A.B', '...', '#..'], doors: [[0, 0, 0, 1], [2, 0, 2, 1]], search: [[0, 0], [2, 0]],
       buildings: { A: { floor: 'concrete', label: 'Гараж 13' }, B: { floor: 'concrete', label: 'Гараж 14' } },
-      decor: [{ k: 'workbench', x: 0, y: 0 }, { k: 'tires', x: 2, y: 0 }, { k: 'car', x: 1, y: 2 }],
+      decor: [{ k: 'workbench', x: 0, y: 0 }, { k: 'tires', x: 2, y: 0 }, { k: 'car', x: 0, y: 2 }],
     },
     {
       id: 'police', name: 'Опорный пункт', num: '08',
@@ -63,7 +69,7 @@
     },
     {
       id: 'construction', name: 'Стройка', num: '09',
-      manhole: [2, 0], map: ['#..', '.#.', '..A'], doors: [[2, 2, 1, 2]], search: [[2, 2], [0, 1]],
+      manhole: [2, 0], map: ['#..', '.#.', '..A'], doors: [[2, 2, 1, 2], [2, 2, 2, 1]], search: [[2, 2], [0, 1]],
       buildings: { A: { floor: 'wood', label: 'Бытовка' } },
       decor: [{ k: 'crane', x: 0, y: 0 }, { k: 'pipes', x: 1, y: 1 }, { k: 'cones', x: 0, y: 1 }, { k: 'workbench', x: 2, y: 2 }],
       ground: 'dirt',

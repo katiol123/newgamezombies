@@ -135,7 +135,7 @@ small { opacity: .75; }
 .fog-toggle input { accent-color: var(--amber); transform: scale(1.2); margin-right: 6px; }
 .seed { display: block; margin-top: 14px; color: var(--muted); font-size: 14px; }
 .seed input { background: var(--panel); border: 1px solid var(--line); color: var(--paper); padding: 6px 8px; width: 160px; font-family: var(--font-t); }
-.setup-go { margin-top: 26px; text-align: center; }
+.setup-go { position: sticky; bottom: 0; margin: 26px -4vw -40px; padding: 14px 0 18px; text-align: center; background: linear-gradient(transparent, var(--bg) 40%); z-index: 3; }
 
 /* ---------------------------------------------------- карта героя */
 .hero-card {
@@ -231,7 +231,8 @@ small { opacity: .75; }
 .cond b { color: var(--amber); }
 .bonus-line { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); }
 .bonus-line b { color: var(--gold); } .bonus-line .ok { color: var(--green); }
-.log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.log-panel { flex: 1; display: flex; flex-direction: column; min-height: 120px; }
+.side { overflow-y: auto; }
 .log { flex: 1; overflow-y: auto; font-family: var(--font-t); font-size: 13px; line-height: 1.35; padding-right: 4px; }
 .log-line { padding: 1px 0; animation: logIn .3s; }
 .log-line.title { color: var(--gold); font-family: var(--font-d); font-size: 13px; }
@@ -300,7 +301,7 @@ small { opacity: .75; }
 .act-icon.ok:hover { transform: translateY(-4px) scale(1.08); }
 .act-icon.ok:hover img { box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(240,192,64,.7); }
 .act-icon.off { filter: grayscale(1) brightness(.75); opacity: .5; cursor: help; }
-.act-icon.off .ai-cost { background: #6b6258; }
+.act-icon.off .ai-cost { background: #b8ab92; color: #1d1712; }
 .act-icon.sel img { box-shadow: 0 0 0 3px #fff, 0 0 26px rgba(255,255,255,.6); }
 .act-icon.gold .ai-label { color: var(--gold); }
 .act-icon.gold img { box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(240,192,64,.8); }
@@ -509,6 +510,13 @@ small { opacity: .75; }
 #rules-close { position: absolute; top: 16px; right: 16px; z-index: 2; }
 
 /* ------------------------------------------------ узкие экраны */
+@media screen and (min-width: 1700px) {
+  .hand-slot { zoom: 1.16; }
+}
+@media screen and (max-height: 800px) {
+  .cond { font-size: 12px; max-height: 70px; overflow-y: auto; }
+  .hp-card .hp-talents, .hp-card .hp-equip { display: none; }
+}
 @media screen and (max-width: 1100px) {
   .game { grid-template-columns: 1fr 240px; grid-template-rows: 54px 1fr 236px; }
   .handbar { grid-template-columns: 170px 1fr 200px; }

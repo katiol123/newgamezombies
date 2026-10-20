@@ -396,8 +396,10 @@
       if (!s) {
         // по умолчанию — доступные шаги
         const costs = {};
-        const cells = E.legal(g).filter((a) => a.t === 'move').map((a) => { costs[a.to] = E.moveCost(g, h, a.to); return a.to; });
-        this.view.setHighlights({ cells, costs, color: 'rgba(240,192,64,.08)', stroke: 'rgba(240,192,64,.45)' });
+        const moves = E.legal(g).filter((a) => a.t === 'move');
+        const cells = moves.map((a) => { costs[a.to] = E.moveCost(g, h, a.to); return a.to; });
+        const explore = moves.filter((a) => a.explore).map((a) => a.to);
+        this.view.setHighlights({ cells, costs, explore, color: 'rgba(240,192,64,.08)', stroke: 'rgba(240,192,64,.45)' });
         return;
       }
       if (s.mode === 'confirm') { this.view.setHighlights({ cells: [h.pos], color: 'rgba(240,192,64,.15)' }); return; }
@@ -423,6 +425,11 @@
       const s = this.sel;
       if (!s) {
         if (p.cell != null && E.legal(g).some((a) => a.t === 'move' && a.to === p.cell)) this.act({ t: 'move', to: p.cell });
+        else if (p.cell != null) {
+          const h = g.heroes[g.active];
+          const near = g.board.adj[h.pos].includes(p.cell) || E.fogNeighbors(g, h.pos).includes(p.cell);
+          if (near) toast(`Не хватает ⚡: шаг стоит ${E.moveCost(g, h, p.cell)}, осталось ${h.energy}.`);
+        }
         return;
       }
       if (s.mode === 'card') {
@@ -668,14 +675,20 @@
       }
       // энергия
       const en = $('#energy');
+      const sig = h ? h.idx + ':' + h.energy : '';
+      if (en.dataset.sig === sig) { /* сферы не пересоздаём — без повторной анимации */ } else {
+      const prevN = en.dataset.sig && h && en.dataset.sig.split(':')[0] === String(h.idx) ? +en.dataset.sig.split(':')[1] : -1;
+      en.dataset.sig = sig;
       en.innerHTML = '';
       if (h) {
         const total = Math.max(h.energy, 3);
         for (let i = 0; i < total; i++) {
           const o = el('img', 'orb' + (i < h.energy ? '' : ' spent'));
           o.src = CV.artURL('energy', 40, 40, { empty: i >= h.energy });
+          if (prevN >= 0) o.style.animation = 'none';
           en.appendChild(o);
         }
+      }
       }
       $('#deck-count').textContent = h ? h.deck.length : '–';
       $('#discard-count').textContent = h ? h.discard.length : '–';
@@ -848,6 +861,12 @@
         await Banner.show('ИГРОК ' + h.player, 'ход: ' + E.heroName(h), 'player');
       }
     },
+    async reveal(ev) {
+      this.view.play([ev]);
+      if (ev.n >= (ZG.Levels.get(this.g.levelId).fogBreak || 4) && this.g.phase === 'zombies') await Banner.show('ПРОРЫВ!', `из тумана выходят ${ev.n} зомби`, 'wave');
+      else await sleep(700);
+    },
+    async bump(ev) { this.view.play([ev]); toast('За поворотом — стена. Пройти здесь нельзя (⚡ потрачена).', 3000); await sleep(300); },
     async alarm() { const a = $('#alarm-track'); a.classList.remove('bump'); void a.offsetWidth; a.classList.add('bump'); this.refreshTop(); },
     async draw() { /* анимация добора — в refreshHand */ },
     async gameover() { /* обрабатывается после очереди */ },
@@ -899,6 +918,19 @@
 
   function zoneInfo(g, cell, zuid) {
     const c = g.board.cells[cell];
+    if (E.hidden(g, cell)) {
+      // закрытый тайл: известно только то, что лежит на рубашке
+      const ti = c.tile, b = g.board;
+      const n = g.zombies.filter((z) => b.cells[z.pos].tile === ti).length;
+      const known = [];
+      if (g.spawnPoints.some((p) => b.cells[p].tile === ti)) known.push('люк');
+      const cr = g.crates.filter((x) => !x.opened && b.cells[x.pos].tile === ti).length;
+      if (cr) known.push(cr + ' ' + ZG.util.plural(cr, 'ящик', 'ящика', 'ящиков'));
+      const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
+      return `<div class="tt-head">Не разведано</div><div>Где стены и что внутри — неизвестно. Войдите базовым «Ходом» из соседней зоны.</div>` +
+        (known.length ? `<div class="tt-gold">На рубашке: ${known.join(', ')}</div>` : '') +
+        (n ? `<div class="tt-red">Стопка: ${n} зомби (состав неизвестен). При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
+    }
     const parts = [];
     const typeName = c.type === 'building' ? 'Помещение' : c.type === 'blocked' ? 'Непроходимо' : 'Улица';
     parts.push(`<div class="tt-head">${typeName}</div>`);
@@ -919,7 +951,7 @@
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
     const s = g.search.find((x) => x.pos === cell);
-    if (s) parts.push(`<div>Жетон обыска${s.kind === 'armory' ? ' (оружейка: 2 карты, лучшая — ваша)' : ''}</div>`);
+    if (s) parts.push(`<div>Жетон обыска${s.kind === 'armory' ? ' (оружейка: тяните на 1 карту больше)' : ''}</div>`);
     if (g.traps.some((t) => t.pos === cell)) parts.push('<div class="tt-red">Растяжка</div>');
     if (g.lures.some((l) => l.pos === cell)) parts.push('<div>Приманка</div>');
     if (g.drops.some((d) => d.pos === cell)) parts.push('<div class="tt-gold">Брошенный груз</div>');
@@ -1029,7 +1061,7 @@
       };
       cards.forEach((u) => {
         const def = E.cardDef(g, u);
-        const c = CV.card(def, { small: true, blockBonus: ZG.Mods.value(g, h, 'blockPerCard', 0) });
+        const c = CV.card(def, { blockBonus: ZG.Mods.value(g, h, 'blockPerCard', 0) });
         c.classList.add('pickable');
         c.onclick = () => { if (picked.has(u)) picked.delete(u); else picked.add(u); c.classList.toggle('picked', picked.has(u)); update(); };
         wrap.appendChild(c);

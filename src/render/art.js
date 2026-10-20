@@ -709,6 +709,10 @@
   Art.define('tok_round', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 5); c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Р', 50, 54); }));
   Art.define('tok_alarm', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#e0602a'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 40px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', 50, 54); }));
   Art.define('tok_start', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#2e8b57'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('СТАРТ', 50, 54); }));
+  Art.define('tok_zback', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
+    circle(c, 50, 50, 46); c.fillStyle = '#2b211a'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#7a0c06'; c.stroke();
+    c.fillStyle = 'rgba(232,220,192,.35)'; c.font = 'bold 48px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 50, 54);
+  }));
   Art.define('tok_tower', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.strokeStyle = INK; c.lineWidth = 5;
     c.beginPath(); c.moveTo(30, 92); c.lineTo(50, 14); c.lineTo(70, 92); c.stroke();

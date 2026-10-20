@@ -25,6 +25,24 @@ lvl.scenarios.forEach((sc) => lvl.conditions.forEach((cond, ci) => {
   });
   n++;
 }));
+// правило дизайна тайлов: середины сторон проходимы, тайл связен внутри
+ZG.Tiles.all().forEach((t) => {
+  [[1, 0], [0, 1], [2, 1], [1, 2]].forEach(([x, y]) => check(t.map[y][x] !== '#', `тайл ${t.id}: середина стороны [${x},${y}] непроходима`));
+  const b = ZG.Board.fromPlaced([{ id: t.id, rot: 0, tx: 0, ty: 0 }], 1, 1);
+  const open = b.cells.filter((c) => c.type !== 'blocked');
+  const d = ZG.Board.bfs(b, open[0].i);
+  check(open.every((c) => d[c.i] < Infinity), `тайл ${t.id}: не все зоны связаны внутри`);
+});
+// любая раскладка связна
+for (let k = 0; k < 500; k++) {
+  const r = { rng: k * 7919 + 1 };
+  const ids = ZG.Rng.shuffle(r, lvl.tiles.slice());
+  const placed = []; for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 3; tx++) placed.push({ id: ids[ty * 3 + tx], rot: ZG.Rng.int(r, 4), tx, ty });
+  const b = ZG.Board.fromPlaced(placed, 3, 2);
+  const open = b.cells.filter((c) => c.type !== 'blocked');
+  const d = ZG.Board.bfs(b, open[0].i);
+  if (open.some((c) => d[c.i] === Infinity)) { check(false, 'несвязная раскладка #' + k); break; }
+}
 // воспроизводимость по сиду
 const a = E.create({ seed: 'repro', quiet: true, heroes: [{ id: 'lisa' }, { id: 'kira' }] });
 const b = E.create({ seed: 'repro', quiet: true, heroes: [{ id: 'lisa' }, { id: 'kira' }] });

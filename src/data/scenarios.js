@@ -84,13 +84,15 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца. Выход (Вертолёт) — ближайшая к вышке уличная зона.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
+      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца (этот тайл открыт сразу). Выход (Вертолёт) — ближайшая к вышке уличная зона.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
         g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 2, on: false };
         g.tower = E.placeTower(g);
         E.placeExitNear(g, g.tower);
+        // в тумане открыты стартовый тайл и тайл вышки (вертолёт садится на нём)
+        if (g.revealed) g.revealed = g.board.tiles.map((t, i) => i === g.board.cells[g.start].tile || i === g.board.cells[g.tower].tile);
         E.placeCrates(g, this.crates, this.real, this.cargo, [g.tower]);
       },
       goals(g) {
@@ -163,7 +165,7 @@
   // ------------------------------------------------------- Условия партии ---
   ZG.Conditions.addAll([
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
-    { id: 'fog', name: 'Туман', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
+    { id: 'fog', name: 'Смог', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
     { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше.', tone: -1, mods: { phaseShift: 1 }, art: 'cond_moon' },
     {
@@ -188,7 +190,7 @@
     { track: 'Счётчик: +1 за каждый Обыск (вскрытие ящика тоже).', id: 'scavenger', name: 'Мародёр', text: 'Сделать 4 Обыска.', check: (g) => g.stats.searches >= 4, progress: (g) => `${g.stats.searches}/4` },
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
     { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
-    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив не больше 1 Раны на героя и без павших.', check: (g) => g.stats.wounds <= g.heroes.length && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/${g.heroes.length}` },
+    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив за партию не больше 1 Раны на весь отряд.', check: (g) => g.stats.wounds <= 1 && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/1` },
     { track: 'Счётчик: +1 за каждый урон по Толстякам, Громилам и Гнёздам.', id: 'biggame', name: 'Крупная дичь', text: 'Нанести 6 урона Толстякам, Громилам и Гнёздам.', check: (g) => (g.stats.bigDmg || 0) >= 6, progress: (g) => `${g.stats.bigDmg || 0}/6` },
   ]);
 

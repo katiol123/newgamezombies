@@ -41,6 +41,7 @@
           const isB = ch !== '.' && ch !== '#';
           cells[y * W + x] = {
             i: y * W + x, x, y, tile: ti,
+            sideMid: (lx === 1) !== (ly === 1) && isB, // середина стороны тайла (помещение со входом наружу)
             type: ch === '.' ? 'street' : ch === '#' ? 'blocked' : 'building',
             bld: isB ? ti + ':' + ch : null,
             floor: isB ? def.buildings[ch].floor : null,
@@ -65,6 +66,7 @@
     const doorSet = new Set(doors.map(([a, b]) => Math.min(a, b) + '-' + Math.max(a, b)));
     const adj = cells.map(() => []);
     const walls = [];
+    const sideDoors = [];
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const a = cells[y * W + x];
@@ -76,13 +78,17 @@
           let open;
           if (a.type === 'street' && b.type === 'street') open = true;
           else if (a.bld && a.bld === b.bld) open = true;
-          else open = doorSet.has(Math.min(a.i, b.i) + '-' + Math.max(a.i, b.i));
+          else if (a.tile !== b.tile && (a.type === 'street' || a.sideMid) && (b.type === 'street' || b.sideMid)) {
+            // помещение в середине стороны тайла имеет вход прямо с этой стороны
+            open = true;
+            sideDoors.push([a.i, b.i]);
+          } else open = doorSet.has(Math.min(a.i, b.i) + '-' + Math.max(a.i, b.i));
           if (open) { adj[a.i].push(b.i); adj[b.i].push(a.i); }
           else walls.push([a.i, b.i]);
         });
       }
     }
-    return { w: W, h: H, cells, adj, walls, doors, tiles: placed };
+    return { w: W, h: H, cells, adj, walls, doors: doors.concat(sideDoors), tiles: placed };
   }
 
   function connected(board) {

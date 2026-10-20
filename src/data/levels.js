@@ -23,14 +23,15 @@
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
     bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
     rounds: 12,
-    phaseStarts: [1, 5, 9], // Сумерки с 1-го, Ночь с 5-го, Глухая ночь с 9-го раунда
+    phaseStarts: [1, 4, 8], // Сумерки с 1-го, Ночь с 4-го, Глухая ночь с 8-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
     alarmThreshold: 6,
-    spawnPoints: { 1: 1, 2: 2, 3: 3, 4: 3 },
+    startAlarm: { 3: 3, 4: 4 }, // большой отряд шумит: стартовая Тревога
+    spawnPoints: { 1: 2, 2: 3, 3: 4, 4: 4 },
     fog: true, // «Туман войны»: тайлы, кроме стартового и тайла выхода, закрыты до разведки
     fogBreak: 4, // столько зомби в закрытом тайле — и он открывается сам
     drawMax: 3, // добор в начале хода — до размера руки, но не больше 3 карт
-    hordeAlarm: 10, // в шаге «Особые свойства»: Тревога +1 за каждые 10 зомби на поле
+    hordeAlarm: 8, // в шаге «Особые свойства»: Тревога +1 за каждые 8 зомби на поле
     pool: { walker: 30, runner: 10, fatso: 6, screamer: 4, brute: 2 }, // жетонов в коробке
   });
 })(typeof globalThis !== 'undefined' ? globalThis : window);
