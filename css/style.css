@@ -104,7 +104,7 @@ small { opacity: .75; }
   animation: logoIn 1.2s cubic-bezier(.2,.8,.2,1) both;
 }
 .logo h1 span { color: var(--red); display: inline-block; animation: flicker 4s infinite; }
-.logo-kicker { text-shadow: 0 2px 6px #000, 0 0 12px #000; font-family: var(--font-t); text-transform: uppercase; letter-spacing: .4em; color: var(--amber); margin-bottom: 10px; animation: fadeUp .8s .3s both; }
+.logo-kicker { margin-bottom: 24px !important; text-shadow: 0 2px 6px #000, 0 0 12px #000; font-family: var(--font-t); text-transform: uppercase; letter-spacing: .4em; color: var(--amber); margin-bottom: 10px; animation: fadeUp .8s .3s both; }
 .logo-sub { font-family: var(--font-d); color: var(--paper2); margin-top: 12px; letter-spacing: .2em; animation: fadeUp .8s .5s both; }
 .menu-buttons { display: flex; flex-direction: column; gap: 12px; min-width: 280px; }
 .menu-buttons .btn { animation: fadeUp .6s both; }
@@ -189,6 +189,7 @@ small { opacity: .75; }
 .al-slot.on { background: linear-gradient(#ffb347, #e0602a); box-shadow: 0 0 8px rgba(255,120,40,.6); }
 .alarm-track.danger .al-slot.on { animation: alarmBlink .7s infinite alternate; }
 .alarm-track.bump { animation: bump .4s; }
+#alarm-val.wave { color: #ff5a4a; animation: alarmBlink .5s infinite alternate; }
 @keyframes alarmBlink { to { background: #ff2a1a; box-shadow: 0 0 14px #ff2a1a; } }
 @keyframes bump { 40% { transform: scale(1.15); } }
 .zcount { font-family: var(--font-d); color: #9fbf7a; font-size: 18px; }
@@ -512,9 +513,11 @@ small { opacity: .75; }
 /* ------------------------------------------------ узкие экраны */
 @media screen and (min-width: 1700px) {
   .hand-slot { zoom: 1.16; }
+  .game { grid-template-rows: 54px 1fr 296px; }
 }
 @media screen and (max-height: 800px) {
-  .cond { font-size: 12px; max-height: 70px; overflow-y: auto; }
+  .cond .cond-full { display: none; }
+  .cond { font-size: 12px; }
   .hp-card .hp-talents, .hp-card .hp-equip { display: none; }
 }
 @media screen and (max-width: 1100px) {

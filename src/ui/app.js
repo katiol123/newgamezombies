@@ -605,14 +605,16 @@
       if (at.childElementCount !== th) { at.innerHTML = ''; for (let i = 0; i < th; i++) at.appendChild(el('div', 'al-slot')); }
       $$('.al-slot', at).forEach((s, i) => s.classList.toggle('on', i < g.alarm));
       at.classList.toggle('danger', g.alarm >= th - 1);
-      $('#alarm-val').textContent = `${g.alarm}/${th}`;
+      $('#alarm-val').textContent = g.alarm >= th ? `${g.alarm}/${th} · ВОЛНА!` : `${g.alarm}/${th}`;
+      $('#alarm-val').classList.toggle('wave', g.alarm >= th);
       // цели
       const goals = E.scenario(g).goals(g);
       $('#goals').innerHTML = `<div class="goal-title">${esc(E.scenario(g).name)}</div>` + goals.map((x) => `<div class="goal ${x.done ? 'done' : ''}"><i></i>${esc(x.text)}</div>`).join('') +
         (E.isComplete(g) ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>` : '');
       const cond = ZG.Conditions.get(g.conditionId);
       const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
-      $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> ${esc(cond.text)}` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> ${esc(bonus.text)} <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
+      $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> <span class="cond-full">${esc(cond.text)}</span>` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> <span class="cond-full">${esc(bonus.text)}</span> <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
+      $('#cond').title = `${cond.name}: ${cond.text}` + (bonus ? `\n★ ${bonus.name}: ${bonus.text}` : '');
       $('#zcount').textContent = g.zombies.length;
     },
 

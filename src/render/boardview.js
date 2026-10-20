@@ -764,8 +764,9 @@
         }
         if (h.costs && h.costs[cell] != null) {
           ctx.font = `bold ${Math.round(C * 0.14)}px 'Russo One', sans-serif`;
-          ctx.fillStyle = '#ffd36b'; ctx.textAlign = 'right';
-          ctx.fillText(h.costs[cell] + '⚡', c.x + C / 2 - 8, c.y + C / 2 - 8);
+          ctx.fillStyle = '#ffd36b'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+          ctx.fillText(h.costs[cell] + '⚡', c.x + C / 2 - 8, c.y - C / 2 + 8);
+          ctx.textBaseline = 'alphabetic';
         }
       });
       (h.zombies || []).forEach((uid) => {

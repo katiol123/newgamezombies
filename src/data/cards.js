@@ -126,7 +126,7 @@
       play(c) { c.lure(c.target, 1); if (c.chain) c.energy(1); },
     },
     {
-      id: 'rooftops', name: 'По крышам', suit: 'agility', cost: 1, shield: 0, type: 'Движение', tags: ['move'], hero: 'lisa',
+      id: 'rooftops', name: 'По крышам', suit: 'agility', cost: 2, shield: 0, type: 'Движение', tags: ['move'], hero: 'lisa',
       text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует.', chainText: '+1 ⚡.', art: 'roof', value: 9,
       target: { kind: 'move', steps: 3, through: true },
       play(c) { c.moveTo(c.target); if (c.chain) c.energy(1); },
