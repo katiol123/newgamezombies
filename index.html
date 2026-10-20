@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мёртвый квартал</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ===================================================== МЕНЮ -->
+  <section id="screen-menu" class="screen">
+    <canvas id="title-canvas"></canvas>
+    <div class="menu-content">
+      <div class="logo">
+        <div class="logo-kicker">кооперативная настольная игра</div>
+        <h1>МЁРТВЫЙ<br><span>КВАРТАЛ</span></h1>
+        <div class="logo-sub">Уровень 1 · Окраина</div>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn primary" id="btn-new">Новая партия</button>
+        <button class="btn" id="btn-continue">Продолжить</button>
+        <button class="btn" id="btn-rules">Правила</button>
+        <button class="btn ghost" id="btn-print">Печать (Print &amp; Play)</button>
+      </div>
+      <div class="menu-foot">1–4 героя · соло или вдвоём за одним экраном · 40–60 минут</div>
+    </div>
+  </section>
+
+  <!-- =============================================== ПОДГОТОВКА -->
+  <section id="screen-setup" class="screen">
+    <div class="setup">
+      <header class="setup-head">
+        <button class="btn ghost" id="btn-setup-back">← Меню</button>
+        <h2>Подготовка к вылазке</h2>
+        <div id="setup-players" class="seg">
+          <button data-p="1">1 игрок</button>
+          <button data-p="2">2 игрока</button>
+        </div>
+      </header>
+      <div class="setup-step"><span class="step-num">1</span> Отряд <small>(клик — взять; ПКМ — подробнее)</small></div>
+      <div id="setup-heroes" class="setup-heroes"></div>
+      <div id="setup-hint" class="setup-hint"></div>
+      <div class="setup-grid">
+        <div>
+          <div class="setup-step"><span class="step-num">2</span> Задание</div>
+          <div id="setup-scenario" class="chips"></div>
+          <div id="setup-scen-desc" class="desc"></div>
+        </div>
+        <div>
+          <div class="setup-step"><span class="step-num">3</span> Условие</div>
+          <div id="setup-condition" class="chips"></div>
+          <div id="setup-cond-desc" class="desc"></div>
+        </div>
+        <div>
+          <div class="setup-step"><span class="step-num">4</span> Сложность</div>
+          <div id="setup-difficulty" class="chips diff"></div>
+          <label class="seed">Сид карты (необязательно): <input id="setup-seed" placeholder="случайный" maxlength="24"></label>
+        </div>
+      </div>
+      <div class="setup-go"><button class="btn primary big" id="btn-start">Начать вылазку</button></div>
+    </div>
+  </section>
+
+  <!-- =================================================== ПАРТИЯ -->
+  <section id="screen-game" class="screen">
+    <div class="game">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-menu" title="Меню">☰</button>
+        <div class="track-box">
+          <div class="track-label">РАУНД · <span id="phase-name"></span></div>
+          <div id="round-track" class="round-track"></div>
+        </div>
+        <div class="track-box">
+          <div class="track-label">ТРЕВОГА <span id="alarm-val"></span></div>
+          <div id="alarm-track" class="alarm-track"></div>
+        </div>
+        <div class="zcount" title="Зомби на поле">☠ <span id="zcount">0</span></div>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="btn-hint" title="Совет (H)">💡</button>
+        <button class="icon-btn" id="btn-auto" title="Сходить за меня">🤖</button>
+        <button class="icon-btn" id="btn-speed" title="Скорость анимаций">×1</button>
+        <button class="icon-btn" id="btn-rules-in" title="Правила">?</button>
+      </header>
+      <main class="board-wrap"><canvas id="board"></canvas><div id="help-line" class="help-line"></div></main>
+      <aside class="side">
+        <div id="heroes" class="heroes"></div>
+        <div class="panel"><div id="goals" class="goals"></div></div>
+        <div class="panel cond" id="cond"></div>
+        <div class="panel log-panel"><div class="panel-title">Журнал</div><div id="log" class="log"></div></div>
+      </aside>
+      <footer class="handbar">
+        <div class="hand-left">
+          <div id="hand-owner" class="hand-owner"></div>
+          <div id="energy" class="energy"></div>
+          <div class="piles">
+            <div class="pile" id="deck-pile" title="Колода"><div class="pile-card"></div><span id="deck-count">0</span><small>колода</small></div>
+            <div class="pile discard" id="discard-pile" title="Сброс"><div class="pile-card"></div><span id="discard-count">0</span><small>сброс</small></div>
+          </div>
+          <div id="equip" class="equip"></div>
+        </div>
+        <div id="hand" class="hand"></div>
+        <div class="hand-right">
+          <div id="actions" class="actions"></div>
+          <button class="btn primary" id="btn-end">Конец хода <small>(E)</small></button>
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ===================================================== ИТОГ -->
+  <section id="screen-end" class="screen">
+    <div class="end">
+      <h1 id="end-title"></h1>
+      <p id="end-reason"></p>
+      <div id="end-stars" class="end-stars"></div>
+      <div id="end-stats" class="end-stats"></div>
+      <div id="end-seed" class="end-seed"></div>
+      <div class="end-buttons">
+        <button class="btn primary" id="btn-again">Новая карта</button>
+        <button class="btn" id="btn-replay">Переиграть эту</button>
+        <button class="btn ghost" id="btn-end-menu">Меню</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================ оверлеи -->
+  <div id="banner" class="banner"><div class="banner-band"><div id="banner-title"></div><div id="banner-sub"></div></div></div>
+  <div id="chain-pop" class="chain-pop">СВЯЗКА!</div>
+  <div id="modal" class="modal"><div id="modal-box" class="modal-box"></div></div>
+  <div id="rules" class="rules-overlay"><button id="rules-close" class="icon-btn">✕</button><div class="rules-frame"></div></div>
+  <div id="tooltip" class="tooltip"></div>
+  <div id="toast" class="toast"></div>
+  <div id="shutter" class="shutter"><div class="sh-top"></div><div class="sh-bot"></div><div class="sh-logo">МЁРТВЫЙ КВАРТАЛ</div></div>
+
+  <script src="src/core/core.js"></script>
+  <script src="src/data/base.js"></script>
+  <script src="src/data/cards.js"></script>
+  <script src="src/data/heroes.js"></script>
+  <script src="src/data/tiles.js"></script>
+  <script src="src/data/spawns.js"></script>
+  <script src="src/data/scenarios.js"></script>
+  <script src="src/data/levels.js"></script>
+  <script src="src/engine/board.js"></script>
+  <script src="src/engine/engine.js"></script>
+  <script src="src/ai/bot.js"></script>
+  <script src="src/render/art.js"></script>
+  <script src="src/render/tilerender.js"></script>
+  <script src="src/render/boardview.js"></script>
+  <script src="src/render/cardview.js"></script>
+  <script src="src/ui/app.js"></script>
+</body>
+</html>

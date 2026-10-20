@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Правила — Мёртвый квартал</title>
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    html, body { overflow: auto; background: #efe5cc; color: #1d1712; height: auto; }
+    body { font-family: var(--font-b); font-size: 16px; line-height: 1.5; background-image: radial-gradient(rgba(0,0,0,.05) 1px, transparent 1px); background-size: 5px 5px; }
+    .book { max-width: 920px; margin: 0 auto; padding: 30px 28px 80px; }
+    .cover { text-align: center; padding: 40px 0 20px; border-bottom: 4px double #1d1712; margin-bottom: 26px; }
+    .cover h1 { font-family: var(--font-d); font-size: 64px; margin: 0; line-height: .95; }
+    .cover h1 span { color: var(--red); }
+    .cover p { font-family: var(--font-t); font-size: 20px; letter-spacing: .2em; text-transform: uppercase; color: #6a5a40; }
+    h2 { font-family: var(--font-d); font-size: 28px; margin: 36px 0 10px; padding-bottom: 4px; border-bottom: 3px solid #1d1712; display: flex; gap: 12px; align-items: center; }
+    h2 .n { background: var(--red); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; flex: none; }
+    h3 { font-family: var(--font-d); font-size: 19px; margin: 22px 0 6px; }
+    .lead { font-size: 19px; font-family: var(--font-t); }
+    .box { background: #fff8e6; border: 2px solid #1d1712; border-radius: 8px; padding: 12px 16px; margin: 14px 0; box-shadow: 4px 4px 0 #1d1712; }
+    .box.red { background: #ffe9e2; } .box.gold { background: #fff1c4; } .box.blue { background: #e4efff; }
+    .box h4 { margin: 0 0 6px; font-family: var(--font-d); font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15px; }
+    th, td { border: 1px solid #b8a888; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #1d1712; color: #efe5cc; font-family: var(--font-t); font-weight: 700; }
+    tr:nth-child(even) td { background: rgba(0,0,0,.03); }
+    .steps { counter-reset: s; list-style: none; padding: 0; }
+    .steps > li { counter-increment: s; position: relative; padding: 6px 0 6px 44px; }
+    .steps > li::before { content: counter(s); position: absolute; left: 0; top: 4px; width: 30px; height: 30px; border-radius: 4px; background: #1d1712; color: #efe5cc; font-family: var(--font-d); display: flex; align-items: center; justify-content: center; }
+    .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+    .flow div { border: 2px solid #1d1712; border-radius: 8px; padding: 10px; background: #fff8e6; }
+    .flow b { font-family: var(--font-d); display: block; margin-bottom: 4px; }
+    .flow .z { background: #e8f0d8; }
+    .suits { display: flex; gap: 10px; flex-wrap: wrap; }
+    .suit { padding: 4px 10px; border-radius: 4px; color: #fff; font-family: var(--font-d); font-size: 14px; }
+    .cards-demo { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+    .cards-demo .card { --card-w: 170px; --card-h: 240px; }
+    .cards-demo .card .card-text { font-size: 13px; }
+    .zgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .zgrid .zombie-card { background: #fff8e6; border: 2px solid #1d1712; color: #1d1712; }
+    .zgrid .zstats { color: #3a2e24; } .zgrid .ztext { color: #5a4a3a; }
+    .hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .hgrid .hero-card { color: var(--paper); }
+    kbd { font-family: var(--font-d); background: #1d1712; color: #efe5cc; padding: 0 6px; border-radius: 3px; font-size: 13px; }
+    .anatomy { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: center; }
+    .anatomy .card { --card-w: 230px; --card-h: 324px; }
+    .anatomy .card .card-text { font-size: 16px; } .anatomy .card .card-name { font-size: 18px; }
+    .anatomy ol li { margin: 6px 0; }
+    .toc { columns: 2; font-family: var(--font-t); font-size: 17px; }
+    .toc a { color: #1d1712; }
+    .ref { columns: 2; column-gap: 26px; font-size: 14.5px; }
+    .ref p { break-inside: avoid; margin: 0 0 8px; }
+    @media (max-width: 700px) { .flow, .zgrid, .anatomy { grid-template-columns: 1fr; } .toc, .ref { columns: 1; } .cover h1 { font-size: 44px; } }
+    @media print { .box { box-shadow: none; } h2 { break-after: avoid; } }
+  </style>
+</head>
+<body>
+<div class="book">
+  <div class="cover">
+    <p>кооперативная настольная игра · 1–4 героя · 40–60 минут</p>
+    <h1>МЁРТВЫЙ<br><span>КВАРТАЛ</span></h1>
+    <p>Книга правил · Уровень 1 «Окраина»</p>
+  </div>
+
+  <p class="lead">Первая ночь после падения города. Ваш отряд застрял на окраине. Нужно выполнить задание и эвакуироваться, пока мертвецы не заполонили квартал. Вы играете <b>вместе против игры</b>: либо спасаются все выжившие, либо квартал побеждает.</p>
+
+  <div class="box gold"><h4>Главное за 30 секунд</h4>
+    Каждый раунд герои по очереди тратят <b>3 Энергии ⚡</b> на карты и простые действия. Потом ходят зомби: <b>идут к ближайшему герою и бьют</b>.
+    Карты, оставшиеся у вас в руке, — это ваша <b>защита</b>: их можно сбросить, чтобы отразить удары.
+    Играйте карты одной масти подряд — получите бонус <b>«Связка»</b>. Шумите осторожно: шум поднимает <b>Тревогу</b>, а переполненная Тревога вызывает <b>Волну</b>.
+  </div>
+
+  <div class="toc">
+    <a href="#s1">1. Компоненты</a><br><a href="#s2">2. Подготовка</a><br><a href="#s3">3. Раунд</a><br><a href="#s4">4. Ход героя</a><br><a href="#s5">5. Карты и Связка</a><br><a href="#s6">6. Поле, зоны, линия огня</a><br>
+    <a href="#s7">7. Бой и раны</a><br><a href="#s8">8. Фаза зомби</a><br><a href="#s9">9. Опыт и таланты</a><br><a href="#s10">10. Задания и победа</a><br><a href="#s11">11. Враги и герои</a><br><a href="#s12">12. Памятка</a>
+  </div>
+
+  <h2 id="s1"><span class="n">1</span>Компоненты</h2>
+  <table>
+    <tr><th>Компонент</th><th>Кол-во</th><th>Зачем</th></tr>
+    <tr><td>Тайлы поля 3×3 зоны (двусторонние не нужны — поворачиваются)</td><td>9</td><td>Из 6 случайных собирается поле 9×6</td></tr>
+    <tr><td>Планшеты героев</td><td>5</td><td>Стойкость, способность, таланты, треки опыта</td></tr>
+    <tr><td>Карты действий (стартовые и именные)</td><td>50</td><td>По 10 на героя: 6 общих + 4 именных</td></tr>
+    <tr><td>Карты добычи</td><td id="loot-count">30</td><td>Колода обыска: оружие, расходники, снаряжение, засады</td></tr>
+    <tr><td>Карты Ран</td><td>30</td><td>Попадают в вашу колоду, когда вас ранят</td></tr>
+    <tr><td>Карты груза (канистры, рация, медикаменты)</td><td>6</td><td>Цели заданий</td></tr>
+    <tr><td>Карты появления</td><td id="spawn-count">22</td><td>Кто выходит из люков</td></tr>
+    <tr><td>Карты заданий / условий</td><td>4 / 7</td><td>Цель партии и её особенности</td></tr>
+    <tr><td>Жетоны зомби</td><td>48</td><td>Шатуны, Бегуны, Толстяки, Крикуны, Громилы, Гнёзда</td></tr>
+    <tr><td>Прочие жетоны</td><td>≈60</td><td>Люки, ящики, обыск, баррикады, растяжки, приманки, шум, урон, блок, адреналин</td></tr>
+    <tr><td>Планшет треков</td><td>1</td><td>Раунды (сутки) и Тревога</td></tr>
+  </table>
+  <p>Всё это можно распечатать: кнопка «Печать (Print &amp; Play)» в меню игры.</p>
+
+  <h2 id="s2"><span class="n">2</span>Подготовка</h2>
+  <ol class="steps">
+    <li><b>Поле.</b> Перемешайте тайлы, разложите 6 из них сеткой 3×2 рубашкой вниз, каждый — в случайном повороте. Все зоны должны быть достижимы (если нет — поверните тайл).</li>
+    <li><b>Старт и выход.</b> Фишки героев ставятся в уличную зону у левого края. Жетон выхода (машина/скорая/вертолёт) — в уличную зону у края, максимально далёкую от старта.</li>
+    <li><b>Люки.</b> Положите жетоны точек появления на уличные зоны у краёв, подальше от старта и друг от друга. Их число — <b>по числу героев, но не меньше 2</b>.</li>
+    <li><b>Задание и условие.</b> Вытяните карту задания и карту условия (или выберите). Задание скажет, сколько ящиков выложить и где.</li>
+    <li><b>Обыск.</b> На отмеченные значком лупы места тайлов положите жетоны обыска (не более 9).</li>
+    <li><b>Колоды.</b> Каждый герой берёт 6 общих и 4 своих карты и перемешивает их. Перемешайте колоды добычи и появления.</li>
+    <li><b>Треки.</b> Маркер раунда — на «1», Тревога — на «0».</li>
+    <li><b>Первые мертвецы.</b> Для каждого люка вытяните карту появления (строка «Сумерки»).</li>
+  </ol>
+
+  <h2 id="s3"><span class="n">3</span>Раунд</h2>
+  <div class="flow">
+    <div><b>1. Ход героев</b>Каждый герой делает свой ход. <b>Порядок выбираете вы</b> — это важная часть тактики.</div>
+    <div class="z"><b>2. Фаза зомби</b>Движение → Атака → Особые свойства → Появление (и Волна, если Тревога полна).</div>
+    <div><b>3. Конец раунда</b>Уберите приманки, шум и «прижатие». Сдвиньте маркер раунда. Если это был последний раунд — поражение.</div>
+  </div>
+  <p>Трек раундов разбит на фазы суток: <b style="color:#8a7a50">Сумерки</b> (1–4), <b style="color:#b07a10">Ночь</b> (5–8), <b style="color:#a0281a">Глухая ночь</b> (9–12). Чем темнее, тем больше мертвецов на картах появления, а в Глухую ночь все зомби <b>голодны: +1 к скорости</b>.</p>
+
+  <h2 id="s4"><span class="n">4</span>Ход героя</h2>
+  <ol class="steps">
+    <li><b>Доберите карты</b> до размера руки (обычно 5, у Бориса 4). Колода кончилась — перемешайте сброс.</li>
+    <li><b>Получите 3 Энергии ⚡</b> (+ жетоны Адреналина, + 1, если вы «На грани»).</li>
+    <li><b>Действуйте</b> в любом порядке: играйте карты и делайте базовые действия, пока хватает ⚡.</li>
+    <li><b>Завершите ход.</b> Неистраченная ⚡ сгорает. <b>Карты в руке остаются</b> — ими вы защищаетесь в фазу зомби.</li>
+  </ol>
+  <h3>Базовые действия (без карт)</h3>
+  <table>
+    <tr><th>Действие</th><th>⚡</th><th>Что делает</th></tr>
+    <tr><td>Ход</td><td>1</td><td>Перейти в соседнюю зону.</td></tr>
+    <tr><td>Обыск</td><td>1</td><td>В зоне с жетоном обыска или ящиком и <b>без зомби</b>: ящик вскрывается (груз или добыча); жетон обыска — возьмите карту добычи в руку.</td></tr>
+    <tr><td>Кулак</td><td>1</td><td>1 урон зомби в своей зоне.</td></tr>
+    <tr><td>Баррикада</td><td>2</td><td>Поставьте баррикаду (прочность 3) на проход из своей зоны в соседнюю. На поле не больше 4 баррикад.</td></tr>
+    <tr><td>Подобрать груз</td><td>1</td><td>Взять брошенный груз из своей зоны.</td></tr>
+    <tr><td>Передать</td><td>0</td><td>Раз за ход: отдать любую карту (кроме Раны) герою в своей зоне.</td></tr>
+    <tr><td>Отдышаться</td><td>3</td><td>Если в зоне нет зомби: уберите 1 Рану из руки из игры.</td></tr>
+    <tr><td>Задание / Эвакуация</td><td>по карте</td><td>Доставить груз, выйти в эфир, сесть в машину — см. карту задания.</td></tr>
+  </table>
+  <div class="box red"><h4>Хватка</h4>Выйти из зоны, где есть зомби, стоит <b>+1 ⚡</b> — и базовым «Ходом», и картами перемещения. Пройти <b>сквозь</b> зону с зомби нельзя — в ней нужно остановиться. Перелезть через баррикаду — тоже +1 ⚡.</div>
+
+  <h2 id="s5"><span class="n">5</span>Карты и Связка</h2>
+  <div class="anatomy">
+    <div id="anatomy-card"></div>
+    <ol>
+      <li><b>Цена</b> в Энергии (жёлтый кружок).</li>
+      <li><b>Масть</b> (значок справа и цвет рамки).</li>
+      <li><b>Эффект</b> — что делает карта.</li>
+      <li><b>Связка</b> — бонус, если предыдущая сыгранная <i>в этот ход</i> карта была той же масти.</li>
+      <li><b>Щит</b> (внизу слева) — сколько урона отражает карта, если сбросить её при атаке.</li>
+      <li><b>Шум</b> — громкие карты поднимают Тревогу.</li>
+    </ol>
+  </div>
+  <div class="suits"><span class="suit" style="background:var(--rage)">Ярость — сила и натиск</span><span class="suit" style="background:var(--agility)">Сноровка — движение и ловкость</span><span class="suit" style="background:var(--mind)">Расчёт — тактика и поддержка</span></div>
+  <div class="box blue"><h4>Связка</h4>Сыграли «Удар» (Ярость), затем «Биту» (Ярость) — у Биты срабатывает Связка: +1 урон. Базовые действия не прерывают и не продолжают Связку — считаются только карты. Планируйте порядок: иногда выгоднее сначала сыграть слабую карту, чтобы «разогнать» сильную.</div>
+  <h3>Особые виды карт</h3>
+  <p><b>Расходник</b> после розыгрыша уходит из игры. <b>Снаряжение</b> остаётся лежать перед героем и действует постоянно (не больше 2 — третье вытесняет самое старое в сброс). <b>Груз</b> занимает место в руке, его нельзя сыграть или сбросить, но можно передать. <b>Рана</b> — мёртвая карта в руке.</p>
+  <p><b>Добыча.</b> Найденные карты идут прямо в руку, а после розыгрыша — в ваш сброс: ваша колода растёт и улучшается. Карта «Засада!» раскрывается сразу: в вашей зоне появляется Шатун (ночью — Бегун), и вы тянете ещё одну карту.</p>
+
+  <h2 id="s6"><span class="n">6</span>Поле, зоны, линия огня</h2>
+  <p>Каждый квадрат тайла — <b>зона</b>. Улицы соединены между собой; в помещения ведут только <b>двери</b> (проёмы в стене). Заштрихованные зоны (машины, деревья, завалы) непроходимы. В зоне может стоять сколько угодно фишек.</p>
+  <p><b>Линия огня</b> — строго по прямой (строка или столбец) через открытые проходы. Стены и непроходимые зоны её перекрывают, двери — нет. <b>Дальность</b> считается в зонах: 0 — своя зона, 1 — соседняя и т. д.</p>
+  <p><b>Шум.</b> Громкие действия кладут жетоны шума в зону героя и поднимают Тревогу на столько же. Шум убирается в конце раунда.</p>
+
+  <h2 id="s7"><span class="n">7</span>Бой и раны</h2>
+  <p><b>Урон по зомби</b> копится только в течение <b>вашего хода</b>: если не добили — в конце хода зомби «встаёт» снова. Исключение — <b>крупные цели</b> (Громила, Гнездо): их урон сохраняется (кладите жетоны урона). <b>Броня</b> уменьшает каждый отдельный эффект урона.</p>
+  <p>Если эффект бьёт «каждого в зоне» или «ещё одного», урон распределяется так, чтобы убить как можно больше, начиная с самых опасных.</p>
+  <h3>Защита</h3>
+  <ol class="steps">
+    <li>Урон всех атакующих героя складывается.</li>
+    <li>Сначала его поглощают жетоны <b>Блока</b> (от «Укрытия» и т. п.) и снаряжение.</li>
+    <li>Затем вы можете <b>сбросить карты из руки</b>: каждая отражает урон по значению своего щита.</li>
+    <li>Каждый неотражённый урон = <b>карта Раны в ваш сброс</b>. Позже она придёт в руку и займёт место.</li>
+  </ol>
+  <div class="box red"><h4>Падение</h4>Когда у героя Ран (во всей колоде, руке и сбросе) становится столько же, сколько его <b>Стойкость ♥</b>, герой падает: снимите фишку, его груз остаётся в зоне, а на его месте поднимается Шатун. Если у героя ровно на одну Рану меньше Стойкости — он <b>«На грани»</b>: +1 ⚡ в начале хода.</div>
+  <p><b>Лечение</b> убирает карты Ран из игры (сначала из руки, потом из сброса и колоды).</p>
+
+  <h2 id="s8"><span class="n">8</span>Фаза зомби</h2>
+  <ol class="steps">
+    <li><b>Движение.</b> Каждый зомби проходит столько зон, какова его скорость, к <b>ближайшей цели</b> — герою или приманке (по кратчайшему пути). При равенстве — туда, где больше шума; затем — к герою с меньшим числом Ран. Дойдя до цели, зомби останавливается. «Прижатые» зомби не двигаются.</li>
+    <li><b>Баррикады.</b> Зомби обходит баррикады, если может. Если обхода нет — бьёт баррикаду (−прочность, равная его урону, минимум 1) вместо шага.</li>
+    <li><b>Атака.</b> Каждый зомби в зоне с героем атакует один раз. Цель — герой с наименьшим числом Ран (Борис перехватывает все атаки в своей зоне). Невидимых героев не атакуют.</li>
+    <li><b>Особые свойства.</b> Крикуны поднимают Тревогу, Гнёзда порождают Шатунов.</li>
+    <li><b>Появление.</b> Для каждого люка вытяните карту появления и выставьте зомби из строки текущей фазы суток.</li>
+  </ol>
+  <div class="box gold"><h4>Тревога и Волна</h4>Если в шаге «Появление» Тревога достигла порога (обычно 6), отнимите порог от Тревоги и для <b>каждого люка тяните на одну карту больше</b>. Шумите, только когда это того стоит.</div>
+  <p><b>Растяжка</b> взрывается, как только в её зону входит зомби: урон каждому зомби там, шум 2.</p>
+
+  <h2 id="s9"><span class="n">9</span>Опыт и таланты</h2>
+  <p>За каждого убитого зомби герой получает опыт (★ на жетоне врага). На <b>5 ★</b> герой достигает 2-го уровня, на <b>12 ★</b> — 3-го. На каждом уровне выберите один из двух талантов на планшете героя — он действует до конца партии.</p>
+
+  <h2 id="s10"><span class="n">10</span>Задания, победа и поражение</h2>
+  <div id="scenarios"></div>
+  <p><b>Эвакуация.</b> Когда цель выполнена, зона выхода открывается. Герой в ней может эвакуироваться (0 ⚡): он покидает поле и спасён. <b>Победа</b> — все выжившие герои эвакуированы. <b>Поражение</b> — все герои пали или закончился последний раунд.</p>
+  <p><b>Звёзды:</b> ★ — победа; ★ — никто не пал; ★ — эвакуация хотя бы за 3 раунда до конца.</p>
+  <h3>Условия партии</h3>
+  <div id="conditions"></div>
+  <h3>Сложность</h3>
+  <div id="difficulty"></div>
+
+  <h2 id="s11"><span class="n">11</span>Враги и герои</h2>
+  <div class="zgrid" id="zombies"></div>
+  <h3>Герои</h3>
+  <div class="hgrid" id="heroes"></div>
+
+  <h2 id="s12"><span class="n">12</span>Памятка</h2>
+  <div class="ref box">
+    <p><b>Ход героя:</b> добрать до лимита → 3 ⚡ → действовать → карты в руке = защита.</p>
+    <p><b>Связка:</b> та же масть, что у предыдущей карты в этот ход → бонус.</p>
+    <p><b>Хватка:</b> выход из зоны с зомби +1 ⚡. Сквозь зомби не пройти.</p>
+    <p><b>Обыск:</b> 1 ⚡, только без зомби в зоне.</p>
+    <p><b>Урон по зомби</b> сбрасывается в конце хода героя (кроме крупных целей).</p>
+    <p><b>Фаза зомби:</b> движение → атака → свойства → появление.</p>
+    <p><b>Цель зомби:</b> ближайший герой или приманка; ничья → шум → меньше Ран.</p>
+    <p><b>Атака:</b> блок → снаряжение → сброс карт со щитом → Раны в сброс.</p>
+    <p><b>Тревога ≥ порога:</b> Волна — по лишней карте появления на люк.</p>
+    <p><b>Глухая ночь:</b> зомби +1 к скорости.</p>
+    <p><b>Опыт:</b> 5 ★ и 12 ★ — новый талант.</p>
+    <p><b>На грани</b> (Ран = Стойкость − 1): +1 ⚡.</p>
+  </div>
+  <p class="muted" style="color:#6a5a40">В цифровой версии: клик по карте — выбрать, затем клик по цели на поле; ПКМ по карте — увеличить; <kbd>E</kbd> — конец хода; <kbd>H</kbd> — совет; <kbd>1</kbd>–<kbd>9</kbd> — карты руки; <kbd>Esc</kbd> — отмена.</p>
+</div>
+
+<script src="src/core/core.js"></script>
+<script src="src/data/base.js"></script>
+<script src="src/data/cards.js"></script>
+<script src="src/data/heroes.js"></script>
+<script src="src/data/tiles.js"></script>
+<script src="src/data/spawns.js"></script>
+<script src="src/data/scenarios.js"></script>
+<script src="src/data/levels.js"></script>
+<script src="src/engine/board.js"></script>
+<script src="src/engine/engine.js"></script>
+<script src="src/render/art.js"></script>
+<script src="src/render/cardview.js"></script>
+<script>
+  (function () {
+    const ZG = window.ZG, CV = ZG.CardView;
+    const lvl = ZG.Levels.get('outskirts');
+    document.getElementById('loot-count').textContent = Object.values(lvl.loot).reduce((a, b) => a + b, 0);
+    document.getElementById('spawn-count').textContent = Object.values(lvl.spawnDeck).reduce((a, b) => a + b, 0);
+    document.getElementById('anatomy-card').appendChild(CV.card('bat'));
+    const sc = document.getElementById('scenarios');
+    sc.innerHTML = '<table><tr><th>Задание</th><th>Что сделать</th></tr>' + lvl.scenarios.map((id) => { const s = ZG.Scenarios.get(id); return `<tr><td><b>${s.name}</b></td><td>${s.brief}<br><i>${s.short}</i></td></tr>`; }).join('') + '</table>';
+    document.getElementById('conditions').innerHTML = '<table>' + lvl.conditions.map((id) => { const c = ZG.Conditions.get(id); return `<tr><td><b>${c.name}</b></td><td>${c.text}</td></tr>`; }).join('') + '</table>';
+    document.getElementById('difficulty').innerHTML = '<table>' + ZG.Difficulties.all().map((d) => `<tr><td><b>${d.name}</b></td><td>${d.text}</td></tr>`).join('') + '</table>';
+    const zw = document.getElementById('zombies');
+    ZG.Zombies.all().forEach((z) => zw.appendChild(CV.zombieCard(z.id)));
+    const hw = document.getElementById('heroes');
+    ZG.Heroes.all().forEach((h) => hw.appendChild(CV.heroCard(h.id, { talents: true })));
+  })();
+</script>
+</body>
+</html>

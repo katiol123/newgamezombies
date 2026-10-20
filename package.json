@@ -1,0 +1,13 @@
+{
+  "name": "dead-quarter",
+  "version": "1.0.0",
+  "description": "Мёртвый квартал — кооперативная настольная игра про зомби (цифровой прототип + Print & Play)",
+  "private": true,
+  "scripts": {
+    "sim": "node tools/sim.js",
+    "sim:pairs": "node tools/sim.js --all-pairs --games 30",
+    "trace": "node tools/trace.js",
+    "test": "node tools/test.js",
+    "serve": "npx http-server -c-1 ."
+  }
+}

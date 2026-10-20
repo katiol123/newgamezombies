@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Print &amp; Play — Мёртвый квартал</title>
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    html, body { overflow: auto; background: #555; height: auto; }
+    body { padding: 20px; }
+    .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: 10px; align-items: center; padding: 10px; margin: -20px -20px 20px; background: #1d1712; color: var(--paper); font-family: var(--font-t); }
+    .toolbar b { font-family: var(--font-d); }
+    .sheet { width: 210mm; min-height: 297mm; margin: 0 auto 20px; background: #fff; padding: 8mm; box-shadow: 0 10px 30px rgba(0,0,0,.5); page-break-after: always; break-after: page; position: relative; }
+    .sheet h2 { font-family: var(--font-d); margin: 0 0 4mm; font-size: 16pt; color: #1d1712; }
+    .sheet .note { font-family: var(--font-t); color: #555; font-size: 10pt; margin-bottom: 3mm; }
+    .grid { display: flex; flex-wrap: wrap; gap: 0; }
+    .slot { width: 63mm; height: 88mm; position: relative; outline: 1px dashed #aaa; outline-offset: -0.5px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .slot .card { zoom: 1.64; box-shadow: none; border-radius: 0; }
+    .slot .count { position: absolute; right: 1mm; bottom: 1mm; font: 700 7pt var(--font-t); background: #fff; padding: 0 1mm; color: #333; z-index: 5; }
+    .tile-slot { width: 150mm; height: 150mm; margin: 0 auto 6mm; outline: 1px dashed #aaa; }
+    .tile-slot canvas { width: 100%; height: 100%; display: block; }
+    .hero-board { width: 194mm; height: 120mm; border: 1px dashed #aaa; margin-bottom: 6mm; display: grid; grid-template-columns: 1fr 70mm; gap: 3mm; padding: 3mm; }
+    .hero-board .hero-card { height: 100%; flex-direction: row; }
+    .hero-board .hero-card .hero-portrait { width: 55mm; height: auto; border-bottom: 0; border-right: 3px solid var(--hero); }
+    .hb-tracks { font-family: var(--font-t); color: #1d1712; display: flex; flex-direction: column; gap: 3mm; }
+    .hb-tracks .tr { display: flex; flex-wrap: wrap; gap: 1mm; }
+    .hb-tracks .tr span { width: 8mm; height: 8mm; border: 1px solid #1d1712; display: flex; align-items: center; justify-content: center; font: 9pt var(--font-d); }
+    .hb-tracks .tr span.lv { background: #f0c040; }
+    .hb-tracks .tr span.w { background: #f2d0c8; }
+    .tokens { display: flex; flex-wrap: wrap; gap: 2mm; }
+    .tok { display: flex; flex-direction: column; align-items: center; font: 8pt var(--font-t); color: #333; }
+    .tok canvas { width: 22mm; height: 22mm; }
+    .tok.small canvas { width: 16mm; height: 16mm; }
+    .tok.big canvas { width: 30mm; height: 30mm; }
+    .tracks { display: flex; flex-direction: column; gap: 6mm; color: #1d1712; font-family: var(--font-d); }
+    .tracks .row { display: flex; gap: 1.5mm; }
+    .tracks .row div { width: 13mm; height: 15mm; display: flex; align-items: center; justify-content: center; font-size: 14pt; border: 2px solid #1d1712; border-radius: 2mm; }
+    .wide-cards { display: flex; flex-wrap: wrap; gap: 4mm; }
+    .wide-cards .cond-card, .wide-cards .scen-card { width: 88mm; }
+    @media print {
+      body { background: none; padding: 0; }
+      .toolbar { display: none; }
+      .sheet { margin: 0; box-shadow: none; width: auto; min-height: auto; }
+      @page { size: A4; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar"><b>МЁРТВЫЙ КВАРТАЛ · Print &amp; Play</b><span>A4, масштаб 100%, без полей. Карты 63×88 мм, тайлы 150×150 мм, жетоны 22 мм.</span><button class="btn" onclick="print()">Печать</button></div>
+  <div id="out"></div>
+
+<script src="src/core/core.js"></script>
+<script src="src/data/base.js"></script>
+<script src="src/data/cards.js"></script>
+<script src="src/data/heroes.js"></script>
+<script src="src/data/tiles.js"></script>
+<script src="src/data/spawns.js"></script>
+<script src="src/data/scenarios.js"></script>
+<script src="src/data/levels.js"></script>
+<script src="src/engine/board.js"></script>
+<script src="src/render/art.js"></script>
+<script src="src/render/tilerender.js"></script>
+<script src="src/render/cardview.js"></script>
+<script>
+(function () {
+  const ZG = window.ZG, CV = ZG.CardView;
+  const out = document.getElementById('out');
+  const lvl = ZG.Levels.get('outskirts');
+  const MM = 96 / 25.4;
+
+  function sheet(title, note) {
+    const s = document.createElement('div');
+    s.className = 'sheet';
+    s.innerHTML = `<h2>${title}</h2>` + (note ? `<div class="note">${note}</div>` : '');
+    out.appendChild(s);
+    return s;
+  }
+  // карты по 9 на лист
+  function cardSheets(title, items) {
+    for (let i = 0; i < items.length; i += 9) {
+      const s = sheet(title + (items.length > 9 ? ` (${i / 9 + 1})` : ''), 'Вырежьте по пунктиру. Рубашки — на последних листах.');
+      const grid = document.createElement('div'); grid.className = 'grid';
+      items.slice(i, i + 9).forEach((it) => {
+        const slot = document.createElement('div'); slot.className = 'slot';
+        slot.appendChild(it.el);
+        if (it.count > 1) { const c = document.createElement('div'); c.className = 'count'; c.textContent = '×' + it.count; slot.appendChild(c); }
+        grid.appendChild(slot);
+      });
+      s.appendChild(grid);
+    }
+  }
+  function canvasOf(key, mm, opts) {
+    const px = Math.round(mm * MM * 3);
+    const c = document.createElement('canvas'); c.width = px; c.height = px;
+    ZG.Art.draw(c.getContext('2d'), key, 0, 0, px, px, opts || {});
+    return c;
+  }
+
+  // ---------------------------------------------- стартовые и именные карты
+  const starter = {};
+  ZG.Heroes.all()[0].deck.slice(0, 6).forEach((id) => { starter[id] = (starter[id] || 0) + 1; });
+  const nHeroes = ZG.Heroes.all().length;
+  cardSheets('Стартовые карты (общие)', Object.entries(starter).map(([id, n]) => ({ el: CV.card(id), count: n * nHeroes })));
+  const heroCards = [];
+  ZG.Heroes.all().forEach((h) => h.deck.slice(6).forEach((id) => heroCards.push({ el: CV.card(id), count: 1 })));
+  cardSheets('Именные карты героев', heroCards);
+  cardSheets('Колода добычи', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
+  cardSheets('Раны и грузы', [
+    { el: CV.card('wound'), count: 30 },
+    { el: CV.card('cargo_fuel'), count: 2 }, { el: CV.card('cargo_meds'), count: 3 }, { el: CV.card('cargo_radio'), count: 1 },
+  ]);
+  cardSheets('Карты появления', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
+
+  // ------------------------------------------------- задания и условия
+  const sc = sheet('Задания и условия');
+  const wc = document.createElement('div'); wc.className = 'wide-cards';
+  lvl.scenarios.forEach((id) => wc.appendChild(CV.scenarioCard(id)));
+  lvl.conditions.forEach((id) => wc.appendChild(CV.conditionCard(id)));
+  sc.appendChild(wc);
+
+  // ---------------------------------------------------- планшеты героев
+  const heroes = ZG.Heroes.all();
+  for (let i = 0; i < heroes.length; i += 2) {
+    const s = sheet('Планшеты героев', 'Отмечайте опыт и Раны кубиком или жетоном.');
+    heroes.slice(i, i + 2).forEach((h) => {
+      const b = document.createElement('div'); b.className = 'hero-board';
+      b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
+      const tr = document.createElement('div'); tr.className = 'hb-tracks';
+      let xp = '<div><b>Опыт ★</b></div><div class="tr">';
+      for (let k = 0; k <= 12; k++) xp += `<span class="${k === 5 || k === 12 ? 'lv' : ''}">${k}</span>`;
+      xp += '</div><div><b>Раны (Стойкость ' + h.hp + ')</b></div><div class="tr">';
+      for (let k = 1; k <= h.hp + 2; k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
+      xp += '</div><div style="font-size:9pt">Жёлтые клетки — новый уровень: выберите талант. Клетки сверх Стойкости — для таланта «Толстая шкура».</div>';
+      tr.innerHTML = xp;
+      b.appendChild(tr);
+      s.appendChild(b);
+    });
+  }
+
+  // ----------------------------------------------------------- тайлы
+  lvl.tiles.forEach((id) => {
+    const def = ZG.Tiles.get(id);
+    const s = sheet(`Тайл ${def.num} — ${def.name}`, '150×150 мм. Можно наклеить на картон 2 мм.');
+    const board = ZG.Board.fromPlaced([{ id, rot: 0, tx: 0, ty: 0 }], 1, 1);
+    const C = 50 * MM * 2;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(C * 3); cv.height = Math.round(C * 3);
+    const ctx = cv.getContext('2d');
+    ZG.TileRender.drawBoard(ctx, board, 0, C, { noFrame: true, labels: true });
+    // значки мест обыска
+    board.cells.forEach((c) => { if (c.tileSearch) ZG.Art.draw(ctx, 'tok_search', c.x * C + C * 0.06, c.y * C + C * 0.06, C * 0.22, C * 0.22, { armory: c.tileSearch === 'armory' }); });
+    const slot = document.createElement('div'); slot.className = 'tile-slot';
+    slot.appendChild(cv); s.appendChild(slot);
+  });
+
+  // ---------------------------------------------------------- жетоны
+  const ts = sheet('Жетоны', 'Вырежьте по контуру. Числа — сколько штук нужно.');
+  const tw = document.createElement('div'); tw.className = 'tokens';
+  const tok = (key, n, label, cls, opts) => {
+    for (let i = 0; i < Math.min(n, cls === 'small' ? 12 : 6); i++) {
+      const d = document.createElement('div'); d.className = 'tok ' + (cls || '');
+      d.appendChild(canvasOf(key, cls === 'big' ? 30 : cls === 'small' ? 16 : 22, opts));
+      if (i === 0) d.appendChild(Object.assign(document.createElement('span'), { textContent: `${label} ×${n}` }));
+      tw.appendChild(d);
+    }
+  };
+  tok('z_walker', 24, 'Шатун'); tok('z_runner', 10, 'Бегун'); tok('z_fatso', 6, 'Толстяк'); tok('z_screamer', 4, 'Крикун');
+  tok('z_brute', 2, 'Громила', 'big'); tok('z_nest', 2, 'Гнездо', 'big', { t: 0 });
+  ZG.Heroes.all().forEach((h) => tok(h.art, 1, h.name));
+  tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
+  tok('tok_trap', 3, 'Растяжка', 'small'); tok('tok_lure', 2, 'Приманка', 'small'); tok('noiseIcon', 8, 'Шум', 'small'); tok('shieldIcon', 8, 'Блок', 'small');
+  tok('energy', 6, 'Адреналин', 'small'); tok('skull', 8, 'Урон (крупные цели)', 'small', { color: '#e8a090' });
+  tok('exit_car', 1, 'Машина', 'big'); tok('exit_ambulance', 1, 'Скорая', 'big'); tok('exit_heli', 1, 'Вертолёт', 'big'); tok('tok_tower', 1, 'Вышка', 'big');
+  ts.appendChild(tw);
+
+  // ----------------------------------------------------- планшет треков
+  const tk = sheet('Планшет треков');
+  const trk = document.createElement('div'); trk.className = 'tracks';
+  let html = '<div>РАУНД</div><div class="row">';
+  for (let r = 1; r <= lvl.rounds; r++) { const ph = r >= lvl.phaseStarts[2] ? 2 : r >= lvl.phaseStarts[1] ? 1 : 0; html += `<div style="background:${ZG.PHASES[ph].color}">${r}</div>`; }
+  html += '</div><div style="font: 11pt var(--font-t)">Сумерки → Ночь → Глухая ночь (зомби +1 к скорости). После последнего раунда — поражение.</div>';
+  html += '<div>ТРЕВОГА</div><div class="row">';
+  for (let a = 0; a <= 8; a++) html += `<div style="background:${a >= lvl.alarmThreshold ? '#f2b0a0' : '#fff'}">${a}</div>`;
+  html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: ${lvl.alarmThreshold}. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
+  html += '<div>ПОРЯДОК ФАЗЫ ЗОМБИ</div><div style="font: 12pt var(--font-t)">1. Движение → 2. Атака → 3. Особые свойства → 4. Появление (+Волна) → 5. Конец раунда</div>';
+  trk.innerHTML = html;
+  tk.appendChild(trk);
+
+  // ---------------------------------------------------------- рубашки
+  cardSheets('Рубашки: действия', Array.from({ length: 9 }, () => ({ el: CV.cardBack('hero') })));
+  cardSheets('Рубашки: добыча', Array.from({ length: 9 }, () => ({ el: CV.cardBack('loot') })));
+  cardSheets('Рубашки: появление', Array.from({ length: 9 }, () => ({ el: CV.cardBack('spawn') })));
+})();
+</script>
+</body>
+</html>

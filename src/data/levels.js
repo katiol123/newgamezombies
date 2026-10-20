@@ -1,0 +1,31 @@
+/*
+ * Уровни. Уровень = набор тайлов + колоды + сценарии + параметры давления.
+ * Новый уровень (новая локация) добавляется одним объектом.
+ */
+(function (G) {
+  'use strict';
+  const ZG = G.ZG;
+
+  ZG.Levels.add({
+    id: 'outskirts',
+    num: 1,
+    name: 'Окраина',
+    subtitle: 'Уровень 1',
+    text: 'Спальный район на краю города. Первая ночь после падения.',
+    layout: { tw: 3, th: 2 }, // 3×2 тайла = поле 9×6 зон
+    tiles: ['crossroad', 'shop', 'house', 'gas', 'pharmacy', 'park', 'garages', 'police', 'construction'],
+    loot: {
+      bat: 3, machete: 2, spear: 2, crowbar: 2, pistol: 2, shotgun: 1, molotov: 2, firecracker: 2,
+      medkit: 2, energy: 3, chocolate: 2, sneakers: 1, backpack: 1, vest: 1, flashlight: 1, ambush: 3,
+    },
+    spawnDeck: ZG.SPAWN_DECK_L1,
+    scenarios: ['fuel', 'meds', 'radio', 'nests'],
+    conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
+    rounds: 12,
+    phaseStarts: [1, 5, 9], // Сумерки с 1-го, Ночь с 5-го, Глухая ночь с 9-го раунда
+    hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
+    alarmThreshold: 6,
+    spawnPoints: { 1: 2, 2: 2, 3: 3, 4: 4 },
+    searchCount: 9,
+  });
+})(typeof globalThis !== 'undefined' ? globalThis : window);
