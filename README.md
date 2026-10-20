@@ -19,6 +19,7 @@
 node tools/test.js                         # дымовые тесты движка
 node tools/sim.js --all-pairs --games 40   # симуляция баланса ИИ
 node tools/trace.js <seed> boris,lisa fuel # журнал одной партии
+NODE_PATH=$(npm root -g) node tools/print_check.js out.pdf  # проверка печати (PDF, переполнение текста)
 ```
 Как добавлять героев, карты, врагов, локации и механики — `docs/EXTENDING.md`.
 Вся графика нарисована кодом в `src/render/art.js` и заменяется спрайтами одной строкой: `ZG.Art.useImage('ключ', 'путь.png')`.

@@ -45,7 +45,10 @@
     opts = opts || {};
     const def = typeof defOrId === 'string' ? ZG.Cards.get(defOrId) : defOrId;
     const suit = ZG.SUITS[def.suit] || ZG.SUITS.none;
-    const c = el('div', `card suit-${suit.id} kind-${def.kind || 'action'}${opts.small ? ' small' : ''}`);
+    // плотность текста: длинные карты получают меньший шрифт и более низкую иллюстрацию
+    const len = (def.text || '').length + (def.chainText ? def.chainText.length + 12 : 0);
+    const dense = len > 115 ? ' denser' : len > 68 ? ' dense' : '';
+    const c = el('div', `card suit-${suit.id} kind-${def.kind || 'action'}${opts.small ? ' small' : ''}${dense}`);
     c.dataset.id = def.id;
     const head = el('div', 'card-head');
     if (def.cost != null) {
@@ -54,7 +57,9 @@
       if (opts.cost != null && opts.cost !== def.cost) cost.classList.add(opts.cost < def.cost ? 'cheaper' : 'pricier');
       head.appendChild(cost);
     }
-    head.appendChild(el('div', 'card-name' + (def.name.length > 11 ? ' long' : ''), esc(def.name)));
+    // размер шрифта названия — по самому длинному слову (слова не переносятся)
+    const longest = Math.max.apply(null, def.name.split(/\s+/).map((w) => w.length));
+    head.appendChild(el('div', 'card-name' + (longest > 10 ? ' xlong' : longest > 8 ? ' long' : ''), esc(def.name)));
     if (suit.icon) head.appendChild(iconImg(suit.icon, 'card-suit', 32));
     c.appendChild(head);
     const art = el('div', 'card-art');

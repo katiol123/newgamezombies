@@ -8,6 +8,7 @@
     "sim:pairs": "node tools/sim.js --all-pairs --games 30",
     "trace": "node tools/trace.js",
     "test": "node tools/test.js",
+    "print:check": "node tools/print_check.js",
     "serve": "npx http-server -c-1 ."
   }
 }

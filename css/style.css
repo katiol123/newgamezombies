@@ -311,9 +311,11 @@ small { opacity: .75; }
 .card-cost { flex: none; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd36b, #c88a1a); border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-size: 14px; color: var(--ink); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 .card-cost.cheaper { background: radial-gradient(circle at 35% 35%, #b8ffc4, #3a9a50); }
 .card-cost.pricier { background: radial-gradient(circle at 35% 35%, #ffb0a0, #c0392b); }
-.card-name { flex: 1; min-width: 0; font-family: var(--font-d); font-size: 13px; line-height: 1; text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; }
+.card-name { flex: 1; min-width: 0; font-family: var(--font-d); font-size: 13px; line-height: 1; text-transform: uppercase; color: var(--ink); overflow-wrap: normal; word-break: keep-all; hyphens: none; }
 .card-name.long { font-size: 10.5px; }
+.card-name.xlong { font-size: 9px; }
 .card.zoomed .card-name.long { font-size: 18px; }
+.card.zoomed .card-name.xlong { font-size: 16px; }
 .card-suit { width: 20px; height: 20px; flex: none; }
 .card-art { margin: 1px 3px; height: 33%; border-radius: 3px; overflow: hidden; border: 2px solid var(--ink); background: #222; flex: none; }
 .card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -331,10 +333,17 @@ small { opacity: .75; }
 .card-flag { margin-left: auto; font-size: 9px; letter-spacing: .1em; color: #5a4a3a; font-weight: 700; }
 .card-gloss { position: absolute !important; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.18) 45%, transparent 60%); background-size: 250% 100%; background-position: 120% 0; pointer-events: none; transition: background-position .6s; z-index: 3 !important; }
 .card:hover .card-gloss { background-position: -60% 0; }
+.card.dense .card-text { font-size: 10.5px; line-height: 1.1; }
+.card.dense .card-art { height: 28%; }
+.card.denser .card-text { font-size: 9.5px; line-height: 1.07; }
+.card.denser .card-art { height: 23%; }
 .card.small { --card-w: 104px; --card-h: 148px; }
 .card.small .card-text { font-size: 10px; }
-.card.small .card-name { font-size: 10px; overflow-wrap: normal; word-break: keep-all; }
-.card.small .card-name.long { font-size: 8.5px; }
+.card.small.dense .card-text { font-size: 8px; }
+.card.small.denser .card-text { font-size: 7.2px; }
+.card.small .card-name { font-size: 10px; }
+.card.small .card-name.long { font-size: 8px; }
+.card.small .card-name.xlong { font-size: 7px; }
 .card.zoomed { --card-w: 280px; --card-h: 400px; }
 .card.zoomed .card-name { font-size: 22px; } .card.zoomed .card-text { font-size: 18px; } .card.zoomed .card-type { font-size: 14px; }
 .card.zoomed .card-cost { width: 40px; height: 40px; font-size: 22px; } .card.zoomed .card-suit { width: 34px; height: 34px; }
@@ -377,6 +386,7 @@ small { opacity: .75; }
 .scen-name { font-family: var(--font-d); font-size: 22px; margin: 4px 0 8px; }
 .scen-brief { color: var(--paper2); font-size: 14px; }
 .scen-short { margin-top: 10px; font-weight: 700; color: var(--gold); padding-right: 50px; }
+.scen-card { padding-bottom: 60px !important; }
 .scen-setup { margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: rgba(0,0,0,.25); font-size: 13px; color: var(--paper); }
 .scen-exit { position: absolute; right: 10px; bottom: 10px; width: 40px; }
 .talent-pick { display: flex; gap: 16px; justify-content: center; margin-top: 10px; }
@@ -471,14 +481,14 @@ small { opacity: .75; }
 #rules-close { position: absolute; top: 16px; right: 16px; z-index: 2; }
 
 /* ------------------------------------------------ узкие экраны */
-@media (max-width: 1100px) {
+@media screen and (max-width: 1100px) {
   .game { grid-template-columns: 1fr 240px; grid-template-rows: 54px 1fr 236px; }
   .handbar { grid-template-columns: 170px 1fr 200px; }
   :root { --card-w: 118px; --card-h: 168px; }
   .card-text { font-size: 11px; }
   .setup-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 760px) {
+@media screen and (max-width: 760px) {
   html, body { overflow: auto; }
   .game { height: auto; min-height: 100%; grid-template-columns: 1fr; grid-template-rows: auto 60vh auto auto; grid-template-areas: "top" "board" "hand" "side"; }
   .topbar { flex-wrap: wrap; padding: 6px 16px; gap: 8px; height: auto; }

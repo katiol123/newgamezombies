@@ -15,7 +15,7 @@
     .sheet .note { font-family: var(--font-t); color: #555; font-size: 10pt; margin-bottom: 3mm; }
     .grid { display: flex; flex-wrap: wrap; gap: 0; }
     .slot { width: 63mm; height: 88mm; position: relative; outline: 1px dashed #aaa; outline-offset: -0.5px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .slot .card { zoom: 1.64; box-shadow: none; border-radius: 0; }
+    .slot .card { --card-w: 146px; --card-h: 206px; zoom: 1.64; box-shadow: none; border-radius: 0; }
     .slot .count { position: absolute; right: 1mm; bottom: 1mm; font: 700 7pt var(--font-t); background: #fff; padding: 0 1mm; color: #333; z-index: 5; }
     .tile-slot { width: 150mm; height: 150mm; margin: 0 auto 6mm; outline: 1px dashed #aaa; }
     .tile-slot canvas { width: 100%; height: 100%; display: block; }
@@ -38,7 +38,8 @@
     .wide-cards { display: flex; flex-wrap: wrap; gap: 4mm; }
     .wide-cards .cond-card, .wide-cards .scen-card { width: 88mm; }
     @media print {
-      body { background: none; padding: 0; }
+      html, body { background: #fff !important; padding: 0; }
+      .sheet { break-inside: avoid; page-break-inside: avoid; height: 297mm; overflow: hidden; }
       .toolbar { display: none; }
       .sheet { margin: 0; box-shadow: none; width: auto; min-height: auto; }
       @page { size: A4; margin: 0; }
@@ -109,7 +110,7 @@
   cardSheets('Колода добычи', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
   cardSheets('Раны и грузы', [
     { el: CV.card('wound'), count: 30 },
-    { el: CV.card('cargo_fuel'), count: 2 }, { el: CV.card('cargo_meds'), count: 3 }, { el: CV.card('cargo_radio'), count: 1 },
+    { el: CV.card('cargo_fuel'), count: 2 }, { el: CV.card('cargo_meds'), count: 4 }, { el: CV.card('cargo_radio'), count: 1 },
   ]);
   cardSheets('Карты появления', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
 
@@ -186,8 +187,8 @@
   html += '<div>ТРЕВОГА</div><div class="row">';
   for (let a = 0; a <= 11; a++) html += `<div style="background:${a >= lvl.alarmThreshold ? '#f2b0a0' : '#fff'}">${a}</div>`;
   html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: ${lvl.alarmThreshold}. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
-  html += '<div>СЧЁТЧИК БОНУСНОЙ ЦЕЛИ</div><div class="row">';
-  for (let a = 0; a <= 15; a++) html += `<div style="width:10mm">${a}</div>`;
+  html += '<div>СЧЁТЧИК БОНУСНОЙ ЦЕЛИ</div><div class="row" style="flex-wrap:wrap">';
+  for (let a = 0; a <= 24; a++) html += `<div style="width:7mm;height:10mm;font-size:10pt">${a}</div>`;
   html += '</div>';
   html += '<div>ПОРЯДОК ФАЗЫ ЗОМБИ</div><div style="font: 12pt var(--font-t)">1. Движение → 2. Атака → 3. Особые свойства → 4. Появление (+Волна) → 5. Конец раунда</div>';
   trk.innerHTML = html;
