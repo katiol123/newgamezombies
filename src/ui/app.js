@@ -192,6 +192,10 @@
         this.view.speed = sp;
         $('#btn-speed').textContent = '×' + sp;
       };
+      const sb = $('#btn-sound');
+      const showSound = () => { sb.textContent = ZG.Sound.muted ? '🔇' : '🔊'; sb.title = ZG.Sound.muted ? 'Звук выключен' : 'Звук включён'; };
+      showSound();
+      sb.onclick = () => { ZG.Sound.toggle(); showSound(); if (!ZG.Sound.muted) ZG.Sound.play('growl', { volume: 0.5 }); };
       $('#deck-pile').onclick = () => this.showPile('deck');
       $('#discard-pile').onclick = () => this.showPile('discard');
       document.addEventListener('keydown', (ev) => this.onKey(ev));
@@ -964,6 +968,8 @@
   // ================================================================ баннеры
   const Banner = {
     async show(title, sub, kind) {
+      const snd = { level: 'round', round: 'round', zombies: 'zombies', wave: 'zombies', night: 'reveal' }[kind];
+      if (snd) ZG.Sound.play(snd);
       const b = $('#banner');
       b.className = 'banner ' + (kind || '');
       $('#banner-title').textContent = title;

@@ -88,6 +88,18 @@ ZG.Heroes.add({
 ZG.Art.useImage('hero_boris', 'img/heroes/boris.png');
 ```
 
+## Звук
+Звуки задаются ключами в `src/ui/sound.js` (файлы в `audio/`):
+
+| Ключ | Файл | Когда звучит |
+|---|---|---|
+| `round` | `audio/tension.mp3` | вступление к уровню, начало каждого раунда |
+| `zombies` | `audio/braam.mp3` | баннеры «Фаза зомби», «Волна!», «Прорыв!» |
+| `growl` | `audio/growl.mp3` | атака зомби на героя, «Засада!» |
+| `reveal` | `audio/psychedelic.mp3` | переворот тайла в тумане, «Наступает Ночь» |
+
+Заменить или добавить: `ZG.Sound.define('ключ', 'audio/файл.mp3', { volume: 0.7, gap: 600 })`, проиграть: `ZG.Sound.play('ключ')`. Кнопка 🔊 в верхней панели выключает звук (запоминается).
+
 ## Баланс
 ```
 node tools/sim.js --all-pairs --games 40      # все пары героев

@@ -284,6 +284,7 @@
           return 110;
         }
         case 'attack': {
+          if (ZG.Sound) ZG.Sound.play('growl');
           const z = this.zombies.get(ev.zombie);
           const h = this.heroes.get(ev.hero);
           if (z && h) {
@@ -441,6 +442,7 @@
           return 200;
         }
         case 'ambush': {
+          if (ZG.Sound) ZG.Sound.play('growl', { rate: 1.15 });
           const p = this.cellXY(ev.pos);
           this._float(p.x, p.y - C * 0.45, 'ЗАСАДА!', '#ff4a3a', 1.5);
           this.flash = { color: 'rgba(160,0,0,0.3)', t0: this.time, dur: 0.4 };
@@ -465,6 +467,7 @@
         }
         case 'dayphase': this.targetDark = this._darkFor(); return 0;
         case 'reveal': {
+          if (ZG.Sound) ZG.Sound.play('reveal');
           // многошаговый переворот тайла: подъём → поворот ребром → открытие с пылью
           this.flips[ev.tile] = this.time;
           const t = this.g.board.tiles[ev.tile];
