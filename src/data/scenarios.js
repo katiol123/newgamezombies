@@ -180,6 +180,18 @@
     },
   ]);
 
+  // ------------------------------------------- Бонусные цели (3-я звезда) ---
+  // Одна карта тянется в начале партии. check(g) проверяется при победе.
+  ZG.Bonuses.addAll([
+    { id: 'quiet', name: 'Тише воды', text: 'Победить, не вызвав ни одной Волны.', check: (g) => g.stats.waves === 0, progress: (g) => `волн: ${g.stats.waves}` },
+    { id: 'hunter', name: 'Охотник', text: 'Убить 15 зомби.', check: (g) => g.stats.kills >= 15, progress: (g) => `${g.stats.kills}/15` },
+    { id: 'scavenger', name: 'Мародёр', text: 'Сделать 6 Обысков.', check: (g) => g.stats.searches >= 6, progress: (g) => `${g.stats.searches}/6` },
+    { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
+    { id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
+    { id: 'unscathed', name: 'Ни царапины', text: 'Получить за партию не больше 4 Ран на весь отряд.', check: (g) => g.stats.wounds <= 4, progress: (g) => `ран: ${g.stats.wounds}/4` },
+    { id: 'biggame', name: 'Крупная дичь', text: 'Убить 3 Толстяков или Громилу.', check: (g) => (g.stats.killsBy.fatso || 0) >= 3 || (g.stats.killsBy.brute || 0) >= 1, progress: (g) => `толстяков ${g.stats.killsBy.fatso || 0}/3, громил ${g.stats.killsBy.brute || 0}/1` },
+  ]);
+
   // ---------------------------------------------------------- Сложность ---
   ZG.Difficulties.addAll([
     { id: 'novice', name: 'Новичок', text: '+2 раунда, порог Волны +2, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2 }, startLoot: 1 },

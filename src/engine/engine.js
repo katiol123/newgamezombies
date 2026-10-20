@@ -89,6 +89,7 @@
     g.board = Board.generate(level, g);
     g.scenarioId = opts.scenarioId || Rng.pick(g, level.scenarios);
     g.conditionId = opts.conditionId || Rng.pick(g, level.conditions);
+    g.bonusId = opts.bonusId || (level.bonuses ? Rng.pick(g, level.bonuses) : null);
 
     // герои
     opts.heroes.forEach((hs, idx) => {
@@ -298,7 +299,7 @@
     if (win) {
       let s = 1;
       if (!g.heroes.some((h) => h.fallen)) s++;
-      if (g.round <= E.maxRounds(g) - 3) s++;
+      if (g.bonusId && ZG.Bonuses.get(g.bonusId).check(g)) s++;
       g.result.stars = s;
     }
     g.phase = 'over'; g.pending = null; g.active = null;

@@ -21,6 +21,7 @@
     spawnDeck: ZG.SPAWN_DECK_L1,
     scenarios: ['fuel', 'meds', 'radio', 'nests'],
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
+    bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
     rounds: 12,
     phaseStarts: [1, 5, 9], // Сумерки с 1-го, Ночь с 5-го, Глухая ночь с 9-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости

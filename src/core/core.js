@@ -42,6 +42,7 @@
   ZG.Conditions = makeRegistry('condition');
   ZG.Levels = makeRegistry('level');
   ZG.Difficulties = makeRegistry('difficulty');
+  ZG.Bonuses = makeRegistry('bonus');
 
   // ---------------------------------------------------------------------------
   // Детерминированный ГСЧ (mulberry32). Состояние лежит в объекте игры,

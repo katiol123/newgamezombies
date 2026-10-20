@@ -223,6 +223,8 @@ small { opacity: .75; }
 .goal-evac { margin-top: 6px; padding: 6px; border-radius: 4px; background: rgba(111,224,138,.12); color: var(--green); font-size: 13px; font-family: var(--font-t); animation: readyPulse 1.6s infinite; }
 .cond { font-family: var(--font-t); font-size: 13px; color: var(--paper2); }
 .cond b { color: var(--amber); }
+.bonus-line { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); }
+.bonus-line b { color: var(--gold); } .bonus-line .ok { color: var(--green); }
 .log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .log { flex: 1; overflow-y: auto; font-family: var(--font-t); font-size: 13px; line-height: 1.35; padding-right: 4px; }
 .log-line { padding: 1px 0; animation: logIn .3s; }

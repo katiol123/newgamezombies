@@ -118,6 +118,7 @@
   const wc = document.createElement('div'); wc.className = 'wide-cards';
   lvl.scenarios.forEach((id) => wc.appendChild(CV.scenarioCard(id)));
   lvl.conditions.forEach((id) => wc.appendChild(CV.conditionCard(id)));
+  lvl.bonuses.forEach((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>`; wc.appendChild(d); });
   sc.appendChild(wc);
 
   // ---------------------------------------------------- планшеты героев

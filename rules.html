@@ -106,7 +106,7 @@
         <li><b>Гнёзда</b> («Выжечь гнёзда») — в центральную зону тайлов, начиная с правого столбца (центр непроходим — в соседнюю зону того же тайла).</li>
       </ul></li>
     <li><b>Обыск.</b> На все оставшиеся значки обыска положите жетоны обыска.</li>
-    <li><b>Условие.</b> Вытяните карту условия и выполните её указания.</li>
+    <li><b>Условие и бонус.</b> Вытяните карту условия и выполните её указания. Вытяните карту бонусной цели — она даст 3-ю звезду.</li>
     <li><b>Колоды.</b> Каждый герой берёт 6 общих и 4 своих карты и перемешивает их. Перемешайте колоды добычи и появления.</li>
     <li><b>Треки.</b> Маркер раунда — на «1», Тревога — на «0».</li>
     <li><b>Первые мертвецы.</b> Для каждого люка вытяните карту появления (строка «Сумерки»).</li>
@@ -195,7 +195,8 @@
   <h2 id="s10"><span class="n">10</span>Задания, победа и поражение</h2>
   <div id="scenarios"></div>
   <p><b>Эвакуация.</b> Когда цель выполнена, зона выхода открывается. Герой в ней может эвакуироваться (0 ⚡): он покидает поле и спасён. <b>Победа</b> — все выжившие герои эвакуированы. <b>Поражение</b> — все герои пали или закончился последний раунд.</p>
-  <p><b>Звёзды:</b> ★ — победа; ★ — никто не пал; ★ — эвакуация хотя бы за 3 раунда до конца.</p>
+  <p><b>Звёзды:</b> ★ — победа; ★ — никто не пал; ★ — выполнена <b>бонусная цель</b> (карта тянется при подготовке).</p>
+  <div id="bonuses"></div>
   <h3>Условия партии</h3>
   <div id="conditions"></div>
   <h3>Сложность</h3>
@@ -221,7 +222,7 @@
     <p><b>Опыт:</b> 4 ★ и 10 ★ — новый талант.</p>
     <p><b>На грани</b> (Ран = Стойкость − 1): +1 ⚡.</p>
   </div>
-  <p class="muted" style="color:#6a5a40">В цифровой версии: клик по карте — выбрать, затем клик по цели на поле; ПКМ по карте — увеличить; <kbd>E</kbd> — конец хода; <kbd>H</kbd> — совет; <kbd>1</kbd>–<kbd>9</kbd> — карты руки; <kbd>Esc</kbd> — отмена.</p>
+  <p class="muted" style="color:#6a5a40">В цифровой версии: клик по карте — выбрать, затем клик по цели на поле (карту без цели — кликнуть ещё раз или Enter); ПКМ по карте — увеличить; <kbd>E</kbd> — конец хода; <kbd>H</kbd> — совет; <kbd>1</kbd>–<kbd>9</kbd> — карты руки; <kbd>Esc</kbd> — отмена.</p>
 </div>
 
 <script src="src/core/core.js"></script>
@@ -246,6 +247,7 @@
     const sc = document.getElementById('scenarios');
     sc.innerHTML = '<table><tr><th>Задание</th><th>Что сделать</th></tr>' + lvl.scenarios.map((id) => { const s = ZG.Scenarios.get(id); return `<tr><td><b>${s.name}</b></td><td>${s.brief}<br><i>${s.short}</i></td></tr>`; }).join('') + '</table>';
     document.getElementById('conditions').innerHTML = '<table>' + lvl.conditions.map((id) => { const c = ZG.Conditions.get(id); return `<tr><td><b>${c.name}</b></td><td>${c.text}</td></tr>`; }).join('') + '</table>';
+    document.getElementById('bonuses').innerHTML = '<table>' + lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); return `<tr><td><b>★ ${b.name}</b></td><td>${b.text}</td></tr>`; }).join('') + '</table>';
     document.getElementById('difficulty').innerHTML = '<table>' + ZG.Difficulties.all().map((d) => `<tr><td><b>${d.name}</b></td><td>${d.text}</td></tr>`).join('') + '</table>';
     const zw = document.getElementById('zombies');
     ZG.Zombies.all().forEach((z) => zw.appendChild(CV.zombieCard(z.id)));

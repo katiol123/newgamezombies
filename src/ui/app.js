@@ -210,7 +210,7 @@
         const g = save.g;
         const level = ZG.Levels.get(g.levelId);
         // поле детерминированно восстанавливается из сида
-        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
+        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
         g.board = tmp.board;
         g.fx = []; g.log = g.log || [];
         this.g = g;
@@ -583,7 +583,8 @@
       $('#goals').innerHTML = `<div class="goal-title">${esc(E.scenario(g).name)}</div>` + goals.map((x) => `<div class="goal ${x.done ? 'done' : ''}"><i></i>${esc(x.text)}</div>`).join('') +
         (E.isComplete(g) ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>` : '');
       const cond = ZG.Conditions.get(g.conditionId);
-      $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> ${esc(cond.text)}`;
+      const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
+      $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> ${esc(cond.text)}` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> ${esc(bonus.text)} <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
       $('#zcount').textContent = g.zombies.length;
     },
 
@@ -756,7 +757,7 @@
       $('#end-reason').textContent = r.reason;
       const stars = $('#end-stars');
       stars.innerHTML = '';
-      const starHints = ['Победа', 'Никто не пал', `Успели до раунда ${E.maxRounds(g) - 3}`];
+      const starHints = ['Победа', 'Никто не пал', g.bonusId ? ZG.Bonuses.get(g.bonusId).name : 'Бонус'];
       for (let i = 0; i < 3; i++) {
         const s = el('div', 'end-star');
         const im = el('img');
@@ -777,7 +778,7 @@
         <div><b>${st.searches}</b><span>обысков</span></div>`;
       $('#end-seed').textContent = `Сид: ${g.seed} · ${E.scenario(g).name} · ${ZG.Conditions.get(g.conditionId).name} · ${ZG.Difficulties.get(g.difficultyId).name}`;
       $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), difficultyId: g.difficultyId, players: this.players });
-      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, difficultyId: g.difficultyId, players: this.players });
+      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
       App.show('end');
     },
@@ -966,6 +967,7 @@
       wrap.appendChild(CV.conditionCard(g.conditionId));
       const steps = sc.goals(g).map((x) => `<li>${esc(x.text)}</li>`).join('');
       await this.show(`<div class="kicker">Брифинг</div><h2>${esc(sc.name)}</h2><p>${esc(sc.brief)}</p><ol class="brief-steps">${steps}</ol>
+        ${g.bonusId ? `<p>★ Бонусная цель (3-я звезда): <b>${esc(ZG.Bonuses.get(g.bonusId).name)}</b> — ${esc(ZG.Bonuses.get(g.bonusId).text)}</p>` : ''}
         <p class="muted">На поле: <b>жёлтые «?»</b> — жетоны обыска, <b>ящики</b> — возможные грузы, <b>люки</b> — точки появления. Наводите курсор на зоны, чтобы узнать подробности.</p>`, [{ label: 'В бой', cls: 'primary', modal: true }], wrap, 'wide');
     },
 
