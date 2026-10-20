@@ -66,6 +66,8 @@
       this.targetDark = this._darkFor();
       this.darkness = this.targetDark;
       if (intro) this.intro = { t0: performance.now(), dur: 2600 };
+      this.shown = g.revealed ? g.revealed.slice() : null;
+      this.flips = {};
     }
 
     resize() {
@@ -216,6 +218,7 @@
     _sync() {
       const g = this.g;
       if (!g) return;
+      if (g.revealed) this.shown = g.revealed.slice();
       const alive = new Set(g.zombies.map((z) => z.uid));
       this.zombies.forEach((e, uid) => { if (!alive.has(uid) && !e.dying) this.zombies.delete(uid); });
       g.zombies.forEach((z) => {
@@ -455,6 +458,26 @@
           return 120;
         }
         case 'dayphase': this.targetDark = this._darkFor(); return 0;
+        case 'reveal': {
+          // многошаговый переворот тайла: подъём → поворот ребром → открытие с пылью
+          this.flips[ev.tile] = this.time;
+          const t = this.g.board.tiles[ev.tile];
+          const cx = this.pad + (t.tx * 3 + 1.5) * C, cy = this.pad + (t.ty * 3 + 1.5) * C;
+          setTimeout(() => {
+            if (this.shown) this.shown[ev.tile] = true;
+            this._dust({ x: cx, y: cy }, 26, '#5a4a3a');
+            this.addShake(ev.n ? 9 : 4);
+            if (ev.n) this._float(cx, cy - C * 0.6, `☠ ${ev.n}`, '#ff6a5a', 1.6);
+          }, 380 / this.speed);
+          return ev.n ? 900 : 650;
+        }
+        case 'bump': {
+          const h = this.heroes.get(ev.hero), to = this.cellXY(ev.to);
+          if (h) { h.lunge = { t0: this.time, tx: to.x, ty: to.y }; }
+          this._float(to.x, to.y - C * 0.2, 'стена!', '#e8dcc0', 1);
+          this.addShake(3);
+          return 300;
+        }
         case 'wave': this.effects.push({ type: 'siren', t0: this.time, dur: 1.6 }); this.addShake(6); return 300;
         default: return 0;
       }
@@ -533,6 +556,7 @@
       ctx.drawImage(this.staticLayer, 0, 0, this.W, this.H);
       ctx.drawImage(this.decals, 0, 0, this.W, this.H);
       this._drawTokens(ctx);
+      this._drawFog(ctx);
       this._drawHighlights(ctx);
 
       // движение фишек
@@ -738,8 +762,76 @@
     }
 
     // ---------------------------------------------------------- фишки
+    hiddenCell(cell) {
+      if (!this.shown) return false;
+      return !this.shown[this.g.board.cells[cell].tile];
+    }
+
+    // рубашки закрытых тайлов: что известно — люки, ящики, вышка; скопление зомби — числом
+    _drawFog(ctx) {
+      if (!this.shown) return;
+      const g = this.g, b = g.board, C = this.cell, T = 3 * C, t = this.time;
+      b.tiles.forEach((tile, ti) => {
+        const flip = this.flips[ti];
+        if (this.shown[ti] && (flip == null || t - flip > 0.75)) return;
+        let sx = 1, lift = 0;
+        if (flip != null) {
+          const k = Math.min(1, (t - flip) / 0.75);
+          lift = Math.sin(Math.min(1, k * 2) * Math.PI / 2) * 10;
+          sx = k < 0.5 ? 1 - k * 2 : 0;
+          if (sx <= 0.01) return;
+        }
+        const x = this.pad + tile.tx * T, y = this.pad + tile.ty * T;
+        ctx.save();
+        ctx.translate(x + T / 2, y + T / 2 - lift);
+        ctx.scale(sx, 1);
+        ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 10 + lift; ctx.shadowOffsetY = 4 + lift;
+        const gr = ctx.createLinearGradient(-T / 2, -T / 2, T / 2, T / 2);
+        gr.addColorStop(0, '#2b211a'); gr.addColorStop(1, '#1a1410');
+        ctx.fillStyle = gr; ctx.fillRect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4);
+        ctx.shadowColor = 'transparent';
+        ctx.save();
+        ctx.beginPath(); ctx.rect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4); ctx.clip();
+        ctx.strokeStyle = 'rgba(224,168,58,.06)'; ctx.lineWidth = C * 0.12;
+        for (let i = -T; i < T * 2; i += C * 0.35) { ctx.beginPath(); ctx.moveTo(-T / 2 + i, -T / 2); ctx.lineTo(-T / 2 + i - T, T / 2); ctx.stroke(); }
+        // клубящийся туман
+        for (let i = 0; i < 5; i++) {
+          const fx = Math.sin(t * 0.3 + i * 1.7 + ti) * T * 0.3, fy = Math.cos(t * 0.25 + i * 2.1 + ti) * T * 0.3;
+          const fg = ctx.createRadialGradient(fx, fy, 2, fx, fy, T * 0.45);
+          fg.addColorStop(0, 'rgba(150,140,130,.10)'); fg.addColorStop(1, 'rgba(150,140,130,0)');
+          ctx.fillStyle = fg; ctx.fillRect(-T / 2, -T / 2, T, T);
+        }
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(224,168,58,.35)'; ctx.lineWidth = 2; ctx.setLineDash([10, 6]);
+        ctx.strokeRect(-T / 2 + 6, -T / 2 + 6, T - 12, T - 12); ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, -C * 0.1);
+        ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
+        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
+        // известные объекты
+        const icons = [];
+        g.spawnPoints.forEach((p) => { if (b.cells[p].tile === ti) icons.push('tok_spawn'); });
+        g.crates.forEach((c) => { if (!c.opened && b.cells[c.pos].tile === ti) icons.push('tok_crate'); });
+        if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
+        const s = C * 0.42;
+        icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
+        const n = g.zombies.filter((z) => b.cells[z.pos].tile === ti).length;
+        if (n) {
+          const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
+          ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);
+          ctx.fillStyle = 'rgba(120,10,6,.85)'; ctx.beginPath(); ctx.arc(0, 0, C * 0.3, 0, Math.PI * 2); ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = '#ff6a5a'; ctx.stroke();
+          ctx.fillStyle = '#fff'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
+          ctx.fillText('☠' + n, 0, 1);
+          ctx.restore();
+        }
+        ctx.restore();
+      });
+    }
+
     _drawZombie(ctx, e) {
       const g = this.g;
+      if (this.hiddenCell(e.cell) && !e.dying) return;
       const z = g.zombies.find((q) => q.uid === e.uid);
       const def = ZG.Zombies.get(e.type);
       let x = e.x, y = e.y;
@@ -803,6 +895,11 @@
       let x = e.x, y = e.y, alpha = h.hidden ? 0.45 : 1, scale = e.scale;
       if (e.evacT) { const k = (this.time - e.evacT) / 0.9; if (k > 1) return; y -= k * this.cell * 0.6; alpha = 1 - k; }
       if (e.fallT) { const k = (this.time - e.fallT) / 1; if (k > 1) return; scale *= 1 - k * 0.5; alpha = 1 - k; }
+      if (e.lunge) {
+        const lt = (this.time - e.lunge.t0) / 0.35;
+        if (lt >= 1) e.lunge = null;
+        else { const a = Math.sin(lt * Math.PI); x += (e.lunge.tx - x) * a * 0.35; y += (e.lunge.ty - y) * a * 0.35; }
+      }
       const hop = Math.sin((e.hop || 0) * Math.PI) * r * 0.45;
       const active = this.g.active === e.idx;
       ctx.save();

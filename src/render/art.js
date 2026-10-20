@@ -397,6 +397,29 @@
   Art.zombieHead = zombieHead;
 
   Object.keys(ICONS).forEach((k) => Art.define(k, iconArt(ICONS[k])));
+
+  // ------------------------------------------- значки базовых действий ---
+  const ACT = {
+    search(c, o) { circle(c, 44, 42, 20); strokeInk(c, 9, o.ink); c.beginPath(); c.moveTo(58, 56); c.lineTo(78, 76); strokeInk(c, 13, o.ink); if (!o.shadow) { circle(c, 44, 42, 14); c.fillStyle = 'rgba(200,230,255,.35)'; c.fill(); } },
+    punch: ICONS.fist,
+    barricade(c, o) { for (let i = 0; i < 3; i++) { c.save(); c.translate(50, 30 + i * 20); c.rotate((i - 1) * 0.12); rr(c, -38, -7, 76, 14, 3); fillInk(c, o.shadow ? o.ink : ['#a07a42', '#8a6a3a', '#a07a42'][i]); strokeInk(c, 3, o.ink); c.restore(); } c.fillStyle = o.ink; c.fillRect(26, 18, 6, 64); c.fillRect(68, 18, 6, 64); },
+    give(c, o) { c.beginPath(); c.moveTo(12, 40); c.lineTo(62, 40); c.lineTo(62, 28); c.lineTo(86, 48); c.lineTo(62, 68); c.lineTo(62, 56); c.lineTo(12, 56); c.closePath(); fillInk(c, o.ink); if (!o.shadow) { rr(c, 18, 70, 26, 18, 3); c.fillStyle = '#e8dcc0'; c.fill(); strokeInk(c, 2.5); } },
+    rest(c, o) { c.beginPath(); c.moveTo(50, 84); c.bezierCurveTo(10, 56, 14, 22, 36, 22); c.bezierCurveTo(44, 22, 50, 30, 50, 34); c.bezierCurveTo(50, 30, 56, 22, 64, 22); c.bezierCurveTo(86, 22, 90, 56, 50, 84); fillInk(c, o.shadow ? o.ink : '#c0392b'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.moveTo(24, 50); c.lineTo(38, 50); c.lineTo(44, 40); c.lineTo(52, 62); c.lineTo(58, 50); c.lineTo(76, 50); c.stroke(); } },
+    heal(c, o) { rr(c, 38, 14, 24, 72, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); rr(c, 14, 38, 72, 24, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(41, 17, 18, 66); c.fillRect(17, 41, 66, 18); } },
+    pickup(c, o) { rr(c, 20, 36, 60, 46, 4); fillInk(c, o.shadow ? o.ink : '#9a6a32'); strokeInk(c, 4, o.ink); c.beginPath(); c.moveTo(50, 8); c.lineTo(66, 26); c.lineTo(56, 26); c.lineTo(56, 40); c.lineTo(44, 40); c.lineTo(44, 26); c.lineTo(34, 26); c.closePath(); fillInk(c, o.ink); },
+    task(c, o) { poly(c, [50, 8, 61, 38, 94, 39, 68, 59, 77, 91, 50, 72, 23, 91, 32, 59, 6, 39, 39, 38]); fillInk(c, o.shadow ? o.ink : '#f0c040'); strokeInk(c, 4, o.ink); },
+    evac(c, o) { c.beginPath(); c.moveTo(50, 8); c.lineTo(80, 42); c.lineTo(62, 42); c.lineTo(62, 88); c.lineTo(38, 88); c.lineTo(38, 42); c.lineTo(20, 42); c.closePath(); fillInk(c, o.shadow ? o.ink : '#6fe08a'); strokeInk(c, 4, o.ink); },
+  };
+  Object.keys(ACT).forEach((k) => Art.define('act_' + k, (ctx, w, h) => {
+    const r = Math.min(w, h) / 2;
+    const g = ctx.createRadialGradient(w / 2, h * 0.38, r * 0.1, w / 2, h / 2, r);
+    g.addColorStop(0, '#5a4430'); g.addColorStop(1, '#1d1611');
+    ctx.beginPath(); ctx.arc(w / 2, h / 2, r * 0.96, 0, 7); ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = r * 0.08; ctx.strokeStyle = '#e0a83a'; ctx.stroke();
+    ctx.save(); ctx.translate(w * 0.2, h * 0.2);
+    Art.unit(ctx, w * 0.6, h * 0.6, (c) => { c.save(); c.translate(2.5, 3); c.globalAlpha = 0.4; ACT[k](c, { shadow: true, ink: '#000' }); c.restore(); ACT[k](c, { ink: '#e8dcc0' }); });
+    ctx.restore();
+  }));
   Art.ICONS = ICONS;
 
   Art.define('_missing', (ctx, w, h, o) => {

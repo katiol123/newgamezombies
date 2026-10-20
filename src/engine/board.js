@@ -126,7 +126,7 @@
   function isAdj(board, a, b) { return board.adj[a].includes(b); }
 
   // Линия видимости — по прямой (строка/столбец) через открытые проходы.
-  function lineCells(board, from, maxRange) {
+  function lineCells(board, from, maxRange, stop) {
     const out = [{ cell: from, dist: 0 }];
     const c0 = board.cells[from];
     [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
@@ -136,6 +136,7 @@
         if (x < 0 || y < 0 || x >= board.w || y >= board.h) break;
         const ni = y * board.w + x;
         if (!isAdj(board, prev, ni)) break;
+        if (stop && stop(ni)) break;
         out.push({ cell: ni, dist: d });
         prev = ni;
       }

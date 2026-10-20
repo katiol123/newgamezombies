@@ -35,7 +35,8 @@
       s += (z.dmg / d.hp) * d.threat * (d.big ? W.bigDmg : W.partDmg);
       if (d.dmg <= 0) return;
       const sp = z.suppressed ? 0 : E.zombieSpeed(g, z);
-      const dz = reach[z.pos] || (reach[z.pos] = E.dist(g, z.pos, noBarr));
+      if (E.hidden(g, z.pos)) return; // в тумане зомби не двигаются
+      const dz = reach[z.pos] || (reach[z.pos] = E.distV(g, z.pos, noBarr));
       let best = Infinity;
       targets.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
       if (best > sp) return;

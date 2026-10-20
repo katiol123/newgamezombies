@@ -23,6 +23,7 @@ function parseArgs() {
     else if (k === '--fast') o.fast = true;
     else if (k === '--seed') o.seed = a[++i];
     else if (k === '--json') o.json = true;
+    else if (k === '--nofog') o.fog = false;
   }
   return o;
 }
@@ -33,7 +34,7 @@ function runBatch(heroIds, o, tag) {
     const g = ZG.Engine.create({
       seed: `${o.seed}-${tag}-${i}`, quiet: true, difficultyId: o.difficulty,
       heroes: heroIds.map((id, k) => ({ id, player: (k % 2) + 1 })),
-      scenarioId: o.scenario || undefined, conditionId: o.condition || undefined,
+      scenarioId: o.scenario || undefined, conditionId: o.condition || undefined, fog: o.fog,
     });
     ZG.Bot.playGame(g, { depth2: !o.fast });
     res.games++;

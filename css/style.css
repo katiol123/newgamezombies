@@ -36,6 +36,10 @@ body {
 }
 body.busy .hand .card, body.busy .actions button, body.busy #btn-end { pointer-events: none; }
 button { font-family: inherit; cursor: pointer; }
+/* игровые элементы — не текст: без курсора-«I» и без выделения */
+.screen, .modal, .banner, .tooltip, .toast, .shutter, .chain-pop { cursor: default; user-select: none; -webkit-user-select: none; }
+.screen input, .rules-overlay { cursor: auto; user-select: text; }
+#board { cursor: pointer; }
 small { opacity: .75; }
 .muted { color: var(--muted); }
 
@@ -242,7 +246,7 @@ small { opacity: .75; }
 
 /* ------------------------------------------------------------ рука */
 .handbar {
-  grid-area: hand; display: grid; grid-template-columns: 230px 1fr 260px; gap: 10px; padding: 8px 14px;
+  grid-area: hand; display: grid; grid-template-columns: 210px 1fr 330px; gap: 10px; padding: 8px 14px;
   background: linear-gradient(#15100c, #0d0a08); border-top: 1px solid var(--line); position: relative;
 }
 .handbar::before { content: ''; position: absolute; left: 0; right: 0; top: -30px; height: 30px; background: linear-gradient(transparent, rgba(0,0,0,.5)); pointer-events: none; }
@@ -285,6 +289,20 @@ small { opacity: .75; }
 .chain-ribbon { position: absolute; top: 46%; left: -6px; right: -6px; text-align: center; font-family: var(--font-d); font-size: 13px; letter-spacing: .2em; color: #fff; background: var(--suit-c); transform: rotate(-8deg); box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
 .hand-right { display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
 .actions { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; align-content: flex-end; flex: 1; }
+.actions.icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 4px; align-content: end; justify-items: center; }
+.act-icon { position: relative; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 0; border: 0; background: none; color: var(--paper); font-family: var(--font-t); transition: transform .18s cubic-bezier(.3,1.6,.5,1), filter .25s, opacity .25s; }
+.act-icon img { width: 56px; height: 56px; border-radius: 50%; transition: box-shadow .25s; }
+.act-icon .ai-label { font-size: 12px; font-weight: 700; line-height: 1.05; text-align: center; max-width: 64px; }
+.act-icon .ai-cost { position: absolute; top: -3px; right: 2px; min-width: 22px; height: 20px; padding: 0 4px; border-radius: 10px; background: #e0a83a; color: var(--ink); font-family: var(--font-d); font-size: 11px; line-height: 20px; box-shadow: 0 2px 4px rgba(0,0,0,.6); }
+.act-icon.ok img { box-shadow: 0 0 0 2px rgba(240,192,64,.7), 0 0 16px rgba(240,192,64,.45); animation: iconPulse 2.2s infinite; }
+.act-icon.ok:hover { transform: translateY(-4px) scale(1.08); }
+.act-icon.ok:hover img { box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(240,192,64,.7); }
+.act-icon.off { filter: grayscale(1) brightness(.75); opacity: .5; cursor: help; }
+.act-icon.off .ai-cost { background: #6b6258; }
+.act-icon.sel img { box-shadow: 0 0 0 3px #fff, 0 0 26px rgba(255,255,255,.6); }
+.act-icon.gold .ai-label { color: var(--gold); }
+.act-icon.gold img { box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(240,192,64,.8); }
+@keyframes iconPulse { 50% { box-shadow: 0 0 0 2px rgba(240,192,64,.9), 0 0 24px rgba(240,192,64,.6); } }
 .act { font-family: var(--font-t); font-size: 14px; font-weight: 700; padding: 6px 9px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel2); color: var(--paper); transition: all .15s; }
 .act:hover:not(:disabled) { border-color: var(--amber); transform: translateY(-1px); }
 .act:disabled { opacity: .35; }

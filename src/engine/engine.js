@@ -65,6 +65,30 @@
   E.isComplete = (g) => E.scenario(g).isComplete(g);
   E.barricadeAt = (g, a, b) => g.barricades.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
   E.dist = (g, from, passable) => Board.bfs(g.board, from, passable);
+  // ---- Туман войны: закрытые тайлы ----
+  E.hidden = (g, cell) => !!g.revealed && !g.revealed[g.board.cells[cell].tile];
+  // расстояние только по открытым тайлам (то, что видят герои и зомби)
+  E.distV = (g, from, passable) => Board.bfs(g.board, from, (a, b) => !E.hidden(g, b) && (!passable || passable(a, b)));
+  E.line = (g, from, R) => Board.lineCells(g.board, from, R, (c) => E.hidden(g, c));
+  E.reveal = function (g, ti, why) {
+    if (!g.revealed || g.revealed[ti]) return;
+    g.revealed[ti] = true;
+    const def = ZG.Tiles.get(g.board.tiles[ti].id);
+    const n = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti).length;
+    E.log(g, `${why || 'Разведка'}: открыт тайл «${def.name}»${n ? ` — там ${n} ${ZG.util.plural(n, 'зомби', 'зомби', 'зомби')}!` : '.'}`, n ? 'bad' : 'info');
+    E.fx(g, { t: 'reveal', tile: ti, n });
+  };
+  // соседние зоны закрытых тайлов (по стороне), куда можно попробовать шагнуть
+  E.fogNeighbors = function (g, cell) {
+    const b = g.board, c = b.cells[cell], out = [];
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+      const x = c.x + dx, y = c.y + dy;
+      if (x < 0 || y < 0 || x >= b.w || y >= b.h) return;
+      const n = y * b.w + x;
+      if (E.hidden(g, n)) out.push(n);
+    });
+    return out;
+  };
   E.nearest = function (g, from, cells) {
     if (!cells.length) return null;
     const d = E.dist(g, from);
@@ -116,6 +140,8 @@
     });
 
     placeStartExit(g, level);
+    g.fog = opts.fog != null ? !!opts.fog : !!level.fog;
+    g.revealed = g.fog ? g.board.tiles.map((t, i) => i === tileOf(g, g.start) || i === tileOf(g, g.exit)) : null;
     // колоды
     Object.entries(level.loot).forEach(([id, n]) => { for (let i = 0; i < n; i++) g.lootDeck.push(id); });
     Rng.shuffle(g, g.lootDeck);
@@ -451,13 +477,14 @@
   }
 
   function moveZombieStep(g, z) {
+    if (E.hidden(g, z.pos)) return false; // в тумане зомби копятся у люка
     const targets = zombieTargets(g, z);
     if (!targets.length) return false;
     if (targets.some((t) => t.pos === z.pos)) return false;
     const noBarr = (a, b) => !E.barricadeAt(g, a, b);
-    let dz = E.dist(g, z.pos, noBarr);
+    let dz = E.distV(g, z.pos, noBarr);
     let viaBarricade = false;
-    if (!targets.some((t) => dz[t.pos] < Infinity)) { dz = E.dist(g, z.pos); viaBarricade = true; }
+    if (!targets.some((t) => dz[t.pos] < Infinity)) { dz = E.distV(g, z.pos); viaBarricade = true; }
     let best = null;
     targets.forEach((t) => {
       if (dz[t.pos] === Infinity) return;
@@ -473,7 +500,7 @@
       const a = g.board.tiles[tileOf(g, z.pos)], b = g.board.tiles[tileOf(g, best.pos)];
       if (Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) > 1) return false;
     }
-    const dt = E.dist(g, best.pos, viaBarricade ? null : noBarr);
+    const dt = E.distV(g, best.pos, viaBarricade ? null : noBarr);
     const next = g.board.adj[z.pos].find((n) => dt[n] === dt[z.pos] - 1 && (viaBarricade || noBarr(z.pos, n)));
     if (next == null) return false;
     const bar = E.barricadeAt(g, z.pos, next);
@@ -539,6 +566,15 @@
           const def = ZG.Zombies.get(z.type);
           if (def.hooks && def.hooks.zombiePhase) def.hooks.zombiePhase(g, z, E);
         });
+        // Прорыв: если в закрытом тайле скопилось много зомби — он открывается сам
+        if (g.revealed) {
+          const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
+          g.board.tiles.forEach((t, ti) => {
+            if (g.revealed[ti]) return;
+            const n = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && !ZG.Zombies.get(z.type).immobile).length;
+            if (n >= lim) E.reveal(g, ti, 'Прорыв орды');
+          });
+        }
         zs.step = 'spawn';
       } else if (zs.step === 'spawn') {
         const th = E.alarmThreshold(g);
@@ -725,33 +761,33 @@
       case 'zombie': {
         if (spec.range === 0 && !spec.ranged) return E.zombiesAt(g, h.pos).map((z) => z.uid);
         const R = E.rangeOf(g, h, spec);
-        const cells = Board.lineCells(b, h.pos, R).filter((c) => c.dist >= (spec.min || 0)).map((c) => c.cell);
+        const cells = E.line(g, h.pos, R).filter((c) => c.dist >= (spec.min || 0)).map((c) => c.cell);
         return g.zombies.filter((z) => cells.includes(z.pos)).map((z) => z.uid);
       }
       case 'zone': {
         const R = E.rangeOf(g, h, spec);
-        return Board.lineCells(b, h.pos, R).filter((c) => c.dist >= (spec.min || 0) && E.zombiesAt(g, c.cell).length).map((c) => c.cell);
+        return E.line(g, h.pos, R).filter((c) => c.dist >= (spec.min || 0) && E.zombiesAt(g, c.cell).length).map((c) => c.cell);
       }
       case 'move': {
         const pass = heroPass(g, h, spec.through);
-        const d = E.dist(g, h.pos, pass);
+        const d = E.distV(g, h.pos, pass);
         return b.cells.filter((c) => d[c.i] >= 1 && d[c.i] <= spec.steps).map((c) => c.i);
       }
       case 'hero': {
-        const d = E.dist(g, h.pos);
+        const d = E.distV(g, h.pos);
         return g.heroes.filter((o) => o.onBoard && d[o.pos] <= spec.range && (spec.self || o !== h) && (!spec.wounded || E.woundCount(g, o) > 0)).map((o) => o.idx);
       }
       case 'cell': {
-        const d = E.dist(g, h.pos);
+        const d = E.distV(g, h.pos);
         return b.cells.filter((c) => d[c.i] >= 1 && d[c.i] <= spec.range).map((c) => c.i);
       }
       case 'adj': {
         if (g.traps.length >= MAX_TRAPS) return [];
-        return [h.pos].concat(b.adj[h.pos]).filter((c) => !g.traps.some((t) => t.pos === c));
+        return [h.pos].concat(b.adj[h.pos]).filter((c) => !E.hidden(g, c) && !g.traps.some((t) => t.pos === c));
       }
       case 'edge': {
         if (g.barricades.length >= MAX_BARRICADES) return [];
-        return b.adj[h.pos].filter((n) => !E.barricadeAt(g, h.pos, n));
+        return b.adj[h.pos].filter((n) => !E.hidden(g, n) && !E.barricadeAt(g, h.pos, n));
       }
       default: return [];
     }
@@ -804,7 +840,8 @@
       E.targetsFor(g, h, def).forEach((t) => out.push({ t: 'play', card: uid, target: t }));
     });
     // базовые
-    g.board.adj[h.pos].forEach((n) => { if (moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n }); });
+    g.board.adj[h.pos].forEach((n) => { if (!E.hidden(g, n) && moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n }); });
+    E.fogNeighbors(g, h.pos).forEach((n) => { if (moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n, explore: true }); });
     if (searchableHere(g, h) && searchCost(g, h) <= h.energy) out.push({ t: 'search' });
     if (h.energy >= 1) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
     if (h.energy >= 1 && g.drops.some((d) => d.pos === h.pos)) out.push({ t: 'pickup' });
@@ -878,11 +915,21 @@
       case 'end': endTurn(g); return true;
       case 'play': return playCard(g, h, a.card, a.target);
       case 'move': {
-        if (!g.board.adj[h.pos].includes(a.to)) return fail(g, 'Туда не пройти.');
+        const explore = E.hidden(g, a.to) && E.fogNeighbors(g, h.pos).includes(a.to);
+        if (!explore && (!g.board.adj[h.pos].includes(a.to) || E.hidden(g, a.to))) return fail(g, 'Туда не пройти.');
         const c = moveCost(g, h, a.to);
         if (c > h.energy) return fail(g, 'Не хватает энергии.');
         spend(g, h, c);
         g.turn.moves++;
+        if (explore) {
+          // разведка: открываем тайл; если путь перекрыт — герой остаётся на месте
+          E.reveal(g, g.board.cells[a.to].tile, `${E.heroName(h)} разведывает квартал`);
+          if (!g.board.adj[h.pos].includes(a.to)) {
+            E.log(g, 'За поворотом — стена. Пройти здесь нельзя.', 'warn');
+            E.fx(g, { t: 'bump', hero: h.idx, pos: h.pos, to: a.to });
+            return true;
+          }
+        }
         moveHero(g, h, a.to);
         return true;
       }
@@ -1141,7 +1188,7 @@
       },
       pull(radius) {
         const open = (a, b) => !E.barricadeAt(g, a, b);
-        const d = E.dist(g, h.pos, open);
+        const d = E.distV(g, h.pos, open);
         g.zombies.slice().forEach((z) => {
           if (!g.zombies.includes(z) || d[z.pos] === 0 || d[z.pos] > radius || ZG.Zombies.get(z.type).immobile) return;
           const next = g.board.adj[z.pos].find((n) => d[n] === d[z.pos] - 1 && open(z.pos, n));

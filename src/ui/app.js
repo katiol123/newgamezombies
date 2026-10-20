@@ -716,6 +716,7 @@
       const h = g.active != null ? g.heroes[g.active] : null;
       $('#btn-end').disabled = !h;
       $('#btn-hint').disabled = !h; $('#btn-auto').disabled = !h;
+      bar.classList.toggle('icons', !!h && g.phase === 'heroes');
       if (!h || g.phase !== 'heroes') {
         if (g.phase === 'heroes' && g.active == null) {
           g.heroes.filter((x) => x.onBoard && !x.acted).forEach((x) => {
@@ -728,31 +729,41 @@
       }
       const legal = E.legal(g);
       const has = (t) => legal.some((a) => a.t === t);
-      const btn = (label, cost, enabled, onclick, title, cls) => {
-        const b = el('button', 'act' + (cls ? ' ' + cls : ''), `${label}${cost != null ? `<span class="cost">${cost}⚡</span>` : ''}`);
-        b.disabled = !enabled;
-        if (title) b.title = title;
-        b.onclick = onclick;
+      const zHere = E.zombiesAt(g, h.pos).length;
+      // крупный значок: подсвечен, если доступен; затемнён с объяснением, если нет
+      const icon = (key, label, cost, ok, why, onclick, extra) => {
+        const b = el('button', 'act-icon' + (ok ? ' ok' : ' off') + (extra || ''));
+        const im = el('img'); im.src = CV.artURL('act_' + key, 112, 112, {}); im.alt = '';
+        b.appendChild(im);
+        b.appendChild(el('span', 'ai-label', label));
+        if (cost != null) b.appendChild(el('span', 'ai-cost', cost + '⚡'));
+        b.title = ok ? label + (cost != null ? ` (${cost} ⚡)` : '') : `${label}: ${why}`;
+        b.onclick = () => { if (ok) onclick(); else toast(`${label}: ${why}`); };
         bar.appendChild(b);
-        return b;
       };
-      const searchHere = g.crates.some((c) => c.pos === h.pos && !c.opened) || g.search.some((s) => s.pos === h.pos);
-      if (searchHere) btn('🔍 Обыск', E.searchCost(g, h), has('search'), () => this.act({ t: 'search' }), E.zombiesAt(g, h.pos).length ? 'Нельзя обыскивать, пока в зоне есть зомби' : 'Взять карту добычи / вскрыть ящик');
-      if (E.zombiesAt(g, h.pos).length) btn('✊ Кулак', 1, has('punch'), () => this.selectMode('punch'), '1 урон зомби в своей зоне', this.sel && this.sel.mode === 'punch' ? 'on' : '');
-      btn('🪵 Баррикада', E.barricadeCost(g, h), has('barricade'), () => this.selectMode('barricade'), 'Перекрыть проход в соседнюю зону. Зомби ломают её ударами.', this.sel && this.sel.mode === 'barricade' ? 'on' : '');
+      const lack = (c) => `нужно ${c} ⚡ (осталось ${h.energy})`;
+      const sc = E.searchCost(g, h);
+      const searchHere = E.searchableHere(g, h) || g.crates.some((c) => c.pos === h.pos && !c.opened) || g.search.some((s) => s.pos === h.pos);
+      icon('search', 'Обыск', sc, has('search'), !searchHere ? 'в этой зоне нечего обыскивать' : zHere ? 'мешают зомби в зоне' : lack(sc), () => this.act({ t: 'search' }));
+      icon('punch', 'Кулак', 1, has('punch'), !zHere ? 'в зоне нет зомби' : lack(1), () => this.selectMode('punch'), this.sel && this.sel.mode === 'punch' ? ' sel' : '');
+      const bc = E.barricadeCost(g, h);
+      icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
+      const gives = legal.filter((a) => a.t === 'give');
+      icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : 'рядом нет другого героя', () => this.giveDialog());
+      const wHand = h.hand.some((u) => g.cards[u] === 'wound');
+      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
       if (ZG.Mods.flag(g, h, 'healAction')) {
         const hl = legal.filter((a) => a.t === 'heal');
-        btn('✚ Лечить', 1, hl.length > 0, async () => {
+        icon('heal', 'Лечить', 1, hl.length > 0, g.turn.healUsed >= ZG.Mods.value(g, h, 'healAction', 0) ? 'уже лечили в этот ход' : h.energy < 1 ? lack(1) : 'рядом нет раненых', async () => {
           const opts = hl.map((a) => a.hero);
           const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
           if (i != null) this.act({ t: 'heal', hero: i });
-        }, 'Убрать 1 Рану из руки героя в своей зоне (раз за ход)');
+        });
       }
-      if (h.hand.some((u) => g.cards[u] === 'wound')) btn('😮‍💨 Отдышаться', 3, has('rest'), () => this.act({ t: 'rest' }), 'Весь ход: убрать 1 Рану из руки (нельзя, если рядом зомби)');
-      if (legal.some((a) => a.t === 'give')) btn('🤝 Передать', 0, true, () => this.giveDialog(), 'Передать карту герою в своей зоне (раз за ход)');
-      if (has('pickup')) btn('📦 Подобрать', 1, true, () => this.act({ t: 'pickup' }));
-      legal.filter((a) => a.t === 'scenario').forEach((a) => btn('★ ' + esc(a.label), a.cost, true, () => this.act(a), null, 'gold'));
-      if (has('evac')) btn('🚁 Эвакуация', 0, true, () => this.act({ t: 'evac' }), 'Герой покидает поле и спасён', 'gold');
+      if (g.drops.length) icon('pickup', 'Подобрать', 1, has('pickup'), 'в зоне нет брошенного груза', () => this.act({ t: 'pickup' }));
+      const sa = legal.filter((a) => a.t === 'scenario');
+      sa.forEach((a) => icon('task', a.label, a.cost, true, '', () => this.act(a), ' gold'));
+      if (E.isComplete(g)) icon('evac', 'Эвакуация', 0, has('evac'), 'дойдите до зоны выхода', () => this.act({ t: 'evac' }), ' gold');
     },
 
     async giveDialog() {

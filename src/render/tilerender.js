@@ -260,8 +260,13 @@
     b.tiles.forEach((p) => {
       const def = ZG.Tiles.get(p.id);
       const x = pad + p.tx * 3 * C, y = pad + p.ty * 3 * C;
-      ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, 3 * C - 2, 3 * C - 2);
-      ctx.strokeStyle = 'rgba(255,240,210,.08)'; ctx.lineWidth = 1; ctx.strokeRect(x + 3, y + 3, 3 * C - 6, 3 * C - 6);
+      // Стык тайлов — не преграда: тонкая светлая линия и уголки. Непроходимы только стены (чёрные).
+      ctx.strokeStyle = 'rgba(232,220,192,.10)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, 3 * C - 1, 3 * C - 1);
+      ctx.strokeStyle = 'rgba(232,220,192,.45)'; ctx.lineWidth = 2;
+      const L = C * 0.14;
+      [[x, y, 1, 1], [x + 3 * C, y, -1, 1], [x, y + 3 * C, 1, -1], [x + 3 * C, y + 3 * C, -1, -1]].forEach(([cx, cy, dx, dy]) => {
+        ctx.beginPath(); ctx.moveTo(cx + dx * L, cy + dy * 2); ctx.lineTo(cx + dx * 2, cy + dy * 2); ctx.lineTo(cx + dx * 2, cy + dy * L); ctx.stroke();
+      });
       if (opts.labels !== false) {
         ctx.save();
         ctx.font = `bold ${Math.max(8, Math.round(C * 0.085))}px 'Russo One', sans-serif`;
