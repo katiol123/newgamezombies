@@ -249,6 +249,11 @@
       const c = b.cells.filter((x) => x.tile === m.i && x.type === 'building');
       if (c.length) return (c.find((x) => x.tileSearch) || c[0]).i;
     }
+    // в среднем столбце нет зданий — тайлы справа налево (кроме стартового)
+    for (const ti of tilesByColumn(g, [tileOf(g, g.start)])) {
+      const c = b.cells.filter((x) => x.tile === ti && x.type === 'building');
+      if (c.length) return (c.find((x) => x.tileSearch) || c[0]).i;
+    }
     return b.cells.find((x) => x.type === 'building').i;
   };
   // Гнёзда: в центре тайлов, начиная с правого столбца (центр непроходим — соседняя зона)
