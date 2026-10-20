@@ -86,6 +86,15 @@
         card.dataset.hero = h.id;
         const badge = el('div', 'pick-badge');
         card.appendChild(badge);
+        // переключатель «Игрок / ИИ» для взятого героя
+        const aiBtn = el('button', 'ai-toggle', '🎮 Игрок');
+        aiBtn.title = 'Кто управляет героем: вы или ИИ';
+        aiBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          const x = s.heroes.find((q) => q.id === h.id);
+          if (x) { x.ai = !x.ai; this.renderSetup(); }
+        };
+        card.appendChild(aiBtn);
         card.onclick = () => {
           const idx = s.heroes.findIndex((x) => x.id === h.id);
           if (idx < 0) {
@@ -132,11 +141,11 @@
       $('#btn-setup-back').onclick = () => this.show('menu');
       $('#btn-start').onclick = () => {
         if (!s.heroes.length) return toast('Выберите хотя бы одного героя.');
-        if (s.players === 2 && (!s.heroes.some((h) => h.player === 1) || !s.heroes.some((h) => h.player === 2))) return toast('У каждого игрока должен быть герой.');
+        if (s.players === 2 && (!s.heroes.some((h) => h.player === 1 && !h.ai) || !s.heroes.some((h) => h.player === 2 && !h.ai))) return toast('У каждого игрока должен быть хотя бы один герой не под ИИ.');
         store.set('setup', s);
         Game.start({
           seed: s.seed || String(Math.floor(Math.random() * 1e9)),
-          heroes: s.heroes.map((h) => ({ id: h.id, player: h.player })),
+          heroes: s.heroes.map((h) => ({ id: h.id, player: h.player, ai: !!h.ai })),
           scenarioId: s.scenario === 'random' ? undefined : s.scenario,
           conditionId: s.condition === 'random' ? undefined : s.condition,
           difficultyId: s.difficulty,
@@ -154,14 +163,17 @@
         const h = s.heroes.find((x) => x.id === c.dataset.hero);
         c.classList.toggle('picked', !!h);
         c.classList.toggle('p2', !!h && h.player === 2);
-        $('.pick-badge', c).textContent = h ? (s.players === 2 ? 'ИГРОК ' + h.player : 'В ОТРЯДЕ') : '';
+        $('.pick-badge', c).textContent = h ? (h.ai ? 'ИИ' : s.players === 2 ? 'ИГРОК ' + h.player : 'В ОТРЯДЕ') : '';
+        c.classList.toggle('ai', !!h && !!h.ai);
+        $('.ai-toggle', c).textContent = h && h.ai ? '🤖 ИИ' : '🎮 Игрок';
       });
       ['scenario', 'condition', 'difficulty'].forEach((k) => $$(`#setup-${k} .chip`).forEach((b) => b.classList.toggle('on', b.dataset.v === s[k])));
       const n = s.heroes.length;
       $('#setup-hint').innerHTML = n === 0 ? 'Выберите героев (1–4). Рекомендуется 2.'
         : `Отряд: <b>${s.heroes.map((h) => ZG.Heroes.get(h.id).name + (s.players === 2 ? ` (И${h.player})` : '')).join(', ')}</b>. ` +
           (n === 1 ? 'Соло: один люк и «Одиночка» (+1 к руке).' : n >= 3 ? 'Больше героев — больше точек появления.' : 'Отличный размер отряда.') +
-          (s.players === 2 ? ' <i>Клик по герою переключает игрока.</i>' : '');
+          (s.players === 2 ? ' <i>Клик по герою переключает игрока.</i>' : '') +
+        ` <i>Кнопка «🎮/🤖» на карточке — отдать героя ИИ${s.heroes.length && s.heroes.every((x) => x.ai) ? ' (все герои под ИИ — режим наблюдения)' : ''}.</i>`;
       const scen = s.scenario === 'random' ? null : ZG.Scenarios.get(s.scenario);
       $('#setup-scen-desc').textContent = scen ? scen.brief : 'Задание выпадет случайно: 4 варианта целей.';
       const cond = s.condition === 'random' ? null : ZG.Conditions.get(s.condition);
@@ -192,6 +204,13 @@
         this.view.speed = sp;
         $('#btn-speed').textContent = '×' + sp;
       };
+      const pb = $('#btn-pause');
+      pb.onclick = () => {
+        this.paused = !this.paused;
+        pb.textContent = this.paused ? '▶' : '⏸';
+        pb.title = this.paused ? 'Продолжить ИИ' : 'Пауза ИИ';
+        if (!this.paused) { this.setHelp(null); this.maybeAutoBegin(); }
+      };
       const sb = $('#btn-sound');
       const showSound = () => { sb.textContent = ZG.Sound.muted ? '🔇' : '🔊'; sb.title = ZG.Sound.muted ? 'Звук выключен' : 'Звук включён'; };
       showSound();
@@ -209,6 +228,9 @@
       this.logSeen = 0;
       this.lastPlayer = null;
       $('#log').innerHTML = '';
+      this.paused = false;
+      $('#btn-pause').textContent = '⏸';
+      $('#btn-pause').style.display = opts.heroes.some((h) => h.ai) ? '' : 'none';
       App.show('game', 'shutter').then(() => this.afterShow(true));
     },
 
@@ -217,7 +239,7 @@
         const g = save.g;
         const level = ZG.Levels.get(g.levelId);
         // поле детерминированно восстанавливается из сида
-        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
+        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
         g.board = tmp.board;
         g.fx = []; g.log = g.log || [];
         this.g = g;
@@ -295,14 +317,47 @@
       const g = this.g;
       if (!g || g.result || g.pending || g.phase !== 'heroes' || g.active != null) return;
       const ready = g.heroes.filter((h) => h.onBoard && !h.acted);
+      const human = ready.filter((h) => !h.ai);
+      // ИИ-герои ходят сами, когда люди уже походили (или людей в отряде нет)
+      if (!human.length && ready.length) { this.runAI(); return; }
       if (ready.length === 1) this.act({ t: 'begin', hero: ready[0].idx });
       else this.refresh();
+    },
+
+    // Ход героя под управлением ИИ (тот же бот, что в симуляторе)
+    async runAI(heroIdx) {
+      const g = this.g;
+      if (this.aiRunning || !g || g.result || this.busy) return;
+      if (this.paused) { this.setHelp('⏸ Пауза — ИИ ждёт. Нажмите ▶ в верхней панели.'); return; }
+      this.aiRunning = true;
+      try {
+        if (g.phase === 'heroes' && g.active == null) {
+          let h = heroIdx != null ? g.heroes[heroIdx] : null;
+          if (!h) {
+            const ready = g.heroes.filter((x) => x.onBoard && !x.acted && x.ai);
+            ready.sort((a, b) => E.zombiesAt(g, b.pos).length - E.zombiesAt(g, a.pos).length || a.idx - b.idx);
+            h = ready[0];
+          }
+          if (!h) return;
+          await sleep(350 / this.view.speed);
+          await this.act({ t: 'begin', hero: h.idx });
+        }
+        if (g.active != null && g.heroes[g.active].ai) await this.autoTurn(true);
+      } finally { this.aiRunning = false; }
+      if (g.phase === 'heroes' && g.active == null && !g.result) this.maybeAutoBegin();
     },
 
     async handlePending() {
       const g = this.g;
       const p = g.pending;
       if (!p) return;
+      // решения ИИ-героя принимает бот
+      if (g.heroes[p.hero] && g.heroes[p.hero].ai) {
+        await sleep(300 / this.view.speed);
+        if (p.type === 'block') return this.act({ t: 'block', cards: ZG.Bot.chooseBlock(g, p) });
+        if (p.type === 'loot') return this.act({ t: 'loot', id: ZG.Bot.chooseLoot(g, p) });
+        if (p.type === 'talent') return this.act({ t: 'talent', id: ZG.Bot.chooseTalent(g, p) });
+      }
       if (p.type === 'block') {
         const cards = await Modal.block(g, p);
         await this.act({ t: 'block', cards });
@@ -509,9 +564,10 @@
       } else if (a.t === 'move') { this.view.setHighlights({ cells: [a.to], stroke: '#6fe08a', color: 'rgba(110,224,138,.2)' }); setTimeout(() => this.applyHighlights(), 2500); }
     },
 
-    async autoTurn() {
+    async autoTurn(fromAI) {
       const g = this.g;
       if (!g || this.busy || g.phase !== 'heroes') return;
+      if (!fromAI && this.aiRunning) return;
       if (g.active == null) return toast('Сначала выберите героя.');
       const idx = g.active;
       for (let i = 0; i < 25 && g.active === idx && !g.result && !g.pending; i++) {
@@ -519,9 +575,14 @@
         if (!a) break;
         const cardEl = a.t === 'play' ? $(`#hand .card[data-uid="${a.card}"]`) : null;
         await this.act(a, { cardEl });
-        await sleep(150);
+        await sleep(fromAI ? 380 / this.view.speed : 150);
+        if (this.paused && fromAI) { await this.waitUnpause(); }
       }
       if (g.active === idx && !g.pending) await this.act({ t: 'end' });
+    },
+
+    waitUnpause() {
+      return new Promise((res) => { const t = setInterval(() => { if (!this.paused) { clearInterval(t); res(); } }, 200); });
     },
 
     showPile(which) {
@@ -569,6 +630,8 @@
       if (g.phase === 'heroes' && g.active == null) {
         const ready = g.heroes.filter((h) => h.onBoard && !h.acted);
         html = ready.length ? 'Выберите героя, который ходит следующим: клик по портрету справа или фишке на поле.' : '';
+      } else if (g.active != null && g.heroes[g.active].ai) {
+        html = `🤖 Ходит ИИ: ${esc(E.heroName(g.heroes[g.active]))}. Скорость — кнопка ×1/×2/×3, пауза — ⏸.`;
       } else if (g.active != null) {
         html = 'Сыграйте карты или кликните по соседней зоне, чтобы пойти. Карты со щитом, оставшиеся в руке, защитят в фазу зомби.';
       } else if (g.phase === 'zombies') html = 'Ход зомби…';
@@ -648,7 +711,7 @@
         const status = h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
-          <div class="hp-name">${esc(def.name)} <small>${this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
+          <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
           <div class="hp-pips" title="Стойкость: ${hp - w} из ${hp}">${pips.join('')}</div>
           <div class="hp-meta">
             <span title="Опыт / уровень">★ ${h.xp}${xpNext ? '/' + xpNext : ''} · ур.${h.level}</span>
@@ -662,7 +725,7 @@
           ${h.equip.length ? `<div class="hp-equip">${h.equip.map((u) => esc(E.cardDef(g, u).name)).join(' · ')}</div>` : ''}`;
         c.appendChild(info);
         c.onclick = () => {
-          if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) this.act({ t: 'begin', hero: h.idx });
+          if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) { if (h.ai) this.runAI(h.idx); else this.act({ t: 'begin', hero: h.idx }); }
           else Modal.heroInfo(h.id, h);
         };
         box.appendChild(c);
@@ -740,14 +803,16 @@
       const bar = $('#actions');
       bar.innerHTML = '';
       const h = g.active != null ? g.heroes[g.active] : null;
-      $('#btn-end').disabled = !h;
+      const aiTurn = !!h && h.ai;
+      document.body.classList.toggle('ai-turn', aiTurn);
+      $('#btn-end').disabled = !h || aiTurn;
       $('#btn-hint').disabled = !h; $('#btn-auto').disabled = !h;
       bar.classList.toggle('icons', !!h && g.phase === 'heroes');
       if (!h || g.phase !== 'heroes') {
         if (g.phase === 'heroes' && g.active == null) {
           g.heroes.filter((x) => x.onBoard && !x.acted).forEach((x) => {
-            const b = el('button', 'act big', `▶ Ход: ${esc(E.heroName(x))}`);
-            b.onclick = () => this.act({ t: 'begin', hero: x.idx });
+            const b = el('button', 'act big' + (x.ai ? ' ai' : ''), x.ai ? `🤖 Ход ИИ: ${esc(E.heroName(x))}` : `▶ Ход: ${esc(E.heroName(x))}`);
+            b.onclick = () => (x.ai ? this.runAI(x.idx) : this.act({ t: 'begin', hero: x.idx }));
             bar.appendChild(b);
           });
         }
@@ -844,8 +909,8 @@
         <div><b>${st.waves}</b><span>волн</span></div>
         <div><b>${st.searches}</b><span>обысков</span></div>`;
       $('#end-seed').textContent = `Сид: ${g.seed} · ${E.scenario(g).name} · ${ZG.Conditions.get(g.conditionId).name} · ${ZG.Difficulties.get(g.difficultyId).name}`;
-      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), difficultyId: g.difficultyId, fog: g.fog, players: this.players });
-      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, players: this.players });
+      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, players: this.players });
+      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
       App.show('end');
     },
@@ -867,7 +932,7 @@
       const h = this.g.heroes[ev.hero];
       this.refresh();
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
-      if (this.players === 2 && this.lastPlayer !== h.player) {
+      if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
         this.lastPlayer = h.player;
         await Banner.show('ИГРОК ' + h.player, 'ход: ' + E.heroName(h), 'player');
       }

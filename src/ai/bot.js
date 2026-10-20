@@ -129,13 +129,16 @@
       const p = g.pending;
       if (p.type === 'block') E.act(g, { t: 'block', cards: chooseBlock(g, p) });
       else if (p.type === 'loot') E.act(g, { t: 'loot', id: chooseLoot(g, p) });
-      else if (p.type === 'talent') {
-        let best = p.options[0], bv = -Infinity;
-        p.options.forEach((id) => { const c = E.clone(g); E.act(c, { t: 'talent', id }); const v = evaluate(c) + ZG.Rng.next(g) * 4; if (v > bv) { bv = v; best = id; } });
-        E.act(g, { t: 'talent', id: best });
-      }
+      else if (p.type === 'talent') E.act(g, { t: 'talent', id: chooseTalent(g, p) });
       else break;
     }
+  }
+
+  // талант — по оценке позиции (с небольшим случайным разбросом, без изменения ГСЧ партии)
+  function chooseTalent(g, p) {
+    let best = p.options[0], bv = -Infinity;
+    p.options.forEach((id, i) => { const c = E.clone(g); E.act(c, { t: 'talent', id }); const v = evaluate(c) + ((g.round * 7 + i * 13) % 5); if (v > bv) { bv = v; best = id; } });
+    return best;
   }
 
   function chooseLoot(g, p) {
@@ -234,5 +237,5 @@
     return g;
   }
 
-  ZG.Bot = { evaluate, bestAction, playTurn, playGame, chooseBlock, chooseLoot, autoPending };
+  ZG.Bot = { evaluate, bestAction, playTurn, playGame, chooseBlock, chooseLoot, chooseTalent, autoPending };
 })(typeof globalThis !== 'undefined' ? globalThis : window);
