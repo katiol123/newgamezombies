@@ -189,8 +189,8 @@ small { opacity: .75; }
 
 .board-wrap { grid-area: board; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: radial-gradient(ellipse at center, #1a1410, #080605); }
 #board { display: block; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.8), 0 0 0 1px #2a2018; cursor: pointer; }
-.help-line { position: absolute; left: 50%; top: 10px; transform: translate(-50%, -20px); opacity: 0; max-width: 80%; text-align: center; padding: 7px 16px; border-radius: 20px; background: rgba(13,10,8,.88); border: 1px solid var(--line); font-family: var(--font-t); font-size: 15px; pointer-events: none; transition: all .3s; }
-.help-line.show { opacity: 1; transform: translate(-50%, 0); }
+.help-line { flex: 1; min-width: 0; text-align: center; padding: 5px 14px; border-radius: 16px; font-family: var(--font-t); font-size: 15px; line-height: 1.2; color: var(--paper2); opacity: 0; transition: opacity .3s, background .3s; max-height: 44px; overflow: hidden; }
+.help-line.show { opacity: 1; background: rgba(240,192,64,.07); border: 1px solid rgba(240,192,64,.18); }
 
 .side { grid-area: side; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: linear-gradient(90deg, #120e0b, #17120e); border-left: 1px solid var(--line); overflow: hidden; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
@@ -333,7 +333,8 @@ small { opacity: .75; }
 .card:hover .card-gloss { background-position: -60% 0; }
 .card.small { --card-w: 104px; --card-h: 148px; }
 .card.small .card-text { font-size: 10px; }
-.card.small .card-name { font-size: 10px; }
+.card.small .card-name { font-size: 10px; overflow-wrap: normal; word-break: keep-all; }
+.card.small .card-name.long { font-size: 8.5px; }
 .card.zoomed { --card-w: 280px; --card-h: 400px; }
 .card.zoomed .card-name { font-size: 22px; } .card.zoomed .card-text { font-size: 18px; } .card.zoomed .card-type { font-size: 14px; }
 .card.zoomed .card-cost { width: 40px; height: 40px; font-size: 22px; } .card.zoomed .card-suit { width: 34px; height: 34px; }
@@ -376,6 +377,7 @@ small { opacity: .75; }
 .scen-name { font-family: var(--font-d); font-size: 22px; margin: 4px 0 8px; }
 .scen-brief { color: var(--paper2); font-size: 14px; }
 .scen-short { margin-top: 10px; font-weight: 700; color: var(--gold); padding-right: 50px; }
+.scen-setup { margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: rgba(0,0,0,.25); font-size: 13px; color: var(--paper); }
 .scen-exit { position: absolute; right: 10px; bottom: 10px; width: 40px; }
 .talent-pick { display: flex; gap: 16px; justify-content: center; margin-top: 10px; }
 .talent-card { width: 220px; min-height: 150px; padding: 16px; border-radius: 10px; cursor: pointer; background: linear-gradient(160deg, #4a3a14, #1d160e); border: 2px solid var(--gold); transition: transform .2s, box-shadow .2s; animation: talentIn .5s cubic-bezier(.3,1.5,.5,1) both; }

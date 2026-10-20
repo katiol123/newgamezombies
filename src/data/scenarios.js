@@ -50,7 +50,7 @@
 
   ZG.Scenarios.addAll([
     {
-      id: 'fuel', name: 'Бензин на исходе', short: 'Найди 2 канистры и заправь машину.',
+      setupText: 'Ящики: 4, с канистрами: 2. Выход — Машина.', id: 'fuel', name: 'Бензин на исходе', short: 'Найди 2 канистры и заправь машину.',
       brief: 'Машина на краю квартала заглохла. В округе спрятаны канистры — но не во всех ящиках бензин.',
       crates: 4, real: 2, cargo: 'cargo_fuel', exitLabel: 'Машина', exitArt: 'exit_car',
       setup(g, E) { g.obj = { delivered: 0, need: 2 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
@@ -67,7 +67,7 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
+      setupText: 'Ящики: 5, с медикаментами: 4 (нужно 3). Выход — Скорая.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
       brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, в четырёх — медикаменты; нужно три.',
       crates: 5, real: 4, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
       setup(g, E) { g.obj = { delivered: 0, need: 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
@@ -84,7 +84,7 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
+      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца. Выход — Вертолёт.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
@@ -138,7 +138,7 @@
       progress(g) { return (g.obj.on ? 2 : cargoInHands(g, this.cargo)) + g.obj.transmit * 1.5; },
     },
     {
-      id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь 2 гнезда и уходи.',
+      setupText: 'Гнёзда: 2 (центры тайлов правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь 2 гнезда и уходи.',
       brief: 'Зараза разрастается из гнёзд. Пока они живы, квартал не очистить. Гнёзда сами порождают мертвецов.',
       exitLabel: 'Пикап', exitArt: 'exit_car',
       setup(g, E) { g.obj = { nests: 2 }; E.placeNests(g, 2); },
@@ -184,11 +184,11 @@
   // Одна карта тянется в начале партии. check(g) проверяется при победе.
   ZG.Bonuses.addAll([
     { id: 'quiet', name: 'Тише воды', text: 'Победить, не вызвав ни одной Волны.', check: (g) => g.stats.waves === 0, progress: (g) => `волн: ${g.stats.waves}` },
-    { id: 'hunter', name: 'Охотник', text: 'Убить 15 зомби.', check: (g) => g.stats.kills >= 15, progress: (g) => `${g.stats.kills}/15` },
-    { id: 'scavenger', name: 'Мародёр', text: 'Сделать 6 Обысков.', check: (g) => g.stats.searches >= 6, progress: (g) => `${g.stats.searches}/6` },
+    { track: 'Счётчик: +1 за каждого убитого зомби.', id: 'hunter', name: 'Охотник', text: 'Убить 15 зомби.', check: (g) => g.stats.kills >= 15, progress: (g) => `${g.stats.kills}/15` },
+    { track: 'Счётчик: +1 за каждый Обыск.', id: 'scavenger', name: 'Мародёр', text: 'Сделать 6 Обысков.', check: (g) => g.stats.searches >= 6, progress: (g) => `${g.stats.searches}/6` },
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
-    { id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
-    { id: 'unscathed', name: 'Ни царапины', text: 'Получить за партию не больше 4 Ран на весь отряд.', check: (g) => g.stats.wounds <= 4, progress: (g) => `ран: ${g.stats.wounds}/4` },
+    { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
+    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Получить за партию не больше 4 Ран на весь отряд.', check: (g) => g.stats.wounds <= 4, progress: (g) => `ран: ${g.stats.wounds}/4` },
     { id: 'biggame', name: 'Крупная дичь', text: 'Убить 3 Толстяков или Громилу.', check: (g) => (g.stats.killsBy.fatso || 0) >= 3 || (g.stats.killsBy.brute || 0) >= 1, progress: (g) => `толстяков ${g.stats.killsBy.fatso || 0}/3, громил ${g.stats.killsBy.brute || 0}/1` },
   ]);
 

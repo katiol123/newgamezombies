@@ -118,7 +118,7 @@
   const wc = document.createElement('div'); wc.className = 'wide-cards';
   lvl.scenarios.forEach((id) => wc.appendChild(CV.scenarioCard(id)));
   lvl.conditions.forEach((id) => wc.appendChild(CV.conditionCard(id)));
-  lvl.bonuses.forEach((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>`; wc.appendChild(d); });
+  lvl.bonuses.forEach((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; wc.appendChild(d); });
   sc.appendChild(wc);
 
   // ---------------------------------------------------- планшеты героев
@@ -132,8 +132,8 @@
       let xp = '<div><b>Опыт ★</b></div><div class="tr">';
       for (let k = 0; k <= 12; k++) xp += `<span class="${k === 4 || k === 10 ? 'lv' : ''}">${k}</span>`;
       xp += '</div><div><b>Раны (Стойкость ' + h.hp + ')</b></div><div class="tr">';
-      for (let k = 1; k <= h.hp + 2; k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
-      xp += '</div><div style="font-size:9pt">Жёлтые клетки — новый уровень: выберите талант. Клетки сверх Стойкости — для таланта «Толстая шкура».</div>';
+      for (let k = 1; k <= h.hp + (h.talents.flat().includes('thick_skin') ? 2 : 0); k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
+      xp += `</div><div style="font-size:9pt">Жёлтые клетки — новый уровень: выберите талант.${h.talents.flat().includes('thick_skin') ? ' Клетки сверх Стойкости — для таланта «Толстая шкура».' : ''}</div>`;
       tr.innerHTML = xp;
       b.appendChild(tr);
       s.appendChild(b);
@@ -184,8 +184,11 @@
   for (let r = 1; r <= lvl.rounds; r++) { const ph = r >= lvl.phaseStarts[2] ? 2 : r >= lvl.phaseStarts[1] ? 1 : 0; html += `<div style="background:${ZG.PHASES[ph].color}">${r}</div>`; }
   html += '</div><div style="font: 11pt var(--font-t)">Сумерки → Ночь → Глухая ночь (зомби +1 к скорости). После последнего раунда — поражение.</div>';
   html += '<div>ТРЕВОГА</div><div class="row">';
-  for (let a = 0; a <= 8; a++) html += `<div style="background:${a >= lvl.alarmThreshold ? '#f2b0a0' : '#fff'}">${a}</div>`;
+  for (let a = 0; a <= 11; a++) html += `<div style="background:${a >= lvl.alarmThreshold ? '#f2b0a0' : '#fff'}">${a}</div>`;
   html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: ${lvl.alarmThreshold}. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
+  html += '<div>СЧЁТЧИК БОНУСНОЙ ЦЕЛИ</div><div class="row">';
+  for (let a = 0; a <= 15; a++) html += `<div style="width:10mm">${a}</div>`;
+  html += '</div>';
   html += '<div>ПОРЯДОК ФАЗЫ ЗОМБИ</div><div style="font: 12pt var(--font-t)">1. Движение → 2. Атака → 3. Особые свойства → 4. Появление (+Волна) → 5. Конец раунда</div>';
   trk.innerHTML = html;
   tk.appendChild(trk);

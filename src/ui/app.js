@@ -539,7 +539,7 @@
         html = ready.length ? 'Выберите героя, который ходит следующим: клик по портрету справа или фишке на поле.' : '';
       } else if (g.active != null) {
         html = 'Сыграйте карты или кликните по соседней зоне, чтобы пойти. Карты со щитом, оставшиеся в руке, защитят в фазу зомби.';
-      }
+      } else if (g.phase === 'zombies') html = 'Ход зомби…';
       box.innerHTML = html;
       box.classList.toggle('show', !!html);
     },
@@ -788,7 +788,7 @@
   const UI_FX = {
     async phase(ev) {
       this.refreshTop();
-      if (ev.name === 'zombies') { this.refreshHand(); this.refreshActions(); await Banner.show('ФАЗА ЗОМБИ', 'мертвецы идут', 'zombies'); }
+      if (ev.name === 'zombies') { this.refreshHand(); this.refreshActions(); this.defaultHelp(); await Banner.show('ФАЗА ЗОМБИ', 'мертвецы идут', 'zombies'); }
       else if (ev.name === 'heroes') { this.refresh(); await Banner.show('РАУНД ' + ev.round, ZG.PHASES[E.phase(this.g)].name.toUpperCase(), 'round'); }
     },
     async dayphase(ev) {

@@ -191,7 +191,7 @@
   function scenarioCard(id) {
     const def = ZG.Scenarios.get(id);
     const c = el('div', 'scen-card');
-    c.innerHTML = `<div class="scen-kicker">ЗАДАНИЕ</div><div class="scen-name">${esc(def.name)}</div><div class="scen-brief">${esc(def.brief)}</div><div class="scen-short">${esc(def.short)}</div>`;
+    c.innerHTML = `<div class="scen-kicker">ЗАДАНИЕ</div><div class="scen-name">${esc(def.name)}</div><div class="scen-brief">${esc(def.brief)}</div><div class="scen-short">${esc(def.short)}</div>${def.setupText ? `<div class="scen-setup"><b>Подготовка:</b> ${esc(def.setupText)}</div>` : ''}`;
     const img = el('img');
     img.src = artURL(def.exitArt || 'exit_car', 64, 84, {});
     img.className = 'scen-exit';
