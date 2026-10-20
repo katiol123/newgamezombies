@@ -20,19 +20,19 @@
   // ------------------------------------------------------------ Стартовые ---
   ZG.Cards.addAll([
     {
-      id: 'strike', name: 'Удар', suit: 'rage', cost: 1, shield: 1, type: 'Атака', tags: ['melee'],
+      id: 'strike', name: 'Удар', suit: 'rage', cost: 1, shield: 0, type: 'Атака', tags: ['melee'],
       text: 'Ближний бой: 2 урона.', chainText: '+1 урон.', art: 'fist', value: 6,
       target: MELEE,
       play(c) { c.melee(c.target, 2 + (c.chain ? 1 : 0)); },
     },
     {
-      id: 'dash', name: 'Рывок', suit: 'agility', cost: 1, shield: 1, type: 'Движение', tags: ['move'],
+      id: 'dash', name: 'Рывок', suit: 'agility', cost: 1, shield: 0, type: 'Движение', tags: ['move'],
       text: 'Переместись на 1–2 зоны.', chainText: 'возьми 1 карту.', art: 'boot', value: 6,
       target: { kind: 'move', steps: 2 },
       play(c) { c.moveTo(c.target); if (c.chain) c.draw(1); },
     },
     {
-      id: 'step', name: 'Перебежка', suit: 'agility', cost: 0, shield: 1, type: 'Движение', tags: ['move'],
+      id: 'step', name: 'Перебежка', suit: 'agility', cost: 0, shield: 0, type: 'Движение', tags: ['move'],
       text: 'Переместись на 1 зону.', chainText: '+1 ⚡.', art: 'step', value: 5,
       target: { kind: 'move', steps: 1 },
       play(c) { c.moveTo(c.target); if (c.chain) c.energy(1); },
@@ -44,7 +44,7 @@
       play(c) { c.draw(1); if (c.chain) c.energy(1); },
     },
     {
-      id: 'cover', name: 'Укрытие', suit: 'mind', cost: 1, shield: 2, type: 'Защита', tags: ['block'],
+      id: 'cover', name: 'Укрытие', suit: 'mind', cost: 0, shield: 1, type: 'Защита', tags: ['block'],
       text: 'Получи 2 Блока до своего следующего хода.', chainText: '+1 Блок.', art: 'shield', value: 6,
       target: null,
       play(c) { c.block(2 + (c.chain ? 1 : 0)); },
@@ -70,16 +70,16 @@
       play(c) { c.moveTo(c.target); c.zoneDamage(c.hero.pos, c.chain ? 2 : 1, { kind: 'melee' }); },
     },
     {
-      id: 'stance', name: 'Стойка', suit: 'mind', cost: 1, shield: 2, type: 'Защита', tags: ['block'], hero: 'boris',
-      text: 'Получи 3 Блока до своего следующего хода.', chainText: '+1 ⚡.', art: 'stance', value: 9,
+      id: 'stance', name: 'Стойка', suit: 'mind', cost: 1, shield: 1, type: 'Защита', tags: ['block'], hero: 'boris',
+      text: 'Получи 4 Блока до своего следующего хода. Каждый зомби, атаковавший тебя в фазу зомби, получает 1 урон.', chainText: '+1 ⚡.', art: 'stance', value: 10,
       target: null,
-      play(c) { c.block(3); if (c.chain) c.energy(1); },
+      play(c) { c.block(4); c.thorns(1); if (c.chain) c.energy(1); },
     },
     {
       id: 'roar', name: 'Боевой клич', suit: 'rage', cost: 0, shield: 0, noise: 1, type: 'Тактика', tags: ['taunt'], hero: 'boris',
-      text: 'Шум 1. Все зомби в 2 зонах от тебя сдвигаются на 1 зону к тебе.', chainText: '+1 ⚡.', art: 'roar', value: 7,
+      text: 'Шум 1. Возьми 1 карту. Все зомби в 2 зонах от тебя сдвигаются на 1 зону к тебе.', chainText: '+1 ⚡.', art: 'roar', value: 8,
       target: null,
-      play(c) { c.noise(1); c.pull(2); if (c.chain) c.energy(1); },
+      play(c) { c.noise(1); c.draw(1); c.pull(2); if (c.chain) c.energy(1); },
     },
   ]);
 
@@ -183,12 +183,12 @@
     },
     {
       id: 'improvise', name: 'Смекалка', suit: 'mind', cost: 0, shield: 1, type: 'Тактика', tags: ['draw'], hero: 'kira',
-      text: 'Возьми 1 карту.', chainText: 'возьми ещё 1.', art: 'gear', value: 6,
+      text: 'Возьми 1 карту.', chainText: 'возьми ещё 1 и +1 ⚡.', art: 'gear', value: 7,
       target: null,
-      play(c) { c.draw(c.chain ? 2 : 1); },
+      play(c) { c.draw(c.chain ? 2 : 1); if (c.chain) c.energy(1); },
     },
     {
-      id: 'weld', name: 'Сварка', suit: 'mind', cost: 1, shield: 1, type: 'Укрепление', tags: ['barricade'], hero: 'kira',
+      id: 'weld', name: 'Сварка', suit: 'mind', cost: 0, shield: 1, type: 'Укрепление', tags: ['barricade'], hero: 'kira',
       text: 'Поставь Баррикаду (прочность 4) на проход из твоей зоны.', chainText: '+1 ⚡.', art: 'weld', value: 9,
       target: { kind: 'edge' },
       play(c) { c.barricade(c.target, 4); if (c.chain) c.energy(1); },
@@ -247,9 +247,9 @@
     },
     {
       id: 'firecracker', name: 'Петарда', suit: 'mind', cost: 0, shield: 0, type: 'Расходник', tags: ['lure'], loot: true, consumable: true,
-      text: 'Положи Приманку в зону в 4 зонах от тебя. Тревога +2. Уходит из игры.', chainText: '+1 ⚡.', art: 'firecracker', value: 7,
+      text: 'Положи Приманку в зону в 4 зонах от тебя. Тревога +1. Уходит из игры.', chainText: '+1 ⚡.', art: 'firecracker', value: 8,
       target: { kind: 'cell', range: 4 },
-      play(c) { c.lure(c.target, 2); if (c.chain) c.energy(1); },
+      play(c) { c.lure(c.target, 1); if (c.chain) c.energy(1); },
     },
     {
       id: 'medkit', name: 'Аптечка', suit: 'mind', cost: 1, shield: 0, type: 'Расходник', tags: ['heal'], loot: true, consumable: true,

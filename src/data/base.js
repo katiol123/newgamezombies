@@ -44,9 +44,9 @@
       text: 'Крупная цель: урон сохраняется. Броня 1: каждый эффект урона по нему −1.', art: 'z_brute',
     },
     {
-      id: 'nest', name: 'Гнездо', hp: 6, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
-      text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне.', art: 'z_nest',
-      hooks: { zombiePhase(g, z, E) { E.spawnZombie(g, 'walker', z.pos, 'Гнездо порождает Шатуна'); } },
+      id: 'nest', name: 'Гнездо', hp: 8, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
+      text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне (с Ночи — Бегуна).', art: 'z_nest',
+      hooks: { zombiePhase(g, z, E) { const t = E.phase(g) >= 1 ? 'runner' : 'walker'; E.spawnZombie(g, t, z.pos, 'Гнездо порождает: ' + ZG.Zombies.get(t).name); } },
     },
   ]);
 

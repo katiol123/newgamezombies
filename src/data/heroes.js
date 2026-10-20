@@ -7,7 +7,7 @@
  *   hp, handSize, energy, meleeBonus, rangedBonus, rangeBonus, shotNoise,
  *   taunt, blockPerCard, autoBlock, freeEscape, freeFirstSearch, freeFirstMove,
  *   barricadeCost, barricadeHp, trapBonus, healBonus, searchDraw, costDelta,
- *   immuneAttack, healAction
+ *   immuneAttack, healAction, trapLure, secondWind
  */
 (function (G) {
   'use strict';
@@ -29,7 +29,7 @@
       id: 'marina', name: 'Марина', nick: 'Скальпель', role: 'Медик', color: '#e8e8e8',
       hp: 5, hand: 5, energy: 3,
       bio: 'Хирург районной больницы. Ушла с последней смены с полной сумкой.',
-      ability: 'Полевой врач', abilityText: 'Раз за ход, 1 ⚡: убери 1 Рану из руки героя в своей зоне (можно у себя).',
+      ability: 'Полевой врач', abilityText: 'Раз за ход, 1 ⚡: герой в её зоне (можно она сама) убирает 1 Рану.',
       deck: STARTER.concat(['scalpel', 'bandage', 'adrenaline', 'coldcalc']),
       talents: [['sterile', 'steady'], ['second_wind', 'triage']],
       mods: { healAction: 1 },
@@ -39,10 +39,10 @@
       id: 'lisa', name: 'Лиза', nick: 'Тень', role: 'Разведчица', color: '#2e8b57',
       hp: 4, hand: 5, energy: 3,
       bio: 'Курьер и паркурщица. Знает каждую крышу квартала.',
-      ability: 'Паркур', abilityText: 'Выход из зоны с зомби и перелезание баррикад ей ничего не стоят. Первый Обыск за ход — 0 ⚡.',
+      ability: 'Паркур', abilityText: 'Первый за ход выход из зоны с зомби ей ничего не стоит (Хватка не действует). Перелезает баррикады бесплатно.',
       deck: STARTER.concat(['knife', 'lure', 'rooftops', 'vanish']),
       talents: [['quick_fingers', 'sprint'], ['backstab', 'ghost']],
-      mods: { freeEscape: 1, freeFirstSearch: 1 },
+      mods: { freeEscape: (g) => (g.turn && g.turn.escaped ? 0 : 1), climb: 1 },
       art: 'hero_lisa',
     },
     {
@@ -57,18 +57,18 @@
     },
     {
       id: 'kira', name: 'Кира', nick: 'Ключ', role: 'Механик', color: '#d4a017',
-      hp: 5, hand: 5, energy: 3,
+      hp: 6, hand: 5, energy: 3,
       bio: 'Чинит всё, что ездит, и ломает всё, что ходит.',
-      ability: 'Инженер', abilityText: 'Базовое действие «Баррикада» стоит ей 1 ⚡ вместо 2. Её баррикады прочнее на 1.',
+      ability: 'Инженер', abilityText: 'Базовое действие «Баррикада» стоит ей 1 ⚡ вместо 2. Её баррикады прочнее на 1, ловушки — на 1 урон сильнее.',
       deck: STARTER.concat(['wrench', 'tripwire', 'improvise', 'weld']),
       talents: [['reinforce', 'shrapnel'], ['tinkerer', 'gadgets']],
-      mods: { barricadeCost: -1, barricadeHp: 1 },
+      mods: { barricadeCost: -1, barricadeHp: 1, trapBonus: 1 },
       art: 'hero_kira',
     },
   ]);
 
   // ------------------------------------------------------------- Таланты ---
-  // Уровень 2 — при 5 Опыта, уровень 3 — при 12 Опыта. Из пары выбирается один.
+  // Уровень 2 — при 4 Опыта, уровень 3 — при 10 Опыта. Из пары выбирается один.
   const isMeleeCtx = (ctx) => ctx && ctx.kind === 'melee';
   ZG.Talents.addAll([
     // Борис
@@ -81,7 +81,7 @@
     },
     // Марина
     { id: 'sterile', name: 'Стерильность', text: 'Любое твоё лечение убирает на 1 Рану больше.', mods: { healBonus: 1 } },
-    { id: 'steady', name: 'Твёрдая рука', text: '+1 к размеру руки.', mods: { handSize: 1 } },
+    { id: 'steady', name: 'Конвейер', text: '«Полевого врача» можно применять дважды за ход.', mods: { healAction: 1 } },
     {
       id: 'second_wind', name: 'Второе дыхание', text: 'Раз за партию: когда герой в твоей зоне должен пасть, вместо этого он убирает 2 Раны.',
       mods: { secondWind: 1 },
@@ -111,11 +111,14 @@
       id: 'quickdraw', name: 'Быстрая рука', text: 'Первая карта дальнего боя за ход стоит на 1 ⚡ меньше.',
       mods: { costDelta: (g, h, ctx) => (ctx && ctx.def.tags && ctx.def.tags.includes('ranged') && !g.turn.rangedPlayed ? -1 : 0) },
     },
-    { id: 'ammo', name: 'Запасливый', text: '+1 к размеру руки.', mods: { handSize: 1 } },
+    {
+      id: 'ammo', name: 'Добивание', text: 'Убив зомби дальней атакой, возьми 1 карту (раз за ход).',
+      hooks: { kill(g, h, ctx) { if (ctx.kind === 'ranged' && g.active === h.idx && g.turn && !g.turn.finisher) { g.turn.finisher = true; ctx.E.drawFor(g, h, 1); } } },
+    },
     // Кира
     { id: 'reinforce', name: 'Армирование', text: 'Твои баррикады получают +2 прочности.', mods: { barricadeHp: 2 } },
     { id: 'shrapnel', name: 'Шрапнель', text: 'Твои ловушки наносят +1 урон.', mods: { trapBonus: 1 } },
-    { id: 'tinkerer', name: 'Мастер на все руки', text: '+1 к размеру руки.', mods: { handSize: 1 } },
+    { id: 'tinkerer', name: 'Сигнализация', text: 'Твои ловушки работают как Приманки: зомби идут к ним, как к героям.', mods: { trapLure: 1 } },
     {
       id: 'gadgets', name: 'Самоделки', text: 'Первая карта масти Расчёт за ход стоит на 1 ⚡ меньше.',
       mods: { costDelta: (g, h, ctx) => (ctx && ctx.def.suit === 'mind' && !g.turn.mindPlayed ? -1 : 0) },

@@ -157,7 +157,7 @@
       const n = s.heroes.length;
       $('#setup-hint').innerHTML = n === 0 ? 'Выберите героев (1–4). Рекомендуется 2.'
         : `Отряд: <b>${s.heroes.map((h) => ZG.Heroes.get(h.id).name + (s.players === 2 ? ` (И${h.player})` : '')).join(', ')}</b>. ` +
-          (n === 1 ? 'Один герой — режим для опытных.' : n >= 3 ? 'Больше героев — больше точек появления.' : 'Отличный размер отряда.') +
+          (n === 1 ? 'Соло: один люк и «Одиночка» (+1 к руке).' : n >= 3 ? 'Больше героев — больше точек появления.' : 'Отличный размер отряда.') +
           (s.players === 2 ? ' <i>Клик по герою переключает игрока.</i>' : '');
       const scen = s.scenario === 'random' ? null : ZG.Scenarios.get(s.scenario);
       $('#setup-scen-desc').textContent = scen ? scen.brief : 'Задание выпадет случайно: 4 варианта целей.';
@@ -590,7 +590,7 @@
         c.appendChild(img);
         const pips = [];
         for (let i = 0; i < hp; i++) pips.push(`<i class="${i < hp - w ? 'ok' : 'hurt'}"></i>`);
-        const xpNext = h.xp < 5 ? 5 : h.xp < 12 ? 12 : null;
+        const xpNext = h.xp < 4 ? 4 : h.xp < 10 ? 10 : null;
         const status = h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `

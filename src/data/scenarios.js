@@ -68,8 +68,8 @@
     },
     {
       id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
-      brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, три с медикаментами.',
-      crates: 5, real: 3, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
+      brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, в четырёх — медикаменты; нужно три.',
+      crates: 5, real: 4, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
       setup(g, E) { g.obj = { delivered: 0, need: 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
       goals(g) {
         return [
@@ -84,12 +84,13 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, дождись вертолёта.',
+      id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 3 раунда и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
         g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 3, on: false };
         g.tower = E.placeTower(g);
+        E.placeExitNear(g, g.tower, 3, 4);
         E.placeCrates(g, this.crates, this.real, this.cargo, [g.tower]);
       },
       goals(g) {
@@ -164,7 +165,7 @@
   // ------------------------------------------------------- Условия партии ---
   ZG.Conditions.addAll([
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
-    { id: 'fog', name: 'Туман', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби не видны издалека — но и вы им.', tone: -1, mods: { rangeBonus: -1 }, art: 'cond_fog' },
+    { id: 'fog', name: 'Туман', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби, до чьей цели больше 4 зон, стоят на месте.', tone: 0, mods: { rangeBonus: -1, zombieSight: 4 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
     { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше.', tone: -1, mods: { phaseShift: 1 }, art: 'cond_moon' },
     {
@@ -183,8 +184,8 @@
 
   // ---------------------------------------------------------- Сложность ---
   ZG.Difficulties.addAll([
-    { id: 'novice', name: 'Новичок', text: '+2 раунда, порог Волны +2.', mods: { maxRounds: 2, alarmThreshold: 2 } },
+    { id: 'novice', name: 'Новичок', text: '+2 раунда, порог Волны +2, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2 }, startLoot: 1 },
     { id: 'survivor', name: 'Выживший', text: 'Стандартные правила.', mods: {} },
-    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, каждый герой начинает с 1 Раной.', mods: { maxRounds: -1, alarmThreshold: -1 }, startWounds: 1 },
+    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, +1 точка появления, Голод уже с Ночи, у каждого героя Рана в колоде.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: 1, zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

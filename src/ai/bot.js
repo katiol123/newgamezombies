@@ -12,7 +12,7 @@
   const W = {
     progress: 450, complete: 500, evac: 600, fallen: 2200, dist: 22, wound: 40, nearDeath: 70,
     unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 3, cardValue: 0.7, hand: 1.5,
-    zombieThreat: 4, alarm: 7, crate: 220, search: 6, bigDmg: 25,
+    zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, adrenaline: 9, trap: 14, block: 2,
   };
   ZG.BotWeights = W;
 
@@ -26,23 +26,32 @@
     // угроза: зомби, которые успеют дойти до зоны героя в эту фазу
     const zoneIncoming = {};
     const reach = {};
+    const noBarr = (x, y) => !E.barricadeAt(g, x, y);
+    const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h }))
+      .concat(g.lures.map((l) => ({ pos: l.pos })));
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat;
       if (d.big) s += (z.dmg / d.hp) * d.threat * W.bigDmg;
-      if (d.dmg <= 0 || d.immobile) { if (d.dmg > 0) zoneIncoming[z.pos] = (zoneIncoming[z.pos] || 0) + d.dmg; return; }
+      if (d.dmg <= 0) return;
       const sp = z.suppressed ? 0 : E.zombieSpeed(g, z);
-      const dz = reach[z.pos + ':' + sp] || (reach[z.pos + ':' + sp] = E.dist(g, z.pos));
-      g.heroes.forEach((h) => {
-        if (h.onBoard && !h.hidden && dz[h.pos] <= sp) zoneIncoming[h.pos] = (zoneIncoming[h.pos] || 0) + d.dmg;
-      });
+      const dz = reach[z.pos] || (reach[z.pos] = E.dist(g, z.pos, noBarr));
+      let best = Infinity;
+      targets.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
+      if (best > sp) return;
+      // идёт к ближайшей цели: если это приманка — героям не опасен
+      targets.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
+    s += g.traps.length * W.trap;
     g.heroes.forEach((h) => {
       if (h.fallen) { s -= W.fallen; return; }
       if (h.evacuated) { s += W.evac; return; }
       const goal = E.goalFor(g, h);
       const d = E.dist(g, h.pos);
-      if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist;
+      const left = E.maxRounds(g) - g.round;
+      const urg = (E.isComplete(g) ? 2.5 : 1) * (left <= 3 ? 1.8 : 1);
+      if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist * urg;
+      s += h.adrenaline * W.adrenaline + h.block * W.block;
       const hp = E.maxHp(g, h);
       const wounds = E.woundCount(g, h);
       s -= wounds * W.wound;
@@ -87,7 +96,11 @@
     while (g.pending && guard++ < 20) {
       const p = g.pending;
       if (p.type === 'block') E.act(g, { t: 'block', cards: chooseBlock(g, p) });
-      else if (p.type === 'talent') E.act(g, { t: 'talent', id: p.options[ZG.Rng.int(g, p.options.length)] });
+      else if (p.type === 'talent') {
+        let best = p.options[0], bv = -Infinity;
+        p.options.forEach((id) => { const c = E.clone(g); E.act(c, { t: 'talent', id }); const v = evaluate(c) + ZG.Rng.next(g) * 4; if (v > bv) { bv = v; best = id; } });
+        E.act(g, { t: 'talent', id: best });
+      }
       else break;
     }
   }

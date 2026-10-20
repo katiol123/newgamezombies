@@ -25,7 +25,7 @@
     phaseStarts: [1, 5, 9], // Сумерки с 1-го, Ночь с 5-го, Глухая ночь с 9-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
     alarmThreshold: 6,
-    spawnPoints: { 1: 2, 2: 2, 3: 3, 4: 4 },
+    spawnPoints: { 1: 1, 2: 2, 3: 3, 4: 3 },
     searchCount: 9,
   });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

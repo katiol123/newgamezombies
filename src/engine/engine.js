@@ -16,7 +16,7 @@
   'use strict';
   const ZG = G.ZG;
   const Rng = ZG.Rng, Mods = ZG.Mods, Board = ZG.Board;
-  const XP_LEVELS = [5, 12];
+  const XP_LEVELS = [4, 10];
   const MAX_BARRICADES = 4;
   const MAX_TRAPS = 3;
   const MAX_EQUIP = 2;
@@ -38,7 +38,8 @@
   E.newUid = (g, prefix) => prefix + (g.nextUid++);
   E.woundCount = (g, h) => h.deck.concat(h.hand, h.discard).filter((u) => g.cards[u] === 'wound').length;
   E.maxHp = (g, h) => Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp);
-  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand);
+  // «Одиночка»: в соло герой держит на 1 карту больше
+  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0);
   E.activeHero = (g) => (g.active == null ? null : g.heroes[g.active]);
   E.maxRounds = (g) => Mods.value(g, null, 'maxRounds', ZG.Levels.get(g.levelId).rounds);
   E.alarmThreshold = (g) => Math.max(3, Mods.value(g, null, 'alarmThreshold', ZG.Levels.get(g.levelId).alarmThreshold));
@@ -113,7 +114,8 @@
     E.scenario(g).setup(g, E);
     placeSearch(g, Mods.value(g, null, 'searchCount', level.searchCount));
     const diff = ZG.Difficulties.get(g.difficultyId);
-    if (diff.startWounds) g.heroes.forEach((h) => addWounds(g, h, diff.startWounds, true));
+    if (diff.startWounds) g.heroes.forEach((h) => { for (let i = 0; i < diff.startWounds; i++) { const u = E.newUid(g, 'w'); g.cards[u] = 'wound'; h.deck.push(u); } Rng.shuffle(g, h.deck); });
+    if (diff.startLoot) g.heroes.forEach((h) => { for (let i = 0; i < diff.startLoot; i++) E.giveLoot(g, h); });
     const cond = ZG.Conditions.get(g.conditionId);
     if (cond.setup) cond.setup(g, E);
 
@@ -187,6 +189,17 @@
     const picks = spreadPick(g, cands, n, [g.start]);
     const realIdx = Rng.shuffle(g, picks.map((_, i) => i)).slice(0, real);
     picks.forEach((pos, i) => g.crates.push({ pos, card: realIdx.includes(i) ? cargoId : null, opened: false }));
+  };
+  E.drawFor = function (g, h, n) { return drawCards(g, h, n); };
+  // перенести выход ближе к точке (для заданий с вертолётом)
+  E.placeExitNear = function (g, cell, dmin, dmax) {
+    const d = E.dist(g, cell), ds = E.dist(g, g.start);
+    const bad = new Set([g.start].concat(g.spawnPoints));
+    let c = g.board.cells.filter((x) => x.type === 'street' && !bad.has(x.i) && d[x.i] >= dmin && d[x.i] <= dmax);
+    if (!c.length) c = g.board.cells.filter((x) => x.type === 'street' && !bad.has(x.i) && d[x.i] >= 2);
+    let best = -1, pick = [];
+    c.forEach((x) => { if (ds[x.i] > best) { best = ds[x.i]; pick = [x.i]; } else if (ds[x.i] === best) pick.push(x.i); });
+    if (pick.length) g.exit = Rng.pick(g, pick);
   };
   E.placeTower = function (g) {
     const ds = E.dist(g, g.start), de = E.dist(g, g.exit);
@@ -358,13 +371,14 @@
       if (heroIdx != null) {
         const h = g.heroes[heroIdx];
         gainXp(g, h, def.xp);
-        Mods.emit(g, h, 'kill', { zombie: z, E });
+        Mods.emit(g, h, 'kill', { zombie: z, kind, E });
       }
       return true;
     }
     return false;
   }
   E.damageZombie = damageZombie;
+  E.gainXp = function (g, h, n) { gainXp(g, h, n); };
 
   function gainXp(g, h, n) {
     const before = h.xp;
@@ -414,6 +428,7 @@
       t.push({ pos: h.pos, noise: 1 + (g.noise[h.pos] || 0), wounds: E.woundCount(g, h), idx: h.idx });
     });
     g.lures.forEach((l) => t.push({ pos: l.pos, noise: 3 + (g.noise[l.pos] || 0), wounds: 99, idx: 99 }));
+    g.traps.forEach((tr) => { if (tr.owner != null && Mods.flag(g, g.heroes[tr.owner], 'trapLure')) t.push({ pos: tr.pos, noise: 2, wounds: 99, idx: 98 }); });
     return t;
   }
 
@@ -431,6 +446,8 @@
       if (!best || dz[t.pos] < dz[best.pos] || (dz[t.pos] === dz[best.pos] && (t.noise > best.noise || (t.noise === best.noise && (t.wounds < best.wounds || (t.wounds === best.wounds && t.idx < best.idx)))))) best = t;
     });
     if (!best) return false;
+    const sight = Mods.value(g, null, 'zombieSight', 0);
+    if (sight > 0 && dz[best.pos] > sight) return false;
     const dt = E.dist(g, best.pos, viaBarricade ? null : noBarr);
     const next = g.board.adj[z.pos].find((n) => dt[n] === dt[z.pos] - 1 && (viaBarricade || noBarr(z.pos, n)));
     if (next == null) return false;
@@ -584,6 +601,9 @@
     } else E.log(g, `${E.heroName(h)} отражает атаку (${entry.incoming}).`, 'good');
     g.pending = null;
     addWounds(g, h, taken);
+    if (h.onBoard && h.thorns) {
+      entry.attackers.forEach((u) => { const z = E.zombie(g, u); if (z) damageZombie(g, z, h.thorns, h.idx, 'melee'); });
+    }
     if (h.onBoard) Mods.emit(g, h, 'afterBlock', { incoming: entry.incoming, taken, E });
   }
 
@@ -615,8 +635,9 @@
     const h = g.heroes[idx];
     g.active = idx;
     h.block = 0;
+    h.thorns = 0;
     h.hidden = false;
-    g.turn = { lastSuit: null, played: 0, moves: 0, searched: 0, healUsed: false, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
+    g.turn = { lastSuit: null, played: 0, moves: 0, searched: 0, healUsed: 0, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
     const hs = E.handSize(g, h);
     if (h.hand.length < hs) drawCards(g, h, hs - h.hand.length);
     let en = Mods.value(g, h, 'energy', ZG.Heroes.get(h.id).energy) + h.adrenaline;
@@ -655,7 +676,7 @@
   };
 
   function heroPass(g, h, through) {
-    const climb = Mods.flag(g, h, 'freeEscape');
+    const climb = Mods.flag(g, h, 'climb');
     return (a, b) => {
       if (E.barricadeAt(g, a, b) && !climb) return false;
       if (!through && a !== h.pos && E.zombiesAt(g, a).length) return false;
@@ -706,9 +727,8 @@
 
   function moveCost(g, h, to) {
     let c = 1;
-    const climb = Mods.flag(g, h, 'freeEscape');
-    if (!climb && E.zombiesAt(g, h.pos).length) c++;
-    if (!climb && E.barricadeAt(g, h.pos, to)) c++;
+    if (!Mods.flag(g, h, 'freeEscape') && E.zombiesAt(g, h.pos).length) c++;
+    if (!Mods.flag(g, h, 'climb') && E.barricadeAt(g, h.pos, to)) c++;
     if (g.turn.moves === 0 && Mods.flag(g, h, 'freeFirstMove')) c--;
     return Math.max(0, c);
   }
@@ -758,8 +778,8 @@
     if (h.energy >= barricadeCost(g, h) && g.barricades.length < MAX_BARRICADES) {
       g.board.adj[h.pos].forEach((n) => { if (!E.barricadeAt(g, h.pos, n)) out.push({ t: 'barricade', to: n }); });
     }
-    if (Mods.flag(g, h, 'healAction') && !g.turn.healUsed && h.energy >= 1) {
-      E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'wound')) out.push({ t: 'heal', hero: o.idx }); });
+    if (Mods.flag(g, h, 'healAction') && g.turn.healUsed < Mods.value(g, h, 'healAction', 0) && h.energy >= 1) {
+      E.heroesAt(g, h.pos).forEach((o) => { if (E.woundCount(g, o) > 0) out.push({ t: 'heal', hero: o.idx }); });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
     if (!g.turn.gave) {
@@ -865,9 +885,9 @@
       }
       case 'heal': {
         const o = g.heroes[a.hero];
-        if (!Mods.flag(g, h, 'healAction') || g.turn.healUsed || h.energy < 1 || o.pos !== h.pos) return fail(g, 'Нельзя.');
+        if (!Mods.flag(g, h, 'healAction') || g.turn.healUsed >= Mods.value(g, h, 'healAction', 0) || h.energy < 1 || o.pos !== h.pos) return fail(g, 'Нельзя.');
         spend(g, h, 1);
-        g.turn.healUsed = true;
+        g.turn.healUsed++;
         const n = healWounds(g, o, 1 + Mods.value(g, h, 'healBonus', 0));
         E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} −${n} Рана.`, 'good');
         return true;
@@ -914,6 +934,7 @@
 
   function moveHero(g, h, to) {
     const from = h.pos;
+    if (g.turn && E.zombiesAt(g, from).length) g.turn.escaped = true;
     h.pos = to;
     E.fx(g, { t: 'hmove', hero: h.idx, from, to });
   }
@@ -933,6 +954,7 @@
       if (crate.card) {
         const u = E.newUid(g, 'c'); g.cards[u] = crate.card; h.hand.push(u);
         E.log(g, `${E.heroName(h)} вскрывает ящик — внутри «${ZG.Cards.get(crate.card).name}»!`, 'good');
+        gainXp(g, h, 1);
         E.fx(g, { t: 'crate', pos: h.pos, found: true, card: u, hero: h.idx });
         return;
       }
@@ -1082,6 +1104,7 @@
           if (next != null) enterCell(g, z, next);
         });
       },
+      thorns(n) { h.thorns = (h.thorns || 0) + n; },
       status(key) { if (key === 'hidden') { h.hidden = true; E.fx(g, { t: 'hidden', hero: h.idx, pos: h.pos }); } },
       equip() { onEquip(); E.log(g, `${E.heroName(h)} надевает: ${def.name}.`, 'info'); },
       burnHeroes(cell, n) {

@@ -189,7 +189,7 @@ small { opacity: .75; }
 
 .board-wrap { grid-area: board; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: radial-gradient(ellipse at center, #1a1410, #080605); }
 #board { display: block; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.8), 0 0 0 1px #2a2018; cursor: pointer; }
-.help-line { position: absolute; left: 50%; bottom: 12px; transform: translate(-50%, 20px); opacity: 0; max-width: 80%; text-align: center; padding: 7px 16px; border-radius: 20px; background: rgba(13,10,8,.88); border: 1px solid var(--line); font-family: var(--font-t); font-size: 15px; pointer-events: none; transition: all .3s; }
+.help-line { position: absolute; left: 50%; top: 10px; transform: translate(-50%, -20px); opacity: 0; max-width: 80%; text-align: center; padding: 7px 16px; border-radius: 20px; background: rgba(13,10,8,.88); border: 1px solid var(--line); font-family: var(--font-t); font-size: 15px; pointer-events: none; transition: all .3s; }
 .help-line.show { opacity: 1; transform: translate(-50%, 0); }
 
 .side { grid-area: side; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: linear-gradient(90deg, #120e0b, #17120e); border-left: 1px solid var(--line); overflow: hidden; }
