@@ -45,9 +45,9 @@
     },
     {
       id: 'cover', name: 'Укрытие', suit: 'mind', cost: 0, shield: 1, type: 'Защита', tags: ['block'],
-      text: 'Получи 2 Блока до своего следующего хода.', chainText: '+1 Блок.', art: 'shield', value: 6,
+      text: 'Получи 1 Блок до своего следующего хода.', chainText: '+2 Блока.', art: 'shield', value: 6,
       target: null,
-      play(c) { c.block(2 + (c.chain ? 1 : 0)); },
+      play(c) { c.block(1 + (c.chain ? 2 : 0)); },
     },
   ]);
 

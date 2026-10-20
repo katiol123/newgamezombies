@@ -117,7 +117,6 @@
       roundEnd(g, E) {
         if (!g.obj.on || g.obj.transmit >= g.obj.transmitNeed) return;
         const held = g.heroes.some((h) => h.onBoard && h.pos === g.tower);
-        E.raiseAlarm(g, 1, 'Шум передачи');
         if (held) {
           g.obj.transmit++;
           E.log(g, `Передача идёт: ${g.obj.transmit}/${g.obj.transmitNeed}.`, 'good');
@@ -184,18 +183,18 @@
   // Одна карта тянется в начале партии. check(g) проверяется при победе.
   ZG.Bonuses.addAll([
     { id: 'quiet', name: 'Тише воды', text: 'Победить, не вызвав ни одной Волны.', check: (g) => g.stats.waves === 0, progress: (g) => `волн: ${g.stats.waves}` },
-    { track: 'Счётчик: +1 за каждого убитого зомби.', id: 'hunter', name: 'Охотник', text: 'Убить 15 зомби.', check: (g) => g.stats.kills >= 15, progress: (g) => `${g.stats.kills}/15` },
-    { track: 'Счётчик: +1 за каждый Обыск.', id: 'scavenger', name: 'Мародёр', text: 'Сделать 6 Обысков.', check: (g) => g.stats.searches >= 6, progress: (g) => `${g.stats.searches}/6` },
+    { track: 'Счётчик: +1 за каждого убитого зомби.', id: 'hunter', name: 'Охотник', text: 'Убить по 6 зомби на героя (минимум 12).', check: (g) => g.stats.kills >= Math.max(12, 6 * g.heroes.length), progress: (g) => `${g.stats.kills}/${Math.max(12, 6 * g.heroes.length)}` },
+    { track: 'Счётчик: +1 за каждый Обыск (вскрытие ящика тоже).', id: 'scavenger', name: 'Мародёр', text: 'Сделать 4 Обыска.', check: (g) => g.stats.searches >= 4, progress: (g) => `${g.stats.searches}/4` },
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
     { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
-    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Получить за партию не больше 4 Ран на весь отряд.', check: (g) => g.stats.wounds <= 4, progress: (g) => `ран: ${g.stats.wounds}/4` },
-    { id: 'biggame', name: 'Крупная дичь', text: 'Убить 3 Толстяков или Громилу.', check: (g) => (g.stats.killsBy.fatso || 0) >= 3 || (g.stats.killsBy.brute || 0) >= 1, progress: (g) => `толстяков ${g.stats.killsBy.fatso || 0}/3, громил ${g.stats.killsBy.brute || 0}/1` },
+    { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив не больше 2 Ран на героя (соло — не больше 1) и без павших.', check: (g) => g.stats.wounds <= (g.heroes.length === 1 ? 1 : 2 * g.heroes.length) && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/${g.heroes.length === 1 ? 1 : 2 * g.heroes.length}` },
+    { track: 'Счётчик: +1 за каждый урон по Толстякам, Громилам и Гнёздам.', id: 'biggame', name: 'Крупная дичь', text: 'Нанести 6 урона Толстякам, Громилам и Гнёздам.', check: (g) => (g.stats.bigDmg || 0) >= 6, progress: (g) => `${g.stats.bigDmg || 0}/6` },
   ]);
 
   // ---------------------------------------------------------- Сложность ---
   ZG.Difficulties.addAll([
-    { id: 'novice', name: 'Новичок', text: '+2 раунда, порог Волны +2, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2 }, startLoot: 1 },
+    { id: 'novice', name: 'Новичок', text: '+2 раунда, Ночь и Глухая ночь наступают на 2 раунда позже, порог Волны +2, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2, phaseShift: -2 }, startLoot: 1 },
     { id: 'survivor', name: 'Выживший', text: 'Стандартные правила.', mods: {} },
-    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, +1 точка появления, Голод уже с Ночи, у каждого героя Рана в колоде.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: 1, zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
+    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (g.heroes.length >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

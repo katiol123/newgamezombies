@@ -311,7 +311,10 @@
   E.spawnZombie = function (g, type, pos, why, silent) {
     const pool = (ZG.Levels.get(g.levelId).pool || {})[type];
     if (pool && g.zombies.filter((x) => x.type === type).length >= pool) {
-      // жетоны кончились: вместо появления каждый такой зомби делает лишний шаг
+      // жетоны кончились: вместо появления все такие зомби делают лишний шаг (раз за карту появления)
+      g.poolMoved = g.poolMoved || {};
+      if (g.poolMoved[type]) return null;
+      g.poolMoved[type] = true;
       E.log(g, `Жетоны «${ZG.Zombies.get(type).name}» кончились — все они делают лишний шаг!`, 'bad');
       g.zombies.filter((x) => x.type === type).forEach((x) => moveZombieStep(g, x));
       return null;
@@ -354,6 +357,7 @@
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
     z.dmg += eff;
+    if (def.big || z.type === 'fatso') g.stats.bigDmg = (g.stats.bigDmg || 0) + eff;
     E.fx(g, { t: 'hit', zombie: z.uid, pos: z.pos, n: eff, kind });
     if (z.dmg >= def.hp) {
       g.zombies.splice(g.zombies.indexOf(z), 1);
@@ -470,6 +474,7 @@
     const id = g.spawnDeck.shift();
     if (!id) return;
     g.spawnDiscard.push(id);
+    g.poolMoved = {};
     const card = ZG.SpawnCards.get(id);
     E.fx(g, { t: 'spawncard', card: id, pos: point });
     if (card.event) { E.log(g, `Событие: ${card.name}. ${card.text}`, 'warn'); card.run(g, E); return; }

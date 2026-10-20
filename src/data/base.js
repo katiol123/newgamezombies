@@ -32,8 +32,8 @@
     },
     {
       id: 'screamer', name: 'Крикун', hp: 1, dmg: 0, speed: 1, xp: 2, armor: 0, threat: 4,
-      text: 'Не атакует. В фазу зомби: Тревога +1.', art: 'z_screamer',
-      hooks: { zombiePhase(g, z, E) { E.raiseAlarm(g, 1, 'Крикун воет'); } },
+      text: 'Не атакует. В фазу зомби, если герой в 2 зонах от него: Тревога +1.', art: 'z_screamer',
+      hooks: { zombiePhase(g, z, E) { const d = E.dist(g, z.pos); if (g.heroes.some((h) => h.onBoard && d[h.pos] <= 2)) E.raiseAlarm(g, 1, 'Крикун воет'); } },
     },
     {
       id: 'fatso', name: 'Толстяк', hp: 4, dmg: 2, speed: 1, xp: 2, armor: 0, threat: 4,
@@ -45,8 +45,8 @@
     },
     {
       id: 'nest', name: 'Гнездо', hp: 8, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
-      text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне (с Ночи — Бегуна).', art: 'z_nest',
-      hooks: { zombiePhase(g, z, E) { const t = E.phase(g) >= 1 ? 'runner' : 'walker'; E.spawnZombie(g, t, z.pos, 'Гнездо порождает: ' + ZG.Zombies.get(t).name); } },
+      text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне (в Глухую ночь — Бегуна).', art: 'z_nest',
+      hooks: { zombiePhase(g, z, E) { const t = E.phase(g) >= 2 ? 'runner' : 'walker'; E.spawnZombie(g, t, z.pos, 'Гнездо порождает: ' + ZG.Zombies.get(t).name); } },
     },
   ]);
 
