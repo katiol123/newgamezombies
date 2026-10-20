@@ -264,14 +264,18 @@ small { opacity: .75; }
 .equip .card.small { --card-w: 70px; --card-h: 100px; }
 
 .hand { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 26px; perspective: 900px; min-width: 0; }
+.hand-slot { position: relative; flex: none; margin: 0 -14px; transition: margin .2s; }
+/* слот не двигается — наведение «держится» за него, поэтому поднятая карта не дёргается */
+.hand-slot:hover { margin: 0 6px; z-index: 10; }
+.hand-slot.sel { z-index: 11; }
 .hand .card {
-  margin: 0 -14px; transform: translateY(var(--lift, 0)) rotate(var(--rot, 0)); transform-origin: 50% 120%;
-  transition: transform .22s cubic-bezier(.2,.8,.3,1.2), box-shadow .2s, filter .2s, margin .2s; cursor: pointer;
+  transform: translateY(var(--lift, 0)) rotate(var(--rot, 0)); transform-origin: 50% 120%;
+  transition: transform .22s cubic-bezier(.2,.8,.3,1.2), box-shadow .2s, filter .2s; cursor: pointer;
 }
-.hand .card:hover { transform: translateY(-46px) scale(1.18) rotate(0); z-index: 10; margin: 0 6px; box-shadow: 0 20px 40px rgba(0,0,0,.7); }
+.hand-slot:hover .card { transform: translateY(-46px) scale(1.18) rotate(0); box-shadow: 0 20px 40px rgba(0,0,0,.7); }
 .hand .card.playable { box-shadow: 0 0 0 2px rgba(240,192,64,.55), 0 8px 18px rgba(0,0,0,.6); }
 .hand .card.dim { filter: saturate(.35) brightness(.7); }
-.hand .card.selected { transform: translateY(-58px) scale(1.2) rotate(0); z-index: 11; box-shadow: 0 0 0 3px var(--gold), 0 0 30px rgba(240,192,64,.6); }
+.hand .card.selected, .hand-slot:hover .card.selected { transform: translateY(-58px) scale(1.2) rotate(0); box-shadow: 0 0 0 3px var(--gold), 0 0 30px rgba(240,192,64,.6); }
 .hand .card.chain-ready { box-shadow: 0 0 0 2px #fff, 0 0 22px var(--suit-c), 0 8px 18px rgba(0,0,0,.6); animation: chainGlow 1.2s infinite alternate; }
 .hand .card.hinted { animation: hinted .5s 5 alternate; }
 .hand .card.drawn { animation: drawIn .5s cubic-bezier(.2,.8,.3,1.2) both; }
@@ -325,7 +329,7 @@ small { opacity: .75; }
 .card-text b { font-weight: 700; }
 .kw-dmg { color: #9a1a0e; } .kw-noise { color: #8a5a00; } .kw-energy { color: #8a5a00; } .kw { color: #1a1410; }
 .card-chain { margin-top: 3px; padding-top: 3px; border-top: 1px dashed rgba(0,0,0,.25); }
-.chain-tag { display: inline-block; font-family: var(--font-d); font-size: 9px; color: #fff; background: var(--suit, #555); padding: 1px 4px; border-radius: 2px; letter-spacing: .05em; }
+.chain-tag { white-space: nowrap; display: inline-block; font-family: var(--font-d); font-size: 9px; color: #fff; background: var(--suit, #555); padding: 1px 4px; border-radius: 2px; letter-spacing: .05em; }
 .card-foot { display: flex; align-items: center; gap: 6px; padding: 0 5px 3px; min-height: 22px; }
 .card-shield, .card-noise { display: flex; align-items: center; font-family: var(--font-d); font-size: 14px; }
 .card-shield img, .card-noise img { width: 20px; height: 20px; }
@@ -498,7 +502,7 @@ small { opacity: .75; }
   .topbar { flex-wrap: wrap; padding: 6px 16px; gap: 8px; height: auto; }
   .handbar { grid-template-columns: 1fr; }
   .hand { flex-wrap: wrap; gap: 4px; }
-  .hand .card { margin: 0; }
+  .hand-slot { margin: 0; }
   .side { border-left: 0; }
   .menu-content { padding: 0 16px; }
   .screen.active { overflow-y: auto; }

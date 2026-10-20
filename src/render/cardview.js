@@ -13,7 +13,10 @@
     if (!artCache.has(k)) artCache.set(k, Art.canvas(key, w, h, opts, 2).toDataURL());
     return artCache.get(k);
   }
-  Art.onChange = () => artCache.clear();
+  Art.onChange = () => {
+    artCache.clear();
+    if (ZG.Game && ZG.Game.g && ZG.Game.view) { ZG.Game.view.resize(); ZG.Game.refresh(); }
+  };
 
   function el(tag, cls, html) {
     const e = document.createElement(tag);
@@ -64,7 +67,7 @@
     c.appendChild(head);
     const art = el('div', 'card-art');
     const img = el('img');
-    img.src = artURL(def.art || def.id, 160, 96, { suit: def.suit });
+    img.src = artURL(def.art || def.id, 200, 100, { suit: def.suit });
     img.alt = '';
     art.appendChild(img);
     c.appendChild(art);
@@ -204,5 +207,22 @@
     return c;
   }
 
-  ZG.CardView = { card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
+  // Подгонка текста: если на конкретном шрифте/системе текст не влезает — уменьшаем кегль,
+  // а затем и высоту иллюстрации, пока строка «Связка» не станет видна целиком.
+  function fit(c) {
+    const run = () => {
+      const t = c.querySelector('.card-text');
+      if (!t || !t.clientHeight) return;
+      let fs = parseFloat(getComputedStyle(t).fontSize);
+      const art = c.querySelector('.card-art');
+      for (let i = 0; i < 14 && t.scrollHeight > t.clientHeight + 1; i++) {
+        if (fs > 8) { fs -= 0.5; t.style.fontSize = fs + 'px'; t.style.lineHeight = '1.07'; }
+        else if (art && art.offsetHeight > 30) art.style.height = (art.offsetHeight - 6) + 'px';
+        else break;
+      }
+    };
+    if (c.isConnected) run(); else requestAnimationFrame(run);
+  }
+
+  ZG.CardView = { fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

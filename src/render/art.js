@@ -15,6 +15,7 @@
   const Art = {
     define(key, fn) { draws[key] = fn; },
     has(key) { return !!(draws[key] || images[key]); },
+    image(key) { return images[key] || null; },
     useImage(key, url) {
       const img = new Image();
       img.onload = () => { images[key] = img; if (Art.onChange) Art.onChange(key); };

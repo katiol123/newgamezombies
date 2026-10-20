@@ -698,7 +698,10 @@
         c.style.setProperty('--lift', (Math.abs(i - mid) * Math.min(6, 30 / n)) + 'px');
         c.onclick = () => this.selectCard(uid, c);
         c.oncontextmenu = (ev) => { ev.preventDefault(); ev.stopPropagation(); Modal.zoomCard(def); };
-        hand.appendChild(c);
+        const slot = el('div', 'hand-slot' + (this.sel && this.sel.uid === uid ? ' sel' : ''));
+        slot.appendChild(c);
+        hand.appendChild(slot);
+        CV.fit(c);
       });
       // снаряжение
       const eq = $('#equip');
@@ -979,6 +982,7 @@
         });
         if (buttons && buttons.length) box.appendChild(bar);
         m.classList.add('show');
+        $$('.card', box).forEach((c) => CV.fit(c));
         this.open = true;
         m.onclick = (ev) => { if (ev.target === m && buttons && buttons.length === 1 && !buttons[0].modal) { this.close(); resolve(buttons[0].value); } };
       });

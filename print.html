@@ -210,6 +210,7 @@
   cardSheets('Рубашки: действия', Array.from({ length: 9 }, () => ({ el: CV.cardBack('hero') })));
   cardSheets('Рубашки: добыча', Array.from({ length: 9 }, () => ({ el: CV.cardBack('loot') })));
   cardSheets('Рубашки: появление', Array.from({ length: 9 }, () => ({ el: CV.cardBack('spawn') })));
+  requestAnimationFrame(() => document.querySelectorAll('.slot .card').forEach((c) => CV.fit(c)));
 })();
 </script>
 </body>

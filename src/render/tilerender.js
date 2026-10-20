@@ -234,6 +234,15 @@
     b.cells.forEach((c) => { if (c.type === 'blocked') drawBlocked(ctx, c, cellRect(pad, C, c), C); });
     drawDecor(ctx, b, pad, C);
     drawEdges(ctx, b, pad, C);
+    // спрайт тайла (ZG.Art.useImage('tile_<id>', ...)) рисуется поверх процедурного, с поворотом
+    b.tiles.forEach((p) => {
+      const img = Art.image('tile_' + p.id);
+      if (!img) return;
+      const T = 3 * C, x = pad + p.tx * T, y = pad + p.ty * T;
+      ctx.save(); ctx.translate(x + T / 2, y + T / 2); ctx.rotate((p.rot * Math.PI) / 2);
+      ctx.drawImage(img, -T / 2, -T / 2, T, T);
+      ctx.restore();
+    });
     // напечатанные значки люков и мест обыска
     b.cells.forEach((c) => {
       const r = cellRect(pad, C, c);
