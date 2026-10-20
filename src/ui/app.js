@@ -514,15 +514,33 @@
       const g = this.g;
       if (!g || g.active == null) return;
       const h = g.heroes[g.active];
-      if (which === 'deck') {
-        const counts = {};
-        h.deck.forEach((u) => { const n = E.cardDef(g, u).name; counts[n] = (counts[n] || 0) + 1; });
-        Modal.show(`<h2>Колода: ${h.deck.length}</h2><p class="muted">Порядок скрыт. Состав:</p><div class="pile-list">${Object.entries(counts).map(([n, c]) => `<span>${esc(n)} ×${c}</span>`).join('')}</div>`, [{ label: 'Закрыть' }]);
-      } else {
-        const wrap = el('div', 'pile-cards');
-        h.discard.forEach((u) => wrap.appendChild(CV.card(E.cardDef(g, u), { small: true })));
-        Modal.show(`<h2>Сброс: ${h.discard.length}</h2>`, [{ label: 'Закрыть' }], wrap);
-      }
+      // карты группируются по виду с количеством; в колоде порядок скрыт (сортировка по масти и названию)
+      const pile = which === 'deck' ? h.deck : h.discard;
+      const groups = new Map();
+      pile.forEach((u) => { const id = g.cards[u]; groups.set(id, (groups.get(id) || 0) + 1); });
+      const order = { rage: 0, agility: 1, mind: 2, none: 3 };
+      const ids = [...groups.keys()].sort((a, b) => {
+        const da = ZG.Cards.get(a), db = ZG.Cards.get(b);
+        return (order[da.suit] - order[db.suit]) || da.name.localeCompare(db.name, 'ru');
+      });
+      const blockBonus = ZG.Mods.value(g, h, 'blockPerCard', 0);
+      const wrap = el('div', 'pile-cards');
+      ids.forEach((id, i) => {
+        const box = el('div', 'pile-item');
+        const c = CV.card(id, { blockBonus });
+        c.classList.add('deal');
+        c.style.animationDelay = (i * 0.04) + 's';
+        c.oncontextmenu = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+        c.onclick = () => Modal.zoomCard(ZG.Cards.get(id));
+        box.appendChild(c);
+        if (groups.get(id) > 1) box.appendChild(el('div', 'pile-count', '×' + groups.get(id)));
+        wrap.appendChild(box);
+      });
+      if (!ids.length) wrap.appendChild(el('p', 'muted', 'Пусто.'));
+      const wounds = groups.get('wound') || 0;
+      const title = which === 'deck' ? `Колода: ${pile.length}` : `Сброс: ${pile.length}`;
+      const sub = which === 'deck' ? 'Порядок скрыт — показан состав.' : 'Перемешается в колоду, когда она закончится.';
+      Modal.show(`<h2>${title}</h2><p class="muted">${sub}${wounds ? ` Ран: <b>${wounds}</b>.` : ''} Клик по карте — увеличить.</p>`, [{ label: 'Закрыть' }], wrap, 'wide');
     },
 
     setHelp(html) {
