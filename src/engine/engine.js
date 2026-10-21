@@ -16,12 +16,14 @@
   'use strict';
   const ZG = G.ZG;
   const Rng = ZG.Rng, Mods = ZG.Mods, Board = ZG.Board;
+  // пороги опыта для уровней 2 и 3 (общие для всех героев; интерфейс рисует трек по ним)
   const XP_LEVELS = [4, 10];
   const MAX_BARRICADES = 4;
   const MAX_TRAPS = 3;
   const MAX_EQUIP = 2;
 
   const E = {};
+  E.XP_LEVELS = XP_LEVELS;
   ZG.Engine = E;
 
   // ================================================================ утилиты
@@ -1694,6 +1696,16 @@
     const c = {
       g, hero: h, def, target, chain, E,
       zombie: (uid) => E.zombie(g, uid),
+      // опыт за связку (у части уникальных карт героев): только под угрозой — зомби в 2 зонах — и раз за ход,
+      // чтобы нельзя было «фармить» опыт в безопасном углу
+      chainXp() {
+        if (!chain || !g.turn || g.turn.chainXp) return;
+        const d = E.distV(g, h.pos);
+        if (!g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && d[z.pos] <= 2)) return;
+        g.turn.chainXp = true;
+        E.log(g, `${E.heroName(h)}: связка под носом у мертвецов — +1 ★ опыта.`, 'good');
+        gainXp(g, h, 1);
+      },
       melee(uid, n) {
         const z = E.zombie(g, uid); if (!z) return;
         const dmg = n + Mods.value(g, h, 'meleeBonus', 0, { kind: 'melee', def });

@@ -93,9 +93,9 @@
     },
     {
       id: 'bandage', name: 'Перевязка', suit: 'mind', cost: 1, shield: 1, type: 'Лечение', tags: ['heal'], hero: 'marina',
-      text: 'Герой в твоей зоне (можно себя) убирает 2 Раны.', chainText: 'и получает 1 Блок.', art: 'bandage', value: 10,
+      text: 'Герой в твоей зоне (можно себя) убирает 2 Раны.', chainText: 'и получает 1 Блок; тебе +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'bandage', value: 10,
       target: { kind: 'hero', range: 0, self: true, wounded: true },
-      play(c) { c.heal(c.target, 2); if (c.chain) c.block(1, c.target); },
+      play(c) { c.chainXp(); c.heal(c.target, 2); if (c.chain) c.block(1, c.target); },
     },
     {
       id: 'adrenaline', name: 'Адреналин', suit: 'agility', cost: 0, shield: 1, type: 'Поддержка', tags: ['support'], hero: 'marina',
@@ -116,9 +116,9 @@
     // --- Сава ---
     {
       id: 'silent_step', name: 'Тихий шаг', suit: 'agility', cost: 1, shield: 1, type: 'Движение', tags: ['move'], hero: 'sava',
-      text: 'Пройди 1–2 зоны, можно сквозь зомби, без Хватки. В конце этого хода бродячие тебя не замечают.', chainText: 'возьми 1 карту.', art: 'silentstep', value: 8,
+      text: 'Пройди 1–2 зоны, можно сквозь зомби, без Хватки. В конце этого хода бродячие тебя не замечают.', chainText: 'возьми 1 карту и +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'silentstep', value: 8,
       target: { kind: 'move', steps: 2, through: true, free: true },
-      play(c) { if (c.g.turn) c.g.turn.quiet = true; c.moveTo(c.target); if (c.chain) c.draw(1); },
+      play(c) { c.chainXp(); if (c.g.turn) c.g.turn.quiet = true; c.moveTo(c.target); if (c.chain) c.draw(1); },
     },
     {
       id: 'shiv', name: 'Нож в спину', suit: 'agility', cost: 1, shield: 0, type: 'Атака', tags: ['melee'], hero: 'sava',
@@ -138,9 +138,9 @@
     },
     {
       id: 'lurk', name: 'Затаиться', suit: 'mind', cost: 1, shield: 2, type: 'Тактика', hero: 'sava',
-      text: 'До своего хода тебя видят только из твоей зоны (кроме ярости орды).', chainText: '+1 Блок.', art: 'lurk', value: 8,
+      text: 'До своего хода тебя видят только из твоей зоны (кроме ярости орды).', chainText: '+1 Блок и +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'lurk', value: 8,
       target: null,
-      play(c) { c.hero.lurk = true; if (c.chain) c.block(1); },
+      play(c) { c.chainXp(); c.hero.lurk = true; if (c.chain) c.block(1); },
     },
     {
       id: 'knife', name: 'Нож', suit: 'agility', cost: 0, shield: 0, type: 'Атака', tags: ['melee'], hero: 'lisa',
@@ -156,15 +156,15 @@
     },
     {
       id: 'rooftops', name: 'По крышам', suit: 'agility', cost: 2, shield: 0, type: 'Движение', tags: ['move'], hero: 'lisa',
-      text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует.', chainText: '+1 ⚡.', art: 'roof', value: 9,
+      text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует.', chainText: '+1 ⚡ и +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'roof', value: 9,
       target: { kind: 'move', steps: 3, through: true },
-      play(c) { c.moveTo(c.target); if (c.chain) c.energy(1); },
+      play(c) { c.chainXp(); c.moveTo(c.target); if (c.chain) c.energy(1); },
     },
     {
       id: 'vanish', name: 'Раствориться', suit: 'agility', cost: 2, shield: 1, type: 'Защита', tags: ['stealth'], hero: 'lisa',
-      text: 'До своего следующего хода ты Невидима: зомби не атакуют и не преследуют тебя.', chainText: 'возьми 1 карту.', art: 'mask', value: 9,
+      text: 'До своего следующего хода ты Невидима: зомби не атакуют и не преследуют тебя.', chainText: 'возьми 1 карту и +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'mask', value: 9,
       target: null,
-      play(c) { c.status('hidden'); if (c.chain) c.draw(1); },
+      play(c) { c.chainXp(); c.status('hidden'); if (c.chain) c.draw(1); },
     },
   ]);
 
@@ -206,9 +206,9 @@
     },
     {
       id: 'tripwire', name: 'Растяжка', suit: 'mind', cost: 1, shield: 0, type: 'Ловушка', tags: ['trap'], hero: 'kira',
-      text: 'Положи Ловушку в свою или соседнюю зону. Когда туда входит зомби — 2 урона каждому зомби в зоне, Шум 2.', chainText: 'Ловушка наносит 3.', art: 'trap', value: 10,
+      text: 'Положи Ловушку в свою или соседнюю зону. Когда туда входит зомби — 2 урона каждому зомби в зоне, Шум 2.', chainText: 'Ловушка наносит 3; +1 ★ опыта, если в 2 зонах есть зомби (раз за ход).', art: 'trap', value: 10,
       target: { kind: 'adj', self: true },
-      play(c) { c.trap(c.target, 2 + (c.chain ? 1 : 0)); },
+      play(c) { c.chainXp(); c.trap(c.target, 2 + (c.chain ? 1 : 0)); },
     },
     {
       id: 'improvise', name: 'Смекалка', suit: 'mind', cost: 0, shield: 1, type: 'Тактика', tags: ['draw'], hero: 'kira',
