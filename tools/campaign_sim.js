@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /*
  * Симулятор кампании: ИИ проходит цепочку миссий с переносом героев между ними.
- *   node tools/campaign_sim.js [--runs N] [--heroes boris,lisa] [--difficulty novice] [--seed S] [--verbose]
+ *   node tools/campaign_sim.js [--runs N] [--heroes boris,lisa] [--difficulty novice] [--fast] [--seed S] [--verbose]
  * Между миссиями — простая политика убежища: продать хлам, лечиться, строить Лазарет/Склад, нанимать при нехватке.
  */
 const ZG = require('./load');
 const C = ZG.Campaign;
 
 function args() {
-  const a = process.argv.slice(2), o = { runs: 20, heroes: ['boris', 'lisa'], seed: 'camp', verbose: false, difficulty: 'survivor' };
+  const a = process.argv.slice(2), o = { runs: 20, heroes: ['boris', 'lisa'], seed: 'camp', verbose: false, difficulty: 'survivor', fast: false };
   for (let i = 0; i < a.length; i++) {
     if (a[i] === '--runs') o.runs = +a[++i];
     else if (a[i] === '--heroes') o.heroes = a[++i].split(',');
     else if (a[i] === '--seed') o.seed = a[++i];
     else if (a[i] === '--verbose') o.verbose = true;
     else if (a[i] === '--difficulty') o.difficulty = a[++i];
+    else if (a[i] === '--fast') o.fast = true;
   }
   return o;
 }
@@ -50,9 +51,10 @@ function run(o, k) {
     if (opts.error) throw new Error(opts.error);
     opts.quiet = true;
     const g = ZG.Engine.create(opts);
-    ZG.Bot.playGame(g, { depth2: false });
+    ZG.Bot.playGame(g, { depth2: !o.fast });
     const rep = C.finishMission(c, g);
     trail.push(`${rep.win ? 'W' : 'L'}${rep.stars}`);
+    const pm = (perMission[rep.missionNo - 1] = perMission[rep.missionNo - 1] || { n: 0, w: 0 }); pm.n++; if (rep.win) pm.w++;
     if (o.verbose) console.log(`  миссия ${rep.missionNo}: ${rep.win ? 'победа' : 'провал'} ★${rep.stars} | ` + c.roster.map((h) => `${h.id} L${h.level} xp${h.xp} hp${C.hp(h)} мор${h.morale} 🎫${h.talons} экип${h.equip.length} сунд${h.chest.length}`).join('; ') + (rep.lost.length ? ` | выбыли: ${rep.lost.map((l) => l.id + (l.turned ? '(обращён)' : '')).join(',')}` : '') + (c.wanderers.length ? ` | бродят: ${c.wanderers.join(',')}` : ''));
   }
   return { c, trail };
@@ -60,6 +62,7 @@ function run(o, k) {
 
 const o = args();
 let won = 0, reached = 0;
+const perMission = [];
 const levels = [];
 for (let k = 0; k < o.runs; k++) {
   const { c, trail } = run(o, k);
@@ -68,4 +71,5 @@ for (let k = 0; k < o.runs; k++) {
   c.roster.forEach((h) => levels.push(h.level));
   console.log(`#${k} ${c.status.padEnd(4)} миссий ${c.missionNo}/${c.chainLength} [${trail.join(' ')}] ${c.endReason || ''}`);
 }
+console.log('По миссиям (побед/сыграно): ' + perMission.map((m, i) => `${i + 1}: ${m.w}/${m.n}`).join('  '));
 console.log(`\nКампаний пройдено: ${won}/${o.runs}; в среднем миссий: ${(reached / o.runs).toFixed(1)}; уровни выживших: ${levels.length ? (levels.reduce((a, b) => a + b, 0) / levels.length).toFixed(1) : '-'}`);
