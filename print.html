@@ -198,7 +198,7 @@
   };
   const pool = lvl.pool || {};
   tok('z_walker', pool.walker || 24, 'Шатун'); tok('z_runner', pool.runner || 8, 'Бегун'); tok('z_fatso', pool.fatso || 5, 'Толстяк'); tok('z_screamer', pool.screamer || 4, 'Крикун');
-  tok('z_brute', pool.brute || 2, 'Громила', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 2, 'Гнездо', 'big', { t: 0 });
+  tok('z_brute', pool.brute || 2, 'Громила', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 3, 'Гнездо', 'big', { t: 0 });
   // фишка героя: лицо — герой, оборот — он же, обращённый (печатайте двусторонней)
   ZG.Heroes.all().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (оборот фишки)`, 'big'); });
   tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
@@ -218,7 +218,7 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
   html += '</div><div style="font: 11pt var(--font-t)">Сумерки → Ночь → Глухая ночь (зомби +1 к скорости). После последнего раунда — поражение.</div>';
   html += '<div>ТРЕВОГА</div><div class="row">';
   for (let a = 0; a <= 11; a++) html += `<div style="background:${a >= 6 ? '#f2b0a0' : a >= 3 ? '#f8dccf' : '#fff'}">${a}</div>`;
-  html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: соло — 5, двое — 6, трое — 4, четверо — 3. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
+  html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: соло — 5, двое и трое — 6, четверо — 4. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
   html += '<div>СЧЁТЧИК БОНУСНОЙ ЦЕЛИ</div><div class="row" style="flex-wrap:wrap">';
   for (let a = 0; a <= 24; a++) html += `<div style="width:7mm;height:10mm;font-size:10pt">${a}</div>`;
   html += '</div>';

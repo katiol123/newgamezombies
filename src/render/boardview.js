@@ -748,16 +748,21 @@
           ctx.save();
           ctx.translate(mx, my);
           if (horiz) ctx.rotate(Math.PI / 2);
-          const L = C * 0.34, T = C * 0.07;
+          const L = C * 0.5, T = C * 0.12;
           if (open) {
-            // створка распахнута на петле
-            ctx.translate(-L / 2, 0); ctx.rotate(-1.25);
-            Art.rr(ctx, 0, -T / 2, L, T, 2); ctx.fillStyle = 'rgba(122,84,44,.75)'; ctx.fill();
-            ctx.lineWidth = 1; ctx.strokeStyle = '#2a1c0c'; ctx.stroke();
+            // открытый проём: пунктир + распахнутая створка
+            ctx.setLineDash([C * 0.05, C * 0.04]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(168,200,190,.7)';
+            ctx.beginPath(); ctx.moveTo(-L / 2, 0); ctx.lineTo(L / 2, 0); ctx.stroke(); ctx.setLineDash([]);
+            ctx.save(); ctx.translate(-L / 2, 0); ctx.rotate(-1.2);
+            Art.rr(ctx, 0, -T * 0.35, L * 0.9, T * 0.7, 2); ctx.fillStyle = '#4f6b66'; ctx.fill();
+            ctx.lineWidth = 1.2; ctx.strokeStyle = '#0d1412'; ctx.stroke();
+            ctx.restore();
           } else {
-            Art.rr(ctx, -L / 2, -T / 2, L, T, 2); ctx.fillStyle = '#7a542c'; ctx.fill();
-            ctx.lineWidth = 1.5; ctx.strokeStyle = '#2a1c0c'; ctx.stroke();
-            ctx.fillStyle = '#e0c070'; ctx.beginPath(); ctx.arc(L * 0.3, 0, T * 0.28, 0, TAU); ctx.fill();
+            // закрытая: стальная створка с обводкой и ручкой
+            Art.rr(ctx, -L / 2, -T / 2, L, T, 3); ctx.fillStyle = '#5f8079'; ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = '#0d1412'; ctx.stroke();
+            ctx.strokeStyle = 'rgba(220,240,230,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-L / 2 + 3, -T * 0.18); ctx.lineTo(L / 2 - 3, -T * 0.18); ctx.stroke();
+            ctx.fillStyle = '#f0d070'; ctx.beginPath(); ctx.arc(L * 0.3, 0, T * 0.25, 0, TAU); ctx.fill(); ctx.strokeStyle = '#0d1412'; ctx.stroke();
           }
           ctx.restore();
         });

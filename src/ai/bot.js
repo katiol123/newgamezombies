@@ -53,7 +53,8 @@
     const reach = {};
     const noBarr = (x, y) => !E.barricadeAt(g, x, y);
     const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h, shelter: E.sheltered(g, h) }))
-      .concat(g.lures.map((l) => ({ pos: l.pos })));
+      .concat(g.lures.map((l) => ({ pos: l.pos })))
+      .concat(Object.keys(g.noise).filter((k) => g.noise[k] > 0 && !E.heroesAt(g, +k).length).map((k) => ({ pos: +k })));
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat;

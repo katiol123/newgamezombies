@@ -167,7 +167,7 @@
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
     { id: 'fog', name: 'Смог', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
-    { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше, но светло: +1 раунд.', tone: -1, mods: { phaseShift: 1, maxRounds: 1 }, art: 'cond_moon' },
+    { id: 'fullmoon', name: 'Полнолуние', text: 'Глухая ночь наступает на 1 раунд раньше.', tone: -1, mods: { deepShift: 1 }, art: 'cond_moon' },
     {
       id: 'convoy', name: 'Брошенный конвой', text: '+3 жетона Обыска на улицах. Тревога начинается с 2.', tone: 0, art: 'cond_convoy',
       setup(g, E) { E.addStreetSearch(g, 3); g.alarm += 2; },
@@ -177,8 +177,8 @@
       setup(g, E) { g.spawnPoints.forEach((p) => E.spawnZombie(g, 'walker', p)); g.heroes.forEach((h) => E.giveLoot(g, h)); },
     },
     {
-      id: 'stash', name: 'Схрон', text: 'Каждый герой начинает с 1 картой добычи. Тревога начинается с 2.', tone: 1, art: 'cond_stash',
-      setup(g, E) { g.heroes.forEach((h) => E.giveLoot(g, h)); g.alarm += 2; },
+      id: 'stash', name: 'Схрон', text: 'Каждый герой начинает с 1 картой добычи.', tone: 1, art: 'cond_stash',
+      setup(g, E) { g.heroes.forEach((h) => E.giveLoot(g, h)); },
     },
   ]);
 
@@ -198,6 +198,6 @@
   ZG.Difficulties.addAll([
     { id: 'novice', name: 'Новичок', text: '+2 раунда, Ночь и Глухая ночь наступают на 2 раунда позже, порог Волны +2, на 1 люк меньше, Заражение только на 1 кубика, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2, phaseShift: -2, infectDie: -1, spawnPointsBonus: -1 }, startLoot: 1 },
     { id: 'survivor', name: 'Выживший', text: 'Стандартные правила.', mods: {} },
-    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (g.heroes.length >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
+    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1 (не ниже 3), Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (g.heroes.length >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

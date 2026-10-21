@@ -23,9 +23,9 @@
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
     bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
     rounds: 12,
-    phaseStarts: [1, 3, 6], // Сумерки с 1-го, Ночь с 3-го, Глухая ночь с 6-го раунда
+    phaseStarts: [1, 3, 5], // Сумерки с 1-го, Ночь с 3-го, Глухая ночь с 5-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
-    alarmThreshold: { 1: 5, 2: 6, 3: 4, 4: 3 }, // порог Волны по размеру отряда: большой отряд шумит больше
+    alarmThreshold: { 1: 5, 2: 6, 3: 6, 4: 4 }, // порог Волны по размеру отряда: большой отряд шумит больше
     startAlarm: { 3: 1, 4: 1 }, // большой отряд шумит: стартовая Тревога (ниже порога Волны)
     spawnPoints: { 1: 2, 2: 3, 3: 4, 4: 4 },
     events: ['ev_radio', 'ev_airdrop', 'ev_blackout', 'ev_silence', 'ev_gas', 'ev_survivor', 'ev_rush', 'ev_frenzy', 'ev_storm', 'ev_howl'],

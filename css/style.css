@@ -204,7 +204,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 
 .board-wrap { grid-area: board; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: radial-gradient(ellipse at center, #1a1410, #080605); }
 #board { display: block; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.8), 0 0 0 1px #2a2018; cursor: pointer; }
-.help-line { flex: 1; min-width: 0; text-align: center; padding: 5px 14px; border-radius: 16px; font-family: var(--font-t); font-size: 15px; line-height: 1.2; color: var(--paper2); opacity: 0; transition: opacity .3s, background .3s; max-height: 44px; overflow: hidden; }
+.help-line { flex: 1; min-width: 0; text-align: center; padding: 5px 14px; border-radius: 16px; font-family: var(--font-t); font-size: 14px; line-height: 1.2; color: var(--paper2); opacity: 0; transition: opacity .3s, background .3s; max-height: 44px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: ellipsis; }
 .help-line.show { opacity: 1; background: rgba(240,192,64,.07); border: 1px solid rgba(240,192,64,.18); }
 
 .side { grid-area: side; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: linear-gradient(90deg, #120e0b, #17120e); border-left: 1px solid var(--line); overflow: hidden; }

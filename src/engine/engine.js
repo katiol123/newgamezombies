@@ -66,8 +66,9 @@
   E.phase = function (g, round) {
     const lvl = ZG.Levels.get(g.levelId);
     const r = (round || g.round) + Mods.value(g, null, 'phaseShift', 0);
+    const deep = Mods.value(g, null, 'deepShift', 0); // сдвиг только Глухой ночи
     let p = 0;
-    lvl.phaseStarts.forEach((s, i) => { if (r >= s) p = i; });
+    lvl.phaseStarts.forEach((s, i) => { if (r + (i === 2 ? deep : 0) >= s) p = i; });
     return p;
   };
   E.scenario = (g) => ZG.Scenarios.get(g.scenarioId);
@@ -91,7 +92,7 @@
     if (!g.doors || !h.onBoard) return false;
     const bld = g.board.cells[h.pos].bld;
     if (!bld) return false;
-    if (g.board.cells.some((c) => c.bld === bld && g.noise[c.i])) return false;
+    if (g.board.cells.some((c) => c.bld === bld && (g.noise[c.i] || (g.loud && g.loud[c.i])))) return false;
     return E.entrances(g, bld).every(([a, b]) => !g.doors[doorKey(a, b)]);
   };
   function openDoor(g, a, b, hero) {
@@ -362,11 +363,13 @@
   function bite(g, h, n, attackers) {
     if (n <= 0) return;
     const inf = ZG.Levels.get(g.levelId).infection;
-    const always = (attackers || []).some((u) => { const z = E.zombie(g, u); return z && ZG.Zombies.get(z.type).infects; });
-    // один бросок на каждого укусившего зомби (не на каждую единицу урона)
-    const rolls = Math.min(n, Math.max(1, (attackers || []).length));
+    // один бросок на каждого укусившего зомби (не на каждую единицу урона); заразный (Обращённая Марина) — Заражение без броска
+    const list = (attackers || []).map((u) => E.zombie(g, u)).filter(Boolean);
+    const rolls = Math.min(n, Math.max(1, list.length));
     let infections = 0;
     for (let i = 0; i < rolls; i++) {
+      const z = list[i];
+      const always = z && ZG.Zombies.get(z.type).infects;
       const roll = 1 + Rng.int(g, 6);
       if (inf && (always || roll <= Mods.value(g, h, 'infectDie', inf.die))) infections++;
     }
@@ -469,8 +472,9 @@
     const saver = g.heroes.find((o) => o.onBoard && o.pos === h.pos && !o.secondWindUsed && Mods.flag(g, o, 'secondWind'));
     if (saver) {
       saver.secondWindUsed = true;
-      healWounds(g, h, 2);
+      healWounds(g, h, 2, true);
       E.log(g, `${E.heroName(saver)}: «Второе дыхание»! ${E.heroName(h)} остаётся в строю.`, 'good');
+      checkFall(g, h); // если двух не хватило — всё же падает
       return;
     }
     h.onBoard = false; h.fallen = true;
@@ -549,6 +553,8 @@
   }
 
   function damageZombie(g, z, n, heroIdx, kind) {
+    // любая атака героя выдаёт его укрытие до конца раунда (даже бесшумная)
+    if (heroIdx != null && (kind === 'melee' || kind === 'ranged') && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     const def = ZG.Zombies.get(z.type);
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
@@ -622,6 +628,8 @@
       t.push({ pos: h.pos, noise: 1 + (g.noise[h.pos] || 0), wounds: E.hurtCount(g, h), idx: h.idx, shelter: E.sheltered(g, h) });
     });
     g.lures.forEach((l) => t.push({ pos: l.pos, lure: true, noise: g.noise[l.pos] || 0, wounds: 99, idx: 99 }));
+    // шум без героев (скрип двери, взрыв) — тоже цель: зомби идут проверить
+    Object.keys(g.noise).forEach((k) => { const c = +k; if (g.noise[c] > 0 && !E.heroesAt(g, c).length && !g.lures.some((l) => l.pos === c)) t.push({ pos: c, noise: g.noise[c], wounds: 98, idx: 97, sound: true }); });
     g.traps.forEach((tr) => { if (tr.owner != null && Mods.flag(g, g.heroes[tr.owner], 'trapLure')) t.push({ pos: tr.pos, lure: true, noise: g.noise[tr.pos] || 0, wounds: 99, idx: 98 }); });
     return t;
   }
@@ -636,10 +644,10 @@
     const dz = E.distV(g, z.pos);
     let best = null;
     targets.forEach((t) => {
-      if (t.shelter && dz[t.pos] > 1) return; // укрытие: из-за закрытых дверей не видно
+      if (t.shelter && dz[t.pos] > 1 && g.board.cells[z.pos].bld !== g.board.cells[t.pos].bld) return; // укрытие: из-за закрытых дверей не видно
       if (dz[t.pos] === Infinity) return;
       // ближайшая цель; ничья → приманка, затем больше шума, затем меньше Ран
-      const key = (x) => [dz[x.pos], x.lure ? 0 : 1, -x.noise, x.wounds, x.idx];
+      const key = (x) => [dz[x.pos], x.lure ? 0 : x.sound ? 2 : 1, -x.noise, x.wounds, x.idx];
       if (!best) { best = t; return; }
       const a = key(t), b = key(best);
       for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) { if (a[i] < b[i]) best = t; break; } }
@@ -666,6 +674,12 @@
         E.log(g, `${def.name} проламывает баррикаду.`, 'warn');
       }
       return false;
+    }
+    // закрытая дверь: зомби тратит один шаг, чтобы её распахнуть
+    if (E.doorClosed(g, z.pos, next)) {
+      openDoor(g, z.pos, next, null);
+      E.fx(g, { t: 'bash', pos: z.pos, to: next });
+      return true;
     }
     enterCell(g, z, next);
     return true;
@@ -852,6 +866,7 @@
     g.event = null;
     g.lures = [];
     g.noise = {};
+    g.loud = {};
     g.relaySuit = null;
     g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big) z.dmg = 0; });
     if (g.round >= E.maxRounds(g)) {
@@ -1080,6 +1095,7 @@
         keepLoot(g, g.heroes[p.hero], a.id, rest);
       }
       else if (a.t === 'talent' && p.type === 'talent') {
+        if (!p.options.includes(a.id)) return fail(g, 'Такого таланта нет в выборе.');
         const h = g.heroes[p.hero];
         h.talents.push(a.id);
         h.talentQueue.shift();
@@ -1214,7 +1230,7 @@
         return true;
       }
       case 'rest': {
-        if (h.energy < 3) return fail(g, 'Нужно 3 ⚡.');
+        if (h.energy < 3 || !h.hand.some((u) => g.cards[u] === 'wound') || E.zombiesAt(g, h.pos).length) return fail(g, 'Отдышаться нельзя.');
         spend(g, h, 3);
         const i = h.hand.findIndex((u) => g.cards[u] === 'wound');
         if (i >= 0) h.hand.splice(i, 1);
@@ -1267,8 +1283,9 @@
     const from = h.pos;
     if (g.doors) {
       // двери по пути (карта может провести через несколько зон)
-      const d = Board.bfs(g.board, to);
+      const d = Board.bfs(g.board, to, (a, b) => !E.hidden(g, b) && (b === from || !E.zombiesAt(g, b).length));
       let cur = from;
+      if (d[from] === Infinity && g.board.adj[from].includes(to)) openDoor(g, from, to, h);
       for (let k = 0; k < 12 && cur !== to; k++) {
         const nx = g.board.adj[cur].find((n) => d[n] === d[cur] - 1);
         if (nx == null) break;
