@@ -59,4 +59,19 @@
     rounds: base.rounds + 2, // +2 раунда: учебная миссия должна проходиться почти всегда
     events: base.events.filter((id) => id !== 'ev_hound'),
   }));
+
+  // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m2', campaignOnly: true,
+    text: 'Автобаза на краю района: притаившиеся мертвецы и фургон во дворе.',
+    layout: { tw: 3, th: 2 },
+    scenarios: ['autobase'],
+    conditions: ['calm'],
+    spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 },
+    events: [], // без событий: только то, что расставлено заранее
+    decoys: false,
+    fogBreak: 0, // стопок в тумане нет — прорыв не нужен
+    rounds: 10,
+    roundsBonus: { 1: 3, 4: -2 }, // соло: +3 раунда (одному долго добивать двух Толстяков); четвёрка: −2 (быстро прочёсывает район)
+  }));
 })(typeof globalThis !== 'undefined' ? globalThis : window);

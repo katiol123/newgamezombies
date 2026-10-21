@@ -160,6 +160,61 @@
       },
       progress(g) { return (g.obj.nests - this.nestsLeft(g)) * 2; },
     },
+    // --- Кампания, миссия 2 (особые правила): только через цепочку кампании ---
+    {
+      id: 'autobase', campaignOnly: true, name: 'Автобаза №3',
+      short: 'Ликвидируй двух Толстяков в боксе автобазы и уезжай на фургоне.',
+      brief: 'В боксе автобазы засели двое разжиревших мертвецов, а во дворе ждёт заправленная «буханка» — последний шанс выбраться из района.',
+      setupText: 'Поле 3×2, люков нет. Уникальный тайл «Автобаза №3» — в правом (дальнем) столбце, строка случайна; лежит рубашкой вверх, но его место известно; в боксе — 2 притаившихся Толстяка, во дворе — фургон (выход). На 4 остальных закрытых тайла рубашкой вверх кладутся 4 карты «Стая/Пусто» (2 и 2): при открытии тайла с «Стаей» в его центр выставьте стаю — 3 Шатуна и 2 Бегуна (при 3 героях: 4 Шатуна и 3 Бегуна, при 4: 5 Шатунов и 4 Бегуна). Раундов 10 (соло — 13, четверо — 8). Притаившиеся зомби не бродят, пока их не разбудят (увидят героя или услышат шум). Открыт только стартовый тайл.',
+      exitLabel: 'Фургон', exitArt: 'exit_van',
+      // состав одной стаи (обе стаи одинаковые) — по размеру отряда
+      stacks: { 1: ['walker', 'walker', 'walker', 'runner', 'runner'], 2: ['walker', 'walker', 'walker', 'runner', 'runner'], 3: ['walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner', 'runner'] },
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng;
+        const ut = b.tiles.findIndex((t) => t.id === 'autobase');
+        const at = (ti, lx, ly) => b.cells.find((c) => c.tile === ti && c.lx === lx && c.ly === ly);
+        const st = b.cells[g.start].tile;
+        g.obj = { bosses: [], total: 2 };
+        if (ut >= 0) {
+          const van = ZG.Tiles.get('autobase').van;
+          g.exit = at(ut, van[0], van[1]).i;
+          // два притаившихся Толстяка в боксе
+          b.cells.filter((c) => c.tile === ut && c.type === 'building').slice(0, 2).forEach((c) => {
+            const z = E.spawnZombie(g, 'fatso', c.i, null, true, true, true);
+            if (z) { z.awake = false; z.lurk = true; z.trail = null; g.obj.bosses.push(z.uid); }
+          });
+        }
+        // туман: открыт только стартовый тайл; где автобаза — известно (её рубашка особая)
+        if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st);
+        // стаи: 4 карты «Стая/Пусто» на остальные закрытые тайлы — где стаи, неизвестно
+        const cand = b.tiles.map((t, i) => i).filter((i) => i !== ut && i !== st);
+        g.stackTiles = cand.slice();
+        g.hideFogCounts = true;
+        Rng.shuffle(g, cand.slice()).slice(0, 2).forEach((ti) => {
+          const mid = at(ti, 1, 1);
+          const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, b.cells.filter((c) => c.tile === ti && c.type !== 'blocked'));
+          this.stacks[Math.min(4, g.heroes.length)].forEach((type) => {
+            const z = E.spawnZombie(g, type, cell.i, null, true, true, true);
+            if (z) { z.awake = false; z.lurk = true; z.trail = null; }
+          });
+        });
+      },
+      bossesLeft(g) { return g.zombies.filter((z) => g.obj.bosses.includes(z.uid)).length; },
+      goals(g) {
+        const left = this.bossesLeft(g);
+        return [
+          { text: `Ликвидировать Толстяков в боксе: ${g.obj.total - left}/${g.obj.total}`, done: left === 0 },
+          { text: 'Все выжившие уезжают на фургоне', done: false },
+        ];
+      },
+      isComplete(g) { return this.bossesLeft(g) === 0; },
+      actions() { return []; },
+      botGoal(g, hero, E) {
+        const bosses = g.zombies.filter((z) => g.obj.bosses.includes(z.uid)).map((z) => z.pos);
+        return bosses.length ? E.nearest(g, hero.pos, bosses) : null;
+      },
+      progress(g) { return (g.obj.total - this.bossesLeft(g)) * 3; },
+    },
   ]);
 
   // ------------------------------------------------------- Условия партии ---

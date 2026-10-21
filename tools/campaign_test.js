@@ -246,5 +246,19 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.zombies.every((z) => ['walker', 'runner', 'nest'].includes(z.type)), 'на поле только слабые (и гнёзда задания)');
 }
 
+// 19) миссия 2: автобаза на краю, фургон — выход, Толстяки и 2 стаи притаились, люков нет
+{
+  const c = C.create({ heroes: [{ id: 'boris' }, { id: 'lisa' }], seed: 't19' });
+  c.missionNo = 1;
+  const opts = C.startMission(c); opts.quiet = true;
+  const g = E.create(opts);
+  const ut = g.board.tiles.findIndex((t) => t.id === 'autobase');
+  ok(ut >= 0 && g.board.tiles[ut].tx === 2 && !g.revealed[ut] && g.board.cells[g.exit].tile === ut, 'автобаза в дальнем столбце, закрыта, фургон на ней');
+  ok(!g.spawnPoints.length && g.scenarioId === 'autobase', 'люков нет, задание «Автобаза»');
+  const lurk = g.zombies.filter((z) => z.lurk && !z.awake);
+  ok(lurk.filter((z) => z.type === 'fatso').length === 2 && lurk.length === 2 + 10, `притаились 2 Толстяка и 2 стаи по 5: ${lurk.length}`);
+  ok(g.stackTiles.length === 4 && g.hideFogCounts, 'на 4 тайлах карты «Стая/Пусто», счётчики скрыты');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

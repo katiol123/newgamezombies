@@ -1041,10 +1041,29 @@
       ctx.restore();
       ctx.strokeStyle = 'rgba(224,168,58,.35)'; ctx.lineWidth = 2; ctx.setLineDash([10, 6]);
       ctx.strokeRect(-T / 2 + 6, -T / 2 + 6, T - 12, T - 12); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, -C * 0.1);
-      ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
-      ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
+      const tdef = ZG.Tiles.get(b.tiles[ti].id);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (tdef.unique) {
+        // уникальный тайл миссии: место известно (особая рубашка), содержимое — нет
+        Art.draw(ctx, (ZG.Engine.scenario(g).exitArt || 'exit_car'), -C * 0.32, -C * 0.75, C * 0.64, C * 0.84, {});
+        ctx.fillStyle = '#f0c040'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
+        ctx.fillText(tdef.name.toUpperCase(), 0, C * 0.4);
+        ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
+        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.65);
+      } else {
+        ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
+        ctx.fillText('?', 0, -C * 0.1);
+        ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
+        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
+      }
+      // карта «Стая/Пусто» рубашкой вверх (миссии с притаившимися стаями)
+      if (g.stackTiles && g.stackTiles.includes(ti)) {
+        ctx.save(); ctx.translate(C * 0.95, -C * 0.85); ctx.rotate(0.12);
+        Art.rr(ctx, -C * 0.22, -C * 0.3, C * 0.44, C * 0.6, 5); ctx.fillStyle = '#5a1f18'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#e0a83a'; ctx.stroke();
+        ctx.fillStyle = '#e0a83a'; ctx.font = `${Math.round(C * 0.32)}px 'Russo One', sans-serif`; ctx.fillText('?', 0, C * 0.02);
+        ctx.restore();
+      }
       // известные объекты
       const icons = [];
       g.spawnPoints.forEach((p) => { if (b.cells[p].tile === ti) icons.push('tok_spawn'); });
@@ -1052,7 +1071,7 @@
       if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
       const s = C * 0.42;
       icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
-      const n = ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
+      const n = g.hideFogCounts ? 0 : ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
       if (n) {
         const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
         ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);

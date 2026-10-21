@@ -25,7 +25,13 @@
     if (!pool.length) pool = Rng.shuffle(g, level.tiles.slice()); // исключили всё — берём базовый пул
     const grid = {};
     const key = (tx, ty) => tx + ',' + ty;
-    req.filter((r) => r.tx != null).forEach((r) => { if (!grid[key(r.tx, r.ty || 0)]) grid[key(r.tx, r.ty || 0)] = r.id; else r.tx = null; }); // место занято — ставим как без позиции
+    req.filter((r) => r.tx != null).forEach((r) => {
+      // tx = -1 — крайний правый столбец; ty не задан — случайная строка этого столбца
+      const tx = r.tx < 0 ? tw + r.tx : r.tx;
+      const rows = []; for (let ty = 0; ty < th; ty++) if (!grid[key(tx, ty)]) rows.push(ty);
+      const ty = r.ty != null ? r.ty : rows.length ? Rng.pick(g, rows) : null;
+      if (ty != null && !grid[key(tx, ty)]) grid[key(tx, ty)] = r.id; else r.tx = null; // место занято — ставим как без позиции
+    });
     const free = (mid) => { const out = []; for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) if (!grid[key(tx, ty)] && (!mid || (tx > 0 && tx < tw - 1))) out.push(key(tx, ty)); return out; };
     req.filter((r) => r.tx == null).forEach((r) => {
       const opts = free(true).length ? free(true) : free(false);
@@ -57,7 +63,7 @@
           const x = p.tx * T + rx, y = p.ty * T + ry;
           const isB = ch !== '.' && ch !== '#';
           cells[y * W + x] = {
-            i: y * W + x, x, y, tile: ti,
+            i: y * W + x, x, y, tile: ti, lx, ly,
             sideMid: (lx === 1) !== (ly === 1) && isB, // середина стороны тайла (помещение со входом наружу)
             type: ch === '.' ? 'street' : ch === '#' ? 'blocked' : 'building',
             bld: isB ? ti + ':' + ch : null,

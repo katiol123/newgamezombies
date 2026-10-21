@@ -1102,6 +1102,7 @@
     if (extra) extra(c);
   }
   Art.define('exit_car', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#3d6e8f', '#4f87ab')));
+  Art.define('exit_van', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#5a6e3a', '#7a9450'))); // УАЗ-«буханка» с автобазы
   Art.define('exit_ambulance', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#eeeeee', '#ffffff', (c) => {
     c.fillStyle = '#c0392b'; c.fillRect(44, 44, 8, 20); c.fillRect(38, 50, 20, 8); c.fillStyle = '#2d6fb5'; c.fillRect(30, 40, 8, 4); c.fillStyle = '#c0392b'; c.fillRect(58, 40, 8, 4);
   })));

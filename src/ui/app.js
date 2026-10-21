@@ -1235,10 +1235,13 @@
       if (g.spawnPoints.some((p) => b.cells[p].tile === ti)) known.push('люк');
       const cr = g.crates.filter((x) => !x.opened && b.cells[x.pos].tile === ti).length;
       if (cr) known.push(cr + ' ' + ZG.util.plural(cr, 'ящик', 'ящика', 'ящиков'));
-      const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
+      const fb = ZG.Levels.get(g.levelId).fogBreak, lim = fb == null ? 4 : fb;
+      const tdef = ZG.Tiles.get(b.tiles[ti].id);
+      if (tdef.unique) known.unshift(tdef.name);
+      if (g.stackTiles && g.stackTiles.includes(ti)) known.push('карта «Стая/Пусто» — здесь может притаиться стая');
       return `<div class="tt-head">Не разведано</div><div>Где стены и что внутри — неизвестно. Войдите базовым «Движением» из соседней зоны.</div>` +
         (known.length ? `<div class="tt-gold">На рубашке: ${known.join(', ')}</div>` : '') +
-        (n ? `<div class="tt-red">Стопка: ${n} ${ZG.util.plural(n, 'жетон', 'жетона', 'жетонов')} лицом вниз — примерно половина может оказаться пустышками. При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
+        (n && !g.hideFogCounts ? `<div class="tt-red">Стопка: ${n} ${ZG.util.plural(n, 'жетон', 'жетона', 'жетонов')} лицом вниз — примерно половина может оказаться пустышками. При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
     }
     const parts = [];
     const typeName = c.type === 'building' ? 'Помещение' : c.type === 'blocked' ? 'Непроходимо' : 'Улица';

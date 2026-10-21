@@ -910,7 +910,7 @@
   // Цель зомби: ближайший видимый герой / приманка / пустой шум (null — стоять)
   function pickGoal(g, z) {
     if (g.stealth) {
-      if (!z.awake) return wanderGoal(g, z);
+      if (!z.awake) return z.lurk ? null : wanderGoal(g, z); // притаившийся ждёт на месте, пока не разбудят
       // охотник: видимые герои и приманки; никого не видно — последний след
       const cand = g.heroes.filter((h) => E.sees(g, z, h)).map((h) => ({ pos: h.pos, k: 1 })).concat(g.lures.map((l) => ({ pos: l.pos, k: 0 })));
       if (!cand.length && z.trail != null) cand.push({ pos: z.trail, k: 2 });
@@ -1041,8 +1041,8 @@
           if (def.hooks && def.hooks.zombiePhase) def.hooks.zombiePhase(g, z, E);
         });
         // Прорыв: если в закрытом тайле скопилось много зомби — он открывается сам
-        if (g.revealed) {
-          const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
+        const fb = ZG.Levels.get(g.levelId).fogBreak, lim = fb == null ? 4 : fb;
+        if (g.revealed && lim) {
           g.board.tiles.forEach((t, ti) => {
             if (g.revealed[ti]) return;
             const n = E.fogTokens(g, ti, true); // по жетонам в стопке (пустышки тоже считаются)

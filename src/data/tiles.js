@@ -18,6 +18,14 @@
   const ZG = G.ZG;
 
   ZG.Tiles.addAll([
+    // уникальный тайл кампании (миссия 2): в пул уровня не входит, ставится правилами миссии
+    {
+      id: 'autobase', name: 'Автобаза №3', num: 'А3', unique: true,
+      map: ['AA.', 'AA.', '...'], doors: [[1, 1, 2, 1], [0, 1, 0, 2]], search: [[0, 1, 'armory']],
+      buildings: { A: { floor: 'concrete', label: 'Бокс' } },
+      decor: [{ k: 'workbench', x: 0, y: 0 }, { k: 'tires', x: 1, y: 0 }, { k: 'locker', x: 1, y: 1 }, { k: 'cones', x: 0, y: 2 }],
+      van: [2, 2], // где стоит фургон (выход миссии)
+    },
     {
       id: 'crossroad', name: 'Перекрёсток', num: '01',
       manhole: [2, 1], map: ['...', '.#.', '...'], doors: [], search: [[0, 0]],
