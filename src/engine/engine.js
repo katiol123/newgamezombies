@@ -116,7 +116,7 @@
   // видит ли зомби героя: своя зона, соседняя (по проходу) или прямая линия через открытые проходы
   E.sees = function (g, z, h) {
     if (!h.onBoard || h.hidden || E.hidden(g, z.pos)) return false;
-    if (E.alerted(g)) return true; // Волна: орда знает, где все
+    if (E.alerted(g) || ZG.Zombies.get(z.type).relentless) return true; // Волна / Безжалостный: знают, где все
     if (z.pos === h.pos) return true;
     if (h.lurk) return false; // «Затаиться»: видят только в своей зоне
     // бродячие не замечают бесшумного героя (Тень) и того, кто идёт «Тихим шагом»
@@ -170,7 +170,7 @@
       if (!z.awake || ZG.Zombies.get(z.type).relentless || ZG.Zombies.get(z.type).immobile) return;
       const seen = g.heroes.filter((h) => E.sees(g, z, h));
       if (seen.length) { z.trail = seen[0].pos; return; }
-      if (z.trail != null && z.trail !== z.pos) return; // идёт по последнему следу
+      if (z.trail != null && z.trail !== z.pos && E.distV(g, z.pos)[z.trail] !== Infinity) return; // идёт по последнему следу (если до него можно дойти)
       z.awake = false; z.trail = null;
       E.fx(g, { t: 'zsleep', zombie: z.uid, pos: z.pos });
     });
@@ -606,7 +606,8 @@
       return null;
     }
     const zd = ZG.Zombies.get(type);
-    const z = { uid: E.newUid(g, 'z'), type, pos, dmg: 0, suppressed: false, awake: !g.stealth || E.alerted(g) || !!zd.relentless, trail: null };
+    const z = { uid: E.newUid(g, 'z'), type, pos, dmg: 0, suppressed: false, awake: !g.stealth || !!zd.relentless || (!E.hidden(g, pos) && (E.alerted(g) || E.heroesAt(g, pos).some((h) => !h.hidden))), trail: null };
+    if (z.awake && g.stealth && !zd.relentless) z.trail = pos; // появился рядом с героем — сразу охотится
     g.zombies.push(z);
     g.stats.spawned++;
     E.fx(g, { t: 'spawn', zombie: z.uid, pos, ztype: type });
