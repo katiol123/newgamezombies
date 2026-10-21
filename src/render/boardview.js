@@ -736,7 +736,9 @@
         ctx.rotate((1 - e) * (i % 2 ? 0.25 : -0.25));
         ctx.scale(0.8 + e * 0.2, 0.8 + e * 0.2);
         ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 30 * (1 - p) + 4; ctx.shadowOffsetY = 12 * (1 - p);
-        ctx.drawImage(this.staticLayer, sxp * this.dpr, syp * this.dpr, T * this.dpr, T * this.dpr, -T / 2, -T / 2, T, T);
+        // закрытые туманом тайлы падают рубашкой вверх — содержимое не мелькает
+        if (this.shown && !this.shown[i]) this._fogFace(ctx, i, 0);
+        else ctx.drawImage(this.staticLayer, sxp * this.dpr, syp * this.dpr, T * this.dpr, T * this.dpr, -T / 2, -T / 2, T, T);
         ctx.restore();
       });
       if (k > 0.75) {
@@ -1012,48 +1014,54 @@
         ctx.save();
         ctx.translate(x + T / 2, y + T / 2 - lift);
         ctx.scale(sx, 1);
-        ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 10 + lift; ctx.shadowOffsetY = 4 + lift;
-        const gr = ctx.createLinearGradient(-T / 2, -T / 2, T / 2, T / 2);
-        gr.addColorStop(0, '#2b211a'); gr.addColorStop(1, '#1a1410');
-        ctx.fillStyle = gr; ctx.fillRect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4);
-        ctx.shadowColor = 'transparent';
-        ctx.save();
-        ctx.beginPath(); ctx.rect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4); ctx.clip();
-        ctx.strokeStyle = 'rgba(224,168,58,.06)'; ctx.lineWidth = C * 0.12;
-        for (let i = -T; i < T * 2; i += C * 0.35) { ctx.beginPath(); ctx.moveTo(-T / 2 + i, -T / 2); ctx.lineTo(-T / 2 + i - T, T / 2); ctx.stroke(); }
-        // клубящийся туман
-        for (let i = 0; i < 5; i++) {
-          const fx = Math.sin(t * 0.3 + i * 1.7 + ti) * T * 0.3, fy = Math.cos(t * 0.25 + i * 2.1 + ti) * T * 0.3;
-          const fg = ctx.createRadialGradient(fx, fy, 2, fx, fy, T * 0.45);
-          fg.addColorStop(0, 'rgba(150,140,130,.10)'); fg.addColorStop(1, 'rgba(150,140,130,0)');
-          ctx.fillStyle = fg; ctx.fillRect(-T / 2, -T / 2, T, T);
-        }
-        ctx.restore();
-        ctx.strokeStyle = 'rgba(224,168,58,.35)'; ctx.lineWidth = 2; ctx.setLineDash([10, 6]);
-        ctx.strokeRect(-T / 2 + 6, -T / 2 + 6, T - 12, T - 12); ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, -C * 0.1);
-        ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
-        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
-        // известные объекты
-        const icons = [];
-        g.spawnPoints.forEach((p) => { if (b.cells[p].tile === ti) icons.push('tok_spawn'); });
-        g.crates.forEach((c) => { if (!c.opened && b.cells[c.pos].tile === ti) icons.push('tok_crate'); });
-        if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
-        const s = C * 0.42;
-        icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
-        const n = ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
-        if (n) {
-          const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
-          ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);
-          ctx.fillStyle = 'rgba(120,10,6,.85)'; ctx.beginPath(); ctx.arc(0, 0, C * 0.3, 0, Math.PI * 2); ctx.fill();
-          ctx.lineWidth = 2; ctx.strokeStyle = '#ff6a5a'; ctx.stroke();
-          ctx.fillStyle = '#fff'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
-          ctx.fillText('☠' + n, 0, 1);
-          ctx.restore();
-        }
+        this._fogFace(ctx, ti, lift);
         ctx.restore();
       });
+    }
+
+    // рубашка закрытого тайла (рисуется вокруг текущего начала координат — центра тайла)
+    _fogFace(ctx, ti, lift) {
+      const g = this.g, b = g.board, C = this.cell, T = 3 * C, t = this.time;
+      ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 10 + lift; ctx.shadowOffsetY = 4 + lift;
+      const gr = ctx.createLinearGradient(-T / 2, -T / 2, T / 2, T / 2);
+      gr.addColorStop(0, '#2b211a'); gr.addColorStop(1, '#1a1410');
+      ctx.fillStyle = gr; ctx.fillRect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4);
+      ctx.shadowColor = 'transparent';
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4); ctx.clip();
+      ctx.strokeStyle = 'rgba(224,168,58,.06)'; ctx.lineWidth = C * 0.12;
+      for (let i = -T; i < T * 2; i += C * 0.35) { ctx.beginPath(); ctx.moveTo(-T / 2 + i, -T / 2); ctx.lineTo(-T / 2 + i - T, T / 2); ctx.stroke(); }
+      // клубящийся туман
+      for (let i = 0; i < 5; i++) {
+        const fx = Math.sin(t * 0.3 + i * 1.7 + ti) * T * 0.3, fy = Math.cos(t * 0.25 + i * 2.1 + ti) * T * 0.3;
+        const fg = ctx.createRadialGradient(fx, fy, 2, fx, fy, T * 0.45);
+        fg.addColorStop(0, 'rgba(150,140,130,.10)'); fg.addColorStop(1, 'rgba(150,140,130,0)');
+        ctx.fillStyle = fg; ctx.fillRect(-T / 2, -T / 2, T, T);
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(224,168,58,.35)'; ctx.lineWidth = 2; ctx.setLineDash([10, 6]);
+      ctx.strokeRect(-T / 2 + 6, -T / 2 + 6, T - 12, T - 12); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, -C * 0.1);
+      ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
+      ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
+      // известные объекты
+      const icons = [];
+      g.spawnPoints.forEach((p) => { if (b.cells[p].tile === ti) icons.push('tok_spawn'); });
+      g.crates.forEach((c) => { if (!c.opened && b.cells[c.pos].tile === ti) icons.push('tok_crate'); });
+      if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
+      const s = C * 0.42;
+      icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
+      const n = ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
+      if (n) {
+        const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
+        ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);
+        ctx.fillStyle = 'rgba(120,10,6,.85)'; ctx.beginPath(); ctx.arc(0, 0, C * 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#ff6a5a'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
+        ctx.fillText('☠' + n, 0, 1);
+        ctx.restore();
+      }
     }
 
     // тень фишки; в режиме «стол» — длинная мягкая тень от лампы и толщина картона
