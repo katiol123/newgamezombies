@@ -221,6 +221,11 @@
       const showSound = () => { sb.textContent = ZG.Sound.muted ? '🔇' : '🔊'; sb.title = ZG.Sound.muted ? 'Звук выключен' : 'Звук включён'; };
       showSound();
       sb.onclick = () => { ZG.Sound.toggle(); showSound(); if (!ZG.Sound.muted) ZG.Sound.play('growl', { volume: 0.5 }); };
+      // режим «стол»: поле под углом, как настоящая коробка на столе
+      const tb = $('#btn-table');
+      const applyTable = () => { const on = store.get('table', false); document.querySelector('.board-wrap').classList.toggle('table', on); tb.classList.toggle('on', on); if (this.view) { this.view.table = on; this.view.resize(); } };
+      tb.onclick = () => { store.set('table', !store.get('table', false)); applyTable(); };
+      this.applyTable = applyTable;
       $('#deck-pile').onclick = () => this.showPile('deck');
       $('#discard-pile').onclick = () => this.showPile('discard');
       document.addEventListener('keydown', (ev) => this.onKey(ev));
@@ -268,6 +273,7 @@
 
     async afterShow(intro) {
       this.view.setGame(this.g, intro);
+      if (this.applyTable) this.applyTable();
       ZG.Sound.music('music'); // «Время перемен» — с первого показа поля до конца вылазки
       this.g.fx = [];
       this.refresh();
@@ -722,18 +728,32 @@
         if (!h.onBoard) c.classList.add(h.fallen ? 'fallen' : 'evac');
         if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) c.classList.add('ready');
         const img = el('img', 'hp-portrait');
-        img.src = CV.artURL(def.art, 96, 96, {});
-        c.appendChild(img);
+        img.src = CV.artURL(h.turned ? 'z_turned_' + h.id : def.art, 96, 96, {});
+        const pw = el('div', 'hp-pwrap'); pw.appendChild(img);
+        pw.appendChild(el('span', 'hp-lvl', String(h.level)));
+        c.appendChild(pw);
+        // треки: Стойкость (фишки-сердца в ячейках) и опыт (фишка скользит по шкале)
+        this.heroPrev = this.heroPrev || {};
+        const prev = this.heroPrev[h.idx];
+        const okN = hp - w - inf;
         const pips = [];
-        for (let i = 0; i < hp; i++) pips.push(`<i class="${i < hp - w - inf ? 'ok' : i < hp - w ? 'inf' : 'hurt'}"></i>`);
+        for (let i = 0; i < hp; i++) {
+          const st = i < okN ? 'ok' : i < hp - w ? 'inf' : 'hurt';
+          const was = prev ? (i < prev.ok ? 'ok' : i < prev.ok + prev.inf ? 'inf' : 'hurt') : st;
+          const anim = prev && was !== st ? (st === 'ok' ? ' gain' : was === 'ok' ? ' lose' : '') : '';
+          pips.push(`<span class="slot"><i class="tok ${st}${anim}"></i></span>`);
+        }
+        if (prev && okN < prev.ok && h.onBoard) { c.classList.add('shake'); setTimeout(() => c.classList.remove('shake'), 700); }
+        const XPMAX = 10, xpFrom = prev ? Math.min(XPMAX, prev.xp) : Math.min(XPMAX, h.xp), xpTo = Math.min(XPMAX, h.xp);
+        this.heroPrev[h.idx] = { ok: okN, inf, xp: h.xp };
         const xpNext = h.xp < 4 ? 4 : h.xp < 10 ? 10 : null;
         const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
           <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
-          <div class="hp-pips" title="Стойкость: ${hp - w - inf} из ${hp}${inf ? ` · ☣ Заражений: ${inf}` : ''}">${pips.join('')}${infHand && h.onBoard ? '<b class="inf-warn" title="Заражение в руке: в конце хода герой обратится! Нужна аптечка или Марина.">☣ В РУКЕ!</b>' : inf ? `<b class="inf-mark">☣${inf}</b>` : ''}</div>
+          <div class="trk trk-hp" title="Стойкость: ${okN} из ${hp}${inf ? ` · ☣ Заражений: ${inf}` : ''}"><b class="trk-l">♥</b><span class="slots">${pips.join('')}</span>${infHand && h.onBoard ? '<b class="inf-warn" title="Заражение в руке: в конце хода герой обратится! Нужна аптечка или Марина.">☣ В РУКЕ!</b>' : inf ? `<b class="inf-mark">☣${inf}</b>` : ''}</div>
+          <div class="trk trk-xp" title="Опыт ${h.xp}${xpNext ? ' — следующий уровень на ' + xpNext : ''}"><b class="trk-l">★</b><span class="xp-line">${Array.from({ length: XPMAX + 1 }, (_, i) => `<i class="tick${i === 4 || i === 10 ? ' gate' : ''}${i <= xpTo ? ' on' : ''}" style="left:${(i / XPMAX) * 100}%"></i>`).join('')}<i class="xp-tok" data-to="${(xpTo / XPMAX) * 100}" style="left:${(xpFrom / XPMAX) * 100}%"></i></span><b class="xp-n">${h.xp}</b></div>
           <div class="hp-meta">
-            <span title="Опыт / уровень">★ ${h.xp}${xpNext ? '/' + xpNext : ''} · ур.${h.level}</span>
             <span title="Размер руки: до стольких карт герой добирает в начале хода (не больше 3 за раз)">✋ ${E.handSize(g, h)}</span>
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>
             ${h.block ? `<span title="Блок до следующего хода">🛡 ${h.block}</span>` : ''}
@@ -744,6 +764,9 @@
           ${h.talents.length || (h.perks || []).length ? `<div class="hp-talents">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).concat((h.perks || []).map((id) => '✦ ' + esc(ZG.Missions.get(id).perk.name))).join(' · ')}</div>` : ''}
           ${h.equip.length ? `<div class="hp-equip">${h.equip.map((u) => esc(E.cardDef(g, u).name)).join(' · ')}</div>` : ''}`;
         c.appendChild(info);
+        // фишка опыта переезжает к новому значению
+        const xt = info.querySelector('.xp-tok');
+        if (xt) requestAnimationFrame(() => requestAnimationFrame(() => { xt.style.left = xt.dataset.to + '%'; }));
         const ml = info.querySelector('.hp-mission.mine');
         if (ml) ml.onclick = (ev) => {
           ev.stopPropagation();
@@ -1031,7 +1054,10 @@
       else await sleep(700);
     },
     async bump(ev) { this.view.play([ev]); toast('За поворотом — стена. Пройти здесь нельзя (⚡ потрачена).', 3000); await sleep(300); },
-    async alarm() { const a = $('#alarm-track'); a.classList.remove('bump'); void a.offsetWidth; a.classList.add('bump'); this.refreshTop(); },
+    async alarm(ev) {
+      const a = $('#alarm-track'); a.classList.remove('bump'); void a.offsetWidth; a.classList.add('bump'); this.refreshTop();
+      if (ev && ev.n > 0) { ZG.Sound.sfx('alarm'); this.view.play([{ t: 'alarm' }]); }
+    },
     async draw() { /* анимация добора — в refreshHand */ },
     async gameover() { /* обрабатывается после очереди */ },
     async talent(ev) {

@@ -9,6 +9,7 @@
  */
 (function (G) {
   'use strict';
+  const TABLE_TILT = 34, TABLE_PERSP = 1500; // режим «стол»: наклон поля и перспектива (совпадает с css .board-wrap.table)
   // событие поля → мелкий звук (ZG.Sound.sfx)
   const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
   const ZG = G.ZG;
@@ -75,7 +76,8 @@
     resize() {
       if (!this.g) return;
       const wrap = this.canvas.parentElement;
-      const W = wrap.clientWidth, H = wrap.clientHeight;
+      // на столе поле наклонено — по высоте помещается больше (≈ 1/cos), ширину чуть ужимаем под ближний край
+      const W = wrap.clientWidth * (this.table ? 0.84 : 1), H = wrap.clientHeight * (this.table ? 1.18 : 1);
       const b = this.g.board;
       this.cell = Math.max(40, Math.floor(Math.min((W - this.pad * 2) / b.w, (H - this.pad * 2) / b.h)));
       const cw = this.cell * b.w + this.pad * 2, ch = this.cell * b.h + this.pad * 2;
@@ -164,6 +166,15 @@
     // ------------------------------------------------------------ ввод
     _bind() {
       const pos = (ev) => {
+        if (this.table) {
+          // обратная перспективная проекция: поле повёрнуто rotateX(TILT) в перспективе PERSP вокруг своего центра
+          const wr = this.canvas.parentElement.getBoundingClientRect();
+          const X = ev.clientX - (wr.left + wr.width / 2), Y = ev.clientY - (wr.top + wr.height / 2);
+          const a = TABLE_TILT * Math.PI / 180, P = TABLE_PERSP;
+          const v = (Y * P) / (P * Math.cos(a) + Y * Math.sin(a));
+          const sc = P / (P - v * Math.sin(a));
+          return { x: X / sc + this.W / 2, y: v + this.H / 2 };
+        }
         const r = this.canvas.getBoundingClientRect();
         return { x: ((ev.clientX - r.left) / r.width) * this.W, y: ((ev.clientY - r.top) / r.height) * this.H };
       };
@@ -279,11 +290,13 @@
           return nextEv && (nextEv.t === 'zmove' || nextEv.t === 'bash') ? 0 : 420;
         }
         case 'zwave': return 420;
+        case 'alarm': this.effects.push({ type: 'beacon', t0: this.time, dur: 1.2 }); return 0;
         case 'plug': { const p = this.cellXY(ev.pos); this._dust(p, 16, '#555'); this._spark(p, 14, '#e0a83a'); this.addShake(5); if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('bash'); return 300; }
         case 'zwake': {
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
-          e.awake = true; e.flash = 1;
+          if (e.awake === false) e.flip = { t0: this.time, to: true }; else e.awake = true;
+          e.flash = 1;
           this._float(e.x, e.y - this.cell * 0.32, ev.sound ? '?!' : '!', '#ff5a3a', 1.3);
           if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('wake', { soft: true });
           return 60;
@@ -291,7 +304,7 @@
         case 'zsleep': {
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
-          e.awake = false;
+          if (e.awake !== false) e.flip = { t0: this.time, to: false }; else e.awake = false;
           this._float(e.x, e.y - this.cell * 0.32, '?', '#9aa4b0', 1.1);
           return 40;
         }
@@ -335,6 +348,8 @@
           if (e) { e.dying = { t0: this.time }; this._splat(e.x, e.y, e.r * 1.4); this._blood({ x: e.x, y: e.y }, 14); }
           const p = e ? e : this.cellXY(ev.pos);
           this._float(p.x, p.y - C * 0.35, '✝', '#e8dcc0', 1.3);
+          // душа уходит дымкой
+          for (let i = 0; i < 7; i++) this.particles.push({ x: p.x + (Math.random() - 0.5) * C * 0.2, y: p.y, vx: (Math.random() - 0.5) * 12, vy: -40 - Math.random() * 30, life: 1.3, t: 0, size: C * (0.05 + Math.random() * 0.05), color: 'rgba(190,200,190,.55)', shape: 'puff' });
           return 220;
         }
         case 'shot': {
@@ -482,7 +497,7 @@
           this._ring(p, '#9be04a', C * 0.9, 900);
           this.flash = { color: 'rgba(80,140,30,0.35)', t0: this.time, dur: 0.6 };
           setTimeout(() => {
-            if (h) h.fallT = this.time;
+            if (h) h.flipT = this.time; // фишка героя переворачивается: на обороте — обращённый
             this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1.1, color: '#9be04a' });
             this._spark(p, 26, '#c8ff6a');
             this.addShake(12);
@@ -666,6 +681,29 @@
         const f = (this.time - this.flash.t0) / this.flash.dur;
         if (f >= 1) this.flash = null;
         else { ctx.fillStyle = this.flash.color; ctx.globalAlpha = 1 - f; ctx.fillRect(0, 0, this.W, this.H); ctx.globalAlpha = 1; }
+      }
+      this._moodFx(ctx);
+    }
+
+    // настроение: пульс «на грани» у героя, который ходит, и молнии в грозу
+    _moodFx(ctx) {
+      const g = this.g, E = ZG.Engine;
+      const h = g.active != null ? g.heroes[g.active] : null;
+      if (h && h.onBoard && E.hurtCount(g, h) >= E.maxHp(g, h) - 1) {
+        // двойной удар сердца: тум-тум … пауза
+        const ph = (this.time * 1.1) % 1;
+        const beat = Math.max(0, Math.sin(ph * Math.PI * 6)) * (ph < 0.34 ? 1 : 0);
+        const vg = ctx.createRadialGradient(this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.35, this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.7);
+        vg.addColorStop(0, 'rgba(120,0,0,0)'); vg.addColorStop(1, `rgba(150,0,0,${0.18 + beat * 0.3})`);
+        ctx.fillStyle = vg; ctx.fillRect(0, 0, this.W, this.H);
+      }
+      if (g.event === 'ev_storm') {
+        this.nextBolt = this.nextBolt || this.time + 2;
+        if (this.time > this.nextBolt) { this.bolt = this.time; this.nextBolt = this.time + 3 + Math.random() * 5; this.addShake(3); if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('blast', { soft: true }); }
+        if (this.bolt) {
+          const k = (this.time - this.bolt) / 0.35;
+          if (k < 1) { ctx.fillStyle = `rgba(210,225,255,${(k < 0.15 || (k > 0.3 && k < 0.45) ? 0.45 : 0.12) * (1 - k)})`; ctx.fillRect(0, 0, this.W, this.H); }
+        }
       }
     }
 
@@ -1006,6 +1044,24 @@
       });
     }
 
+    // тень фишки; в режиме «стол» — длинная мягкая тень от лампы и толщина картона
+    _tokShadow(ctx, x, y, rx, ry, a, lift) {
+      if (!this.table) {
+        ctx.fillStyle = 'rgba(0,0,0,' + a + ')';
+        ctx.beginPath(); ctx.ellipse(x + 2, y + 2, rx, ry, 0, 0, TAU); ctx.fill();
+        return;
+      }
+      const off = 4 + (lift || 0) * 0.6;
+      ctx.save();
+      ctx.filter = 'blur(' + (2 + (lift || 0) * 0.15).toFixed(1) + 'px)';
+      ctx.fillStyle = 'rgba(0,0,0,' + (a * 0.9) + ')';
+      ctx.beginPath(); ctx.ellipse(x + off * 1.3, y + off, rx * 1.08, ry * 1.1, 0, 0, TAU); ctx.fill();
+      ctx.restore();
+      // ребро картонной фишки
+      ctx.fillStyle = 'rgba(60,42,24,.85)';
+      ctx.beginPath(); ctx.ellipse(x, y - ry * 0.55 + 3, rx * 0.98, ry * 1.6, 0, 0, Math.PI); ctx.fill();
+    }
+
     _drawZombie(ctx, e) {
       const g = this.g;
       if (this.hiddenCell(e.cell) && !e.dying) return;
@@ -1036,10 +1092,18 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       // тень
-      ctx.fillStyle = 'rgba(0,0,0,.45)';
-      ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.35 + 2, r * scale, r * 0.55 * scale, 0, 0, TAU); ctx.fill();
+      this._tokShadow(ctx, x, y + r * 0.35, r * scale, r * 0.55 * scale, 0.45, hop);
+      // переворот жетона «бродит ↔ охотится»: сжатие по ширине, подскок, смена стороны на середине
+      let fx = 1, fhop = 0, awakeNow = e.awake;
+      if (e.flip) {
+        const k = (this.time - e.flip.t0) / 0.5;
+        if (k >= 1) { e.awake = e.flip.to; awakeNow = e.awake; e.flip = null; }
+        else { fx = Math.max(0.05, Math.abs(Math.cos(k * Math.PI))); fhop = Math.sin(k * Math.PI) * r * 0.8; awakeNow = k < 0.5 ? !e.flip.to : e.flip.to; }
+      }
+      if (fx !== 1) { ctx.translate(x, y - hop - fhop); ctx.scale(fx, 1); ctx.translate(-x, -(y - hop - fhop)); }
+      if (fhop) ctx.translate(0, -fhop);
       const s = r * 2 * scale;
-      const sleeping = g.stealth && e.awake === false && !def.immobile;
+      const sleeping = g.stealth && awakeNow === false && !def.immobile;
       if (sleeping) ctx.globalAlpha = alpha * 0.82;
       Art.draw(ctx, 'z_' + e.type, x - s / 2, y - s / 2 - hop, s, s, { rot, t: this.time });
       ctx.globalAlpha = alpha;
@@ -1096,12 +1160,21 @@
       const g = this.g;
       const h = g.heroes[e.idx];
       if (!h) return;
-      if (e.gone && !e.fallT && !e.evacT) return;
+      if (e.gone && !e.fallT && !e.evacT && !e.flipT) return;
       const def = ZG.Heroes.get(h.id);
       const r = (e.r || this.cell * 0.28) * 1.05;
       let x = e.x, y = e.y, alpha = h.hidden ? 0.45 : 1, scale = e.scale;
       if (e.evacT) { const k = (this.time - e.evacT) / 0.9; if (k > 1) return; y -= k * this.cell * 0.6; alpha = 1 - k; }
       if (e.fallT) { const k = (this.time - e.fallT) / 1; if (k > 1) return; scale *= 1 - k * 0.5; alpha = 1 - k; }
+      // переворот фишки (обращение): сплющивается по ширине, на середине — оборот; держится, пока не встанет жетон зомби
+      let flipX = 1, showTurned = false;
+      if (e.flipT) {
+        const k = (this.time - e.flipT) / 0.7;
+        if (k > 1.6) return;
+        flipX = k < 1 ? Math.max(0.04, Math.abs(Math.cos(k * Math.PI))) : 1;
+        showTurned = k >= 0.5;
+        if (k > 1) alpha *= Math.max(0, 1 - (k - 1) / 0.6);
+      }
       if (e.lunge) {
         const lt = (this.time - e.lunge.t0) / 0.35;
         if (lt >= 1) e.lunge = null;
@@ -1111,8 +1184,7 @@
       const active = this.g.active === e.idx;
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = 'rgba(0,0,0,.5)';
-      ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.4 + 2, r * scale, r * 0.6 * scale, 0, 0, TAU); ctx.fill();
+      this._tokShadow(ctx, x, y + r * 0.4, r * scale, r * 0.6 * scale, 0.5, 0);
       if (active) {
         const p = 0.5 + Math.sin(this.time * 4) * 0.5;
         const gl = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 1.8);
@@ -1121,6 +1193,12 @@
       }
       y -= hop;
       const R = r * scale;
+      if (flipX !== 1) { ctx.translate(x, y); ctx.scale(flipX, 1); ctx.translate(-x, -y); }
+      if (showTurned) {
+        Art.draw(ctx, 'z_turned_' + h.id, x - R * 1.1, y - R * 1.1, R * 2.2, R * 2.2, {});
+        ctx.restore();
+        return;
+      }
       // база
       ctx.beginPath(); ctx.arc(x, y, R, 0, TAU);
       ctx.fillStyle = '#1a1512'; ctx.fill();
@@ -1221,6 +1299,22 @@
             gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, f.color);
             ctx.globalAlpha = Math.sin(k * Math.PI) * 0.7;
             ctx.fillStyle = gr; ctx.fillRect(f.x - w / 2, f.y - this.cell * 2, w, this.cell * 2);
+            break;
+          }
+          case 'beacon': {
+            // проблесковый маячок тревоги: два вращающихся луча из центра поля
+            const cx = this.W / 2, cy = this.H / 2, R = Math.max(this.W, this.H);
+            const a0 = k * Math.PI * 4;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = Math.sin(k * Math.PI) * 0.35;
+            for (let i = 0; i < 2; i++) {
+              const a = a0 + i * Math.PI;
+              const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+              gr.addColorStop(0, 'rgba(255,90,40,.9)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
+              ctx.fillStyle = gr;
+              ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a - 0.35, a + 0.35); ctx.closePath(); ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'source-over';
             break;
           }
           case 'siren': {

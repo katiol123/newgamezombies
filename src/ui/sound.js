@@ -124,6 +124,7 @@
     energy(ac, o, t) { tone(ac, o, t, 0.25, { f: 440, f2: 880, type: 'triangle', v: 0.18 }); },
     door(ac, o, t) { tone(ac, o, t, 0.35, { f: 420, f2: 260, type: 'sawtooth', v: 0.05, a: 0.04 }); noise(ac, o, t + 0.05, 0.12, { f: 600, v: 0.3 }); }, // скрип двери
     wake(ac, o, t) { tone(ac, o, t, 0.25, { f: 180, f2: 320, type: 'sawtooth', v: 0.06 }); }, // зомби заметил
+    alarm(ac, o, t) { for (let i = 0; i < 2; i++) { tone(ac, o, t + i * 0.42, 0.4, { f: 620, f2: 940, type: 'sawtooth', v: 0.09, a: 0.02 }); tone(ac, o, t + i * 0.42 + 0.2, 0.22, { f: 940, f2: 620, type: 'sawtooth', v: 0.07 }); } }, // сирена тревоги
     click(ac, o, t) { tone(ac, o, t, 0.04, { f: 900, type: 'square', v: 0.05 }); },
   };
   ZG.Sound = Sound;
