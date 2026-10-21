@@ -638,9 +638,11 @@
       c.fillStyle = '#1f4a80'; c.fillRect(64, 28, 16, 6);
       c.strokeStyle = '#222'; c.lineWidth = 3; c.beginPath(); c.arc(50, 34, 26, Math.PI * 1.05, -0.05); c.stroke();
       [[24, 44], [76, 44]].forEach(([x, y]) => { rr(c, x - 6, y - 9, 12, 18, 5); c.fillStyle = '#e8701a'; c.fill(); strokeInk(c, 2); });
-      // усы и щетина
-      c.fillStyle = '#4a2a1a'; c.beginPath(); c.moveTo(38, 56); c.quadraticCurveTo(50, 50, 62, 56); c.quadraticCurveTo(50, 60, 38, 56); c.fill();
-      c.fillStyle = 'rgba(60,40,30,.25)'; c.fillRect(36, 58, 28, 8);
+      // щетина и широкая горластая ухмылка с щербинкой (без усов — усы у Виктора)
+      c.fillStyle = 'rgba(60,40,30,.22)'; c.beginPath(); c.ellipse(50, 60, 15, 8, 0, 0, Math.PI); c.fill();
+      c.fillStyle = '#5a1a14'; c.beginPath(); c.moveTo(39, 54); c.quadraticCurveTo(50, 66, 61, 54); c.closePath(); c.fill(); strokeInk(c, 1.5);
+      c.fillStyle = '#f2ead8'; c.beginPath(); c.moveTo(41, 55); c.lineTo(59, 55); c.quadraticCurveTo(50, 59, 41, 55); c.fill();
+      c.fillStyle = '#5a1a14'; c.fillRect(49, 55, 2, 2.5);
       // светоотражающие полосы на жилете
       c.fillStyle = '#e8e8d0'; c.fillRect(26, 82, 48, 4); c.fillRect(30, 90, 40, 4);
     }),
