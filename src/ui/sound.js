@@ -92,6 +92,7 @@
     bash(ac, o, t) { tone(ac, o, t, 0.12, { f: 120, f2: 70, type: 'triangle', v: 0.6 }); noise(ac, o, t, 0.15, { f: 700, v: 0.5 }); },
     pickup(ac, o, t) { tone(ac, o, t, 0.12, { f: 660, v: 0.2 }); tone(ac, o, t + 0.08, 0.16, { f: 990, v: 0.2 }); },
     energy(ac, o, t) { tone(ac, o, t, 0.25, { f: 440, f2: 880, type: 'triangle', v: 0.18 }); },
+    door(ac, o, t) { tone(ac, o, t, 0.35, { f: 420, f2: 260, type: 'sawtooth', v: 0.05, a: 0.04 }); noise(ac, o, t + 0.05, 0.12, { f: 600, v: 0.3 }); }, // скрип двери
     click(ac, o, t) { tone(ac, o, t, 0.04, { f: 900, type: 'square', v: 0.05 }); },
   };
   ZG.Sound = Sound;

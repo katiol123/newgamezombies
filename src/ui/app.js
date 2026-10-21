@@ -863,6 +863,7 @@
           if (i != null) this.act({ t: 'cleanse', hero: i });
         }, ' gold');
       }
+      if (g.board.cells[h.pos].bld) icon('door', 'Закрыть двери', 1, has('shut'), E.sheltered(g, h) ? 'вы уже в укрытии' : h.energy < 1 ? lack(1) : 'все двери уже закрыты', () => this.act({ t: 'shut' }));
       const burns = legal.filter((a) => a.t === 'burn');
       if (burns.length) icon('cleanse', 'Прижечь укус', 2, true, '', async () => {
         const opts = burns.map((a) => a.hero);
@@ -1026,6 +1027,7 @@
       case 'punch': return 'ударить кулаком';
       case 'barricade': return 'поставить баррикаду';
       case 'heal': return 'обработать раны';
+      case 'shut': return 'закрыть двери помещения (укрытие: дальние зомби вас не видят)';
       case 'burn': return 'прижечь укус (Заражения в руке → Раны)';
       case 'cleanse': return 'обеззаразить укус (Заражения в руке → Раны)';
       case 'rest': return 'отдышаться';
@@ -1067,6 +1069,14 @@
     }
     const hs = E.heroesAt(g, cell);
     if (hs.length) parts.push(`<div>Герои: ${hs.map((h) => E.heroName(h)).join(', ')}</div>`);
+    if (g.doors && c.bld) {
+      const ent = E.entrances(g, c.bld);
+      const open = ent.filter(([x, y]) => !E.doorClosed(g, x, y)).length;
+      const loud = g.board.cells.some((x) => x.bld === c.bld && g.noise[x.i]);
+      parts.push(open ? `<div class="tt-red">Двери: открыто ${open} из ${ent.length} — укрытия нет («Закрыть двери», 1 ⚡)</div>`
+        : loud ? '<div class="tt-red">Двери закрыты, но внутри шумели — укрытия нет до конца раунда</div>'
+        : '<div class="tt-gold">Двери закрыты — укрытие: зомби дальше 1 зоны героев здесь не видят</div>');
+    }
     if (cell === g.exit) parts.push(`<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} ${E.isComplete(g) ? '— ОТКРЫТА' : '— закрыта, пока не выполнена цель'}</div>`);
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
     if (g.spawnPoints.includes(cell)) parts.push('<div class="tt-red">Точка появления зомби</div>');

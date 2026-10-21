@@ -425,6 +425,10 @@
       c.fillStyle = o.ink; c.fillRect(-16, -40, 32, 7); c.fillRect(-3, -50, 6, 12); c.fillRect(-1.5, 18, 3, 26);
       c.restore();
     },
+    door(c, o) {
+      rr(c, 26, 10, 48, 82, 3); fillInk(c, o.shadow ? o.ink : '#7a542c'); strokeInk(c, 4, o.ink);
+      if (!o.shadow) { c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 3; rr(c, 33, 18, 34, 28, 2); c.stroke(); rr(c, 33, 54, 34, 30, 2); c.stroke(); circle(c, 64, 52, 4); fillInk(c, '#e0c070'); }
+    },
     pickup(c, o) { rr(c, 20, 36, 60, 46, 4); fillInk(c, o.shadow ? o.ink : '#9a6a32'); strokeInk(c, 4, o.ink); c.beginPath(); c.moveTo(50, 8); c.lineTo(66, 26); c.lineTo(56, 26); c.lineTo(56, 40); c.lineTo(44, 40); c.lineTo(44, 26); c.lineTo(34, 26); c.closePath(); fillInk(c, o.ink); },
     task(c, o) { poly(c, [50, 8, 61, 38, 94, 39, 68, 59, 77, 91, 50, 72, 23, 91, 32, 59, 6, 39, 39, 38]); fillInk(c, o.shadow ? o.ink : '#f0c040'); strokeInk(c, 4, o.ink); },
     evac(c, o) { c.beginPath(); c.moveTo(50, 8); c.lineTo(80, 42); c.lineTo(62, 42); c.lineTo(62, 88); c.lineTo(38, 88); c.lineTo(38, 42); c.lineTo(20, 42); c.closePath(); fillInk(c, o.shadow ? o.ink : '#6fe08a'); strokeInk(c, 4, o.ink); },
@@ -774,6 +778,11 @@
   }));
   Art.define('tok_barricade', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
     for (let i = -1; i <= 1; i++) { c.save(); c.translate(50, 50 + i * 18); c.rotate(i * 0.08); rr(c, -46, -7, 92, 14, 3); c.fillStyle = i ? '#8a6a3a' : '#a07a42'; c.fill(); strokeInk(c, 3); c.fillStyle = '#555'; circle(c, -38, 0, 2.5); c.fill(); circle(c, 38, 0, 2.5); c.fill(); c.restore(); }
+  }));
+  Art.define('tok_door', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
+    rr(c, 8, 8, 84, 84, 10); c.fillStyle = o.open ? '#3a2e22' : '#5a3e20'; c.fill(); strokeInk(c, 4);
+    if (o.open) { c.save(); c.translate(26, 20); c.rotate(-0.5); rr(c, 0, 0, 22, 62, 2); c.fillStyle = '#7a542c'; c.fill(); strokeInk(c, 3); c.restore(); c.fillStyle = '#e8dcc0'; c.font = 'bold 14px sans-serif'; c.textAlign = 'center'; c.fillText('ОТКР', 64, 86); }
+    else { rr(c, 30, 14, 40, 72, 3); c.fillStyle = '#7a542c'; c.fill(); strokeInk(c, 3); circle(c, 62, 52, 4); c.fillStyle = '#e0c070'; c.fill(); }
   }));
   Art.define('tok_round', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 5); c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Р', 50, 54); }));
   Art.define('tok_alarm', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#e0602a'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 40px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', 50, 54); }));

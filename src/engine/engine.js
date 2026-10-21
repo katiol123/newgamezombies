@@ -73,6 +73,40 @@
   E.scenario = (g) => ZG.Scenarios.get(g.scenarioId);
   E.isComplete = (g) => E.scenario(g).isComplete(g);
   E.barricadeAt = (g, a, b) => g.barricades.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
+  // ---- Двери и укрытия: вход в помещение (проход между помещением и улицей/другим помещением) ----
+  const doorKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+  E.isEntrance = (g, a, b) => {
+    const ca = g.board.cells[a], cb = g.board.cells[b];
+    return !!(ca.bld || cb.bld) && ca.bld !== cb.bld;
+  };
+  E.doorClosed = (g, a, b) => !!g.doors && E.isEntrance(g, a, b) && !g.doors[doorKey(a, b)];
+  // все входы помещения (bld) — пары [внутри, снаружи]
+  E.entrances = (g, bld) => {
+    const out = [];
+    g.board.cells.forEach((c) => { if (c.bld === bld) g.board.adj[c.i].forEach((n) => { if (g.board.cells[n].bld !== bld) out.push([c.i, n]); }); });
+    return out;
+  };
+  // герой в укрытии: в помещении, все двери закрыты, внутри не шумели
+  E.sheltered = (g, h) => {
+    if (!g.doors || !h.onBoard) return false;
+    const bld = g.board.cells[h.pos].bld;
+    if (!bld) return false;
+    if (g.board.cells.some((c) => c.bld === bld && g.noise[c.i])) return false;
+    return E.entrances(g, bld).every(([a, b]) => !g.doors[doorKey(a, b)]);
+  };
+  function openDoor(g, a, b, hero) {
+    if (!E.doorClosed(g, a, b)) return;
+    g.doors[doorKey(a, b)] = true;
+    E.fx(g, { t: 'door', a, b, open: true });
+    if (hero) {
+      // скрип: жетон шума на внешнюю сторону двери, Тревога не растёт
+      const outside = g.board.cells[a].bld && g.board.cells[b].bld !== g.board.cells[a].bld && g.board.cells[b].type === 'street' ? b : g.board.cells[a].type === 'street' ? a : b;
+      g.noise[outside] = (g.noise[outside] || 0) + 1;
+      E.fx(g, { t: 'noise', pos: outside, n: 1 });
+      E.log(g, `${E.heroName(hero)} открывает дверь — скрип!`, 'dim');
+    }
+  }
+  E.openDoor = openDoor;
   E.dist = (g, from, passable) => Board.bfs(g.board, from, passable);
   // ---- Туман войны: закрытые тайлы ----
   E.hidden = (g, cell) => !!g.revealed && !g.revealed[g.board.cells[cell].tile];
@@ -123,7 +157,7 @@
       v: 1, seed, rng: Rng.seedFrom(seed), levelId: level.id,
       scenarioId: null, conditionId: null, difficultyId: opts.difficultyId || 'survivor',
       cards: {}, nextUid: 1, heroes: [], zombies: [], crates: [], search: [], drops: [],
-      lures: [], traps: [], barricades: [], noise: {}, spawnPoints: [],
+      lures: [], traps: [], barricades: [], doors: level.doors ? {} : null, noise: {}, spawnPoints: [],
       lootDeck: [], lootDiscard: [], spawnDeck: [], spawnDiscard: [],
       round: 1, alarm: 0, phase: 'heroes', active: null, turn: null, pending: null, zs: null,
       obj: {}, result: null, quiet: !!opts.quiet,
@@ -567,6 +601,7 @@
 
   function enterCell(g, z, cell) {
     const from = z.pos;
+    openDoor(g, from, cell, null);
     z.pos = cell;
     E.fx(g, { t: 'zmove', zombie: z.uid, from, to: cell });
     const trap = g.traps.find((t) => t.pos === cell);
@@ -584,7 +619,7 @@
     const t = [];
     g.heroes.forEach((h) => {
       if (!h.onBoard || h.hidden) return;
-      t.push({ pos: h.pos, noise: 1 + (g.noise[h.pos] || 0), wounds: E.hurtCount(g, h), idx: h.idx });
+      t.push({ pos: h.pos, noise: 1 + (g.noise[h.pos] || 0), wounds: E.hurtCount(g, h), idx: h.idx, shelter: E.sheltered(g, h) });
     });
     g.lures.forEach((l) => t.push({ pos: l.pos, lure: true, noise: g.noise[l.pos] || 0, wounds: 99, idx: 99 }));
     g.traps.forEach((tr) => { if (tr.owner != null && Mods.flag(g, g.heroes[tr.owner], 'trapLure')) t.push({ pos: tr.pos, lure: true, noise: g.noise[tr.pos] || 0, wounds: 99, idx: 98 }); });
@@ -601,6 +636,7 @@
     const dz = E.distV(g, z.pos);
     let best = null;
     targets.forEach((t) => {
+      if (t.shelter && dz[t.pos] > 1) return; // укрытие: из-за закрытых дверей не видно
       if (dz[t.pos] === Infinity) return;
       // ближайшая цель; ничья → приманка, затем больше шума, затем меньше Ран
       const key = (x) => [dz[x.pos], x.lure ? 0 : 1, -x.noise, x.wounds, x.idx];
@@ -1013,6 +1049,8 @@
       });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    const bld = g.board.cells[h.pos].bld;
+    if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
     // Прижечь укус: 2 ⚡, себе или товарищу в своей зоне, даже рядом с зомби
     if (h.energy >= 2) E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'burn', hero: o.idx }); });
     if (!g.turn.gave) {
@@ -1166,6 +1204,15 @@
         E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
         return true;
       }
+      case 'shut': {
+        const bld = g.board.cells[h.pos].bld;
+        const open = bld ? E.entrances(g, bld).filter(([x, y]) => g.doors[doorKey(x, y)]) : [];
+        if (h.energy < 1 || !open.length) return fail(g, 'Закрывать нечего.');
+        spend(g, h, 1);
+        open.forEach(([x, y]) => { delete g.doors[doorKey(x, y)]; E.fx(g, { t: 'door', a: x, b: y, open: false }); });
+        E.log(g, `${E.heroName(h)} закрывает двери${E.sheltered(g, h) ? ' — в укрытии' : ''}.`, 'info');
+        return true;
+      }
       case 'rest': {
         if (h.energy < 3) return fail(g, 'Нужно 3 ⚡.');
         spend(g, h, 3);
@@ -1218,6 +1265,17 @@
 
   function moveHero(g, h, to) {
     const from = h.pos;
+    if (g.doors) {
+      // двери по пути (карта может провести через несколько зон)
+      const d = Board.bfs(g.board, to);
+      let cur = from;
+      for (let k = 0; k < 12 && cur !== to; k++) {
+        const nx = g.board.adj[cur].find((n) => d[n] === d[cur] - 1);
+        if (nx == null) break;
+        openDoor(g, cur, nx, h);
+        cur = nx;
+      }
+    }
     if (g.turn && E.zombiesAt(g, from).length) g.turn.escaped = true;
     h.pos = to;
     E.fx(g, { t: 'hmove', hero: h.idx, from, to });

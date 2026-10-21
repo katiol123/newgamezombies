@@ -10,7 +10,7 @@
 (function (G) {
   'use strict';
   // событие поля → мелкий звук (ZG.Sound.sfx)
-  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain' };
+  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
   const ZG = G.ZG;
   const Art = ZG.Art;
   const hash = Art.hash;
@@ -733,6 +733,35 @@
         const c = this.cellXY(l.pos);
         Art.draw(ctx, 'tok_lure', c.x - C * 0.3, c.y - C * 0.3, C * 0.6, C * 0.6, { t });
       });
+      // двери на входах в помещения: закрытая — створка поперёк прохода, открытая — распахнута
+      if (g.doors) {
+        if (!this.entranceList || this.entranceBoard !== g.board) {
+          const seen = new Set(); this.entranceList = []; this.entranceBoard = g.board;
+          g.board.cells.forEach((c) => { if (c.bld) g.board.adj[c.i].forEach((n) => { if (g.board.cells[n].bld !== c.bld) { const k = Math.min(c.i, n) + '-' + Math.max(c.i, n); if (!seen.has(k)) { seen.add(k); this.entranceList.push([c.i, n, k]); } } }); });
+        }
+        this.entranceList.forEach(([ia, ib, k]) => {
+          if (ZG.Engine.hidden(g, ia) && ZG.Engine.hidden(g, ib)) return;
+          const a = this.cellXY(ia), b = this.cellXY(ib);
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          const horiz = Math.abs(a.x - b.x) > 1; // соседи по горизонтали — дверь вертикальная
+          const open = !!g.doors[k];
+          ctx.save();
+          ctx.translate(mx, my);
+          if (horiz) ctx.rotate(Math.PI / 2);
+          const L = C * 0.34, T = C * 0.07;
+          if (open) {
+            // створка распахнута на петле
+            ctx.translate(-L / 2, 0); ctx.rotate(-1.25);
+            Art.rr(ctx, 0, -T / 2, L, T, 2); ctx.fillStyle = 'rgba(122,84,44,.75)'; ctx.fill();
+            ctx.lineWidth = 1; ctx.strokeStyle = '#2a1c0c'; ctx.stroke();
+          } else {
+            Art.rr(ctx, -L / 2, -T / 2, L, T, 2); ctx.fillStyle = '#7a542c'; ctx.fill();
+            ctx.lineWidth = 1.5; ctx.strokeStyle = '#2a1c0c'; ctx.stroke();
+            ctx.fillStyle = '#e0c070'; ctx.beginPath(); ctx.arc(L * 0.3, 0, T * 0.28, 0, TAU); ctx.fill();
+          }
+          ctx.restore();
+        });
+      }
       // баррикады — на границе зон
       g.barricades.forEach((bz) => {
         const a = this.cellXY(bz.a), b = this.cellXY(bz.b);
@@ -1027,6 +1056,15 @@
       // имя
       ctx.font = `bold ${Math.round(Math.max(9, R * 0.32))}px 'Russo One', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      // укрытие: значок домика над фишкой
+      const hh = this.g.heroes[e.idx];
+      if (hh && ZG.Engine.sheltered(this.g, hh)) {
+        ctx.save(); ctx.translate(x - R * 0.85, y - R * 0.95);
+        const u = R * 0.42;
+        ctx.beginPath(); ctx.moveTo(0, -u); ctx.lineTo(u, -u * 0.1); ctx.lineTo(u * 0.7, -u * 0.1); ctx.lineTo(u * 0.7, u * 0.8); ctx.lineTo(-u * 0.7, u * 0.8); ctx.lineTo(-u * 0.7, -u * 0.1); ctx.lineTo(-u, -u * 0.1); ctx.closePath();
+        ctx.fillStyle = '#6fbf73'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#111'; ctx.stroke();
+        ctx.restore();
+      }
       // в тесной зоне — короткое имя, чтобы подписи соседей не налезали
       let crowd = 0; this.heroes.forEach((o) => { if (!o.gone && o.cell === e.cell) crowd++; }); this.zombies.forEach((o) => { if (!o.dying && o.cell === e.cell) crowd++; });
       const label = crowd > 1 ? def.name.slice(0, 3) : def.name;

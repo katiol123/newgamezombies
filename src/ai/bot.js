@@ -52,7 +52,7 @@
     const zoneIncoming = {};
     const reach = {};
     const noBarr = (x, y) => !E.barricadeAt(g, x, y);
-    const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h }))
+    const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h, shelter: E.sheltered(g, h) }))
       .concat(g.lures.map((l) => ({ pos: l.pos })));
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
@@ -63,10 +63,11 @@
       if (E.hidden(g, z.pos)) return; // в тумане зомби не двигаются
       const dz = reach[z.pos] || (reach[z.pos] = E.distV(g, z.pos, noBarr));
       let best = Infinity;
-      targets.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
+      const seen = targets.filter((t) => !(t.shelter && dz[t.pos] > 1));
+      seen.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
       if (best > sp) return;
       // идёт к ближайшей цели: если это приманка — героям не опасен
-      targets.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
+      seen.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
     s += g.traps.length * W.trap;
     g.heroes.forEach((h) => {
