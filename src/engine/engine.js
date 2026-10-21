@@ -312,7 +312,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null,
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null,
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -703,6 +703,10 @@
   // сколько жетонов лежит стопкой на закрытом тайле (зомби + пустышки)
   E.fogTokens = (g, ti, mobileOnly) => g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && (!mobileOnly || !ZG.Zombies.get(z.type).immobile)).length + E.decoysOn(g, ti).length;
   E.spawnZombie = function (g, type, pos, why, silent, real, force) {
+    // облегчённые уровни (zombieTypes): чужие типы подменяются слабыми — быстрые Бегуном, прочие Шатуном
+    // (обращённые союзники и неподвижные цели задания — как есть)
+    const allow = ZG.Levels.get(g.levelId).zombieTypes;
+    if (allow && !allow.includes(type)) { const zx = ZG.Zombies.get(type); if (!zx.turned && !zx.immobile) type = zx.speed >= 2 && allow.includes('runner') ? 'runner' : allow[0]; }
     const zd0 = ZG.Zombies.get(type);
     if (!real && ZG.Levels.get(g.levelId).decoys && g.revealed && E.hidden(g, pos) && !zd0.immobile && !zd0.relentless && !zd0.turned) {
       let first = null;
@@ -991,8 +995,9 @@
     const card = ZG.SpawnCards.get(id);
     E.fx(g, { t: 'spawncard', card: id, pos: point });
     if (card.event) { E.log(g, `Событие: ${card.name}. ${card.text}`, 'warn'); card.run(g, E, point); return; }
+    const lvl = ZG.Levels.get(g.levelId);
     const row = card.rows[E.phase(g)];
-    row.forEach((type) => E.spawnZombie(g, type, point));
+    (lvl.spawnPerCard ? row.slice(0, lvl.spawnPerCard) : row).forEach((type) => E.spawnZombie(g, type, point)); // облегчённые уровни: меньше зомби с карты
   }
 
   // ---------------------------------------------------- фаза зомби (автомат)

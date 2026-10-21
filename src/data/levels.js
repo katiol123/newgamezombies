@@ -47,4 +47,16 @@
     hordeAlarm: 8, // в шаге «Особые свойства»: Тревога +1 за каждые 8 зомби на поле
     pool: { walker: 16, runner: 6, fatso: 4, screamer: 3, brute: 2, plague: 3, grabber: 3, hound: 1 }, // жетонов в коробке
   });
+
+  // Кампания, миссия 1: облегчённая Окраина — поле 3×2 тайла, только Шатуны и Бегуны, у люка появляется 1 зомби
+  const base = ZG.Levels.get('outskirts');
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m1', campaignOnly: true,
+    text: 'Первая вылазка: несколько кварталов, слабые мертвецы.',
+    layout: { tw: 3, th: 2 },
+    zombieTypes: ['walker', 'runner'],
+    spawnPerCard: 1,
+    rounds: base.rounds + 2, // +2 раунда: учебная миссия должна проходиться почти всегда
+    events: base.events.filter((id) => id !== 'ev_hound'),
+  }));
 })(typeof globalThis !== 'undefined' ? globalThis : window);

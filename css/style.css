@@ -832,3 +832,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
   .sh-drop { --card-w: 118px; --card-h: 166px; }
   .sh-bld { width: 96px; } .sh-bld img { width: 88px; height: 88px; }
 }
+
+.special-box { margin: 10px 0; padding: 8px 12px; border-radius: 6px; background: rgba(192,57,43,.14); border: 1px solid rgba(255,122,106,.45); color: var(--paper); }
+.special-box b { color: #ff9a8a; letter-spacing: .04em; }
+.special-box ul { margin: 4px 0 0; padding-left: 20px; }

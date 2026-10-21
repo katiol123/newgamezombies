@@ -75,7 +75,7 @@
     return {
       seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
-      scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null,
+      scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null,
       wanderers: c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);

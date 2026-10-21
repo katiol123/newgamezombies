@@ -3,7 +3,7 @@
  * Симулятор баланса: прогоняет партии ИИ и печатает статистику.
  *
  *   node tools/sim.js [--games N] [--heroes boris,lisa] [--scenario fuel] [--condition fog]
- *                     [--difficulty survivor] [--all-pairs] [--solo] [--fast] [--seed S] [--json] [--set '{"rounds":11}']
+ *                     [--difficulty survivor] [--level camp_m1] [--all-pairs] [--solo] [--fast] [--seed S] [--json] [--set '{"rounds":11}']
  */
 const ZG = require('./load');
 
@@ -23,6 +23,7 @@ function parseArgs() {
     else if (k === '--fast') o.fast = true;
     else if (k === '--seed') o.seed = a[++i];
     else if (k === '--json') o.json = true;
+    else if (k === '--level') o.level = a[++i];
     else if (k === '--nofog') o.fog = false;
     else if (k === '--nostealth') o.stealth = false;
     else if (k === '--set') Object.assign(ZG.Levels.get('outskirts'), JSON.parse(a[++i])); // проба параметров уровня
@@ -34,7 +35,7 @@ function runBatch(heroIds, o, tag) {
   const res = { games: 0, wins: 0, stars: 0, rounds: 0, kills: 0, wounds: 0, fell: 0, waves: 0, chains: 0, played: 0, byScenario: {}, reasons: {} };
   for (let i = 0; i < o.games; i++) {
     const g = ZG.Engine.create({
-      seed: `${o.seed}-${tag}-${i}`, quiet: true, difficultyId: o.difficulty,
+      seed: `${o.seed}-${tag}-${i}`, quiet: true, difficultyId: o.difficulty, levelId: o.level,
       heroes: heroIds.map((id, k) => ({ id, player: (k % 2) + 1 })),
       scenarioId: o.scenario || undefined, conditionId: o.condition || undefined, fog: o.fog, stealth: o.stealth,
     });

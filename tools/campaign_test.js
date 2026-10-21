@@ -236,5 +236,15 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(l.equip.length === 3 && !l.junk.length && l.equip[1].id === 'bandage_roll', `ранена: берёт всё, лечение вперёд (${l.equip.map((x) => x.id)})`);
 }
 
+// 18) миссия 1: поле 3×2, только Шатуны и Бегуны, 1 зомби с карты появления
+{
+  const g = E.create({ levelId: 'camp_m1', heroes: [{ id: 'boris' }], seed: 't18', quiet: true });
+  const open = g.board.cells.find((cl) => !E.hidden(g, cl.i) && cl.type === 'street').i;
+  const a = E.spawnZombie(g, 'brute', open, null, true, true), b = E.spawnZombie(g, 'hound', open, null, true, true);
+  ok(g.board.tiles.length === 6, 'поле из 6 тайлов');
+  ok(a && a.type === 'walker' && b && b.type === 'runner', `сильные заменены: Громила→${a && a.type}, Ищейка→${b && b.type}`);
+  ok(g.zombies.every((z) => ['walker', 'runner', 'nest'].includes(z.type)), 'на поле только слабые (и гнёзда задания)');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);
