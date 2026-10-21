@@ -79,7 +79,7 @@
       const m = ZG.Missions.get(fh.mission);
       if (g.missionFirst === fh.idx) s += 150;
       else if (g.missionFirst == null && !fh.missionDone) {
-        s += (E.missionProgress(g, fh) / m.goal) * 120;
+        s += (E.missionProgress(g, fh) / m.goal) * 80;
       }
     }
     // заглушенные люки: каждый раунд тишины — меньше зомби

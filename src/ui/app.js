@@ -1009,7 +1009,8 @@
         (this.seenMission = this.seenMission || {})[h.idx] = true;
         const m = ZG.Missions.get(h.mission);
         const v = await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше. Раз за партию миссию можно сменить (в свой ход — по клику на строку миссии).</p>`, [{ label: 'Сменить (1 раз)', value: 'redraw' }, { label: 'Понятно', cls: 'primary', value: 'ok' }]);
-        if (v === 'redraw') { await this.act({ t: 'mredraw' }); (this.seenMission = this.seenMission || {})[h.idx] = false; return this.showMission(h); }
+        // окно показывается посреди проигрывания событий (интерфейс занят) — меняем миссию прямо в движке
+        if (v === 'redraw') { if (E.redrawMission(this.g, h)) { this.save(); return this.showMission(h); } toast('Подходящих миссий для смены нет.'); }
       }
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {

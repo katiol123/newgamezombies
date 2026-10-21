@@ -593,3 +593,5 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .card.r-rare .rarity-gem { background: #2d6fb5; color: #cfe6ff; }
 .card.r-unique .rarity-gem { background: #b07a10; color: #fff4c4; }
 @media print { .card .rarity-gem { box-shadow: 0 0 0 2px #15110e; } }
+.setup-heroes { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.setup-grid { padding-bottom: 70px; }
