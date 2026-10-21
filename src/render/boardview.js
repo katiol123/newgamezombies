@@ -9,6 +9,8 @@
  */
 (function (G) {
   'use strict';
+  // событие поля → мелкий звук (ZG.Sound.sfx)
+  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain' };
   const ZG = G.ZG;
   const Art = ZG.Art;
   const hash = Art.hash;
@@ -255,6 +257,10 @@
 
     _handle(ev, nextEv) {
       const C = this.cell;
+      if (ZG.Sound && ZG.Sound.sfx) {
+        const k = ev.t === 'hit' ? (ev.kind === 'melee' ? 'punch' : 'hit') : ev.t === 'play' ? (ev.chain ? 'chain' : 'card') : SFX_MAP[ev.t];
+        if (k) ZG.Sound.sfx(k);
+      }
       switch (ev.t) {
         case 'zmove': {
           // все шаги одной волны идут разом; между волнами — пауза (событие zwave)
@@ -429,6 +435,37 @@
           this.flash = { color: 'rgba(120,0,0,0.5)', t0: this.time, dur: 0.8 };
           this.addShake(16);
           return 1100;
+        }
+        case 'infect': {
+          const h = this.heroes.get(ev.hero);
+          const p = h || this.cellXY(ev.pos);
+          if (h) { h.flash = 1; h.flashColor = '#9be04a'; }
+          this._float(p.x, p.y - C * 0.55, '☣ ×' + ev.n, '#9be04a', 1.5);
+          for (let i = 0; i < 14; i++) this.particles.push({ x: p.x + (Math.random() - 0.5) * C * 0.4, y: p.y, vx: (Math.random() - 0.5) * 30, vy: -20 - Math.random() * 30, life: 1.4, t: 0, size: C * (0.03 + Math.random() * 0.04), color: '#9be04a', shape: 'puff' });
+          return 380;
+        }
+        case 'infectTick': {
+          const h = this.heroes.get(ev.hero);
+          const p = h || this.cellXY(ev.pos);
+          this._float(p.x, p.y - C * 0.5, '☣', '#c8ff6a', 1.8);
+          this._ring(p, '#9be04a', C * 0.6, 600);
+          return 300;
+        }
+        case 'turn_hero': {
+          // многошаговое обращение: зелёная вспышка → судороги → фишка «переворачивается»
+          const h = this.heroes.get(ev.hero);
+          const p = h || this.cellXY(ev.pos);
+          if (ZG.Sound) ZG.Sound.play('growl', { rate: 0.8 });
+          if (h) { h.flash = 1; h.flashColor = '#9be04a'; h.shakeT = this.time; }
+          this._ring(p, '#9be04a', C * 0.9, 900);
+          this.flash = { color: 'rgba(80,140,30,0.35)', t0: this.time, dur: 0.6 };
+          setTimeout(() => {
+            if (h) h.fallT = this.time;
+            this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1.1, color: '#9be04a' });
+            this._spark(p, 26, '#c8ff6a');
+            this.addShake(12);
+          }, 450 / this.speed);
+          return 1000;
         }
         case 'crate': {
           const p = this.cellXY(ev.pos);

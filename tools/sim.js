@@ -3,7 +3,7 @@
  * Симулятор баланса: прогоняет партии ИИ и печатает статистику.
  *
  *   node tools/sim.js [--games N] [--heroes boris,lisa] [--scenario fuel] [--condition fog]
- *                     [--difficulty survivor] [--all-pairs] [--solo] [--fast] [--seed S] [--json]
+ *                     [--difficulty survivor] [--all-pairs] [--solo] [--fast] [--seed S] [--json] [--set '{"rounds":11}']
  */
 const ZG = require('./load');
 
@@ -24,6 +24,7 @@ function parseArgs() {
     else if (k === '--seed') o.seed = a[++i];
     else if (k === '--json') o.json = true;
     else if (k === '--nofog') o.fog = false;
+    else if (k === '--set') Object.assign(ZG.Levels.get('outskirts'), JSON.parse(a[++i])); // проба параметров уровня
   }
   return o;
 }

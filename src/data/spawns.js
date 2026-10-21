@@ -9,25 +9,26 @@
   const W = 'walker', R = 'runner', S = 'screamer', F = 'fatso', B = 'brute';
 
   ZG.SpawnCards.addAll([
-    { id: 'sp_w1', rows: [[W], [W], [W, W]] },
-    { id: 'sp_w2', rows: [[W], [W, W], [W, W]] },
-    { id: 'sp_w3', rows: [[W, W], [W, W], [W, W, W]] },
+    { id: 'sp_w1', rows: [[W], [W], [F]] },
+    { id: 'sp_w2', rows: [[W], [R, W], [R, W]] },
+    { id: 'sp_w3', rows: [[W, W], [W, W], [W, W]] },
     { id: 'sp_r1', rows: [[R], [R], [R, R]] },
     { id: 'sp_r2', rows: [[], [R, W], [R, R]] },
     { id: 'sp_f1', rows: [[], [F], [F, W]] },
-    { id: 'sp_f2', rows: [[W], [F], [F, F]] },
+    { id: 'sp_f2', rows: [[W], [F], [F]] },
     { id: 'sp_s1', rows: [[], [S], [S, W]] },
     { id: 'sp_s2', rows: [[S], [S], [S, W]] },
-    { id: 'sp_e1', rows: [[], [], [W]] },
+    { id: 'sp_e1', rows: [[], [R], [R]] },
     { id: 'sp_e2', rows: [[], [W], [W]] },
     { id: 'sp_b1', rows: [[], [], [B]] },
-    { id: 'sp_b2', rows: [[W], [W], [B]] },
+    { id: 'sp_b2', rows: [[W], [F], [B]] },
     {
       id: 'sp_sewer', name: 'Канализация', event: true,
-      text: 'Из каждой точки появления выходит по Шатуну (Глухая ночь — по два).',
-      run(g, E) {
-        const n = E.phase(g) === 2 ? 2 : 1;
-        g.spawnPoints.forEach((p) => { for (let i = 0; i < n; i++) E.spawnZombie(g, W, p); });
+      text: 'Из этого люка и из случайного другого выходит по Шатуну.',
+      run(g, E, point) {
+        E.spawnZombie(g, W, point);
+        const others = g.spawnPoints.filter((p) => p !== point);
+        if (others.length) E.spawnZombie(g, W, ZG.Rng.pick(g, others));
       },
     },
     {

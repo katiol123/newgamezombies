@@ -166,9 +166,13 @@
 
   function bestAction(g, opts) {
     const depth2 = !opts || opts.depth2 !== false;
+    const cands = candidateActions(g);
+    // эвакуация доступна — уходим сразу (иначе оценка «после фазы зомби» нечестно пугает ИИ)
+    const evac = cands.find((a) => a.t === 'evac');
+    if (evac) return evac;
     const base = evaluate(g);
     const scored = [];
-    candidateActions(g).forEach((a) => {
+    cands.forEach((a) => {
       if (a.t === 'end') return;
       if (a.explore) {
         // шаг в туман оцениваем без подглядывания: насколько ближе к цели + любопытство

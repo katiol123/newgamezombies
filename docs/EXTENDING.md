@@ -98,13 +98,21 @@ ZG.Art.useImage('hero_boris', 'img/heroes/boris.png');
 | `growl` | `audio/growl.mp3` | атака зомби на героя, «Засада!» |
 | `reveal` | `audio/psychedelic.mp3` | переворот тайла в тумане, «Наступает Ночь» |
 
+Мелкие звуки (шаги, удары, выстрелы, карты, блок, лечение, баррикада, взрыв…) синтезируются Web Audio — `ZG.Sound.sfx('shot')`. Любой из них заменяется файлом: `ZG.Sound.define('sfx_shot', 'audio/shot.mp3')`. Ключи: `step, hstep, card, punch, hit, shot, blast, kill, block, chain, heal, infect, search, wood, bash, pickup, energy, click`; соответствие событиям поля — `SFX_MAP` в `src/render/boardview.js`.
+
 Заменить или добавить: `ZG.Sound.define('ключ', 'audio/файл.mp3', { volume: 0.7, gap: 600 })`, проиграть: `ZG.Sound.play('ключ')`. Кнопка 🔊 в верхней панели выключает звук (запоминается).
+
+## Заражение и обращённые
+Параметры уровня: `infection: { die: 2, turnAt: 1, top: 4, hurts: true }` — на кубике ≤ die укус даёт карту Заражения (замешивается в верхние `top` карт колоды), `hurts` — Заражение считается Раной, `turnAt` — сколько раз Заражение должно «досидеть» в руке до конца хода, чтобы герой обратился. `maxAttackers` — Теснота (сколько зомби кусают одного героя за фазу).
+
+Обращённый герой — обычный враг с id `turned_<герой>` (`base.js`), арт `z_turned_<герой>` / `zp_turned_<герой>` рисуется из портрета героя. Флаги врагов: `breaker` (ломает баррикаду с удара), `climber` (лезет через баррикады), `infects` (удар всегда Заражение), хук `onDeath(g, z, E)`.
 
 ## Баланс
 ```
 node tools/sim.js --all-pairs --games 40      # все пары героев
 node tools/sim.js --solo --games 40           # соло
 node tools/sim.js --heroes kira,viktor --scenario radio --condition fog
+node tools/sim.js --all-pairs --set '{"rounds":11}'   # проба параметров уровня без правки файлов
 node tools/test.js                            # дымовые тесты
 ```
 ИИ оценивает позиции, а не карты, поэтому новые карты он «понимает» сразу — удобно для первичной проверки баланса.

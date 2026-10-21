@@ -23,20 +23,21 @@
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
     bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
     rounds: 12,
-    phaseStarts: [1, 4, 8], // Сумерки с 1-го, Ночь с 4-го, Глухая ночь с 8-го раунда
+    phaseStarts: [1, 3, 6], // Сумерки с 1-го, Ночь с 3-го, Глухая ночь с 6-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
     alarmThreshold: 6,
     startAlarm: { 3: 3, 4: 5 }, // большой отряд шумит: стартовая Тревога
-    spawnPoints: { 1: 2, 2: 3, 3: 4, 4: 4 },
+    spawnPoints: { 1: 1, 2: 2, 3: 3, 4: 4 },
     events: ['ev_radio', 'ev_airdrop', 'ev_blackout', 'ev_silence', 'ev_gas', 'ev_survivor', 'ev_rush', 'ev_frenzy', 'ev_storm', 'ev_howl'],
     eventChance: 1 / 6, // в начале раунда (со 2-го) кубик: на 6 — событие, иначе затишье
     // укус: d6 ≤ die — Заражение (замешивается в верхние top карт колоды), иначе Рана;
     // Заражение — тоже рана (hurts); обращение, когда трек дошёл до turnAt
     infection: { die: 2, turnAt: 1, top: 4, hurts: true },
+    maxAttackers: 3, // Теснота: героя за фазу кусают не больше 3 зомби (самые опасные)
     fog: true, // «Туман войны»: тайлы, кроме стартового и тайла выхода, закрыты до разведки
     fogBreak: 4, // столько зомби в закрытом тайле — и он открывается сам
     drawMax: 3, // добор в начале хода — до размера руки, но не больше 3 карт
     hordeAlarm: 8, // в шаге «Особые свойства»: Тревога +1 за каждые 8 зомби на поле
-    pool: { walker: 30, runner: 10, fatso: 6, screamer: 4, brute: 2 }, // жетонов в коробке
+    pool: { walker: 24, runner: 8, fatso: 5, screamer: 4, brute: 2 }, // жетонов в коробке
   });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

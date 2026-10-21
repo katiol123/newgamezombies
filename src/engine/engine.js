@@ -634,7 +634,7 @@
     g.poolMoved = {};
     const card = ZG.SpawnCards.get(id);
     E.fx(g, { t: 'spawncard', card: id, pos: point });
-    if (card.event) { E.log(g, `Событие: ${card.name}. ${card.text}`, 'warn'); card.run(g, E); return; }
+    if (card.event) { E.log(g, `Событие: ${card.name}. ${card.text}`, 'warn'); card.run(g, E, point); return; }
     const row = card.rows[E.phase(g)];
     row.forEach((type) => E.spawnZombie(g, type, point));
   }
@@ -671,7 +671,7 @@
       } else if (zs.step === 'special') {
         const horde = ZG.Levels.get(g.levelId).hordeAlarm;
         const mobile = g.zombies.filter((z) => !ZG.Zombies.get(z.type).immobile).length;
-        if (horde && mobile >= horde) E.raiseAlarm(g, Math.floor(mobile / horde), `Орда (${mobile} на поле) гудит`);
+        if (horde && mobile >= horde) E.raiseAlarm(g, 1, `Орда (${mobile} на поле) гудит`);
         g.zombies.slice().forEach((z) => {
           const def = ZG.Zombies.get(z.type);
           if (def.hooks && def.hooks.zombiePhase) def.hooks.zombiePhase(g, z, E);
@@ -718,10 +718,13 @@
 
   function buildAttacks(g) {
     const byHero = {};
-    g.zombies.forEach((z) => {
+    // Теснота: одного героя за фазу кусают не больше maxAttackers зомби (самые опасные — первыми)
+    const cap = ZG.Levels.get(g.levelId).maxAttackers || Infinity;
+    const order = g.zombies.slice().sort((a, b) => ZG.Zombies.get(b.type).dmg - ZG.Zombies.get(a.type).dmg);
+    order.forEach((z) => {
       const def = ZG.Zombies.get(z.type);
       if (def.dmg <= 0) return;
-      let hs = E.heroesAt(g, z.pos).filter((h) => !h.hidden && !Mods.flag(g, h, 'immuneAttack', { type: z.type }));
+      let hs = E.heroesAt(g, z.pos).filter((h) => !h.hidden && !Mods.flag(g, h, 'immuneAttack', { type: z.type }) && !(byHero[h.idx] && byHero[h.idx].attackers.length >= cap));
       if (!hs.length) return;
       const taunt = hs.filter((h) => Mods.flag(g, h, 'taunt'));
       if (taunt.length) hs = taunt;

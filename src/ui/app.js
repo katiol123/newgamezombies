@@ -377,6 +377,10 @@
       const unused = h.energy;
       const zHere = E.zombiesAt(g, h.pos).length;
       const doEnd = () => this.act({ t: 'end' });
+      if (h.hand.some((u) => g.cards[u] === 'infection')) {
+        Modal.confirm(`<b class="bad">☣ У ${E.heroName(h)} в руке Заражение!</b><br>Если завершить ход сейчас — герой <b>обратится в зомби</b>. Спасут аптечка или Марина (в той же зоне). Завершить ход?`, doEnd);
+        return;
+      }
       if (unused > 0 && store.get('warnEnergy', true)) {
         Modal.confirm(`У ${E.heroName(h)} осталось ${unused} ⚡ — энергия сгорит. Завершить ход?` + (zHere ? `<br><small>В зоне ${zHere} зомби — оставшиеся в руке карты со щитом пригодятся для защиты.</small>` : ''), doEnd);
       } else doEnd();
@@ -695,8 +699,10 @@
       box.innerHTML = '';
       g.heroes.forEach((h) => {
         const def = ZG.Heroes.get(h.id);
-        const hp = E.maxHp(g, h), w = E.woundCount(g, h);
+        const hp = E.maxHp(g, h), w = E.woundCount(g, h), inf = E.infectCount(g, h);
+        const infHand = h.hand.filter((u) => g.cards[u] === 'infection').length;
         const c = el('div', 'hp-card');
+        if (infHand && h.onBoard) c.classList.add('infected');
         c.style.setProperty('--hero', def.color);
         if (h.idx === g.active) c.classList.add('active');
         if (h.acted && h.onBoard) c.classList.add('acted');
@@ -706,13 +712,13 @@
         img.src = CV.artURL(def.art, 96, 96, {});
         c.appendChild(img);
         const pips = [];
-        for (let i = 0; i < hp; i++) pips.push(`<i class="${i < hp - w ? 'ok' : 'hurt'}"></i>`);
+        for (let i = 0; i < hp; i++) pips.push(`<i class="${i < hp - w - inf ? 'ok' : i < hp - w ? 'inf' : 'hurt'}"></i>`);
         const xpNext = h.xp < 4 ? 4 : h.xp < 10 ? 10 : null;
-        const status = h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
+        const status = h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
           <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
-          <div class="hp-pips" title="Стойкость: ${hp - w} из ${hp}">${pips.join('')}</div>
+          <div class="hp-pips" title="Стойкость: ${hp - w - inf} из ${hp}${inf ? ` · ☣ Заражений: ${inf}` : ''}">${pips.join('')}${infHand && h.onBoard ? '<b class="inf-warn" title="Заражение в руке: в конце хода герой обратится! Нужна аптечка или Марина.">☣ В РУКЕ!</b>' : inf ? `<b class="inf-mark">☣${inf}</b>` : ''}</div>
           <div class="hp-meta">
             <span title="Опыт / уровень">★ ${h.xp}${xpNext ? '/' + xpNext : ''} · ур.${h.level}</span>
             <span title="Размер руки: до стольких карт герой добирает в начале хода (не больше 3 за раз)">✋ ${E.handSize(g, h)}</span>
@@ -850,6 +856,12 @@
           const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
           if (i != null) this.act({ t: 'heal', hero: i });
         });
+        const cl = legal.filter((a) => a.t === 'cleanse');
+        if (cl.length || E.heroesAt(g, h.pos).some((o) => E.infectCount(g, o))) icon('cleanse', 'Обеззаразить', 1, cl.length > 0, g.turn.healUsed >= ZG.Mods.value(g, h, 'healAction', 0) ? 'уже лечили в этот ход' : h.energy < 1 ? lack(1) : 'Заражение должно быть в руке героя рядом', async () => {
+          const opts = cl.map((a) => a.hero);
+          const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
+          if (i != null) this.act({ t: 'cleanse', hero: i });
+        }, ' gold');
       }
       if (g.drops.length) icon('pickup', 'Подобрать', 1, has('pickup'), 'в зоне нет брошенного груза', () => this.act({ t: 'pickup' }));
       const sa = legal.filter((a) => a.t === 'scenario');
@@ -953,12 +965,29 @@
     async alarm() { const a = $('#alarm-track'); a.classList.remove('bump'); void a.offsetWidth; a.classList.add('bump'); this.refreshTop(); },
     async draw() { /* анимация добора — в refreshHand */ },
     async gameover() { /* обрабатывается после очереди */ },
-    async talent() { this.refreshHeroes(); },
+    async talent(ev) {
+      this.refreshHeroes();
+      const h = this.g.heroes[ev.hero], t = ZG.Talents.get(ev.id);
+      if (h && t && h.ai) { toast(`🤖 ${E.heroName(h)} берёт талант «${t.name}»: ${t.text}`, 5000); await sleep(600); }
+    },
+    async infect(ev) {
+      this.view.play([ev]);
+      this.refreshHeroes();
+      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} — оно придёт в руку в ближайшие ходы.`, 4000);
+      await sleep(250);
+    },
+    async infectTick(ev) { this.view.play([ev]); this.refreshHeroes(); await sleep(300); },
+    async turn_hero(ev) {
+      this.view.play([ev]);
+      const h = this.g.heroes[ev.hero];
+      this.refreshHeroes();
+      await Banner.show('ОБРАЩЕНИЕ!', `${E.heroName(h)} больше не человек`, 'wave');
+    },
     async play(ev) {
       this.view.play([ev]);
       if (ev.chain) {
         const def = ZG.Cards.get(this.g.cards[ev.card]);
-        Banner.chain(ZG.SUITS[def.suit]);
+        Banner.chain(ZG.SUITS[def.suit], def.chainText);
       }
       await sleep(120);
     },
@@ -990,6 +1019,7 @@
       case 'punch': return 'ударить кулаком';
       case 'barricade': return 'поставить баррикаду';
       case 'heal': return 'обработать раны';
+      case 'cleanse': return 'обеззаразить укус (Заражения в руке → Раны)';
       case 'rest': return 'отдышаться';
       case 'give': return `передать «${E.cardDef(g, a.card).name}» → ${E.heroName(g.heroes[a.hero])}`;
       case 'scenario': return a.label;
@@ -1063,8 +1093,9 @@
       await sleep(400 / (Game.view ? Game.view.speed : 1));
       b.className = 'banner';
     },
-    chain(suit) {
+    chain(suit, text) {
       const c = $('#chain-pop');
+      c.innerHTML = 'СВЯЗКА!' + (text ? `<small>${esc(text)}</small>` : '');
       c.style.setProperty('--suit', suit.color);
       c.classList.remove('go'); void c.offsetWidth; c.classList.add('go');
     },
@@ -1145,8 +1176,8 @@
       const update = () => {
         let sum = 0; picked.forEach((u) => { sum += E.blockValue(g, h, u); });
         const taken = Math.max(0, p.remaining - sum);
-        const left = E.maxHp(g, h) - E.woundCount(g, h) - taken;
-        info.innerHTML = `Отражено картами: <b>${sum}</b> / ${p.remaining} → получите <b class="${taken ? 'bad' : 'good'}">${taken} ${ZG.util.plural(taken, 'Рану', 'Раны', 'Ран')}</b>` + (left <= 0 ? ' <b class="bad">— ГЕРОЙ ПАДЁТ!</b>' : '');
+        const left = E.maxHp(g, h) - E.woundCount(g, h) - E.infectCount(g, h) - taken;
+        info.innerHTML = `Отражено картами: <b>${sum}</b> / ${p.remaining} → получите <b class="${taken ? 'bad' : 'good'}">${taken} урона</b>` + (taken ? ` <small>(за каждый кубик: 1–2 ☣ Заражение, 3–6 Рана)</small>` : '') + (left <= 0 ? ' <b class="bad">— ГЕРОЙ ПАДЁТ!</b>' : '');
       };
       cards.forEach((u) => {
         const def = E.cardDef(g, u);
@@ -1201,7 +1232,7 @@
       return new Promise((resolve) => {
         idxs.forEach((i) => {
           const h = g.heroes[i];
-          const b = el('button', 'btn', esc(E.heroName(h)) + ` <small>(${E.woundCount(g, h)} ран)</small>`);
+          const b = el('button', 'btn', esc(E.heroName(h)) + ` <small>(${E.woundCount(g, h)} ран${E.infectCount(g, h) ? `, ☣${E.infectCount(g, h)}` : ''})</small>`);
           b.onclick = () => { this.close(); resolve(i); };
           wrap.appendChild(b);
         });

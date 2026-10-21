@@ -109,8 +109,8 @@
   ZG.Heroes.all().forEach((h) => h.deck.slice(6).forEach((id) => heroCards.push({ el: CV.card(id), count: 1 })));
   cardSheets('Именные карты героев', heroCards);
   cardSheets('Колода добычи', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
-  cardSheets('Раны и грузы', [
-    { el: CV.card('wound'), count: 30 },
+  cardSheets('Раны, Заражения и грузы', [
+    { el: CV.card('wound'), count: 30 }, { el: CV.card('infection'), count: 12 },
     { el: CV.card('cargo_fuel'), count: 2 }, { el: CV.card('cargo_meds'), count: 4 }, { el: CV.card('cargo_radio'), count: 1 },
   ]);
   cardSheets('Карты появления', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
@@ -196,9 +196,11 @@
       tw.appendChild(d);
     }
   };
-  tok('z_walker', 30, 'Шатун'); tok('z_runner', 10, 'Бегун'); tok('z_fatso', 6, 'Толстяк'); tok('z_screamer', 4, 'Крикун');
-  tok('z_brute', 2, 'Громила', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 2, 'Гнездо', 'big', { t: 0 });
-  ZG.Heroes.all().forEach((h) => tok(h.art, 1, h.name));
+  const pool = lvl.pool || {};
+  tok('z_walker', pool.walker || 24, 'Шатун'); tok('z_runner', pool.runner || 8, 'Бегун'); tok('z_fatso', pool.fatso || 5, 'Толстяк'); tok('z_screamer', pool.screamer || 4, 'Крикун');
+  tok('z_brute', pool.brute || 2, 'Громила', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 2, 'Гнездо', 'big', { t: 0 });
+  // фишка героя: лицо — герой, оборот — он же, обращённый (печатайте двусторонней)
+  ZG.Heroes.all().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (оборот фишки)`, 'big'); });
   tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
   tok('tok_trap', 3, 'Растяжка', 'small'); tok('tok_lure', 2, 'Приманка', 'small'); tok('noiseIcon', 8, 'Шум', 'small'); tok('shieldIcon', 8, 'Блок', 'small');
   tok('energy', 6, 'Адреналин', 'small'); tok('skull', 8, 'Урон (крупные цели)', 'small', { color: '#e8a090' });
