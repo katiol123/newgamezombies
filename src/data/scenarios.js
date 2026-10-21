@@ -67,9 +67,9 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 5, с медикаментами: 4 (нужно 3). Выход — Скорая.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
+      setupText: 'Ящики: 5, с медикаментами: 4 (нужно 3). Выход — Скорая. Задание долгое: +1 раунд.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
       brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, в четырёх — медикаменты; нужно три.',
-      crates: 5, real: 4, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
+      crates: 5, real: 4, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance', mods: { maxRounds: 1 },
       setup(g, E) { g.obj = { delivered: 0, need: 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
       goals(g) {
         return [
@@ -177,8 +177,8 @@
       setup(g, E) { g.spawnPoints.forEach((p) => E.spawnZombie(g, 'walker', p)); g.heroes.forEach((h) => E.giveLoot(g, h)); },
     },
     {
-      id: 'stash', name: 'Схрон', text: 'Каждый герой начинает с 1 картой добычи. Тревога начинается с 3.', tone: 1, art: 'cond_stash',
-      setup(g, E) { g.heroes.forEach((h) => E.giveLoot(g, h)); g.alarm += 3; },
+      id: 'stash', name: 'Схрон', text: 'Каждый герой начинает с 1 картой добычи. Тревога начинается с 2.', tone: 1, art: 'cond_stash',
+      setup(g, E) { g.heroes.forEach((h) => E.giveLoot(g, h)); g.alarm += 2; },
     },
   ]);
 
@@ -196,7 +196,7 @@
 
   // ---------------------------------------------------------- Сложность ---
   ZG.Difficulties.addAll([
-    { id: 'novice', name: 'Новичок', text: '+2 раунда, Ночь и Глухая ночь наступают на 2 раунда позже, порог Волны +2, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2, phaseShift: -2 }, startLoot: 1 },
+    { id: 'novice', name: 'Новичок', text: '+2 раунда, Ночь и Глухая ночь наступают на 2 раунда позже, порог Волны +2, на 1 люк меньше, Заражение только на 1 кубика, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2, phaseShift: -2, infectDie: -1, spawnPointsBonus: -1 }, startLoot: 1 },
     { id: 'survivor', name: 'Выживший', text: 'Стандартные правила.', mods: {} },
     { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1, Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (g.heroes.length >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
   ]);

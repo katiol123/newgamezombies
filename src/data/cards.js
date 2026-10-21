@@ -20,7 +20,7 @@
   // ------------------------------------------------------------ Стартовые ---
   ZG.Cards.addAll([
     {
-      id: 'strike', name: 'Удар', suit: 'rage', cost: 1, shield: 0, type: 'Атака', tags: ['melee'],
+      id: 'strike', name: 'Удар', suit: 'rage', cost: 1, shield: 1, type: 'Атака', tags: ['melee'],
       text: 'Ближний бой: 2 урона.', chainText: '+1 урон.', art: 'fist', value: 6,
       target: MELEE,
       play(c) { c.melee(c.target, 2 + (c.chain ? 1 : 0)); },

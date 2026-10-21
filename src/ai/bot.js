@@ -84,7 +84,7 @@
       const infHand = h.hand.filter((u) => g.cards[u] === 'infection').length;
       s -= (h.infection * 140 + infHand * 160 + E.infectCount(g, h) * 45) * (h.infection + infHand >= at - 1 ? 1.8 : 1);
       const hp = E.maxHp(g, h);
-      const wounds = E.woundCount(g, h);
+      const wounds = E.hurtCount(g, h);
       s -= wounds * W.wound;
       if (hp - wounds <= 1) s -= W.nearDeath;
       // ожидаемая атака
@@ -94,7 +94,7 @@
         const tank = here.find((o) => ZG.Mods.flag(g, o, 'taunt'));
         if (tank) incoming = tank === h ? zoneIncoming[h.pos] : 0;
         else {
-          here.sort((a, b) => E.woundCount(g, a) - E.woundCount(g, b) || a.idx - b.idx);
+          here.sort((a, b) => E.hurtCount(g, a) - E.hurtCount(g, b) || a.idx - b.idx);
           incoming = here[0] === h ? zoneIncoming[h.pos] : 0;
         }
       }
@@ -211,7 +211,10 @@
 
   function chooseHero(g) {
     const ready = g.heroes.filter((h) => h.onBoard && !h.acted);
-    ready.sort((a, b) => E.zombiesAt(g, b.pos).length - E.zombiesAt(g, a.pos).length || a.idx - b.idx);
+    // лекарь ходит первым, если кому-то нужно обеззаразить укус; заражённые — после него
+    const bitten = g.heroes.filter((o) => o.onBoard && o.hand.some((u) => g.cards[u] === 'infection'));
+    const pri = (h) => (bitten.length && ZG.Mods.flag(g, h, 'healAction') ? 2 : 0) - (bitten.includes(h) && ready.some((m) => m !== h && ZG.Mods.flag(g, m, 'healAction')) ? 1 : 0);
+    ready.sort((a, b) => pri(b) - pri(a) || E.zombiesAt(g, b.pos).length - E.zombiesAt(g, a.pos).length || a.idx - b.idx);
     return ready[0];
   }
 

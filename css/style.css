@@ -135,7 +135,8 @@ small { opacity: .75; }
 .fog-toggle input { accent-color: var(--amber); transform: scale(1.2); margin-right: 6px; }
 .seed { display: block; margin-top: 14px; color: var(--muted); font-size: 14px; }
 .seed input { background: var(--panel); border: 1px solid var(--line); color: var(--paper); padding: 6px 8px; width: 160px; font-family: var(--font-t); }
-.setup-go { position: sticky; bottom: 0; margin: 26px -4vw -40px; padding: 14px 0 18px; text-align: center; background: linear-gradient(transparent, var(--bg) 40%); z-index: 3; }
+.setup-go { position: sticky; bottom: 0; margin: 40px -4vw -40px; padding: 18px 0 18px; text-align: center; background: linear-gradient(rgba(0,0,0,0), var(--bg) 30%); z-index: 3; pointer-events: none; }
+.setup-go > * { pointer-events: auto; }
 
 /* ---------------------------------------------------- карта героя */
 .hero-card {
@@ -437,7 +438,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @keyframes talentIn { from { opacity: 0; transform: translateY(30px) rotateY(90deg); } }
 
 /* ========================================================= МОДАЛКИ */
-.modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(5,4,3,.7); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .25s; }
+.modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(5,4,3,.8); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .25s; }
 .modal.show { opacity: 1; pointer-events: auto; }
 .modal-box { max-width: min(560px, 92vw); max-height: 90vh; overflow-y: auto; padding: 22px 24px; border-radius: 10px; background: linear-gradient(160deg, #241c15, #15100c); border: 1px solid #4a3a2a; box-shadow: 0 30px 80px rgba(0,0,0,.8); transform: scale(.9) translateY(20px); transition: transform .3s cubic-bezier(.3,1.4,.5,1); font-family: var(--font-t); font-size: 16px; }
 .modal.show .modal-box { transform: none; }
@@ -558,3 +559,16 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @keyframes infPulse { 50% { filter: brightness(1.5); transform: scale(1.06); } }
 .chain-pop small { display: block; font-family: var(--font-t, sans-serif); font-size: 18px; letter-spacing: .02em; text-align: center; max-width: 520px; text-shadow: 0 0 10px var(--suit), 0 2px 0 #000; }
 .banner.turned .banner-title { color: #9be04a; }
+
+/* узкие экраны (телефон) */
+@media screen and (max-width: 480px) {
+  .setup-head { flex-wrap: wrap; gap: 10px; }
+  .setup-head h2 { flex-basis: 100%; font-size: 22px; }
+  .seg button { padding: 8px 10px; font-size: 13px; }
+  .setup-heroes { grid-template-columns: 1fr; }
+  .setup-go { position: static; margin: 20px 0 0; background: none; }
+  .modal-box { padding: 16px; font-size: 14px; max-height: 86vh; }
+  .modal-buttons { position: sticky; bottom: -16px; background: #15100c; padding: 10px 0; margin-bottom: -16px; }
+  .chain-pop { font-size: 32px; bottom: 40%; }
+  .chain-pop small { font-size: 14px; max-width: 90vw; }
+}

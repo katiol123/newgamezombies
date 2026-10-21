@@ -847,8 +847,8 @@
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
       icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : 'рядом нет другого героя', () => this.giveDialog());
-      const wHand = h.hand.some((u) => g.cards[u] === 'wound');
-      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
+      const wHand = h.hand.some((u) => g.cards[u] === 'wound' || g.cards[u] === 'infection');
+      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран и Заражений' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
       if (ZG.Mods.flag(g, h, 'healAction')) {
         const hl = legal.filter((a) => a.t === 'heal');
         icon('heal', 'Лечить', 1, hl.length > 0, g.turn.healUsed >= ZG.Mods.value(g, h, 'healAction', 0) ? 'уже лечили в этот ход' : h.energy < 1 ? lack(1) : 'рядом нет раненых', async () => {
@@ -894,6 +894,7 @@
       const g = this.g;
       store.set('save', null);
       await sleep(600);
+      clearTimeout(toast._t); $('#toast').classList.remove('show'); // старые подсказки не висят поверх итогов
       const r = g.result;
       const scr = $('#screen-end');
       scr.className = 'screen ' + (r.win ? 'win' : 'lose');
@@ -916,7 +917,7 @@
       $('#end-stats').innerHTML = `
         <div><b>${g.round}</b><span>раунд</span></div>
         <div><b>${st.kills}</b><span>убито</span></div>
-        <div><b>${st.wounds}</b><span>ран</span></div>
+        <div><b>${st.wounds + (st.infections || 0)}</b><span>ран</span></div>${st.turned ? `<div><b>${st.turned}</b><span>обращено</span></div>` : ''}
         <div><b>${st.chains}</b><span>связок</span></div>
         <div><b>${st.waves}</b><span>волн</span></div>
         <div><b>${st.searches}</b><span>обысков</span></div>`;
@@ -973,7 +974,7 @@
     async infect(ev) {
       this.view.play([ev]);
       this.refreshHeroes();
-      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} — оно придёт в руку в ближайшие ходы.`, 4000);
+      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Отдышаться»).`, 5000);
       await sleep(250);
     },
     async infectTick(ev) { this.view.play([ev]); this.refreshHeroes(); await sleep(300); },

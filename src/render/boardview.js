@@ -137,14 +137,14 @@
         const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
         const rows = Math.ceil(n / cols);
         const span = this.cell * (n === 1 ? 0 : 0.56);
-        const r = this.cell * (n <= 1 ? 0.3 : n <= 4 ? 0.22 : 0.16);
+        const r = this.cell * (n <= 1 ? 0.3 : n <= 4 ? 0.22 : 0.135);
         list.forEach((e, k) => {
           const slot = Math.min(k, 8);
           const cx = cols === 1 ? 0 : ((slot % cols) / (cols - 1) - 0.5) * span;
           const cy = rows === 1 ? 0 : (Math.floor(slot / cols) / (rows - 1) - 0.5) * span;
           e.tx = c.x + cx;
           e.ty = c.y + cy + (n === 1 && extras.has(cell) ? this.cell * 0.08 : 0);
-          e.r = r * (e.uid && ZG.Zombies.get(e.type).big ? 1.35 : 1);
+          e.r = r * (e.uid && ZG.Zombies.get(e.type).big ? (n > 4 ? 1.15 : 1.35) : 1);
           e.over = list.length > 9 && k > 8;
           if (snap) { e.x = e.tx; e.y = e.ty; }
         });

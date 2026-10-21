@@ -27,9 +27,9 @@
     },
     {
       id: 'marina', name: 'Марина', nick: 'Скальпель', role: 'Медик', color: '#e8e8e8',
-      hp: 5, hand: 5, energy: 3,
+      hp: 6, hand: 5, energy: 3,
       bio: 'Хирург районной больницы. Ушла с последней смены с полной сумкой.',
-      ability: 'Полевой врач', abilityText: 'Раз за ход, 1 ⚡, герою в её зоне (можно себе): убрать 1 Рану ИЛИ превратить все Заражения в его руке в Раны.',
+      ability: 'Полевой врач', abilityText: 'Раз за ход, 1 ⚡, герою в её зоне (можно себе): убрать 1 Рану ИЛИ обеззаразить: все его Заражения (в руке, колоде и сбросе) → Раны.',
       deck: STARTER.concat(['scalpel', 'bandage', 'adrenaline', 'coldcalc']),
       talents: [['sterile', 'steady'], ['second_wind', 'triage']],
       mods: { healAction: 1 },

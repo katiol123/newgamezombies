@@ -276,12 +276,12 @@
       });
       if (opts.labels !== false) {
         ctx.save();
-        ctx.font = `bold ${Math.max(8, Math.round(C * 0.085))}px 'Russo One', sans-serif`;
+        ctx.font = `bold ${Math.max(10, Math.round(C * 0.12))}px 'Russo One', sans-serif`;
         ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
         const text = `${def.num} · ${def.name.toUpperCase()}`;
         const tw = ctx.measureText(text).width;
-        ctx.fillStyle = 'rgba(10,8,6,.55)'; ctx.fillRect(x + 4, y + 3 * C - C * 0.14 - 4, tw + 8, C * 0.14);
-        ctx.fillStyle = 'rgba(232,220,192,.75)'; ctx.fillText(text, x + 8, y + 3 * C - 5);
+        ctx.fillStyle = 'rgba(10,8,6,.62)'; ctx.fillRect(x + 4, y + 3 * C - C * 0.17 - 4, tw + 8, C * 0.17);
+        ctx.fillStyle = 'rgba(232,220,192,.85)'; ctx.fillText(text, x + 8, y + 3 * C - 5);
         ctx.restore();
       }
     });
