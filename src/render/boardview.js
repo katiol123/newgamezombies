@@ -1027,9 +1027,12 @@
       // имя
       ctx.font = `bold ${Math.round(Math.max(9, R * 0.32))}px 'Russo One', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      const nw = ctx.measureText(def.name).width + 8, nh = Math.max(11, R * 0.4);
+      // в тесной зоне — короткое имя, чтобы подписи соседей не налезали
+      let crowd = 0; this.heroes.forEach((o) => { if (!o.gone && o.cell === e.cell) crowd++; }); this.zombies.forEach((o) => { if (!o.dying && o.cell === e.cell) crowd++; });
+      const label = crowd > 1 ? def.name.slice(0, 3) : def.name;
+      const nw = ctx.measureText(label).width + 8, nh = Math.max(11, R * 0.4);
       ctx.fillStyle = 'rgba(10,8,6,.85)'; Art.rr(ctx, x - nw / 2, y + R * 1.08, nw, nh, 3); ctx.fill();
-      ctx.fillStyle = active ? '#ffd36b' : '#e8dcc0'; ctx.fillText(def.name, x, y + R * 1.12);
+      ctx.fillStyle = active ? '#ffd36b' : '#e8dcc0'; ctx.fillText(label, x, y + R * 1.12);
       ctx.restore();
     }
 

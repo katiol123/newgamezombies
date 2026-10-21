@@ -329,11 +329,14 @@
     if (n <= 0) return;
     const inf = ZG.Levels.get(g.levelId).infection;
     const always = (attackers || []).some((u) => { const z = E.zombie(g, u); return z && ZG.Zombies.get(z.type).infects; });
-    let wounds = 0, infections = 0;
-    for (let i = 0; i < n; i++) {
+    // один бросок на каждого укусившего зомби (не на каждую единицу урона)
+    const rolls = Math.min(n, Math.max(1, (attackers || []).length));
+    let infections = 0;
+    for (let i = 0; i < rolls; i++) {
       const roll = 1 + Rng.int(g, 6);
-      if (inf && (always || roll <= Mods.value(g, h, 'infectDie', inf.die))) infections++; else wounds++;
+      if (inf && (always || roll <= Mods.value(g, h, 'infectDie', inf.die))) infections++;
     }
+    const wounds = n - infections;
     if (infections) {
       // карта Заражения замешивается в колоду добора — укус скоро даст о себе знать
       for (let i = 0; i < infections; i++) { const u = E.newUid(g, 'i'); g.cards[u] = 'infection'; if (inf.hand) { h.hand.push(u); continue; } const span = inf.top ? Math.min(inf.top, h.deck.length) : h.deck.length; h.deck.splice(Rng.int(g, span + 1), 0, u); }
@@ -1009,7 +1012,9 @@
         if (E.infectCount(g, o)) out.push({ t: 'cleanse', hero: o.idx });
       });
     }
-    if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound' || g.cards[u] === 'infection') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    // Прижечь укус: 2 ⚡, себе или товарищу в своей зоне, даже рядом с зомби
+    if (h.energy >= 2) E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'burn', hero: o.idx }); });
     if (!g.turn.gave) {
       E.heroesAt(g, h.pos).forEach((o) => {
         if (o === h) return;
@@ -1151,17 +1156,19 @@
         checkFall(g, o);
         return true;
       }
+      case 'burn': {
+        const o = g.heroes[a.hero];
+        const bites = o ? o.hand.filter((u) => g.cards[u] === 'infection') : [];
+        if (h.energy < 2 || !bites.length || o.pos !== h.pos) return fail(g, 'Прижечь нельзя.');
+        spend(g, h, 2);
+        bites.forEach((u) => { g.cards[u] = 'wound'; });
+        E.log(g, `${E.heroName(h)} прижигает укус${o === h ? '' : ` у ${E.heroName(o)}`}: Заражение → Рана.`, 'good');
+        E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
+        return true;
+      }
       case 'rest': {
         if (h.energy < 3) return fail(g, 'Нужно 3 ⚡.');
         spend(g, h, 3);
-        const bites = h.hand.filter((u) => g.cards[u] === 'infection');
-        if (bites.length) {
-          // прижечь укус: Заражения в руке становятся обычными Ранами
-          bites.forEach((u) => { g.cards[u] = 'wound'; });
-          E.log(g, `${E.heroName(h)} прижигает укус: Заражение → Рана.`, 'good');
-          E.fx(g, { t: 'heal', hero: h.idx, n: 0, pos: h.pos });
-          return true;
-        }
         const i = h.hand.findIndex((u) => g.cards[u] === 'wound');
         if (i >= 0) h.hand.splice(i, 1);
         E.log(g, `${E.heroName(h)} переводит дух и перевязывает рану.`, 'good');

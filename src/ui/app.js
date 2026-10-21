@@ -847,8 +847,8 @@
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
       icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : 'рядом нет другого героя', () => this.giveDialog());
-      const wHand = h.hand.some((u) => g.cards[u] === 'wound' || g.cards[u] === 'infection');
-      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран и Заражений' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
+      const wHand = h.hand.some((u) => g.cards[u] === 'wound');
+      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
       if (ZG.Mods.flag(g, h, 'healAction')) {
         const hl = legal.filter((a) => a.t === 'heal');
         icon('heal', 'Лечить', 1, hl.length > 0, g.turn.healUsed >= ZG.Mods.value(g, h, 'healAction', 0) ? 'уже лечили в этот ход' : h.energy < 1 ? lack(1) : 'рядом нет раненых', async () => {
@@ -863,6 +863,12 @@
           if (i != null) this.act({ t: 'cleanse', hero: i });
         }, ' gold');
       }
+      const burns = legal.filter((a) => a.t === 'burn');
+      if (burns.length) icon('cleanse', 'Прижечь укус', 2, true, '', async () => {
+        const opts = burns.map((a) => a.hero);
+        const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
+        if (i != null) this.act({ t: 'burn', hero: i });
+      }, ' gold');
       if (g.drops.length) icon('pickup', 'Подобрать', 1, has('pickup'), 'в зоне нет брошенного груза', () => this.act({ t: 'pickup' }));
       const sa = legal.filter((a) => a.t === 'scenario');
       sa.forEach((a) => icon('task', a.label, a.cost, true, '', () => this.act(a), ' gold'));
@@ -974,7 +980,7 @@
     async infect(ev) {
       this.view.play([ev]);
       this.refreshHeroes();
-      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Отдышаться»).`, 5000);
+      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Прижечь укус», 2 ⚡).`, 5000);
       await sleep(250);
     },
     async infectTick(ev) { this.view.play([ev]); this.refreshHeroes(); await sleep(300); },
@@ -1020,6 +1026,7 @@
       case 'punch': return 'ударить кулаком';
       case 'barricade': return 'поставить баррикаду';
       case 'heal': return 'обработать раны';
+      case 'burn': return 'прижечь укус (Заражения в руке → Раны)';
       case 'cleanse': return 'обеззаразить укус (Заражения в руке → Раны)';
       case 'rest': return 'отдышаться';
       case 'give': return `передать «${E.cardDef(g, a.card).name}» → ${E.heroName(g.heroes[a.hero])}`;

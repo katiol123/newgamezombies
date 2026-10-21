@@ -50,10 +50,10 @@
 
   ZG.Scenarios.addAll([
     {
-      setupText: 'Ящики: 4, с канистрами: 2. Выход — Машина.', id: 'fuel', name: 'Бензин на исходе', short: 'Найди 2 канистры и заправь машину.',
+      setupText: 'Ящики: 4, с канистрами: 2 (при 3–4 героях: 5 ящиков, 3 канистры — нужны все). Выход — Машина.', id: 'fuel', name: 'Бензин на исходе', short: 'Найди 2 канистры и заправь машину.',
       brief: 'Машина на краю квартала заглохла. В округе спрятаны канистры — но не во всех ящиках бензин.',
       crates: 4, real: 2, cargo: 'cargo_fuel', exitLabel: 'Машина', exitArt: 'exit_car',
-      setup(g, E) { g.obj = { delivered: 0, need: 2 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
+      setup(g, E) { const big = g.heroes.length >= 3 ? 1 : 0; g.obj = { delivered: 0, need: 2 + big }; E.placeCrates(g, this.crates + big, this.real + big, this.cargo); },
       goals(g) {
         return [
           { text: `Заправить машину: ${g.obj.delivered}/${g.obj.need} канистры`, done: g.obj.delivered >= g.obj.need },
@@ -67,10 +67,10 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 5, с медикаментами: 4 (нужно 3). Выход — Скорая. Задание долгое: +1 раунд.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
+      setupText: 'Ящики: 6, с медикаментами: 5 (нужно 3, при 3–4 героях — 4). Выход — Скорая. Задание долгое: +1 раунд.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
       brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, в четырёх — медикаменты; нужно три.',
-      crates: 5, real: 4, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance', mods: { maxRounds: 1 },
-      setup(g, E) { g.obj = { delivered: 0, need: 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
+      crates: 6, real: 5, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance', mods: { maxRounds: 1 },
+      setup(g, E) { g.obj = { delivered: 0, need: g.heroes.length >= 3 ? 4 : 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
       goals(g) {
         return [
           { text: `Погрузить медикаменты: ${g.obj.delivered}/${g.obj.need}`, done: g.obj.delivered >= g.obj.need },
@@ -84,11 +84,11 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца (этот тайл открыт сразу). Выход (Вертолёт) — ближайшая к вышке уличная зона.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда и улетай.',
+      setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца (этот тайл открыт сразу). Выход (Вертолёт) — ближайшая к вышке уличная зона. Передача: 2 раунда, при 3–4 героях — 3.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда (при 3–4 героях — 3) и улетай.',
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
-        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: 2, on: false };
+        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: g.heroes.length >= 3 ? 3 : 2, on: false };
         g.tower = E.placeTower(g);
         E.placeExitNear(g, g.tower);
         // в тумане открыты стартовый тайл и тайл вышки (вертолёт садится на нём)
@@ -140,10 +140,10 @@
       progress(g) { return (g.obj.on ? 2 : cargoInHands(g, this.cargo)) + g.obj.transmit * 1.5; },
     },
     {
-      setupText: 'Гнёзда: 2, в соло 1 (центры тайлов правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь гнёзда (2, в соло 1) и уходи.',
+      setupText: 'Гнёзда: соло 1, двое 2, трое–четверо 3 (центры тайлов, начиная с правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь гнёзда (1–3 по числу героев) и уходи.',
       brief: 'Зараза разрастается из гнёзд. Пока они живы, квартал не очистить. Гнёзда сами порождают мертвецов.',
       exitLabel: 'Пикап', exitArt: 'exit_car',
-      setup(g, E) { const n = g.heroes.length === 1 ? 1 : 2; g.obj = { nests: n }; E.placeNests(g, n); },
+      setup(g, E) { const n = Math.min(3, g.heroes.length === 1 ? 1 : g.heroes.length >= 3 ? 3 : 2); g.obj = { nests: n }; E.placeNests(g, n); },
       nestsLeft(g) { return g.zombies.filter((z) => z.type === 'nest').length; },
       goals(g) {
         const left = this.nestsLeft(g);
@@ -167,7 +167,7 @@
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
     { id: 'fog', name: 'Смог', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
-    { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше.', tone: -1, mods: { phaseShift: 1 }, art: 'cond_moon' },
+    { id: 'fullmoon', name: 'Полнолуние', text: 'Ночь и Глухая ночь наступают на 1 раунд раньше, но светло: +1 раунд.', tone: -1, mods: { phaseShift: 1, maxRounds: 1 }, art: 'cond_moon' },
     {
       id: 'convoy', name: 'Брошенный конвой', text: '+3 жетона Обыска на улицах. Тревога начинается с 2.', tone: 0, art: 'cond_convoy',
       setup(g, E) { E.addStreetSearch(g, 3); g.alarm += 2; },
