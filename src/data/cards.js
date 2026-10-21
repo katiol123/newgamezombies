@@ -113,6 +113,35 @@
 
   // ---------------------------------------------------------- Лиза «Тень» ---
   ZG.Cards.addAll([
+    // --- Сава ---
+    {
+      id: 'silent_step', name: 'Тихий шаг', suit: 'agility', cost: 1, shield: 1, type: 'Движение', tags: ['move'], hero: 'sava',
+      text: 'Переместись на 1–2 зоны. До конца хода бродячие зомби тебя не замечают.', chainText: 'возьми 1 карту.', art: 'silentstep', value: 8,
+      target: { kind: 'move', steps: 2 },
+      play(c) { if (c.g.turn) c.g.turn.quiet = true; c.moveTo(c.target); if (c.chain) c.draw(1); },
+    },
+    {
+      id: 'shiv', name: 'Нож в спину', suit: 'agility', cost: 1, shield: 0, type: 'Атака', tags: ['melee'], hero: 'sava',
+      text: 'Ближний бой. Бродячего (не крупного) зомби — убить беззвучно. Охотнику — 2 урона.', chainText: '+1 урон охотнику.', art: 'knife', value: 9,
+      target: MELEE,
+      play(c) {
+        const z = c.zombie(c.target);
+        if (z && c.g.stealth && !z.awake && !ZG.Zombies.get(z.type).big) c.silentKill(c.target);
+        else c.melee(c.target, 2 + (c.chain ? 1 : 0));
+      },
+    },
+    {
+      id: 'pebble', name: 'Камешек', suit: 'mind', cost: 0, shield: 1, type: 'Тактика', tags: ['lure'], hero: 'sava',
+      text: 'Брось в зону в 2 зонах от тебя: жетон шума (Тревога не растёт). Зомби в 2 зонах от неё, не видящие героев, идут проверить.', chainText: 'слышно на 1 зону дальше.', art: 'pebble', value: 8,
+      target: { kind: 'cell', range: 2 },
+      play(c) { const plus = ZG.Mods.flag(c.g, c.hero, 'pebblePlus'); c.pebble(c.target, 2 + (c.chain ? 1 : 0) + (plus ? 2 : 0)); if (plus) c.draw(1); },
+    },
+    {
+      id: 'lurk', name: 'Затаиться', suit: 'mind', cost: 1, shield: 2, type: 'Тактика', hero: 'sava',
+      text: 'До своего следующего хода тебя видят только зомби в твоей зоне.', chainText: '+1 Блок.', art: 'lurk', value: 8,
+      target: null,
+      play(c) { c.hero.lurk = true; if (c.chain) c.block(1); },
+    },
     {
       id: 'knife', name: 'Нож', suit: 'agility', cost: 0, shield: 0, type: 'Атака', tags: ['melee'], hero: 'lisa',
       text: 'Ближний бой: 1 урон.', chainText: '+1 урон и возьми 1 карту.', art: 'knife', value: 8,

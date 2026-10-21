@@ -12,8 +12,8 @@
     name: 'Окраина',
     subtitle: 'Уровень 1',
     text: 'Спальный район на краю города. Первая ночь после падения.',
-    layout: { tw: 3, th: 2 }, // 3×2 тайла = поле 9×6 зон
-    tiles: ['crossroad', 'shop', 'house', 'gas', 'pharmacy', 'park', 'garages', 'police', 'construction'],
+    layout: { tw: 4, th: 2 }, // 4×2 тайла = поле 12×6 зон
+    tiles: ['crossroad', 'shop', 'house', 'gas', 'pharmacy', 'park', 'garages', 'police', 'construction', 'school', 'market'],
     loot: {
       bat: 3, machete: 2, spear: 2, crowbar: 2, pistol: 2, shotgun: 1, molotov: 2, firecracker: 2,
       medkit: 3, energy: 3, chocolate: 2, sneakers: 1, backpack: 1, vest: 1, flashlight: 1, ambush: 3,
@@ -22,8 +22,8 @@
     scenarios: ['fuel', 'meds', 'radio', 'nests'],
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
     bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
-    rounds: 12,
-    phaseStarts: [1, 3, 5], // Сумерки с 1-го, Ночь с 3-го, Глухая ночь с 5-го раунда
+    rounds: 14,
+    phaseStarts: [1, 4, 7], // Сумерки с 1-го, Ночь с 4-го, Глухая ночь с 7-го раунда
     hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
     alarmThreshold: { 1: 5, 2: 6, 3: 6, 4: 4 }, // порог Волны по размеру отряда: большой отряд шумит больше
     roundsBonus: { 3: 1, 4: 1 }, // у большого отряда цели больше — и раунд в запасе
@@ -35,6 +35,7 @@
     // Заражение — тоже Рана (hurts); обращение, когда Заражение «досидело» в руке до конца хода turnAt раз
     infection: { die: 2, turnAt: 1, hand: true, hurts: true },
     maxAttackers: 3, // Теснота: героя за фазу кусают не больше 3 зомби (самые опасные)
+    stealth: true, // скрытность: зомби бродят, пока не заметят героев (Тревога на максимуме выдаёт всех)
     doors: true, // двери на входах в помещения: закрыты в начале, укрытие от дальних зомби
     fog: true, // «Туман войны»: тайлы, кроме стартового и тайла выхода, закрыты до разведки
     fogBreak: 4, // столько зомби в закрытом тайле — и он открывается сам

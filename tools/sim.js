@@ -24,6 +24,7 @@ function parseArgs() {
     else if (k === '--seed') o.seed = a[++i];
     else if (k === '--json') o.json = true;
     else if (k === '--nofog') o.fog = false;
+    else if (k === '--nostealth') o.stealth = false;
     else if (k === '--set') Object.assign(ZG.Levels.get('outskirts'), JSON.parse(a[++i])); // проба параметров уровня
   }
   return o;
@@ -35,7 +36,7 @@ function runBatch(heroIds, o, tag) {
     const g = ZG.Engine.create({
       seed: `${o.seed}-${tag}-${i}`, quiet: true, difficultyId: o.difficulty,
       heroes: heroIds.map((id, k) => ({ id, player: (k % 2) + 1 })),
-      scenarioId: o.scenario || undefined, conditionId: o.condition || undefined, fog: o.fog,
+      scenarioId: o.scenario || undefined, conditionId: o.condition || undefined, fog: o.fog, stealth: o.stealth,
     });
     ZG.Bot.playGame(g, { depth2: !o.fast });
     res.games++;

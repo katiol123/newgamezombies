@@ -203,6 +203,22 @@
       fillInk(c, o.ink);
       if (!o.shadow) { c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(50, 22); c.quadraticCurveTo(44, 46, 54, 74); c.stroke(); c.beginPath(); c.moveTo(30, 48); c.quadraticCurveTo(40, 44, 44, 54); c.stroke(); c.beginPath(); c.moveTo(70, 46); c.quadraticCurveTo(60, 50, 60, 62); c.stroke(); }
     },
+    silentstep(c, o) {
+      ICONS.boot(c, o);
+      if (!o.shadow) { c.strokeStyle = '#e8dcc0'; c.lineWidth = 3; c.beginPath(); c.arc(78, 26, 8, -1.2, 1.2); c.stroke(); c.beginPath(); c.arc(78, 26, 15, -1.0, 1.0); c.stroke(); c.fillStyle = '#c0392b'; c.save(); c.translate(78, 26); c.rotate(-0.8); c.fillRect(-18, -2, 36, 4); c.restore(); }
+    },
+    pebble(c, o) {
+      c.beginPath(); c.ellipse(46, 62, 20, 15, -0.3, 0, 7); fillInk(c, o.shadow ? o.ink : '#8a8f96'); strokeInk(c, 3, o.ink);
+      if (!o.shadow) { c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(40, 56, 7, 4, -0.3, 0, 7); c.fill(); }
+      c.setLineDash([4, 5]); c.beginPath(); c.moveTo(60, 50); c.quadraticCurveTo(76, 18, 90, 22); strokeInk(c, 3, o.ink); c.setLineDash([]);
+      for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(84, 22, 8 + i * 7, 0.6, 2.4); strokeInk(c, 2.5, o.shadow ? o.ink : '#e0a83a'); }
+    },
+    lurk(c, o) {
+      // закрытый глаз под капюшоном
+      c.beginPath(); c.moveTo(14, 70); c.quadraticCurveTo(14, 16, 50, 12); c.quadraticCurveTo(86, 16, 86, 70); c.quadraticCurveTo(70, 50, 50, 46); c.quadraticCurveTo(30, 50, 14, 70); fillInk(c, o.shadow ? o.ink : '#2a2438'); strokeInk(c, 3, o.ink);
+      c.beginPath(); c.moveTo(30, 62); c.quadraticCurveTo(50, 74, 70, 62); strokeInk(c, 4, o.shadow ? o.ink : '#e8dcc0');
+      if (!o.shadow) for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(36 + i * 9, 67 + (i % 3 ? 2 : 0)); c.lineTo(34 + i * 9, 74); strokeInk(c, 2, '#e8dcc0'); }
+    },
     knife(c, o) {
       c.save(); c.translate(50, 50); c.rotate(0.75); c.translate(-50, -50);
       rr(c, 44, 58, 12, 30, 3); fillInk(c, o.ink);
@@ -542,6 +558,17 @@
       // чёлка
       c.fillStyle = '#2a1a10'; poly(c, [34, 30, 56, 26, 46, 36, 40, 34]); c.fill();
     }),
+    sava: (c) => bust(c, '#bf9474', '#3a3350', (c) => {
+      eyes(c, '#9ab0c0', 43);
+      // глубокий капюшон и тень на лице
+      c.beginPath(); c.moveTo(22, 70); c.quadraticCurveTo(16, 14, 50, 10); c.quadraticCurveTo(84, 14, 78, 70); c.quadraticCurveTo(72, 34, 50, 24); c.quadraticCurveTo(28, 34, 22, 70); c.fillStyle = '#2a2438'; c.fill(); strokeInk(c, 2.5);
+      c.fillStyle = 'rgba(10,8,20,.35)'; c.fillRect(30, 28, 40, 12);
+      // шарф до носа
+      c.beginPath(); c.moveTo(30, 48); c.lineTo(70, 48); c.lineTo(68, 66); c.lineTo(32, 66); c.closePath(); c.fillStyle = '#5a4e70'; c.fill(); strokeInk(c, 1.5);
+      c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1.2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(33, 53 + i * 4); c.lineTo(67, 53 + i * 4); c.stroke(); }
+      // перо на капюшоне (сыч)
+      c.fillStyle = '#c9b78f'; poly(c, [70, 20, 80, 8, 76, 24]); c.fill();
+    }),
     viktor: (c) => bust(c, '#cfa07e', '#2b3f5c', (c) => {
       eyes(c, '#3a2a1a', 44);
       // усы
@@ -778,6 +805,12 @@
   }));
   Art.define('tok_barricade', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
     for (let i = -1; i <= 1; i++) { c.save(); c.translate(50, 50 + i * 18); c.rotate(i * 0.08); rr(c, -46, -7, 92, 14, 3); c.fillStyle = i ? '#8a6a3a' : '#a07a42'; c.fill(); strokeInk(c, 3); c.fillStyle = '#555'; circle(c, -38, 0, 2.5); c.fill(); circle(c, 38, 0, 2.5); c.fill(); c.restore(); }
+  }));
+  Art.define('tok_hunt', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 42); c.fillStyle = '#c0392b'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 56px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', 50, 54); }));
+  Art.define('tok_trail', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
+    circle(c, 50, 50, 44); c.fillStyle = '#e8dcc0'; c.fill(); strokeInk(c, 4);
+    c.fillStyle = '#7a1f1f'; c.beginPath(); c.ellipse(36, 62, 9, 15, 0.3, 0, 7); c.fill(); c.beginPath(); c.ellipse(60, 40, 9, 15, 0.3, 0, 7); c.fill();
+    c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.fillText('?', 74, 76);
   }));
   Art.define('tok_door', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     rr(c, 8, 8, 84, 84, 10); c.fillStyle = o.open ? '#3a2e22' : '#5a3e20'; c.fill(); strokeInk(c, 4);

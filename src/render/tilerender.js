@@ -127,6 +127,14 @@
     workbench(ctx, C) { ctx.fillStyle = '#6b5233'; ctx.fillRect(-C * 0.38, -C * 0.4, C * 0.76, C * 0.16); ctx.fillStyle = '#999'; ctx.fillRect(-C * 0.3, -C * 0.37, C * 0.12, C * 0.04); ctx.fillRect(C * 0.05, -C * 0.38, C * 0.04, C * 0.1); },
     tires(ctx, C) { [[-0.2, -0.2], [0.1, -0.25], [-0.25, 0.15]].forEach(([x, y]) => { ctx.strokeStyle = '#111'; ctx.lineWidth = C * 0.05; ctx.beginPath(); ctx.arc(x * C, y * C, C * 0.08, 0, TAU); ctx.stroke(); }); },
     cross(ctx, C) { ctx.fillStyle = '#2e8b57'; ctx.fillRect(-C * 0.05, -C * 0.15, C * 0.1, C * 0.3); ctx.fillRect(-C * 0.15, -C * 0.05, C * 0.3, C * 0.1); },
+    desks(ctx, C) { for (let r = 0; r < 2; r++) for (let k = 0; k < 2; k++) { ctx.fillStyle = '#6b5233'; ctx.fillRect(-C * 0.32 + k * C * 0.36, -C * 0.28 + r * C * 0.34, C * 0.26, C * 0.14); ctx.fillStyle = '#3a2e22'; ctx.fillRect(-C * 0.26 + k * C * 0.36, -C * 0.1 + r * C * 0.34, C * 0.14, C * 0.06); } ctx.fillStyle = '#2f4a3a'; ctx.fillRect(-C * 0.36, -C * 0.44, C * 0.72, C * 0.07); },
+    stall(ctx, C) {
+      // прилавок под полосатым навесом
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#e8e2d4' : '#c0392b'; ctx.fillRect(-C * 0.42 + i * C * 0.14, -C * 0.42, C * 0.14, C * 0.3); }
+      ctx.fillStyle = '#6b5233'; ctx.fillRect(-C * 0.4, -C * 0.08, C * 0.8, C * 0.36);
+      ['#e0a83a', '#2e8b57', '#c0392b', '#e8701a'].forEach((col, i) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-C * 0.27 + i * C * 0.18, C * 0.08, C * 0.06, 0, TAU); ctx.fill(); });
+    },
+    crates_pile(ctx, C) { [[-0.3, 0.18], [-0.12, 0.26], [-0.22, 0.02]].forEach(([x, y]) => { ctx.fillStyle = '#8a6a3a'; ctx.fillRect(x * C, y * C, C * 0.16, C * 0.14); ctx.strokeStyle = '#3a2a12'; ctx.lineWidth = 1.5; ctx.strokeRect(x * C, y * C, C * 0.16, C * 0.14); }); },
     zebra(ctx, C) { ctx.fillStyle = 'rgba(230,225,210,.55)'; for (let i = 0; i < 5; i++) ctx.fillRect(-C * 0.4 + i * C * 0.17, -C * 0.12, C * 0.09, C * 0.24); },
   };
 

@@ -137,6 +137,8 @@
       $('#setup-seed').value = s.seed || '';
       $('#setup-fog').checked = s.fog !== false;
       $('#setup-fog').onchange = (ev) => { s.fog = ev.target.checked; };
+      $('#setup-stealth').checked = s.stealth !== false;
+      $('#setup-stealth').onchange = (ev) => { s.stealth = ev.target.checked; };
       $('#setup-seed').oninput = (ev) => { s.seed = ev.target.value.trim(); };
       $('#btn-setup-back').onclick = () => this.show('menu');
       $('#btn-start').onclick = () => {
@@ -150,6 +152,7 @@
           conditionId: s.condition === 'random' ? undefined : s.condition,
           difficultyId: s.difficulty,
           fog: s.fog !== false,
+          stealth: s.stealth !== false,
           players: s.players,
         });
       };
@@ -237,6 +240,7 @@
     resume(save) {
       try {
         const g = save.g;
+        if (g.v !== 2) throw new Error('старая версия сохранения (поле стало больше)');
         const level = ZG.Levels.get(g.levelId);
         // поле детерминированно восстанавливается из сида
         const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
@@ -933,8 +937,8 @@
         <div><b>${st.waves}</b><span>волн</span></div>
         <div><b>${st.searches}</b><span>обысков</span></div>`;
       $('#end-seed').textContent = `Сид: ${g.seed} · ${E.scenario(g).name} · ${ZG.Conditions.get(g.conditionId).name} · ${ZG.Difficulties.get(g.difficultyId).name}`;
-      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, players: this.players });
-      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, players: this.players });
+      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, players: this.players });
+      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
       App.show('end');
     },
@@ -951,7 +955,7 @@
       this.view.targetDark = this.view._darkFor();
       await Banner.show('НАСТУПАЕТ ' + ZG.PHASES[ev.phase].name.toUpperCase(), ev.phase === 2 ? 'мертвецы голодны: +1 к скорости' : 'появляется больше мертвецов', 'night');
     },
-    async wave() { this.view.play([{ t: 'wave' }]); await Banner.show('ВОЛНА!', 'тревога переполнена', 'wave'); },
+    async wave() { this.view.play([{ t: 'wave' }]); await Banner.show('ВОЛНА!', this.g.stealth ? 'орда знает, где вы!' : 'тревога переполнена', 'wave'); },
     async turn(ev) {
       const h = this.g.heroes[ev.hero];
       this.refresh();
@@ -1068,7 +1072,8 @@
       zs.forEach((z) => { const d = ZG.Zombies.get(z.type); (by[z.type] = by[z.type] || []).push(z); });
       parts.push('<div class="tt-z">' + Object.entries(by).map(([t, list]) => {
         const d = ZG.Zombies.get(t);
-        return `<div class="${list.some((z) => z.uid === zuid) ? 'hl' : ''}"><b>${d.name}</b> ×${list.length} <span>♥${d.hp}${list.some((z) => z.dmg) ? ' (ранен)' : ''} ✊${d.dmg} 👣${E.zombieSpeed(g, list[0])}</span><br><small>${esc(d.text)}</small></div>`;
+        const st = g.stealth && !d.immobile ? (list.every((z) => z.awake) ? ' <span class="tt-red">охотится</span>' : list.some((z) => z.awake) ? ' <span class="tt-red">часть охотится</span>' : ' <span>бродит</span>') : '';
+        return `<div class="${list.some((z) => z.uid === zuid) ? 'hl' : ''}"><b>${d.name}</b> ×${list.length}${st} <span>♥${d.hp}${list.some((z) => z.dmg) ? ' (ранен)' : ''} ✊${d.dmg} 👣${E.zombieSpeed(g, list[0])}</span><br><small>${esc(d.text)}</small></div>`;
       }).join('') + '</div>');
     }
     const hs = E.heroesAt(g, cell);

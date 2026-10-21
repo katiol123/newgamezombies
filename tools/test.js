@@ -37,8 +37,9 @@ ZG.Tiles.all().forEach((t) => {
 for (let k = 0; k < 500; k++) {
   const r = { rng: k * 7919 + 1 };
   const ids = ZG.Rng.shuffle(r, lvl.tiles.slice());
-  const placed = []; for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 3; tx++) placed.push({ id: ids[ty * 3 + tx], rot: ZG.Rng.int(r, 4), tx, ty });
-  const b = ZG.Board.fromPlaced(placed, 3, 2);
+  const { tw, th } = lvl.layout;
+  const placed = []; for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) placed.push({ id: ids[(ty * tw + tx) % ids.length], rot: ZG.Rng.int(r, 4), tx, ty });
+  const b = ZG.Board.fromPlaced(placed, tw, th);
   const open = b.cells.filter((c) => c.type !== 'blocked');
   const d = ZG.Board.bfs(b, open[0].i);
   if (open.some((c) => d[c.i] === Infinity)) { check(false, 'несвязная раскладка #' + k); break; }

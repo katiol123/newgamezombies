@@ -53,8 +53,8 @@
     const reach = {};
     const noBarr = (x, y) => !E.barricadeAt(g, x, y);
     const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h, shelter: E.sheltered(g, h) }))
-      .concat(g.lures.map((l) => ({ pos: l.pos })))
-      .concat(Object.keys(g.noise).filter((k) => g.noise[k] > 0 && !E.heroesAt(g, +k).length).map((k) => ({ pos: +k })));
+      .concat(g.lures.map((l) => ({ pos: l.pos, lure: true })))
+      .concat(g.stealth ? [] : Object.keys(g.noise).filter((k) => g.noise[k] > 0 && !E.heroesAt(g, +k).length).map((k) => ({ pos: +k })));
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat;
@@ -64,7 +64,9 @@
       if (E.hidden(g, z.pos)) return; // в тумане зомби не двигаются
       const dz = reach[z.pos] || (reach[z.pos] = E.distV(g, z.pos, noBarr));
       let best = Infinity;
-      const seen = targets.filter((t) => !(t.shelter && dz[t.pos] > 1));
+      // скрытность: опасны только герои, которых этот зомби видит (бродячий их заметит в начале фазы)
+      const seen = g.stealth ? targets.filter((t) => (t.hero ? E.sees(g, z, t.hero) : t.lure))
+        : targets.filter((t) => !(t.shelter && dz[t.pos] > 1));
       seen.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
       if (best > sp) return;
       // идёт к ближайшей цели: если это приманка — героям не опасен

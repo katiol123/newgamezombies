@@ -65,6 +65,16 @@
       mods: { barricadeCost: -1, barricadeHp: 1, trapBonus: 1 },
       art: 'hero_kira',
     },
+    {
+      id: 'sava', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
+      hp: 5, hand: 5, energy: 3,
+      bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
+      ability: 'Бесшумный', abilityText: 'Бродячие зомби замечают Саву, только если он в их зоне. Двери под ним не скрипят.',
+      deck: STARTER.concat(['silent_step', 'shiv', 'pebble', 'lurk']),
+      talents: [['sharp', 'softfoot'], ['decoy', 'assassin']],
+      mods: { stealthy: 1, silentDoors: 1 },
+      art: 'hero_sava',
+    },
   ]);
 
   // ------------------------------------------------------------- Таланты ---
@@ -122,6 +132,14 @@
     {
       id: 'gadgets', name: 'Самоделки', text: 'Первая карта масти Расчёт за ход стоит на 1 ⚡ меньше.',
       mods: { costDelta: (g, h, ctx) => (ctx && ctx.def.suit === 'mind' && !g.turn.mindPlayed ? -1 : 0) },
+    },
+    // Сава
+    { id: 'sharp', name: 'Заточка', text: '«Нож в спину» наносит охотникам на 1 урон больше.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'shiv' ? 1 : 0) } },
+    { id: 'softfoot', name: 'Тихоход', text: 'Первый «Ход» за ход — бесплатно.', mods: { freeFirstMove: 1 } },
+    { id: 'decoy', name: 'Мастер отвлечения', text: '«Камешек» слышен на 2 зоны дальше и даёт 1 карту.', mods: { pebblePlus: 1 } },
+    {
+      id: 'assassin', name: 'Убийца из тени', text: 'Убив бродячего зомби «Ножом в спину», получи +1 ⚡ (раз за ход).',
+      hooks: { kill(g, h, ctx) { if (ctx.kind === 'silent' && g.active === h.idx && g.turn && !g.turn.assassin) { g.turn.assassin = true; h.energy += 1; } } },
     },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

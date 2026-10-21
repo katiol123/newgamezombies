@@ -74,5 +74,19 @@
       decor: [{ k: 'crane', x: 0, y: 0 }, { k: 'pipes', x: 1, y: 1 }, { k: 'cones', x: 0, y: 1 }, { k: 'workbench', x: 2, y: 2 }],
       ground: 'dirt',
     },
+    {
+      // коридор с двумя классами: много дверей — рай для скрытности
+      id: 'school', name: 'Школа', num: '10',
+      manhole: [2, 2], map: ['A.B', 'KKK', '...'], doors: [[0, 0, 0, 1], [2, 0, 2, 1], [1, 1, 1, 0], [1, 1, 1, 2]], search: [[0, 0], [2, 0]],
+      buildings: { A: { floor: 'wood', label: 'Класс 5А' }, B: { floor: 'wood', label: 'Класс 5Б' }, K: { floor: 'tiles', label: 'Школа' } },
+      decor: [{ k: 'desks', x: 0, y: 0 }, { k: 'desks', x: 2, y: 0 }, { k: 'locker', x: 1, y: 1 }, { k: 'trash', x: 0, y: 2 }],
+    },
+    {
+      // лабиринт прилавков: короткая линия огня, много обыска
+      id: 'market', name: 'Рынок', num: '11',
+      manhole: [2, 1], map: ['A.#', '...', '#.B'], doors: [[0, 0, 1, 0], [2, 2, 1, 2]], search: [[0, 0], [2, 2], [1, 1]],
+      buildings: { A: { floor: 'concrete', label: 'Ларёк' }, B: { floor: 'tiles', label: 'Шаурма' } },
+      decor: [{ k: 'stall', x: 2, y: 0 }, { k: 'stall', x: 0, y: 2 }, { k: 'crates_pile', x: 1, y: 1 }, { k: 'counter', x: 0, y: 0 }, { k: 'counter', x: 2, y: 2 }],
+    },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

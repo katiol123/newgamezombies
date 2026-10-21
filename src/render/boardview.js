@@ -111,7 +111,8 @@
     // ------------------------------------------------------ сущности
     _addZombie(uid, type, cell, scale) {
       const p = this.cellXY(cell);
-      this.zombies.set(uid, { uid, type, cell, x: p.x, y: p.y, scale: scale == null ? 0 : scale, alpha: 1, rot: 0, flash: 0, lunge: null, hop: 0, dying: null, born: this.time });
+      const zm = this.g && this.g.zombies.find((q) => q.uid === uid);
+      this.zombies.set(uid, { uid, type, cell, x: p.x, y: p.y, scale: scale == null ? 0 : scale, alpha: 1, rot: 0, flash: 0, lunge: null, hop: 0, dying: null, born: this.time, awake: zm ? zm.awake !== false : true });
     }
     _addHero(idx, cell) {
       const p = this.cellXY(cell);
@@ -235,7 +236,7 @@
       g.zombies.forEach((z) => {
         const e = this.zombies.get(z.uid);
         if (!e) this._addZombie(z.uid, z.type, z.pos, 1);
-        else { e.cell = z.pos; if (e.scale < 1 && !e.dying) e.scale = 1; }
+        else { e.cell = z.pos; e.awake = z.awake !== false; if (e.scale < 1 && !e.dying) e.scale = 1; }
       });
       g.heroes.forEach((h) => {
         const e = this.heroes.get(h.idx);
@@ -276,6 +277,21 @@
           return nextEv && (nextEv.t === 'zmove' || nextEv.t === 'bash') ? 0 : 420;
         }
         case 'zwave': return 420;
+        case 'zwake': {
+          const e = this.zombies.get(ev.zombie);
+          if (!e) return 0;
+          e.awake = true; e.flash = 1;
+          this._float(e.x, e.y - this.cell * 0.32, ev.sound ? '?!' : '!', '#ff5a3a', 1.3);
+          if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('wake', { soft: true });
+          return 60;
+        }
+        case 'zsleep': {
+          const e = this.zombies.get(ev.zombie);
+          if (!e) return 0;
+          e.awake = false;
+          this._float(e.x, e.y - this.cell * 0.32, '?', '#9aa4b0', 1.1);
+          return 40;
+        }
         case 'hmove': {
           const e = this.heroes.get(ev.hero);
           if (!e) return 0;
@@ -736,6 +752,18 @@
         const c = this.cellXY(l.pos);
         Art.draw(ctx, 'tok_lure', c.x - C * 0.3, c.y - C * 0.3, C * 0.6, C * 0.6, { t });
       });
+      // последний след: охотники, которые никого не видят, идут сюда
+      if (g.stealth) {
+        const trails = new Set();
+        g.zombies.forEach((z) => { if (z.awake && z.trail != null && z.trail !== z.pos && !g.heroes.some((hh) => hh.onBoard && hh.pos === z.trail)) trails.add(z.trail); });
+        trails.forEach((cell) => {
+          const c = this.cellXY(cell);
+          ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(t * 3) * 0.15; ctx.fillStyle = '#c0392b';
+          for (let k = 0; k < 2; k++) { ctx.beginPath(); ctx.ellipse(c.x - C * 0.08 + k * C * 0.16, c.y + C * 0.12 - k * C * 0.14, C * 0.05, C * 0.08, 0.3, 0, TAU); ctx.fill(); }
+          ctx.font = `bold ${Math.round(C * 0.16)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.fillText('?', c.x + C * 0.2, c.y - C * 0.12);
+          ctx.restore();
+        });
+      }
       // помещения-укрытия с героями: зелёный контур и подпись
       if (g.doors) {
         const done = new Set();
@@ -1007,7 +1035,18 @@
       ctx.fillStyle = 'rgba(0,0,0,.45)';
       ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.35 + 2, r * scale, r * 0.55 * scale, 0, 0, TAU); ctx.fill();
       const s = r * 2 * scale;
+      const sleeping = g.stealth && e.awake === false && !def.immobile;
+      if (sleeping) ctx.filter = 'saturate(.35) brightness(.8)';
       Art.draw(ctx, 'z_' + e.type, x - s / 2, y - s / 2 - hop, s, s, { rot, t: this.time });
+      ctx.filter = 'none';
+      if (g.stealth && !def.immobile && !e.dying) {
+        // значок состояния: «z» — бродит, «!» — охотится
+        const bx = x + s * 0.36, by = y - s * 0.36 - hop, br = Math.max(5, s * 0.17);
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU);
+        ctx.fillStyle = sleeping ? '#4a5560' : '#c0392b'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(br * 1.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(sleeping ? 'z' : '!', bx, by + 1);
+      }
       if (e.flash > 0) {
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = e.flash * 0.7;
