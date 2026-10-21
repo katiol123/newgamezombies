@@ -201,7 +201,7 @@
       this.view.onClick = (p) => this.onBoardClick(p);
       this.view.onHover = (h, changed) => this.onBoardHover(h, changed);
       $('#btn-end').onclick = () => this.endTurn();
-      $('#btn-menu').onclick = () => Modal.confirm('Выйти в меню? Партия сохранится.', () => { this.save(); App.show('menu'); $('#btn-continue').style.display = ''; });
+      $('#btn-menu').onclick = () => Modal.confirm('Выйти в меню? Партия сохранится.', () => { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); $('#btn-continue').style.display = ''; });
       $('#btn-rules-in').onclick = () => Rules.open();
       $('#btn-hint').onclick = () => this.hint();
       $('#btn-auto').onclick = () => this.autoTurn();
@@ -268,6 +268,7 @@
 
     async afterShow(intro) {
       this.view.setGame(this.g, intro);
+      ZG.Sound.music('music'); // «Время перемен» — с первого показа поля до конца вылазки
       this.g.fx = [];
       this.refresh();
       if (intro) {
@@ -933,6 +934,7 @@
 
     async gameOver() {
       const g = this.g;
+      ZG.Sound.stopMusic(2500);
       store.set('save', null);
       await sleep(600);
       clearTimeout(toast._t); $('#toast').classList.remove('show'); // старые подсказки не висят поверх итогов
@@ -991,9 +993,7 @@
       if (this.g.missions && h.mission && !h.ai && !h.missionDone && !(this.seenMission || {})[h.idx] && this.canSeeMission(h)) {
         (this.seenMission = this.seenMission || {})[h.idx] = true;
         const m = ZG.Missions.get(h.mission);
-        ZG.Sound.music('mission', 15000);
         await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше.</p>`, [{ label: 'Понятно', cls: 'primary' }]);
-        ZG.Sound.stopMusic(1200);
       }
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
@@ -1032,7 +1032,6 @@
       const h = this.g.heroes[ev.hero], m = ZG.Missions.get(ev.id);
       this.refreshHeroes();
       if (!ev.rewarded) { toast(`${E.heroName(h)} выполнил миссию «${m.name}», но не первым — без награды.`, 4000); return; }
-      ZG.Sound.music('mission', 10000);
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
     },

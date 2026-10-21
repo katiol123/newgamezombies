@@ -81,7 +81,8 @@
       id: 'ev_hound', name: 'Ищейка', tone: -1, art: 'z_hound',
       text: 'Из подворотни выходит мёртвый пёс: у самого дальнего от героев люка появляется Ищейка. Она всегда охотится и чует ближайшего героя. Второй раз это событие не повторится.',
       start(g, E) {
-        if (!g.spawnPoints.length) return;
+        if (!g.spawnPoints.length || g.houndDone) return;
+        g.houndDone = true; // Ищейка — только однажды за партию
         // самый дальний от героев открытый люк (на закрытом — тоже можно: пёс выйдет из тумана)
         let best = g.spawnPoints[0], bd = -1;
         g.spawnPoints.forEach((p) => { const d = E.distV(g, p); const m = Math.min(...g.heroes.filter((h) => h.onBoard).map((h) => d[h.pos])); if (m > bd && m !== Infinity) { bd = m; best = p; } });

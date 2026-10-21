@@ -23,18 +23,18 @@
       reward(g, h, E) { E.giveRareLoot(g, h); },
     },
     {
-      id: 'm_scout', name: 'Первопроходец', rarity: 'common', stat: 'reveals', goal: 2, needsFog: true,
-      text: 'Разведай 2 закрытых тайла (шагни в туман). Нужен туман войны.', rewardText: 'Пассивка «Следопыт»: первое «Движение» за ход бесплатно.',
+      id: 'm_scout', name: 'Первопроходец', rarity: 'common', stat: 'reveals', goal: 3, needsFog: true,
+      text: 'Разведай 3 закрытых тайла (шагни в туман). Нужен туман войны.', rewardText: 'Пассивка «Следопыт»: первое «Движение» за ход бесплатно.',
       perk: { name: 'Следопыт', text: 'Первое «Движение» за ход бесплатно.', mods: { freeFirstMove: 1 } },
     },
     {
-      id: 'm_angel', name: 'Ангел-хранитель', rarity: 'common', stat: 'helps', goal: 3, needsAlly: true,
-      text: 'Трижды помоги союзнику: передай ему карту, вылечи, обеззаразь или вытащи его. Нужен союзник.', rewardText: 'Аптечка в руку и +2 опыта.',
+      id: 'm_angel', name: 'Ангел-хранитель', rarity: 'common', stat: 'helps', goal: 2, needsAlly: true,
+      text: 'Дважды помоги союзнику: вылечи, обеззаразь, вытащи его, передай ему находку или груз (раненому — любую карту). Передача засчитывается раз за ход и не дважды одной картой. Нужен союзник.', rewardText: 'Аптечка в руку и +2 опыта.',
       reward(g, h, E) { E.giveCard(g, h, 'medkit'); E.gainXp(g, h, 2); },
     },
     {
-      id: 'm_ghost', name: 'Невидимка', rarity: 'common', stat: 'unseen', goal: 4,
-      text: 'Закончи 4 своих хода так, чтобы ни один зомби тебя не видел.', rewardText: 'Пассивка «Хладнокровие»: +1 к размеру руки.',
+      id: 'm_ghost', name: 'Невидимка', rarity: 'common', stat: 'unseen', goal: 2,
+      text: 'Закончи 2 своих хода рядом с зомби (в 3 зонах), но так, чтобы ни один тебя не видел.', rewardText: 'Пассивка «Хладнокровие»: +1 к размеру руки.',
       perk: { name: 'Хладнокровие', text: '+1 к размеру руки.', mods: { handSize: 1 } },
     },
     {
@@ -48,8 +48,8 @@
       reward(g, h, E) { E.giveRareLoot(g, h); E.gainXp(g, h, 2); },
     },
     {
-      id: 'm_traitor', name: 'Предатель', rarity: 'rare', stat: 'betrayals', goal: 2, needsAlly: true, needsStealth: true, traitor: true,
-      text: 'Дважды натрави на союзника зомби: разбуди или отвлеки его своим шумом или ударом — и он укусит союзника (хотя бы 1 урон). Нужны союзник и скрытность.',
+      id: 'm_traitor', name: 'Предатель', rarity: 'rare', stat: 'betrayals', goal: 1, needsAlly: true, needsStealth: true, traitor: true,
+      text: 'Натрави на союзника зомби: разбуди или отвлеки их своим шумом или ударом — и пусть они разом нанесут союзнику 2+ урона. Нужны союзник и скрытность.',
       rewardText: 'Тебя раскрывают. Пассивка «Своя шкура»: каждую фазу зомби 1 урон по тебе блокируется.',
       perk: { name: 'Своя шкура', text: 'Каждую фазу зомби 1 урон по тебе блокируется.', mods: { autoBlock: 1 } },
     },

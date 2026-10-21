@@ -704,7 +704,7 @@
   E.checkMissions = function (g) {
     if (!g.missions) return;
     g.heroes.forEach((h) => {
-      if (!h.mission || h.missionDone) return;
+      if (!h.mission || h.missionDone || h.fallen) return; // павший герой миссию уже не выполнит
       const m = ZG.Missions.get(h.mission);
       if (E.missionProgress(g, h) < m.goal) return;
       h.missionDone = true;
@@ -1022,8 +1022,8 @@
       E.fx(g, { t: 'wound', hero: h.idx, pos: h.pos, n: taken });
     } else E.log(g, `${E.heroName(h)} отражает атаку (${entry.incoming}).`, 'good');
     g.pending = null;
-    if (taken > 0) {
-      // «Предатель»: укус от зомби, которого разбудил другой герой
+    if (taken >= 2) {
+      // «Предатель»: укус (2+ урона) от зомби, которого разбудил или отвлёк другой герой
       const by = new Set();
       (entry.attackers || []).forEach((u) => { const z = E.zombie(g, u); if (z && z.wokenBy != null && z.wokenBy !== h.idx) by.add(z.wokenBy); });
       by.forEach((i) => { if (g.heroes[i]) ms(g.heroes[i], 'betrayals'); });
@@ -1111,7 +1111,7 @@
     h.adrenaline = 0;
     h.energy = en;
     if (g.relayBonus) { h.energy += g.relayBonus; E.log(g, `${E.heroName(h)}: +${g.relayBonus} ⚡ от товарища.`, 'good'); g.relayBonus = 0; }
-    E.log(g, `Ход: ${E.heroName(h)} (${en} ⚡).`, 'turn');
+    E.log(g, `Ход: ${E.heroName(h)} (${h.energy} ⚡).`, 'turn');
     E.fx(g, { t: 'turn', hero: idx });
     Mods.emit(g, h, 'turnStart', { E });
   }
@@ -1119,7 +1119,12 @@
   function endTurn(g) {
     const h = E.activeHero(g);
     E.perceive(g); // скрытность: зомби «оглядываются» в конце хода каждого героя (одно общее правило для всех)
-    if (h && h.onBoard && !g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && E.sees(g, Object.assign({}, z, { awake: true }), h))) ms(h, 'unseen');
+    if (h && h.onBoard) {
+      // «Невидимка»: ход засчитывается, только если зомби рядом (в 3 зонах), но ни один тебя не видит
+      const d = E.distV(g, h.pos);
+      const near = g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && !E.hidden(g, z.pos) && d[z.pos] <= 3);
+      if (near && !g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && E.sees(g, Object.assign({}, z, { awake: true }), h))) ms(h, 'unseen');
+    }
     if (h) { h.acted = true; tickInfection(g, h); }
     if (g.result) return;
     // Эстафета: следующий герой может продолжить Связку мастью последней карты
@@ -1199,8 +1204,10 @@
 
   // Хват в зоне: выход стоит ещё +1 ⚡ («Дымовая шашка» снимает Хватку в зоне до конца хода)
   E.plugCost = (g, h) => Math.max(0, 1 + Mods.value(g, h, 'plugCost', 0));
-  E.gripExtra = (g, h) => (g.turn && g.turn.noGrip === h.pos ? 0 : E.zombiesAt(g, h.pos).some((z) => ZG.Zombies.get(z.type).grip) ? 1 : 0);
-  E.gripBase = (g, h) => (g.turn && g.turn.noGrip === h.pos ? 0 : E.zombiesAt(g, h.pos).length ? 1 : 0);
+  // в скрытности держат только охотники (бродячий героя не заметил — и не хватает)
+  const grabbers = (g, h) => (g.turn && g.turn.noGrip === h.pos ? [] : E.zombiesAt(g, h.pos).filter((z) => !g.stealth || z.awake));
+  E.gripExtra = (g, h) => (grabbers(g, h).some((z) => ZG.Zombies.get(z.type).grip) ? 1 : 0);
+  E.gripBase = (g, h) => (grabbers(g, h).length ? 1 : 0);
   function moveCost(g, h, to) {
     let c = 1;
     if (!Mods.flag(g, h, 'freeEscape') && E.gripBase(g, h)) c++;
@@ -1464,7 +1471,10 @@
         if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || ['wound', 'infection'].includes(g.cards[a.card])) return fail(g, 'Передать нельзя.');
         h.hand.splice(i, 1); o.hand.push(a.card);
         g.turn.gave = true;
-        ms(h, 'helps');
+        // помощь передачей: находку/груз — любому, любую карту — раненому; раз за ход и не одной и той же картой
+        const cd = E.cardDef(g, a.card);
+        g.helpedCards = g.helpedCards || {};
+        if ((cd.loot || cd.kind === 'cargo' || E.hurtCount(g, o) > 0) && !g.turn.helpedGive && !g.helpedCards[a.card]) { g.turn.helpedGive = true; g.helpedCards[a.card] = 1; ms(h, 'helps'); }
         E.log(g, `${E.heroName(h)} передаёт «${E.cardDef(g, a.card).name}» → ${E.heroName(o)}.`, 'info');
         E.fx(g, { t: 'give', from: h.idx, to: o.idx, card: a.card });
         return true;

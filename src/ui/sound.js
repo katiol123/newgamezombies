@@ -34,23 +34,30 @@
         if (p && p.catch) p.catch(() => { /* браузер ещё не разрешил звук до первого клика */ });
       } catch (e) { /* звук не критичен */ }
     },
-    toggle() { this.muted = !this.muted; save('muted', this.muted); if (this.muted) this.stopMusic(0); return this.muted; },
-    // музыкальная тема (например, секретные миссии): играет ms миллисекунд и плавно затихает
+    toggle() {
+      this.muted = !this.muted; save('muted', this.muted);
+      if (this.muted) this.stopMusic(0, true); else if (this._musicKey) this.music(this._musicKey);
+      return this.muted;
+    },
+    // фоновая музыка: играет по кругу (или ms миллисекунд), плавно нарастает и затихает
     music(key, ms) {
       const d = defs[key];
+      this._musicKey = key;
       if (!d || this.muted) return;
       this.stopMusic(0);
+      this._musicKey = key;
       try {
         const a = d.base.cloneNode();
         const vol = Math.max(0, Math.min(1, d.volume * this.volume));
-        a.volume = 0; a.currentTime = 0;
+        a.volume = 0; a.currentTime = 0; a.loop = !ms;
         const p = a.play(); if (p && p.catch) p.catch(() => {});
         this._music = a;
         let v = 0; const up = setInterval(() => { v = Math.min(vol, v + vol / 10); a.volume = v; if (v >= vol) clearInterval(up); }, 60);
         if (ms) this._musicTimer = setTimeout(() => this.stopMusic(1500), ms);
       } catch (e) { /* звук не критичен */ }
     },
-    stopMusic(fade) {
+    stopMusic(fade, keepKey) {
+      if (!keepKey) this._musicKey = null;
       const a = this._music; clearTimeout(this._musicTimer);
       if (!a) return;
       this._music = null;
@@ -126,5 +133,5 @@
   Sound.define('zombies', 'audio/braam.mp3', { volume: 0.75, gap: 1200 });     // фаза зомби, волна, прорыв
   Sound.define('growl', 'audio/growl.mp3', { volume: 0.7, gap: 700 });        // атака зомби, засада
   Sound.define('reveal', 'audio/psychedelic.mp3', { volume: 0.6, gap: 1500 }); // туман: открытие тайла, смена суток
-  Sound.define('mission', 'audio/missions.mp3', { volume: 0.55 });              // «Время перемен» — секретные миссии
+  Sound.define('music', 'audio/missions.mp3', { volume: 0.32 });                // «Время перемен» — фон всей вылазки
 })(window);
