@@ -160,6 +160,82 @@
       },
       progress(g) { return (g.obj.nests - this.nestsLeft(g)) * 2; },
     },
+    // --- Кампания, миссия 3 «Лес»: найти аккумулятор → подать сигнал с вышки → поворот: вернуться к машине ---
+    {
+      id: 'forest', campaignOnly: true, name: 'Сигнал из леса',
+      short: 'Найди в бору аккумулятор, отнеси на пожарную вышку и подай сигнал.',
+      brief: 'Колонна встала за лесом. Вертолёт заберёт тех, кто подаст сигнал. На просеке — пожарная вышка с рацией, но её батарея давно села.',
+      setupText: 'Поле 3×2 из лесных тайлов: Кордон лесника (старт; колодец — точка появления; «буханка» во дворе), Сосновый бор ×3, Просека ЛЭП ×2. Пожарная вышка — на одной из просек (этот тайл открыт сразу). В центре каждого бора — ящик; в одном из них аккумулятор. В одном из боров притаился Медведь-шатун. На 4 закрытых тайла — карты «Стая/Пусто» (1 «Стая»).',
+      exitLabel: 'Буханка', exitArt: 'exit_van',
+      packs: { 1: ['walker', 'walker', 'runner'], 2: ['walker', 'walker', 'runner'], 3: ['walker', 'walker', 'walker', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'runner', 'runner', 'runner'] },
+      failTitle: 'Сигнал не прошёл',
+      failText: 'Аккумулятор встал на место, рация на вышке ожила — и захрипела пустым эфиром. Антенный кабель перегрызен до меди, на столбе — клочья бурой шерсти. А к рации приколота записка углём: «Связи нет. Колонна заночует у моста на трассе и уйдёт с рассветом. Догоняйте. — Лесник».',
+      newTask: 'Вернуться к «буханке» на кордоне и всем уехать к мосту',
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng;
+        const at = (ti, lx, ly) => b.cells.find((c) => c.tile === ti && c.lx === lx && c.ly === ly);
+        const kt = b.cells[g.start].tile;
+        const kdef = ZG.Tiles.get('kordon');
+        g.spawnPoints = [at(kt, kdef.manhole[0], kdef.manhole[1]).i]; // колодец на кордоне
+        g.exit = at(kt, kdef.van[0], kdef.van[1]).i; // «буханка» во дворе
+        const bors = b.tiles.map((t, i) => (t.id === 'bor' ? i : -1)).filter((i) => i >= 0);
+        const pros = b.tiles.map((t, i) => (t.id === 'proseka' ? i : -1)).filter((i) => i >= 0);
+        const tt = Rng.pick(g, pros);
+        g.tower = [at(tt, 0, 0), at(tt, 0, 2)].sort((a, b) => a.y - b.y || b.x - a.x)[0].i; // угол повыше — подальше от подписи тайла
+        g.towerLabel = 'ВЫШКА';
+        // ящики: по одному в центре каждого бора, в одном — аккумулятор
+        const real = Rng.int(g, bors.length);
+        bors.forEach((ti, k) => g.crates.push({ pos: at(ti, 1, 1).i, card: k === real ? 'cargo_battery' : null, opened: false }));
+        // Медведь-шатун притаился в одном из боров
+        const bt = Rng.pick(g, bors);
+        const bear = E.lurker(g, 'bear', at(bt, 1, 2).i);
+        g.obj = { attempted: false, bear: bear && bear.uid };
+        // туман: открыты кордон и тайл с вышкой (её видно над лесом)
+        if (g.revealed) g.revealed = b.tiles.map((t, i) => i === kt || i === tt);
+        // одна стая под картами «Стая/Пусто» на закрытых тайлах
+        const cand = b.tiles.map((t, i) => i).filter((i) => i !== kt && i !== tt);
+        E.placePacks(g, cand, 1, this.packs[Math.min(4, g.heroes.length)]);
+      },
+      hasBattery(g) { return g.heroes.some((h) => h.hand.some((u) => g.cards[u] === 'cargo_battery')) || g.drops.some((d) => d.card === 'cargo_battery'); },
+      goals(g) {
+        if (!g.obj.attempted) {
+          return [
+            { text: 'Найти в бору аккумулятор (ящики)', done: this.hasBattery(g) },
+            { text: 'Отнести на пожарную вышку и подать сигнал', done: false },
+          ];
+        }
+        return [
+          { text: 'Найти в бору аккумулятор', done: true },
+          { text: 'Подать сигнал с пожарной вышки', failed: true, note: 'Антенна перегрызена — связи нет' },
+          { text: this.newTask, isNew: true, done: false },
+        ];
+      },
+      isComplete(g) { return g.obj.attempted; },
+      actions(g, hero) {
+        if (g.obj.attempted || hero.pos !== g.tower) return [];
+        if (!hero.hand.some((u) => g.cards[u] === 'cargo_battery')) return [];
+        return [{ t: 'scenario', key: 'signal', cost: 1, label: 'Подать сигнал' }];
+      },
+      doAction(g, hero, key, E) {
+        if (key !== 'signal') return;
+        const uid = hero.hand.find((u) => g.cards[u] === 'cargo_battery');
+        hero.hand.splice(hero.hand.indexOf(uid), 1);
+        g.obj.attempted = true;
+        E.hear(g, g.tower, 2, hero.idx); // треск рации разносится по лесу
+        E.log(g, `${E.heroName(hero)} подключает аккумулятор… ${this.failTitle}! Антенна перегрызена, лесник оставил записку: колонна ждёт у моста. Новая задача — вернуться к «буханке» и уехать.`, 'bad');
+        E.fx(g, { t: 'twist', title: this.failTitle, text: this.failText, task: this.newTask, pos: hero.pos });
+      },
+      botGoal(g, hero, E) {
+        if (g.obj.attempted) return null;
+        if (hero.hand.some((u) => g.cards[u] === 'cargo_battery')) return g.tower;
+        const drops = g.drops.filter((d) => d.card === 'cargo_battery').map((d) => d.pos);
+        if (drops.length) return E.nearest(g, hero.pos, drops);
+        if (g.heroes.some((h) => h.hand.some((u) => g.cards[u] === 'cargo_battery'))) return g.tower;
+        const opts = g.crates.filter((c) => !c.opened).map((c) => c.pos);
+        return opts.length ? E.nearest(g, hero.pos, opts) : null;
+      },
+      progress(g) { return g.obj.attempted ? 9 : (this.hasBattery(g) ? 2 : 0); }, // сигнал весит много: после него всем далеко до «буханки»
+    },
     // --- Кампания, миссия 2 (особые правила): только через цепочку кампании ---
     {
       id: 'autobase', campaignOnly: true, name: 'Автобаза №3',
@@ -180,24 +256,15 @@
           g.exit = at(ut, van[0], van[1]).i;
           // два притаившихся Толстяка в боксе
           b.cells.filter((c) => c.tile === ut && c.type === 'building').slice(0, 2).forEach((c) => {
-            const z = E.spawnZombie(g, 'fatso', c.i, null, true, true, true);
-            if (z) { z.awake = false; z.lurk = true; z.trail = null; g.obj.bosses.push(z.uid); }
+            const z = E.lurker(g, 'fatso', c.i);
+            if (z) g.obj.bosses.push(z.uid);
           });
         }
         // туман: открыт только стартовый тайл; где автобаза — известно (её рубашка особая)
         if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st);
         // стаи: 4 карты «Стая/Пусто» на остальные закрытые тайлы — где стаи, неизвестно
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== ut && i !== st);
-        g.stackTiles = cand.slice();
-        g.hideFogCounts = true;
-        Rng.shuffle(g, cand.slice()).slice(0, 2).forEach((ti) => {
-          const mid = at(ti, 1, 1);
-          const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, b.cells.filter((c) => c.tile === ti && c.type !== 'blocked'));
-          this.stacks[Math.min(4, g.heroes.length)].forEach((type) => {
-            const z = E.spawnZombie(g, type, cell.i, null, true, true, true);
-            if (z) { z.awake = false; z.lurk = true; z.trail = null; }
-          });
-        });
+        E.placePacks(g, cand, 2, this.stacks[Math.min(4, g.heroes.length)]);
       },
       // Особое правило: драка с Толстяками будит всех. Карты «Стая/Пусто» переворачиваются:
       // тайлы со стаями открываются, стаи вылетают уже охотящимися.

@@ -782,7 +782,7 @@
       if (g.tower != null) {
         const c = this.cellXY(g.tower);
         Art.draw(ctx, 'tok_tower', c.x - C * 0.4, c.y - C * 0.45, C * 0.5, C * 0.6, { on: g.obj.on });
-        this._label(ctx, c.x, c.y + C * 0.42, 'ВЫШКА', g.obj.on ? '#ff8a7a' : '#e8dcc0');
+        this._label(ctx, c.x, c.y + C * 0.42, g.towerLabel || 'ВЫШКА', g.obj.on ? '#ff8a7a' : '#e8dcc0');
       }
       // ящики и обыск
       g.crates.forEach((cr) => {
@@ -1045,7 +1045,7 @@
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (tdef.unique) {
         // уникальный тайл миссии: место известно (особая рубашка), содержимое — нет
-        Art.draw(ctx, (ZG.Engine.scenario(g).exitArt || 'exit_car'), -C * 0.32, -C * 0.75, C * 0.64, C * 0.84, {});
+        if (g.exit != null && b.cells[g.exit].tile === ti) Art.draw(ctx, (ZG.Engine.scenario(g).exitArt || 'exit_car'), -C * 0.32, -C * 0.75, C * 0.64, C * 0.84, {});
         ctx.fillStyle = '#f0c040'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
         ctx.fillText(tdef.name.toUpperCase(), 0, C * 0.4);
         ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;

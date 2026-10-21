@@ -339,7 +339,9 @@
       this.refresh();
       if (intro) {
         await sleep(2700);
-        await Banner.show(`УРОВЕНЬ ${ZG.Levels.get(this.g.levelId).num}`, ZG.Levels.get(this.g.levelId).name.toUpperCase(), 'level');
+        const lv = ZG.Levels.get(this.g.levelId), ac = this.g.campaign && ZG.App.campaign, cm = ac && ZG.Campaign.missionDef(ac.c);
+        if (cm && cm.name) await Banner.show(`МИССИЯ ${ac.c.missionNo + 1}`, cm.name.toUpperCase(), 'level');
+        else await Banner.show(`УРОВЕНЬ ${lv.num}`, lv.name.toUpperCase(), 'level');
         await Modal.briefing(this.g);
         await Banner.show('РАУНД 1', ZG.PHASES[0].name.toUpperCase(), 'round');
       }
@@ -760,7 +762,12 @@
       $('#alarm-val').classList.toggle('wave', g.alarm >= th);
       // цели
       const goals = E.scenario(g).goals(g);
-      $('#goals').innerHTML = `<div class="goal-title">${esc(E.scenario(g).name)}</div>` + goals.map((x) => `<div class="goal ${x.done ? 'done' : ''}"><i></i>${esc(x.text)}</div>`).join('') +
+      // окно задач: номер, состояние (выполнено / провалено с причиной / новая задача)
+      $('#goals').innerHTML = `<div class="goal-title"><span>Задание</span>${esc(E.scenario(g).name)}</div>` + goals.map((x, i) => {
+        const st = x.failed ? 'failed' : x.done ? 'done' : x.isNew ? 'new' : '';
+        const mark = x.failed ? '✕' : x.done ? '✓' : String(i + 1);
+        return `<div class="goal ${st}"><i>${mark}</i><div class="goal-body">${x.isNew ? '<span class="goal-tag">Новая задача</span>' : ''}<span class="goal-text">${esc(x.text)}</span>${x.note ? `<small class="goal-note">${esc(x.note)}</small>` : ''}</div></div>`;
+      }).join('') +
         (E.isComplete(g) ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>` : '');
       const cond = ZG.Conditions.get(g.conditionId);
       const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
@@ -1161,6 +1168,21 @@
       if (!ev.rewarded) { toast(`${E.heroName(h)} выполнил миссию «${m.name}», но не первым — без награды.`, 4000); return; }
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
+    },
+    // поворот сюжета: старая задача провалена — записка с причиной и новая задача
+    async twist(ev) {
+      this.view.play([ev]);
+      ZG.Sound.play('reveal');
+      this.refresh();
+      await Modal.show(`<div class="twist-stamp">${esc(ev.title)}</div>
+        <div class="twist-note">${esc(ev.text)}</div>
+        <div class="twist-arrow">▼</div>
+        <div class="twist-task"><span>Новая задача</span>${esc(ev.task)}</div>`, [{ label: 'В путь', cls: 'primary' }], null, 'twist');
+    },
+    async trophy(ev) {
+      this.view.play([ev]);
+      const d = ZG.Cards.get(ev.card);
+      await Banner.show('ТРОФЕЙ!', `${E.heroName(this.g.heroes[ev.hero])} получает «${d.name}»`, 'level');
     },
     async wakeall(ev) {
       this.view.play([ev]);

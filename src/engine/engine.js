@@ -144,6 +144,26 @@
     }
     return false;
   };
+  // Притаившиеся стаи под картами «Стая/Пусто»: на каждый тайл-кандидат кладётся карта рубашкой вверх,
+  // n из них — «Стая». Стая притаилась в центре тайла; счётчики жетонов над туманом скрыты (чтобы не выдать место).
+  E.placePacks = function (g, tiles, n, pack) {
+    const b = g.board;
+    g.stackTiles = (g.stackTiles || []).concat(tiles);
+    g.hideFogCounts = true;
+    const chosen = Rng.shuffle(g, tiles.slice()).slice(0, n);
+    chosen.forEach((ti) => {
+      const mid = b.cells.find((c) => c.tile === ti && c.lx === 1 && c.ly === 1);
+      const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, b.cells.filter((c) => c.tile === ti && c.type !== 'blocked'));
+      pack.forEach((type) => E.lurker(g, type, cell.i));
+    });
+    return chosen;
+  };
+  // притаившийся зомби (стоит на месте, пока не разбудят)
+  E.lurker = function (g, type, cell) {
+    const z = E.spawnZombie(g, type, cell, null, true, true, true);
+    if (z) { z.awake = false; z.lurk = true; z.trail = null; }
+    return z;
+  };
   // будит всех зомби на поле и снимает «притаился»; все идут на место события
   E.wakeAll = function (g, cell, why) {
     g.zombies.forEach((z) => { if (ZG.Zombies.get(z.type).immobile) return; z.lurk = false; wake(g, z, cell, true); });
@@ -389,7 +409,7 @@
     queueTalent(g); // кампания: невыбранный в прошлой миссии талант предлагается сразу
     // начальное появление
     g.spawnPoints.forEach((p) => drawSpawn(g, p));
-    E.log(g, `Уровень ${level.num}: ${level.name}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
+    E.log(g, `${level.campaignOnly ? 'Миссия' : 'Уровень'} ${level.num}: ${level.name}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
     E.log(g, E.scenario(g).short, 'info');
     return g;
   };
@@ -426,7 +446,13 @@
       const st = on.filter((c) => c.type === 'street');
       return Rng.pick(g, st.length ? st : on).i;
     };
-    g.start = edgeZone(0, 0);
+    const startId = g.tileRules && g.tileRules.startTile;
+    const st = startId != null ? b.tiles.findIndex((t) => t.id === startId) : -1;
+    if (st >= 0) { // миссия задаёт стартовый тайл
+      const on = b.cells.filter((c) => c.tile === st && c.type !== 'blocked');
+      const edge = on.filter((c) => c.x === 0 && c.type === 'street');
+      g.start = Rng.pick(g, edge.length ? edge : on.filter((c) => c.type === 'street').length ? on.filter((c) => c.type === 'street') : on).i;
+    } else g.start = edgeZone(0, 0);
     g.exit = edgeZone(maxTx, b.w - 1);
     const n = level.spawnPoints[Math.min(4, g.heroes.length)] + Mods.value(g, null, 'spawnPointsBonus', 0);
     const startTile = tileOf(g, g.start);
@@ -712,7 +738,7 @@
     // облегчённые уровни (zombieTypes): чужие типы подменяются слабыми — быстрые Бегуном, прочие Шатуном
     // (обращённые союзники и неподвижные цели задания — как есть)
     const allow = ZG.Levels.get(g.levelId).zombieTypes;
-    if (allow && !allow.includes(type)) { const zx = ZG.Zombies.get(type); if (!zx.turned && !zx.immobile) type = zx.speed >= 2 && allow.includes('runner') ? 'runner' : allow[0]; }
+    if (allow && !allow.includes(type)) { const zx = ZG.Zombies.get(type); if (!zx.turned && !zx.immobile && !zx.boss) type = zx.speed >= 2 && allow.includes('runner') ? 'runner' : allow[0]; }
     const zd0 = ZG.Zombies.get(type);
     if (!real && ZG.Levels.get(g.levelId).decoys && g.revealed && E.hidden(g, pos) && !zd0.immobile && !zd0.relentless && !zd0.turned) {
       let first = null;
@@ -794,6 +820,11 @@
         if (g.turn && g.active === heroIdx) { g.turn.kills = (g.turn.kills || 0) + 1; h.ms.bestTurnKills = Math.max(h.ms.bestTurnKills || 0, g.turn.kills); }
         gainXp(g, h, def.xp);
         if (def.turned) (g.putDown = g.putDown || []).push({ hero: heroIdx, turned: def.turned }); // упокоил бывшего союзника
+        if (def.trophy) { // трофей мини-босса — сразу в руку убившему
+          E.giveCard(g, h, def.trophy);
+          E.log(g, `${E.heroName(h)} добывает трофей: «${ZG.Cards.get(def.trophy).name}»!`, 'good');
+          E.fx(g, { t: 'trophy', hero: h.idx, card: def.trophy, pos: z.pos, ztype: z.type });
+        }
         Mods.emit(g, h, 'kill', { zombie: z, kind, E });
       }
       return true;
@@ -1003,7 +1034,7 @@
     E.fx(g, { t: 'spawncard', card: id, pos: point });
     if (card.event) { E.log(g, `Событие: ${card.name}. ${card.text}`, 'warn'); card.run(g, E, point); return; }
     const lvl = ZG.Levels.get(g.levelId);
-    const row = card.rows[E.phase(g)];
+    const row = card.rowFn ? card.rowFn(g, E) : card.rows[E.phase(g)]; // rowFn — карта с особым порядком появления
     (lvl.spawnPerCard ? row.slice(0, lvl.spawnPerCard) : row).forEach((type) => E.spawnZombie(g, type, point)); // облегчённые уровни: меньше зомби с карты
   }
 

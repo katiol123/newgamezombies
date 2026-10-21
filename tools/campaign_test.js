@@ -260,5 +260,23 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.stackTiles.length === 4 && g.hideFogCounts, 'на 4 тайлах карты «Стая/Пусто», счётчики скрыты');
 }
 
+// 20) ИИ чинит ценные изношенные карты, если есть Мастерская и талоны сверх запаса; мелочь не чинит
+{
+  const c = C.create({ heroes: [{ id: 'boris', ai: true }], seed: 't20' });
+  const b = C.hero(c, 'boris');
+  b.chest.push({ key: 'r1', id: 'katana', worn: true }, { key: 'r2', id: 'chocolate', worn: true }, { key: 'r3', id: 'bat', worn: true });
+  b.talons = 10;
+  C.autoManage(c, 'boris');
+  ok([b.equip, b.chest, b.junk].flat().every((it) => it.worn), 'без Мастерской ничего не чинит');
+  b.buildings.push('workshop');
+  C.autoManage(c, 'boris');
+  const all = [b.equip, b.chest, b.junk].flat();
+  ok(!all.find((it) => it.id === 'katana').worn && !all.find((it) => it.id === 'bat').worn && all.find((it) => it.id === 'chocolate').worn && b.talons === 10 - 3 - 2, `починил катану и биту, шоколад нет; талонов ${b.talons}`);
+  const c2 = C.create({ heroes: [{ id: 'boris', ai: true }], seed: 't20b' });
+  const b2 = C.hero(c2, 'boris'); b2.buildings.push('workshop'); b2.talons = 3; b2.chest.push({ key: 'q', id: 'katana', worn: true });
+  C.autoManage(c2, 'boris');
+  ok(b2.equip[0].worn && b2.talons === 3, 'не тратит последние талоны, нужные на паёк');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

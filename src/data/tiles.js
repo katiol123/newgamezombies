@@ -18,6 +18,27 @@
   const ZG = G.ZG;
 
   ZG.Tiles.addAll([
+    // --- Лес (кампания, миссия 3): особые тайлы, в пул уровня не входят ---
+    {
+      id: 'kordon', name: 'Кордон лесника', num: 'Л1', unique: true, ground: 'dirt',
+      manhole: [0, 2], // старый колодец — из него лезут мертвецы
+      map: ['AA.', 'AA.', '...'], doors: [[1, 1, 2, 1], [0, 1, 0, 2]], search: [[1, 0]],
+      buildings: { A: { floor: 'wood', label: 'Изба' } },
+      decor: [{ k: 'table', x: 0, y: 0 }, { k: 'bed', x: 1, y: 0 }, { k: 'well', x: 0, y: 2 }, { k: 'woodpile', x: 2, y: 0 }],
+      van: [2, 2], // здесь стоит «буханка»
+    },
+    {
+      id: 'bor', name: 'Сосновый бор', num: 'Л2', unique: true, ground: 'grass',
+      map: ['#.#', '...', '#.#'], doors: [], search: [],
+      buildings: {},
+      decor: [{ k: 'pines', x: 0, y: 0 }, { k: 'pines', x: 2, y: 0 }, { k: 'pines', x: 0, y: 2 }, { k: 'pines', x: 2, y: 2 }, { k: 'stump', x: 1, y: 0 }, { k: 'logs', x: 2, y: 1 }],
+    },
+    {
+      id: 'proseka', name: 'Просека ЛЭП', num: 'Л3', unique: true, ground: 'grass',
+      map: ['...', '.#.', '...'], doors: [], search: [[0, 0]],
+      buildings: {},
+      decor: [{ k: 'pylon', x: 1, y: 1 }, { k: 'stump', x: 2, y: 2 }, { k: 'pine', x: 2, y: 0 }],
+    },
     // уникальный тайл кампании (миссия 2): в пул уровня не входит, ставится правилами миссии
     {
       id: 'autobase', name: 'Автобаза №3', num: 'А3', unique: true,

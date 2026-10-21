@@ -469,6 +469,24 @@
       c.fillStyle = o.ink; c.fillRect(62, 6, 5, 28);
       if (!o.shadow) { rr(c, 30, 40, 40, 16, 2); c.fillStyle = '#7ec850'; c.fill(); for (let i = 0; i < 3; i++) { circle(c, 36 + i * 14, 72, 5); c.fillStyle = '#c9b78f'; c.fill(); } }
     },
+    battery(c, o) {
+      rr(c, 18, 32, 64, 50, 6); fillInk(c, o.shadow ? o.ink : '#3a3e44');
+      if (!o.shadow) {
+        c.fillStyle = '#c8ccd0'; c.fillRect(28, 24, 12, 9); c.fillRect(60, 24, 12, 9);
+        c.fillStyle = '#c0392b'; c.fillRect(30, 26, 8, 2); c.fillStyle = '#2d6fb5'; c.fillRect(62, 26, 8, 2);
+        c.fillStyle = '#f0c040'; poly(c, [52, 40, 40, 60, 50, 60, 46, 76, 60, 52, 50, 52]); c.fill();
+      }
+    },
+    bearfat(c, o) {
+      // банка с жиром и отпечатком лапы
+      rr(c, 26, 26, 48, 60, 8); fillInk(c, o.shadow ? o.ink : '#e8d8a0');
+      if (!o.shadow) {
+        c.fillStyle = '#7a5a36'; c.fillRect(24, 20, 52, 10);
+        c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(32, 34, 6, 40);
+        c.fillStyle = '#5a3a1a'; c.beginPath(); c.ellipse(52, 62, 9, 8, 0, 0, 7); c.fill();
+        [[40, 48], [48, 44], [56, 44], [64, 48]].forEach(([x, y]) => { c.beginPath(); c.ellipse(x, y, 3.5, 4.5, 0, 0, 7); c.fill(); });
+      }
+    },
     cargo_meds(c, o) {
       rr(c, 18, 28, 64, 56, 6); fillInk(c, o.shadow ? o.ink : '#f2efe6');
       if (!o.shadow) { c.fillStyle = '#2d6fb5'; c.fillRect(18, 28, 64, 12); c.fillStyle = '#c0392b'; c.fillRect(44, 48, 12, 30); c.fillRect(35, 57, 30, 12); }
@@ -979,6 +997,35 @@
     ctx.fillStyle = gr; ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, houndHead); ctx.restore();
     ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.16; ctx.strokeStyle = '#c0392b'; ctx.stroke();
+    ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+    ctx.restore();
+  });
+  // Медведь-шатун — мини-босс леса (отдельный рисунок)
+  function bearHead(c) {
+    c.fillStyle = '#4a3424'; circle(c, 28, 30, 10); c.fill(); strokeInk(c, 2); circle(c, 72, 30, 10); c.fill(); strokeInk(c, 2); // уши
+    c.fillStyle = '#6a8a50'; circle(c, 72, 30, 4); c.fill();
+    c.fillStyle = '#5a4030'; c.beginPath(); c.ellipse(50, 54, 30, 27, 0, 0, 7); c.fill(); strokeInk(c, 2.5);
+    c.fillStyle = 'rgba(120,150,90,.55)'; [[34, 44, 7], [64, 62, 6], [42, 70, 4]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); }); // проплешины-гниль
+    c.fillStyle = '#8a6a50'; c.beginPath(); c.ellipse(50, 66, 15, 12, 0, 0, 7); c.fill(); strokeInk(c, 2); // морда
+    c.fillStyle = INK; c.beginPath(); c.ellipse(50, 60, 6, 4, 0, 0, 7); c.fill();
+    c.fillStyle = '#2a0a06'; c.beginPath(); c.ellipse(50, 73, 10, 5, 0, 0, 7); c.fill();
+    c.fillStyle = '#e8dcc0'; poly(c, [42, 70, 44, 77, 46, 70]); c.fill(); poly(c, [54, 70, 56, 77, 58, 70]); c.fill();
+    c.fillStyle = '#d8ff4a'; circle(c, 38, 46, 3.4); c.fill(); circle(c, 62, 46, 3.4); c.fill();
+    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(60, 36); c.lineTo(68, 52); c.stroke(); // шрам
+  }
+  Art.define('zp_bear', (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#6a4a2a'); g.addColorStop(1, '#0d0a08');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, bearHead); ctx.restore();
+  });
+  Art.define('z_bear', (ctx, w, h) => {
+    const r = Math.min(w, h) / 2;
+    ctx.save(); ctx.translate(w / 2, h / 2);
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
+    const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, '#8a6a3a'); gr.addColorStop(1, '#0d0a08');
+    ctx.fillStyle = gr; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, bearHead); ctx.restore();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = '#d4a017'; ctx.stroke(); // золотое кольцо мини-босса
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
   });

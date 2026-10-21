@@ -300,6 +300,18 @@
     const h = C.hero(c, heroId);
     if (!h) return 'Нет такого героя.';
     const desp = C.desperate(h);
+    // ремонт (если есть Мастерская): чинить то, что пойдёт в поход или стоит хранить, — самое ценное первым;
+    // оставить запас на паёк и лечение травм; мелочь, которая уйдёт в хлам, не чинить
+    if (C.built(h, 'workshop')) {
+      const P = CFG().prices;
+      const reserve = P.ration + Math.min(h.injury, 2) * P.heal;
+      const pool = h.equip.concat(h.chest, h.junk).filter((it) => it.worn && C.isValuable(it))
+        .sort((a, b) => (ZG.Cards.get(b.id).value || 0) - (ZG.Cards.get(a.id).value || 0));
+      pool.forEach((it) => {
+        const price = C.repairPrice(it.id);
+        if (h.talons - price >= reserve) { h.talons -= price; it.worn = false; }
+      });
+    }
     const survival = (it) => { const t = ZG.Cards.get(it.id).tags || []; return t.includes('heal') || t.includes('block') ? 4 : 0; };
     const score = (it) => C.cardScore(it) + (desp ? survival(it) : 0);
     const all = h.equip.concat(h.chest, h.junk).sort((a, b) => score(b) - score(a));

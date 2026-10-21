@@ -76,6 +76,53 @@
 
   // ------------------------------------------------------------ декор
   const DECOR = {
+    // --- лес ---
+    pine(ctx, C, x, y, r) {
+      x = x || 0; y = y || 0; r = r || C * 0.22;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(x + 4, y + 5, r, 0, TAU); ctx.fill();
+      for (let k = 0; k < 3; k++) {
+        const rr = r * (1 - k * 0.28);
+        ctx.fillStyle = ['#1f3d24', '#2a5230', '#386a3a'][k];
+        ctx.beginPath();
+        for (let i = 0; i < 16; i++) { const a = (i / 16) * TAU, q = i % 2 ? rr * 0.72 : rr; ctx.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); }
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = '#4a3420'; ctx.beginPath(); ctx.arc(x, y, r * 0.12, 0, TAU); ctx.fill();
+    },
+    pines(ctx, C) {
+      [[-0.22, -0.2, 0.24], [0.2, -0.18, 0.22], [-0.16, 0.22, 0.23], [0.22, 0.2, 0.2], [0.02, 0.0, 0.2]].forEach(([x, y, r]) => DECOR.pine(ctx, C, x * C, y * C, r * C));
+    },
+    stump(ctx, C) {
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(C * 0.2 + 3, C * 0.22 + 3, C * 0.1, C * 0.08, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#8a6a44'; ctx.beginPath(); ctx.ellipse(C * 0.2, C * 0.22, C * 0.1, C * 0.08, 0, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(60,40,20,.7)'; ctx.lineWidth = 1; for (let i = 1; i < 3; i++) { ctx.beginPath(); ctx.ellipse(C * 0.2, C * 0.22, C * 0.1 * i / 3, C * 0.08 * i / 3, 0, 0, TAU); ctx.stroke(); }
+    },
+    logs(ctx, C) {
+      for (let i = 0; i < 3; i++) {
+        const y = -C * 0.12 + i * C * 0.09;
+        Art.rr(ctx, -C * 0.3, y, C * 0.6, C * 0.08, C * 0.04); ctx.fillStyle = i % 2 ? '#7a5a36' : '#8a6a40'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.fillStyle = '#c8a070'; ctx.beginPath(); ctx.arc(C * 0.3, y + C * 0.04, C * 0.035, 0, TAU); ctx.fill();
+      }
+    },
+    woodpile(ctx, C) {
+      for (let row = 0; row < 3; row++) for (let i = 0; i < 4 - row; i++) {
+        const x = -C * 0.18 + i * C * 0.12 + row * C * 0.06, y = C * 0.12 - row * C * 0.1;
+        ctx.fillStyle = '#c8a070'; ctx.beginPath(); ctx.arc(x, y, C * 0.055, 0, TAU); ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#5a3a1a'; ctx.stroke();
+      }
+    },
+    well(ctx, C) {
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(4, 5, C * 0.26, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#7a7470'; ctx.beginPath(); ctx.arc(0, 0, C * 0.26, 0, TAU); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+      for (let i = 0; i < 10; i++) { const a = (i / 10) * TAU; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.moveTo(Math.cos(a) * C * 0.18, Math.sin(a) * C * 0.18); ctx.lineTo(Math.cos(a) * C * 0.26, Math.sin(a) * C * 0.26); ctx.stroke(); }
+      ctx.fillStyle = '#0c0a08'; ctx.beginPath(); ctx.arc(0, 0, C * 0.17, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-C * 0.3, -C * 0.05); ctx.lineTo(C * 0.3, -C * 0.05); ctx.stroke(); // ворот
+    },
+    pylon(ctx, C) {
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-C * 0.2 + 4, -C * 0.2 + 5, C * 0.4, C * 0.4);
+      ctx.strokeStyle = '#8a9298'; ctx.lineWidth = 3; ctx.strokeRect(-C * 0.2, -C * 0.2, C * 0.4, C * 0.4);
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-C * 0.2, -C * 0.2); ctx.lineTo(C * 0.2, C * 0.2); ctx.moveTo(C * 0.2, -C * 0.2); ctx.lineTo(-C * 0.2, C * 0.2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(30,30,30,.7)'; ctx.lineWidth = 1.5; [-0.12, 0.12].forEach((k) => { ctx.beginPath(); ctx.moveTo(-C * 0.5, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // провода над просекой
+    },
     bus(ctx, C) {
       Art.rr(ctx, -C * 0.24, -C * 0.46, C * 0.48, C * 0.92, 6); ctx.fillStyle = '#c99a1a'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
       ctx.fillStyle = '#2a3036'; for (let i = 0; i < 5; i++) ctx.fillRect(-C * 0.19, -C * 0.38 + i * C * 0.15, C * 0.38, C * 0.09);

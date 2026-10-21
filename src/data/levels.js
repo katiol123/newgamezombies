@@ -60,9 +60,27 @@
     events: base.events.filter((id) => id !== 'ev_hound'),
   }));
 
+  // Кампания, миссия 3 «Лес»: 6 особых тайлов (кордон, бор ×3, просека ×2), один люк — колодец на кордоне,
+  // особая колода появления (с Ночи по одному: Шатун/Бегун по очереди)
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m3', campaignOnly: true, num: 3, name: 'Лес',
+    text: 'Лес за городом: кордон лесника, сосновый бор, просека ЛЭП.',
+    layout: { tw: 3, th: 2 },
+    scenarios: ['forest'],
+    conditions: ['calm'],
+    spawnPoints: { 1: 1, 2: 1, 3: 1, 4: 1 },
+    spawnDeck: { sp_forest: 1 },
+    zombieTypes: ['walker', 'runner'],
+    events: [],
+    decoys: false,
+    fogBreak: 0,
+    rounds: 12,
+    roundsBonus: { 1: 3 }, // соло — 15 раундов
+  }));
+
   // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m2', campaignOnly: true,
+    id: 'camp_m2', campaignOnly: true, num: 2, name: 'Автобаза',
     text: 'Автобаза на краю района: притаившиеся мертвецы и фургон во дворе.',
     layout: { tw: 3, th: 2 },
     scenarios: ['autobase'],
