@@ -996,7 +996,8 @@
       if (g.board.cells[h.pos].bld) icon('door', 'Закрыть двери', 1, has('shut'), E.sheltered(g, h) ? 'вы уже в укрытии' : h.energy < 1 ? lack(1) : 'все двери уже закрыты', () => this.act({ t: 'shut' }));
       if (ZG.Mods.flag(g, h, 'plugAction')) icon('plug', 'Заглушка', E.plugCost(g, h), has('plug'), !g.spawnPoints.includes(h.pos) ? 'встаньте в зону с люком' : E.plugged(g, h.pos) ? 'люк уже заглушен' : lack(E.plugCost(g, h)), () => this.act({ t: 'plug' }), ' gold');
       const burns = legal.filter((a) => a.t === 'burn');
-      if (burns.length) icon('cleanse', 'Прижечь укус', 2, true, '', async () => {
+      const bitten = E.heroesAt(g, h.pos).some((o) => o.hand.some((u) => g.cards[u] === 'infection'));
+      if (bitten) icon('cleanse', 'Прижечь укус', 2, burns.length > 0, E.zombiesAt(g, h.pos).length ? 'рядом зомби — не дадут (нужна зона без врагов)' : lack(2), async () => {
         const opts = burns.map((a) => a.hero);
         const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
         if (i != null) this.act({ t: 'burn', hero: i });
@@ -1139,7 +1140,7 @@
     async infect(ev) {
       this.view.play([ev]);
       this.refreshHeroes();
-      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Прижечь укус», 2 ⚡).`, 5000);
+      toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Прижечь укус» — 2 ⚡, только в зоне без зомби).`, 5000);
       await sleep(250);
     },
     async mission(ev) {

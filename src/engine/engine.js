@@ -1411,7 +1411,8 @@
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
     // Прижечь укус: 2 ⚡, себе или товарищу в своей зоне, даже рядом с зомби
-    if (h.energy >= 2) E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'burn', hero: o.idx }); });
+    // прижечь укус — только там, где нет зомби: рядом с ними на это нет времени
+    if (h.energy >= 2 && !E.zombiesAt(g, h.pos).length) E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'burn', hero: o.idx }); });
     if (!g.turn.gave) {
       E.heroesAt(g, h.pos).forEach((o) => {
         if (o === h) return;
@@ -1563,6 +1564,7 @@
       case 'burn': {
         const o = g.heroes[a.hero];
         const bites = o ? o.hand.filter((u) => g.cards[u] === 'infection') : [];
+        if (E.zombiesAt(g, h.pos).length) return fail(g, 'Рядом зомби — прижечь укус не дадут. Нужна зона без врагов.');
         if (h.energy < 2 || !bites.length || o.pos !== h.pos) return fail(g, 'Прижечь нельзя.');
         spend(g, h, 2);
         bites.forEach((u) => { g.cards[u] = 'wound'; });
