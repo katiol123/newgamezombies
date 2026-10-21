@@ -77,19 +77,9 @@
     const fh = g.missions && g.turnHero != null ? g.heroes[g.turnHero] : null;
     if (fh && fh.mission) {
       const m = ZG.Missions.get(fh.mission);
-      if (g.missionFirst === fh.idx) s += 350;
+      if (g.missionFirst === fh.idx) s += 150;
       else if (g.missionFirst == null && !fh.missionDone) {
-        s += (E.missionProgress(g, fh) / m.goal) * 260;
-        if (m.traitor) {
-          // предатель: разбуженные им зомби рядом с союзниками
-          let n = 0;
-          g.zombies.forEach((z) => {
-            if (z.wokenBy !== fh.idx || n >= 3) return;
-            const d = E.distV(g, z.pos);
-            if (g.heroes.some((o) => o.onBoard && o !== fh && d[o.pos] <= E.zombieSpeed(g, z))) n++;
-          });
-          s += n * 50;
-        }
+        s += (E.missionProgress(g, fh) / m.goal) * 120;
       }
     }
     // заглушенные люки: каждый раунд тишины — меньше зомби
@@ -189,7 +179,7 @@
     // «Ангел-хранитель» передаёт карты охотно, остальные — только грузы
     const h = g.active != null ? g.heroes[g.active] : null;
     const angel = h && h.mission === 'm_angel' && !h.missionDone && g.missionFirst == null;
-    return E.legal(g).filter((a) => a.t !== 'give' || angel || ZG.Cards.get(g.cards[a.card]).kind === 'cargo');
+    return E.legal(g).filter((a) => a.t !== 'mredraw' && (a.t !== 'give' || angel || ZG.Cards.get(g.cards[a.card]).kind === 'cargo'));
   }
 
   function bestAction(g, opts) {
@@ -255,6 +245,12 @@
       E.act(g, { t: 'begin', hero: h.idx });
     }
     const idx = g.active;
+    // секретная миссия не стыкуется с героем — сменить (раз за партию)
+    const me = g.heroes[idx];
+    if (me && me.mission && !me.missionRedrawn && !me.missionDone && g.missionFirst == null) {
+      const m = ZG.Missions.get(me.mission);
+      if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || m.traitor) E.act(g, { t: 'mredraw' });
+    }
     for (let i = 0; i < 40; i++) {
       autoPending(g);
       if (g.active !== idx || g.result) return;

@@ -207,9 +207,40 @@
     g.revealed[ti] = true;
     const def = ZG.Tiles.get(g.board.tiles[ti].id);
     const n = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti).length;
+    resolveDecoys(g, ti);
     E.log(g, `${why || 'Разведка'}: открыт тайл «${def.name}»${n ? ` — там ${n} ${ZG.util.plural(n, 'зомби', 'зомби', 'зомби')}!` : '.'}`, n ? 'bad' : 'info');
-    E.fx(g, { t: 'reveal', tile: ti, n });
+    E.fx(g, { t: 'reveal', tile: ti, n, why });
   };
+  // раскрытие пустышек при перевороте тайла
+  function resolveDecoys(g, ti) {
+    const list = E.decoysOn(g, ti);
+    if (!list.length) return;
+    g.decoys = g.decoys.filter((d) => !list.includes(d));
+    const cnt = { gone: 0, lair: 0, ambush: 0, tracks: 0 };
+    list.forEach((d) => {
+      cnt[d.kind]++;
+      if (d.kind === 'lair') {
+        g.search.push({ pos: d.pos, kind: 'armory' });
+        E.fx(g, { t: 'objective', pos: d.pos, text: 'ЛОГОВО' });
+      } else if (d.kind === 'ambush') {
+        const p = E.nearest(g, d.pos, g.spawnPoints.filter((x) => !E.plugged || !E.plugged(g, x)));
+        if (p != null) { E.fx(g, { t: 'objective', pos: p, text: 'ЗАСАДА!' }); drawSpawn(g, p); }
+      } else if (d.kind === 'tracks') {
+        const dd = E.distV(g, d.pos);
+        let best = null;
+        g.zombies.forEach((z) => { if (!ZG.Zombies.get(z.type).immobile && !E.hidden(g, z.pos) && dd[z.pos] < Infinity && (!best || dd[z.pos] < dd[best.pos])) best = z; });
+        if (best) { if (g.stealth) wake(g, best, d.pos, true); else g.noise[d.pos] = (g.noise[d.pos] || 0) + 1; }
+        E.fx(g, { t: 'objective', pos: d.pos, text: 'СЛЕДЫ' });
+      }
+    });
+    const parts = [];
+    if (cnt.gone) parts.push(`${cnt.gone} — «ушли»`);
+    if (cnt.lair) parts.push('логово с припасами');
+    if (cnt.ambush) parts.push('засада: зомби лезут из ближайшего люка');
+    if (cnt.tracks) parts.push('свежие следы — кто-то идёт сюда');
+    E.log(g, `Пустышки в тумане: ${parts.join(', ')}.`, cnt.ambush ? 'bad' : 'info');
+    if (cnt.gone && cnt.gone === list.length) E.fx(g, { t: 'objective', pos: list[0].pos, text: 'ПУСТО' });
+  }
   // соседние зоны закрытых тайлов (по стороне), куда можно попробовать шагнуть
   E.fogNeighbors = function (g, cell) {
     const b = g.board, c = b.cells[cell], out = [];
@@ -302,8 +333,7 @@
       g.heroes.forEach((h) => {
         for (let guard = 0; guard < 30 && g.missionDeck.length; guard++) {
           const id = g.missionDeck.shift(), m = ZG.Missions.get(id);
-          const bad = (m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog);
-          if (bad) { g.missionDeck.push(id); continue; }
+          if (!E.missionFits(g, m)) { g.missionDeck.push(id); continue; }
           h.mission = id; break;
         }
       });
@@ -611,7 +641,23 @@
   }
 
   // ============================================================== зомби
-  E.spawnZombie = function (g, type, pos, why, silent) {
+  // Пустышки: в тумане за каждого зомби кладутся 2 жетона лицом вниз — каждый 50/50 зомби или пустышка.
+  // Пустышки (мешок 20 шт.): 17 «Ушли», 1 «Логово», 1 «Засада сверху», 1 «Следы».
+  function rollDecoy(g) { const r = Rng.int(g, 20); return r === 0 ? 'lair' : r === 1 ? 'ambush' : r === 2 ? 'tracks' : 'gone'; }
+  E.decoysOn = (g, ti) => (g.decoys || []).filter((d) => g.board.cells[d.pos].tile === ti);
+  // сколько жетонов лежит стопкой на закрытом тайле (зомби + пустышки)
+  E.fogTokens = (g, ti, mobileOnly) => g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && (!mobileOnly || !ZG.Zombies.get(z.type).immobile)).length + E.decoysOn(g, ti).length;
+  E.spawnZombie = function (g, type, pos, why, silent, real) {
+    const zd0 = ZG.Zombies.get(type);
+    if (!real && ZG.Levels.get(g.levelId).decoys && g.revealed && E.hidden(g, pos) && !zd0.immobile && !zd0.relentless && !zd0.turned) {
+      let first = null;
+      for (let k = 0; k < 2; k++) {
+        if (Rng.int(g, 2) === 0) { const z = E.spawnZombie(g, type, pos, null, true, true); first = first || z; }
+        else { (g.decoys = g.decoys || []).push({ pos, kind: rollDecoy(g) }); E.fx(g, { t: 'spawn', pos, decoy: true }); }
+      }
+      if (why && !silent) E.log(g, why + '.', 'warn');
+      return first;
+    }
     const pool = (ZG.Levels.get(g.levelId).pool || {})[type];
     if (pool && g.zombies.filter((x) => x.type === type).length >= pool) {
       // жетоны кончились: вместо появления все такие зомби делают лишний шаг (раз за карту появления)
@@ -699,6 +745,22 @@
   // счётчик прогресса секретной миссии
   const ms = (h, key, n) => { h.ms = h.ms || {}; h.ms[key] = (h.ms[key] || 0) + (n == null ? 1 : n); };
   E.ms = ms;
+  // подходит ли миссия к этой партии (союзник, скрытность, туман)
+  E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog));
+  // смена миссии: раз за партию, в свой ход, пока миссия не выполнена; прогресс начинается заново
+  E.redrawMission = function (g, h) {
+    if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || !g.missionDeck.length) return false;
+    const old = h.mission;
+    g.missionDeck.push(old);
+    for (let guard = 0; guard < 30; guard++) {
+      const id = g.missionDeck.shift(), m = ZG.Missions.get(id);
+      if (id === old || !E.missionFits(g, m)) { g.missionDeck.push(id); continue; }
+      h.mission = id; break;
+    }
+    h.missionRedrawn = true; h.ms = {};
+    E.log(g, `${E.heroName(h)} меняет секретную миссию.`, 'dim');
+    return true;
+  };
   E.missionProgress = (g, h) => { const m = h.mission && ZG.Missions.get(h.mission); return m ? Math.min(m.goal, (h.ms && h.ms[m.stat]) || 0) : 0; };
   // проверка миссий: награда — только первому выполнившему
   E.checkMissions = function (g) {
@@ -913,7 +975,7 @@
           const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
           g.board.tiles.forEach((t, ti) => {
             if (g.revealed[ti]) return;
-            const n = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && !ZG.Zombies.get(z.type).immobile).length;
+            const n = E.fogTokens(g, ti, true); // по жетонам в стопке (пустышки тоже считаются)
             if (n >= lim) E.reveal(g, ti, 'Прорыв орды');
           });
         }
@@ -1271,6 +1333,7 @@
       });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn) out.push({ t: 'mredraw' });
     if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
@@ -1435,6 +1498,7 @@
         E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
         return true;
       }
+      case 'mredraw': return E.redrawMission(g, h) || fail(g, 'Сменить миссию уже нельзя.');
       case 'plug': {
         const cost = E.plugCost(g, h);
         if (!Mods.flag(g, h, 'plugAction') || !g.spawnPoints.includes(h.pos) || E.plugged(g, h.pos) || h.energy < cost) return fail(g, 'Заглушить нельзя.');

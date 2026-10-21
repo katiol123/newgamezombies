@@ -991,7 +991,7 @@
         if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
         const s = C * 0.42;
         icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
-        const n = g.zombies.filter((z) => b.cells[z.pos].tile === ti).length;
+        const n = ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
         if (n) {
           const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
           ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);

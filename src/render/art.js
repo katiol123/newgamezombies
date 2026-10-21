@@ -631,11 +631,13 @@
       // перо на капюшоне (сыч)
       c.fillStyle = '#c9b78f'; poly(c, [70, 20, 80, 8, 76, 24]); c.fill();
     }),
-    gosha: (c) => bust(c, '#d8a882', '#e67e22', (c) => {
+    gosha: (c) => bust(c, '#d8a882', '#b8d02a', (c) => {
       eyes(c, '#5a3a1a', 44);
-      // каска
-      c.beginPath(); c.arc(50, 34, 24, Math.PI, 0); c.lineTo(78, 36); c.lineTo(22, 36); c.closePath(); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 2.5);
-      c.fillStyle = '#d0a020'; c.fillRect(46, 12, 8, 22);
+      // синяя кепка козырьком назад и наушники-противошумы
+      c.beginPath(); c.arc(50, 33, 22, Math.PI, 0); c.closePath(); c.fillStyle = '#2d5fa0'; c.fill(); strokeInk(c, 2.5);
+      c.fillStyle = '#1f4a80'; c.fillRect(64, 28, 16, 6);
+      c.strokeStyle = '#222'; c.lineWidth = 3; c.beginPath(); c.arc(50, 34, 26, Math.PI * 1.05, -0.05); c.stroke();
+      [[24, 44], [76, 44]].forEach(([x, y]) => { rr(c, x - 6, y - 9, 12, 18, 5); c.fillStyle = '#e8701a'; c.fill(); strokeInk(c, 2); });
       // усы и щетина
       c.fillStyle = '#4a2a1a'; c.beginPath(); c.moveTo(38, 56); c.quadraticCurveTo(50, 50, 62, 56); c.quadraticCurveTo(50, 60, 38, 56); c.fill();
       c.fillStyle = 'rgba(60,40,30,.25)'; c.fillRect(36, 58, 28, 8);
@@ -934,6 +936,15 @@
     circle(c, 50, 50, 44); c.fillStyle = '#3a3a3a'; c.fill(); strokeInk(c, 4);
     c.strokeStyle = '#e0a83a'; c.lineWidth = 7; c.beginPath(); c.moveTo(20, 20); c.lineTo(80, 80); c.moveTo(80, 20); c.lineTo(20, 80); c.stroke();
     if (o.n) { circle(c, 76, 24, 16); c.fillStyle = '#e0a83a'; c.fill(); strokeInk(c, 3); c.fillStyle = INK; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(o.n, 76, 26); }
+  }));
+  // пустышки (лицевая сторона; рубашка — как у зомби, tok_zback)
+  Art.define('tok_decoy', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
+    circle(c, 50, 50, 46); c.fillStyle = { gone: '#4a4038', lair: '#8a6a32', ambush: '#7a1f1f', tracks: '#3a4a5a' }[o.kind || 'gone']; c.fill(); c.lineWidth = 4; c.strokeStyle = '#1a1410'; c.stroke();
+    c.fillStyle = '#e8dcc0'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = 'bold 15px sans-serif';
+    c.fillText({ gone: 'УШЛИ', lair: 'ЛОГОВО', ambush: 'ЗАСАДА', tracks: 'СЛЕДЫ' }[o.kind || 'gone'], 50, 74);
+    c.font = 'bold 34px sans-serif';
+    c.fillText({ gone: '∅', lair: '⌂', ambush: '!', tracks: '👣' }[o.kind || 'gone'], 50, 42);
   }));
   Art.define('tok_door', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     rr(c, 8, 8, 84, 84, 10); c.fillStyle = o.open ? '#3a2e22' : '#5a3e20'; c.fill(); strokeInk(c, 4);

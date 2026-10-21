@@ -744,6 +744,15 @@
           ${h.talents.length || (h.perks || []).length ? `<div class="hp-talents">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).concat((h.perks || []).map((id) => '✦ ' + esc(ZG.Missions.get(id).perk.name))).join(' · ')}</div>` : ''}
           ${h.equip.length ? `<div class="hp-equip">${h.equip.map((u) => esc(E.cardDef(g, u).name)).join(' · ')}</div>` : ''}`;
         c.appendChild(info);
+        const ml = info.querySelector('.hp-mission.mine');
+        if (ml) ml.onclick = (ev) => {
+          ev.stopPropagation();
+          const m = ZG.Missions.get(h.mission);
+          const can = g.active === h.idx && !h.missionRedrawn && !h.missionDone && g.phase === 'heroes';
+          Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>${h.missionRedrawn ? '<p class="muted">Смена уже использована.</p>' : can ? '<p class="muted">Можно сменить один раз за партию; прогресс начнётся заново.</p>' : '<p class="muted">Сменить можно в свой ход (раз за партию).</p>'}`,
+            can ? [{ label: 'Сменить', value: 'redraw' }, { label: 'Закрыть', cls: 'primary' }] : [{ label: 'Закрыть', cls: 'primary' }])
+            .then(async (v) => { if (v === 'redraw') { await this.act({ t: 'mredraw' }); this.showMission(h); } });
+        };
         c.onclick = () => {
           if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) { if (h.ai) this.runAI(h.idx); else this.act({ t: 'begin', hero: h.idx }); }
           else Modal.heroInfo(h.id, h);
@@ -760,6 +769,12 @@
       const cur = g.active != null ? g.heroes[g.active] : null;
       return !!cur && !cur.ai && cur.player === h.player;
     },
+    async showMission(h) {
+      const m = ZG.Missions.get(h.mission);
+      (this.seenMission = this.seenMission || {})[h.idx] = true;
+      this.refreshHeroes();
+      await Modal.show(`<div class="kicker">Новая секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>`, [{ label: 'Понятно', cls: 'primary' }]);
+    },
     missionLine(h) {
       const g = this.g;
       if (!g.missions || !h.mission) return '';
@@ -769,7 +784,7 @@
         return `<div class="hp-mission ${won ? 'won' : 'late'}" title="${esc(m.text)}">${won ? '✦' : '✗'} ${esc(m.name)}${m.traitor && won ? ' — ПРЕДАТЕЛЬ' : ''}${won ? '' : ' (не первым)'}</div>`;
       }
       if (!this.canSeeMission(h)) return `<div class="hp-mission hidden" title="Секретная миссия — видна только её владельцу">🂠 секретная миссия</div>`;
-      return `<div class="hp-mission mine" title="${esc(m.text)}\nНаграда (только первому): ${esc(m.rewardText)}">🂠 ${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}${g.missionFirst != null ? ' · награда уже ушла' : ''}</div>`;
+      return `<div class="hp-mission mine" style="cursor:pointer" title="${esc(m.text)}\nНаграда (только первому): ${esc(m.rewardText)}">🂠 ${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}${g.missionFirst != null ? ' · награда уже ушла' : ''}</div>`;
     },
 
     refreshHand() {
@@ -993,7 +1008,8 @@
       if (this.g.missions && h.mission && !h.ai && !h.missionDone && !(this.seenMission || {})[h.idx] && this.canSeeMission(h)) {
         (this.seenMission = this.seenMission || {})[h.idx] = true;
         const m = ZG.Missions.get(h.mission);
-        await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше.</p>`, [{ label: 'Понятно', cls: 'primary' }]);
+        const v = await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше. Раз за партию миссию можно сменить (в свой ход — по клику на строку миссии).</p>`, [{ label: 'Сменить (1 раз)', value: 'redraw' }, { label: 'Понятно', cls: 'primary', value: 'ok' }]);
+        if (v === 'redraw') { await this.act({ t: 'mredraw' }); (this.seenMission = this.seenMission || {})[h.idx] = false; return this.showMission(h); }
       }
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
@@ -1010,7 +1026,7 @@
     },
     async reveal(ev) {
       this.view.play([ev]);
-      if (ev.n >= (ZG.Levels.get(this.g.levelId).fogBreak || 4) && this.g.phase === 'zombies') await Banner.show('ПРОРЫВ!', `из тумана выходят ${ev.n} зомби`, 'wave');
+      if (this.g.phase === 'zombies' && ev.why === 'Прорыв орды') await Banner.show('ПРОРЫВ!', ev.n ? `из тумана выходят ${ev.n} зомби` : 'стопка оказалась пустой — они ушли', 'wave');
       else await sleep(700);
     },
     async bump(ev) { this.view.play([ev]); toast('За поворотом — стена. Пройти здесь нельзя (⚡ потрачена).', 3000); await sleep(300); },
@@ -1097,7 +1113,7 @@
     if (E.hidden(g, cell)) {
       // закрытый тайл: известно только то, что лежит на рубашке
       const ti = c.tile, b = g.board;
-      const n = g.zombies.filter((z) => b.cells[z.pos].tile === ti).length;
+      const n = E.fogTokens(g, ti);
       const known = [];
       if (g.spawnPoints.some((p) => b.cells[p].tile === ti)) known.push('люк');
       const cr = g.crates.filter((x) => !x.opened && b.cells[x.pos].tile === ti).length;
@@ -1105,7 +1121,7 @@
       const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
       return `<div class="tt-head">Не разведано</div><div>Где стены и что внутри — неизвестно. Войдите базовым «Движением» из соседней зоны.</div>` +
         (known.length ? `<div class="tt-gold">На рубашке: ${known.join(', ')}</div>` : '') +
-        (n ? `<div class="tt-red">Стопка: ${n} зомби (состав неизвестен). При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
+        (n ? `<div class="tt-red">Стопка: ${n} ${ZG.util.plural(n, 'жетон', 'жетона', 'жетонов')} лицом вниз — примерно половина может оказаться пустышками. При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
     }
     const parts = [];
     const typeName = c.type === 'building' ? 'Помещение' : c.type === 'blocked' ? 'Непроходимо' : 'Улица';
@@ -1199,10 +1215,13 @@
   // ================================================================= модалки
   const Modal = {
     open: false,
+    waiters: [],
     escape() {
       if (this.onEscape) this.onEscape();
     },
     show(html, buttons, extraEl, cls) {
+      // очередь окон: если открыто другое окно (брифинг), новое ждёт его закрытия, а не затирает
+      if (this.open) return new Promise((r) => this.waiters.push(r)).then(() => this.show(html, buttons, extraEl, cls));
       return new Promise((resolve) => {
         const escBtn = (buttons || []).find((b) => b.label === 'Закрыть' || b.label === 'Отмена');
         this.onEscape = escBtn ? () => { this.close(); resolve(escBtn.value); } : null;
@@ -1224,7 +1243,11 @@
         m.onclick = (ev) => { if (ev.target === m && buttons && buttons.length === 1 && !buttons[0].modal) { this.close(); resolve(buttons[0].value); } };
       });
     },
-    close() { $('#modal').classList.remove('show'); this.open = false; },
+    close() {
+      $('#modal').classList.remove('show'); this.open = false;
+      const w = this.waiters.splice(0);
+      if (w.length) setTimeout(() => w.forEach((f) => f()), 60);
+    },
     confirm(html, onYes) { this.show(`<p class="confirm">${html}</p>`, [{ label: 'Отмена', value: false }, { label: 'Да', value: true, cls: 'primary' }]).then((v) => v && onYes()); },
 
     async briefing(g) {

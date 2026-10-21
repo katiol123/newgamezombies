@@ -75,6 +75,7 @@
     if (def.hero) typeLine.push(ZG.Heroes.get(def.hero).name);
     if (def.loot) typeLine.push({ rare: 'Редкая', unique: 'Уникальная' }[def.rarity] || 'Добыча');
     if (def.rarity && def.rarity !== 'common') c.classList.add('r-' + def.rarity);
+    if (def.rarity && def.rarity !== 'common') c.appendChild(el('div', 'rarity-gem', def.rarity === 'unique' ? '★' : '◆'));
     c.appendChild(el('div', 'card-type', esc(typeLine.join(' · '))));
     const body = el('div', 'card-text');
     body.innerHTML = rich(def.text);
