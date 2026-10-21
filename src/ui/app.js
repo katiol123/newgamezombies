@@ -1511,7 +1511,7 @@
       const box = $('#slot-list');
       box.innerHTML = '';
       CMP.list().forEach(({ slot, c }) => {
-        const d = el('div', 'slot' + (c ? ' ' + c.status : ' empty'));
+        const d = el('div', 'camp-slot' + (c ? ' ' + c.status : ' empty'));
         d.appendChild(el('div', 'slot-n', 'Слот ' + slot));
         const body = el('div', 'slot-body');
         if (!c) body.innerHTML = '<span class="muted">пусто</span>';
