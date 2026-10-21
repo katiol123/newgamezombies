@@ -311,7 +311,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null,
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null,
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -461,13 +461,15 @@
     const b = g.board;
     const midX = Math.floor(b.tiles.reduce((m, t) => Math.max(m, t.tx), 0) / 2);
     const startRow = b.tiles[tileOf(g, g.start)].ty;
-    const mids = b.tiles.map((t, i) => ({ t, i })).filter((x) => x.t.tx === midX).sort((x, y) => (x.t.ty === startRow) - (y.t.ty === startRow));
+    // уникальные тайлы миссии (кампания) не открываются заранее — вышку на них не ставим
+    const reqIds = ((g.tileRules && g.tileRules.required) || []).map((r) => (typeof r === 'string' ? r : r.id));
+    const mids = b.tiles.map((t, i) => ({ t, i })).filter((x) => x.t.tx === midX && !reqIds.includes(x.t.id)).sort((x, y) => (x.t.ty === startRow) - (y.t.ty === startRow));
     for (const m of mids) {
       const c = b.cells.filter((x) => x.tile === m.i && x.type === 'building');
       if (c.length) return (c.find((x) => x.tileSearch) || c[0]).i;
     }
     // в среднем столбце нет зданий — тайлы справа налево (кроме стартового)
-    for (const ti of tilesByColumn(g, [tileOf(g, g.start)])) {
+    for (const ti of tilesByColumn(g, [tileOf(g, g.start)].concat(b.tiles.map((t, i) => (reqIds.includes(t.id) ? i : -1)).filter((i) => i >= 0)))) {
       const c = b.cells.filter((x) => x.tile === ti && x.type === 'building');
       if (c.length) return (c.find((x) => x.tileSearch) || c[0]).i;
     }

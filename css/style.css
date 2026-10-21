@@ -775,3 +775,5 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
   .shelter-head { flex-wrap: wrap; }
   .slot { grid-template-columns: 1fr; }
 }
+
+.rep-brief { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(232,220,192,.15); color: var(--paper); font-style: italic; }

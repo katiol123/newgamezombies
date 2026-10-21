@@ -289,7 +289,7 @@
         if (g.v !== 2) throw new Error('старая версия сохранения (поле стало больше)');
         const level = ZG.Levels.get(g.levelId);
         // поле детерминированно восстанавливается из сида
-        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, quiet: true });
+        const tmp = E.create({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, levelId: level.id, tileRules: g.tileRules, quiet: true });
         g.board = tmp.board;
         g.fx = []; g.log = g.log || [];
         this.g = g;
@@ -1557,10 +1557,12 @@
       const done = c.status === 'over' || c.status === 'won';
       $('#shelter-sub').innerHTML = done
         ? `<b class="${c.status}">${c.status === 'won' ? 'КАМПАНИЯ ПРОЙДЕНА' : 'КАМПАНИЯ ОКОНЧЕНА'}</b> — ${esc(c.endReason || '')}`
-        : `Впереди миссия ${c.missionNo + 1} из ${c.chainLength} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
+        : `Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
       $('#btn-shelter-go').style.display = done ? 'none' : '';
       $('#btn-shelter-go').textContent = `В поход: миссия ${c.missionNo + 1} ▶`;
       this.renderReport(c);
+      const md = CMP.missionDef(c);
+      if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       const box = $('#shelter-heroes');
       box.innerHTML = '';
       c.roster.forEach((h) => box.appendChild(this.heroCard(c, h, done)));

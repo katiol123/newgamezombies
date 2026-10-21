@@ -13,13 +13,29 @@
     return [x, y];
   }
 
+  // g.tileRules (миссии кампании): { required: [{ id, tx?, ty? }], exclude: [id] }.
+  // Обязательные тайлы ставятся на заданное место или в средние столбцы (крайние — старт и выход, они открыты сразу),
+  // остальное добирается случайно из базового пула уровня.
   function build(level, g) {
     const { tw, th } = level.layout;
-    const pool = Rng.shuffle(g, level.tiles.slice());
+    const rules = g.tileRules || {};
+    const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : r));
+    const skip = (rules.exclude || []).concat(req.map((r) => r.id));
+    const pool = Rng.shuffle(g, level.tiles.filter((id) => !skip.includes(id)));
+    const grid = {};
+    const key = (tx, ty) => tx + ',' + ty;
+    req.filter((r) => r.tx != null).forEach((r) => { grid[key(r.tx, r.ty || 0)] = r.id; });
+    const free = (mid) => { const out = []; for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) if (!grid[key(tx, ty)] && (!mid || (tx > 0 && tx < tw - 1))) out.push(key(tx, ty)); return out; };
+    req.filter((r) => r.tx == null).forEach((r) => {
+      const opts = free(true).length ? free(true) : free(false);
+      if (opts.length) grid[Rng.pick(g, opts)] = r.id;
+    });
     const placed = [];
+    let k = 0;
     for (let ty = 0; ty < th; ty++) {
       for (let tx = 0; tx < tw; tx++) {
-        placed.push({ id: pool[(ty * tw + tx) % pool.length], rot: Rng.int(g, 4), tx, ty });
+        const id = grid[key(tx, ty)] || pool[k++ % pool.length];
+        placed.push({ id, rot: Rng.int(g, 4), tx, ty });
       }
     }
     return fromPlaced(placed, tw, th);

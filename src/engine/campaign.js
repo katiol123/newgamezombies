@@ -22,7 +22,7 @@
       v: 1, seed, rng: Rng.seedFrom('camp-' + seed), name: opts.name || 'Кампания',
       created: Date.now(), updated: Date.now(),
       difficultyId: opts.difficultyId || 'survivor', players: opts.players || 1,
-      squad: opts.heroes.length, missionNo: 0, chainLength: CFG().chainLength,
+      squad: opts.heroes.length, missionNo: 0, chainLength: CFG().chain.length,
       status: 'ready', // ready — можно идти на миссию; mission — идёт миссия; over — провал; won — пройдена
       roster: [], fallen: [], wanderers: [], nextKey: 1, report: null, current: null, endReason: null,
     };
@@ -52,6 +52,7 @@
     return CFG().prices.sell[d.rarity || 'common'];
   };
   C.mission = (c) => ({ no: c.missionNo + 1, total: c.chainLength });
+  C.missionDef = (c) => CFG().chain[Math.min(c.missionNo, CFG().chain.length - 1)] || {};
 
   // ------------------------------------------------------------ миссия
   // Опции для ZG.Engine.create: отряд из ростера, перенос героев, блуждающие угрозы.
@@ -67,10 +68,12 @@
     c.status = 'mission';
     c.updated = Date.now();
     const M = CFG().morale;
+    const md = C.missionDef(c);
     return {
       seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
-      wanderers: c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)),
+      scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null,
+      wanderers: c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);
         const temp = h.morale <= 0 ? ['despair', 'despair'] : h.morale <= M.low ? ['despair'] : h.morale >= M.max ? ['courage'] : [];

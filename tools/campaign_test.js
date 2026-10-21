@@ -93,5 +93,26 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(b.talons === 5 - 2, `талоны: 5 за звезду − 2 паёк = ${b.talons}`);
 }
 
+// 8) уникальные тайлы миссии: обязательные в игре и закрыты с начала, исключённых нет
+{
+  let bad = 0;
+  for (let k = 0; k < 60; k++) {
+    const g = E.create({ heroes: [{ id: 'boris' }], seed: 't8-' + k, quiet: true, fog: true, tileRules: { required: ['school'], exclude: ['market'] } });
+    const ids = g.board.tiles.map((t) => t.id), si = ids.indexOf('school');
+    if (si < 0 || ids.includes('market') || g.revealed[si]) bad++;
+  }
+  ok(!bad, 'обязательный тайл всегда в игре и закрыт, исключённого нет (60 раскладок)');
+}
+
+// 9) боссы миссии — блуждающие угрозы
+{
+  const ZGc = ZG.CAMPAIGN, keep = ZGc.chain[0];
+  ZGc.chain[0] = { bosses: ['brute'], tiles: { required: ['school'] } };
+  const c = C.create({ heroes: [{ id: 'boris' }], seed: 't9' });
+  const opts = C.startMission(c);
+  ok(opts.wanderers.includes('brute') && opts.tileRules.required[0] === 'school', 'описание миссии: босс и уникальный тайл передаются в партию');
+  ZGc.chain[0] = keep;
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);
