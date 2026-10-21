@@ -73,6 +73,8 @@
       seen.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
     s += g.traps.length * W.trap;
+    // заглушенные люки: каждый раунд тишины — меньше зомби
+    Object.keys(g.plugs || {}).forEach((k) => { const left = g.plugs[k] - g.round + 1; if (left > 0) s += left * 45; });
     g.heroes.forEach((h) => {
       if (h.fallen) { s -= W.fallen; return; }
       if (h.evacuated) { s += W.evac; return; }

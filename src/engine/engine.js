@@ -89,7 +89,7 @@
   };
   // герой в укрытии: в помещении, все двери закрыты, внутри не шумели
   E.sheltered = (g, h) => {
-    if (!g.doors || !h.onBoard) return false;
+    if (!g.doors || !h.onBoard || Mods.flag(g, h, 'loud')) return false;
     const bld = g.board.cells[h.pos].bld;
     if (!bld) return false;
     if (g.board.cells.some((c) => c.bld === bld && (g.noise[c.i] || (g.loud && g.loud[c.i])))) return false;
@@ -104,7 +104,7 @@
       const outside = g.board.cells[a].bld && g.board.cells[b].bld !== g.board.cells[a].bld && g.board.cells[b].type === 'street' ? b : g.board.cells[a].type === 'street' ? a : b;
       g.noise[outside] = (g.noise[outside] || 0) + 1;
       E.fx(g, { t: 'noise', pos: outside, n: 1 });
-      E.hear(g, outside, 1);
+      E.hear(g, outside, Mods.flag(g, hero, 'loud') ? 2 : 1);
       E.log(g, `${E.heroName(hero)} открывает дверь — скрип!`, 'dim');
     }
   }
@@ -124,6 +124,7 @@
     if (quiet) return false;
     if (g.board.adj[z.pos].includes(h.pos)) return true;
     if (!z.awake && Mods.flag(g, h, 'stealthy')) return false; // бесшумного издалека не замечают
+    if (Mods.flag(g, h, 'loud') && E.distV(g, z.pos)[h.pos] <= 2) return true; // шумного слышно за 2 зоны
     if (E.sheltered(g, h)) return false;
     const b = g.board, c0 = b.cells[z.pos];
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -802,7 +803,10 @@
     return true;
   }
 
+  // Заглушка: люк молчит, пока не кончится срок (g.plugs[клетка] = последний раунд)
+  E.plugged = (g, cell) => !!(g.plugs && g.plugs[cell] >= g.round);
   function drawSpawn(g, point) {
+    if (E.plugged(g, point)) { E.log(g, 'Заглушенный люк молчит.', 'good'); return; }
     if (!g.spawnDeck.length) { g.spawnDeck = Rng.shuffle(g, g.spawnDiscard); g.spawnDiscard = []; }
     const id = g.spawnDeck.shift();
     if (!id) return;
@@ -1050,6 +1054,7 @@
     }
     h.adrenaline = 0;
     h.energy = en;
+    if (g.relayBonus) { h.energy += g.relayBonus; E.log(g, `${E.heroName(h)}: +${g.relayBonus} ⚡ от товарища.`, 'good'); g.relayBonus = 0; }
     E.log(g, `Ход: ${E.heroName(h)} (${en} ⚡).`, 'turn');
     E.fx(g, { t: 'turn', hero: idx });
     Mods.emit(g, h, 'turnStart', { E });
@@ -1057,7 +1062,7 @@
 
   function endTurn(g) {
     const h = E.activeHero(g);
-    E.perceive(g); // скрытность: в конце хода героя зомби замечают, кого видят
+    E.perceive(g); // скрытность: зомби «оглядываются» в конце хода каждого героя (одно общее правило для всех)
     if (h) { h.acted = true; tickInfection(g, h); }
     if (g.result) return;
     // Эстафета: следующий герой может продолжить Связку мастью последней карты
@@ -1072,7 +1077,10 @@
     if (def.cost == null) return null;
     let c = Math.max(0, def.cost + Mods.value(g, h, 'costDelta', 0, { def }));
     // Хватка: выход из зоны с зомби стоит +1 ⚡ и для карт перемещения
-    if (def.target && def.target.kind === 'move' && !def.target.free && !def.target.through && E.zombiesAt(g, h.pos).length && !Mods.flag(g, h, 'freeEscape')) c++;
+    if (def.target && def.target.kind === 'move' && !def.target.free && !def.target.through) {
+      if (E.gripBase(g, h) && !Mods.flag(g, h, 'freeEscape')) c++;
+      c += E.gripExtra(g, h);
+    }
     return c;
   };
 
@@ -1081,8 +1089,8 @@
     return Math.max(spec.range ? 1 : 0, spec.range + Mods.value(g, h, 'rangeBonus', 0));
   };
 
-  function heroPass(g, h, through) {
-    const climb = Mods.flag(g, h, 'climb');
+  function heroPass(g, h, through, climbSpec) {
+    const climb = climbSpec || Mods.flag(g, h, 'climb');
     return (a, b) => {
       if (E.barricadeAt(g, a, b) && !climb) return false;
       if (!through && a !== h.pos && E.zombiesAt(g, a).length) return false;
@@ -1107,7 +1115,7 @@
         return E.line(g, h.pos, R).filter((c) => c.dist >= (spec.min || 0) && E.zombiesAt(g, c.cell).length).map((c) => c.cell);
       }
       case 'move': {
-        const pass = heroPass(g, h, spec.through);
+        const pass = heroPass(g, h, spec.through, spec.climb);
         const d = E.distV(g, h.pos, pass);
         return b.cells.filter((c) => d[c.i] >= 1 && d[c.i] <= spec.steps).map((c) => c.i);
       }
@@ -1119,6 +1127,7 @@
         const d = E.distV(g, h.pos);
         return b.cells.filter((c) => d[c.i] >= 1 && d[c.i] <= spec.range).map((c) => c.i);
       }
+      case 'adjcell': return [h.pos].concat(b.adj[h.pos]).filter((c) => !E.hidden(g, c));
       case 'adj': {
         if (g.traps.length >= MAX_TRAPS) return [];
         return [h.pos].concat(b.adj[h.pos]).filter((c) => !E.hidden(g, c) && !g.traps.some((t) => t.pos === c));
@@ -1131,9 +1140,14 @@
     }
   };
 
+  // Хват в зоне: выход стоит ещё +1 ⚡ («Дымовая шашка» снимает Хватку в зоне до конца хода)
+  E.plugCost = (g, h) => Math.max(0, 1 + Mods.value(g, h, 'plugCost', 0));
+  E.gripExtra = (g, h) => (g.turn && g.turn.noGrip === h.pos ? 0 : E.zombiesAt(g, h.pos).some((z) => ZG.Zombies.get(z.type).grip) ? 1 : 0);
+  E.gripBase = (g, h) => (g.turn && g.turn.noGrip === h.pos ? 0 : E.zombiesAt(g, h.pos).length ? 1 : 0);
   function moveCost(g, h, to) {
     let c = 1;
-    if (!Mods.flag(g, h, 'freeEscape') && E.zombiesAt(g, h.pos).length) c++;
+    if (!Mods.flag(g, h, 'freeEscape') && E.gripBase(g, h)) c++;
+    c += E.gripExtra(g, h);
     if (!Mods.flag(g, h, 'climb') && E.barricadeAt(g, h.pos, to)) c++;
     if (g.turn.moves === 0 && Mods.flag(g, h, 'freeFirstMove')) c--;
     return Math.max(0, c);
@@ -1193,6 +1207,7 @@
       });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
     // Прижечь укус: 2 ⚡, себе или товарищу в своей зоне, даже рядом с зомби
@@ -1249,8 +1264,6 @@
     if (!h) return fail(g, 'Выберите героя.');
     const ok = applyHeroAction(g, h, a);
     if (ok === false) return false;
-    // зомби замечают героев сразу; бесшумного (Сава, «Тихий шаг») — только в конце его хода
-    if (g.phase === 'heroes' && !g.result && g.active === h.idx) E.perceive(g, Mods.flag(g, h, 'stealthy') || (g.turn && g.turn.quiet) ? h.idx : null);
     queueTalent(g);
     return true;
   };
@@ -1349,6 +1362,18 @@
         bites.forEach((u) => { g.cards[u] = 'wound'; });
         E.log(g, `${E.heroName(h)} прижигает укус${o === h ? '' : ` у ${E.heroName(o)}`}: Заражение → Рана.`, 'good');
         E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
+        return true;
+      }
+      case 'plug': {
+        const cost = E.plugCost(g, h);
+        if (!Mods.flag(g, h, 'plugAction') || !g.spawnPoints.includes(h.pos) || E.plugged(g, h.pos) || h.energy < cost) return fail(g, 'Заглушить нельзя.');
+        spend(g, h, cost);
+        const rounds = 2 + Mods.value(g, h, 'plugRounds', 0);
+        (g.plugs = g.plugs || {})[h.pos] = g.round + rounds - 1;
+        E.log(g, `${E.heroName(h)} заглушает люк на ${rounds} ${ZG.util.plural(rounds, 'раунд', 'раунда', 'раундов')}.`, 'good');
+        E.fx(g, { t: 'plug', pos: h.pos, hero: h.idx });
+        makeNoise(g, h, h.pos, 1);
+        if (Mods.flag(g, h, 'plugBonus')) { drawCards(g, h, 1); h.block += 1; }
         return true;
       }
       case 'shut': {
@@ -1583,6 +1608,25 @@
         E.fx(g, { t: 'trap', pos: cell });
       },
       barricade(cell, hp) { placeBarricade(g, h, cell, hp); },
+      relayEnergy(n) { g.relayBonus = (g.relayBonus || 0) + n; },
+      pin(uid) { const z = E.zombie(g, uid); if (z) { z.suppressed = true; E.fx(g, { t: 'suppress', pos: z.pos }); } },
+      smoke(cell) {
+        E.zombiesAt(g, cell).forEach((z) => {
+          if (g.stealth && !ZG.Zombies.get(z.type).relentless) { if (z.awake) E.fx(g, { t: 'zsleep', zombie: z.uid, pos: z.pos }); z.awake = false; z.trail = null; }
+          else if (!g.stealth) z.suppressed = true;
+        });
+        if (g.turn) g.turn.noGrip = cell;
+        E.fx(g, { t: 'hidden', hero: h.idx, pos: cell });
+        E.log(g, `${E.heroName(h)}: дымовая завеса!`, 'info');
+      },
+      carry(from, to) {
+        const o = g.heroes.find((x) => x.onBoard && x !== h && x.pos === from);
+        if (o) { moveHero(g, o, to); E.log(g, `${E.heroName(h)} вытаскивает за собой ${E.heroName(o)}.`, 'info'); }
+      },
+      dropWoundFromHand() {
+        const i = h.hand.findIndex((u) => g.cards[u] === 'wound');
+        if (i >= 0) { h.hand.splice(i, 1); E.fx(g, { t: 'heal', hero: h.idx, n: 1, pos: h.pos }); }
+      },
       suppress(cell) {
         E.zombiesAt(g, cell).forEach((z) => { z.suppressed = true; });
         E.fx(g, { t: 'suppress', pos: cell });

@@ -69,11 +69,21 @@
       id: 'sava', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
       hp: 5, hand: 5, energy: 3,
       bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
-      ability: 'Бесшумный', abilityText: 'Бродячие зомби замечают Саву только вблизи (своя или соседняя зона), а в его ход — лишь в конце хода. Двери под ним не скрипят.',
+      ability: 'Бесшумный', abilityText: 'Бродячие зомби не замечают Саву издалека — только из своей или соседней зоны. Двери под ним не скрипят.',
       deck: STARTER.concat(['silent_step', 'shiv', 'pebble', 'lurk']),
       talents: [['sharp', 'softfoot'], ['decoy', 'assassin']],
       mods: { stealthy: 1, silentDoors: 1 },
       art: 'hero_sava',
+    },
+    {
+      id: 'gosha', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
+      hp: 7, hand: 5, energy: 3,
+      bio: 'Бригадир ремонтной бригады. Тихо не умеет, зато умеет закатать в асфальт что угодно.',
+      ability: 'Шумный и Заглушка', abilityText: 'Шумный: бродячие замечают Гошу за 2 зоны даже сквозь стены, укрытие ему не помогает, двери под ним скрипят на 2 зоны. Заглушка (1 ⚡, действие): в зоне с люком — люк молчит 2 раунда. Шум 1.',
+      deck: STARTER.concat(['jackhammer', 'generator', 'cones', 'rebar']),
+      talents: [['weld_seam', 'workwear'], ['foreman', 'overtime']],
+      mods: { loud: 1, plugAction: 1 },
+      art: 'hero_gosha',
     },
   ]);
 
@@ -141,5 +151,10 @@
       id: 'assassin', name: 'Убийца из тени', text: 'Убив бродячего зомби «Ножом в спину», получи +1 ⚡ (раз за ход).',
       hooks: { kill(g, h, ctx) { if (ctx.kind === 'silent' && g.active === h.idx && g.turn && !g.turn.assassin) { g.turn.assassin = true; h.energy += 1; } } },
     },
+    // Гоша
+    { id: 'weld_seam', name: 'Сварной шов', text: 'Заглушка держит на 1 раунд дольше.', mods: { plugRounds: 1 } },
+    { id: 'workwear', name: 'Спецовка', text: '+1 Стойкость.', mods: { hp: 1 } },
+    { id: 'foreman', name: 'Бригадир', text: 'После Заглушки возьми 1 карту и получи 1 Блок.', mods: { plugBonus: 1 } },
+    { id: 'overtime', name: 'Сверхурочные', text: '«Отбойный молоток» стоит 1 ⚡.', mods: { costDelta: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'jackhammer' ? -1 : 0) } },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

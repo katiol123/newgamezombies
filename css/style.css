@@ -574,3 +574,8 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 }
 .setup-modes { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.03); }
 .setup-modes .fog-toggle { margin-top: 0; }
+/* редкость находок */
+.card.r-rare { box-shadow: 0 0 0 2px #4aa3df, 0 0 14px rgba(74,163,223,.45); }
+.card.r-unique { box-shadow: 0 0 0 2px #f0c040, 0 0 18px rgba(240,192,64,.6); }
+.card.r-rare .card-type { color: #2d6fb5; font-weight: bold; }
+.card.r-unique .card-type { color: #b07a10; font-weight: bold; }

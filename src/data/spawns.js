@@ -6,7 +6,7 @@
 (function (G) {
   'use strict';
   const ZG = G.ZG;
-  const W = 'walker', R = 'runner', S = 'screamer', F = 'fatso', B = 'brute';
+  const W = 'walker', R = 'runner', S = 'screamer', F = 'fatso', B = 'brute', P = 'plague', H = 'grabber';
 
   ZG.SpawnCards.addAll([
     { id: 'sp_w1', rows: [[W], [W], [F]] },
@@ -22,6 +22,8 @@
     { id: 'sp_e2', rows: [[], [W], [W]] },
     { id: 'sp_b1', rows: [[], [], [B]] },
     { id: 'sp_b2', rows: [[W], [F], [B]] },
+    { id: 'sp_pl', rows: [[], [P], [P, W]] },
+    { id: 'sp_gr', rows: [[], [H], [H, W]] },
     {
       id: 'sp_sewer', name: 'Канализация', event: true,
       text: 'Из этого люка и из случайного другого выходит по Шатуну.',
@@ -40,6 +42,6 @@
 
   ZG.SPAWN_DECK_L1 = {
     sp_w1: 3, sp_w2: 2, sp_w3: 2, sp_r1: 2, sp_r2: 1, sp_f1: 2, sp_f2: 1,
-    sp_s1: 1, sp_s2: 1, sp_e1: 2, sp_e2: 2, sp_b1: 1, sp_b2: 1, sp_sewer: 1, sp_siren: 1,
+    sp_s1: 1, sp_s2: 1, sp_e1: 2, sp_e2: 2, sp_b1: 1, sp_b2: 1, sp_pl: 2, sp_gr: 2, sp_sewer: 1, sp_siren: 1,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

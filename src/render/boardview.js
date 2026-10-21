@@ -278,6 +278,7 @@
           return nextEv && (nextEv.t === 'zmove' || nextEv.t === 'bash') ? 0 : 420;
         }
         case 'zwave': return 420;
+        case 'plug': { const p = this.cellXY(ev.pos); this._dust(p, 16, '#555'); this._spark(p, 14, '#e0a83a'); this.addShake(5); if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('bash'); return 300; }
         case 'zwake': {
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
@@ -707,6 +708,7 @@
         gl.addColorStop(0, `rgba(200,40,20,${0.25 + pulse * 0.25})`); gl.addColorStop(1, 'rgba(200,40,20,0)');
         ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y, s, 0, TAU); ctx.fill();
         Art.draw(ctx, 'tok_spawn', x - s / 2, y - s / 2, s, s, {});
+        if (ZG.Engine.plugged(g, p)) Art.draw(ctx, 'tok_plug', x - s * 0.55, y - s * 0.55, s * 1.1, s * 1.1, { n: g.plugs[p] - g.round + 1 });
       });
       // выход
       const sc = ZG.Scenarios.get(g.scenarioId);

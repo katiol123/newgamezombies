@@ -44,6 +44,18 @@
       text: 'Крупная цель: урон сохраняется. Броня 1: каждый эффект урона по нему −1.', art: 'z_brute',
     },
     {
+      id: 'plague', name: 'Чумной', hp: 4, dmg: 1, speed: 1, xp: 3, armor: 0, threat: 7, infects: true,
+      text: 'Заразный: каждый его неотражённый укус — Заражение, без броска.', art: 'z_plague',
+    },
+    {
+      id: 'grabber', name: 'Хват', hp: 5, dmg: 1, speed: 1, xp: 3, armor: 1, threat: 6, grip: true,
+      text: 'Длинные руки: выйти из его зоны стоит ещё +1 ⚡ (сверх Хватки). Броня 1.', art: 'z_grabber',
+    },
+    {
+      id: 'hound', name: 'Ищейка', hp: 4, dmg: 2, speed: 2, xp: 5, armor: 0, threat: 9, big: true, relentless: true,
+      text: 'Мёртвый пёс: всегда охотится и чует ближайшего героя на любом расстоянии. Ходит на 2 зоны. Появляется только от события «Ищейка».', art: 'z_hound',
+    },
+    {
       id: 'nest', name: 'Гнездо', hp: 7, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
       text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне (в Глухую ночь — Бегуна).', art: 'z_nest',
       hooks: { zombiePhase(g, z, E) { const t = E.phase(g) >= 2 ? 'runner' : 'walker'; E.spawnZombie(g, t, z.pos, 'Гнездо порождает: ' + ZG.Zombies.get(t).name); } },
@@ -79,6 +91,11 @@
     {
       id: 'turned_sava', name: 'Сава-Обращённый', hp: 5, dmg: 1, speed: 2, xp: 4, armor: 0, threat: 8, big: true, turned: 'sava',
       text: 'Безжалостный: всегда охотится и не теряет след; ходит на 2 зоны.', art: 'z_turned_sava', relentless: true,
+    },
+    {
+      id: 'turned_gosha', name: 'Гоша-Обращённый', hp: 7, dmg: 2, speed: 1, xp: 5, armor: 1, threat: 9, big: true, turned: 'gosha',
+      text: 'Гремит: в фазу зомби Тревога +1. Броня 1.', art: 'z_turned_gosha',
+      hooks: { zombiePhase(g, z, E) { E.raiseAlarm(g, 1, 'Гоша-Обращённый гремит'); } },
     },
   ]);
 

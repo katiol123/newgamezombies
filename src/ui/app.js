@@ -872,6 +872,7 @@
         }, ' gold');
       }
       if (g.board.cells[h.pos].bld) icon('door', 'Закрыть двери', 1, has('shut'), E.sheltered(g, h) ? 'вы уже в укрытии' : h.energy < 1 ? lack(1) : 'все двери уже закрыты', () => this.act({ t: 'shut' }));
+      if (ZG.Mods.flag(g, h, 'plugAction')) icon('plug', 'Заглушка', E.plugCost(g, h), has('plug'), !g.spawnPoints.includes(h.pos) ? 'встаньте в зону с люком' : E.plugged(g, h.pos) ? 'люк уже заглушен' : lack(E.plugCost(g, h)), () => this.act({ t: 'plug' }), ' gold');
       const burns = legal.filter((a) => a.t === 'burn');
       if (burns.length) icon('cleanse', 'Прижечь укус', 2, true, '', async () => {
         const opts = burns.map((a) => a.hero);
@@ -1035,6 +1036,7 @@
       case 'punch': return 'ударить кулаком';
       case 'barricade': return 'поставить баррикаду';
       case 'heal': return 'обработать раны';
+      case 'plug': return 'заглушить люк (2 раунда без зомби отсюда)';
       case 'shut': return 'закрыть двери помещения (укрытие: дальние зомби вас не видят)';
       case 'burn': return 'прижечь укус (Заражения в руке → Раны)';
       case 'cleanse': return 'обеззаразить укус (Заражения в руке → Раны)';
@@ -1088,7 +1090,7 @@
     }
     if (cell === g.exit) parts.push(`<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} ${E.isComplete(g) ? '— ОТКРЫТА' : '— закрыта, пока не выполнена цель'}</div>`);
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
-    if (g.spawnPoints.includes(cell)) parts.push('<div class="tt-red">Точка появления зомби</div>');
+    if (g.spawnPoints.includes(cell)) parts.push(E.plugged(g, cell) ? `<div class="tt-gold">Люк заглушен: молчит ещё ${g.plugs[cell] - g.round + 1} р.</div>` : '<div class="tt-red">Точка появления зомби</div>');
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
     const s = g.search.find((x) => x.pos === cell);
