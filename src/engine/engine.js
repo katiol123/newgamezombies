@@ -219,6 +219,7 @@
     const cnt = { gone: 0, lair: 0, ambush: 0, tracks: 0 };
     list.forEach((d) => {
       cnt[d.kind]++;
+      if (d.kind === 'gone') (g.decoyBag = g.decoyBag || []).push('gone'); // «Ушли» возвращается в мешок
       if (d.kind === 'lair') {
         g.search.push({ pos: d.pos, kind: 'armory' });
         E.fx(g, { t: 'objective', pos: d.pos, text: 'ЛОГОВО' });
@@ -643,7 +644,12 @@
   // ============================================================== зомби
   // Пустышки: в тумане за каждого зомби кладутся 2 жетона лицом вниз — каждый 50/50 зомби или пустышка.
   // Пустышки (мешок 20 шт.): 17 «Ушли», 1 «Логово», 1 «Засада сверху», 1 «Следы».
-  function rollDecoy(g) { const r = Rng.int(g, 20); return r === 0 ? 'lair' : r === 1 ? 'ambush' : r === 2 ? 'tracks' : 'gone'; }
+  // мешок пустышек (без возвращения): 17 «Ушли», по одной особой; «Ушли» при открытии возвращается в мешок, особые — выходят из игры
+  function rollDecoy(g) {
+    if (!g.decoyBag) g.decoyBag = Array(17).fill('gone').concat(['lair', 'ambush', 'tracks']);
+    if (!g.decoyBag.length) return null;
+    return g.decoyBag.splice(Rng.int(g, g.decoyBag.length), 1)[0];
+  }
   E.decoysOn = (g, ti) => (g.decoys || []).filter((d) => g.board.cells[d.pos].tile === ti);
   // сколько жетонов лежит стопкой на закрытом тайле (зомби + пустышки)
   E.fogTokens = (g, ti, mobileOnly) => g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && (!mobileOnly || !ZG.Zombies.get(z.type).immobile)).length + E.decoysOn(g, ti).length;
@@ -653,7 +659,7 @@
       let first = null;
       for (let k = 0; k < 2; k++) {
         if (Rng.int(g, 2) === 0) { const z = E.spawnZombie(g, type, pos, null, true, true); first = first || z; }
-        else { (g.decoys = g.decoys || []).push({ pos, kind: rollDecoy(g) }); E.fx(g, { t: 'spawn', pos, decoy: true }); }
+        else { const kind = rollDecoy(g); if (kind) { (g.decoys = g.decoys || []).push({ pos, kind }); E.fx(g, { t: 'spawn', pos, decoy: true }); } }
       }
       if (why && !silent) E.log(g, why + '.', 'warn');
       return first;
@@ -751,12 +757,11 @@
   E.redrawMission = function (g, h) {
     if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || !g.missionDeck.length) return false;
     const old = h.mission;
+    const i = g.missionDeck.findIndex((id) => id !== old && E.missionFits(g, ZG.Missions.get(id)));
+    if (i < 0) return false; // подходящих карт нет — смена не тратится
+    const id = g.missionDeck.splice(i, 1)[0];
     g.missionDeck.push(old);
-    for (let guard = 0; guard < 30; guard++) {
-      const id = g.missionDeck.shift(), m = ZG.Missions.get(id);
-      if (id === old || !E.missionFits(g, m)) { g.missionDeck.push(id); continue; }
-      h.mission = id; break;
-    }
+    h.mission = id;
     h.missionRedrawn = true; h.ms = {};
     E.log(g, `${E.heroName(h)} меняет секретную миссию.`, 'dim');
     return true;
@@ -1333,7 +1338,7 @@
       });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
-    if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn) out.push({ t: 'mredraw' });
+    if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
     if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
