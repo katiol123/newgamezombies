@@ -1069,8 +1069,10 @@
       if (this.camp) {
         // итоги сразу вносятся в кампанию (даже если игрок уйдёт в меню)
         const camp = this.camp;
-        CMP.finishMission(camp.c, g);
+        const rep = CMP.finishMission(camp.c, g);
         camp.c.game = null;
+        const got = Object.values(rep.heroes).reduce((s, x) => s + x.talons, 0);
+        $('#end-seed').insertAdjacentHTML('beforeend', `<div class="end-camp">Кампания: миссия ${rep.missionNo} из ${camp.c.chainLength}${got ? ` · заработано ${got} 🎫` : ''}${camp.c.status === 'over' ? ' · <b>кампания окончена</b>' : camp.c.status === 'won' ? ' · <b>кампания пройдена!</b>' : ''}</div>`);
         CMP.save(camp.c, camp.slot);
         this.camp = null;
         $('#btn-again').onclick = () => Shelter.show();
@@ -1537,18 +1539,33 @@
       const prev = (c.lastSquad || []).filter((id) => CMP.hero(c, id));
       this.squad = prev.concat(c.roster.map((h) => h.id).filter((id) => !prev.includes(id))).slice(0, c.squad);
       $('#btn-shelter-menu').onclick = () => App.show('menu');
-      $('#btn-shelter-go').onclick = () => this.go();
       this.render();
       App.show('shelter');
     },
     save() { CMP.save(App.campaign.c, App.campaign.slot); },
     act(fn) { const err = fn(); if (err) toast(err); else this.save(); this.render(); },
-    go() {
+    async go() {
       const c = App.campaign.c;
       if (this.squad.length !== c.squad) return toast(`В поход идут ровно ${c.squad} ${ZG.util.plural(c.squad, 'герой', 'героя', 'героев')}.`);
       if (c.players === 2) {
         const sq = this.squad.map((id) => CMP.hero(c, id));
         if (!sq.some((h) => h.player === 1 && !h.ai) || !sq.some((h) => h.player === 2 && !h.ai)) return toast('У каждого игрока в отряде должен быть герой не под ИИ.');
+      }
+      const empty = this.squad.map((id) => CMP.hero(c, id)).filter((h) => !h.equip.length && h.chest.length);
+      if (empty.length) {
+        const v = await Modal.show(`<h2>Экипировка пуста</h2><p>${empty.map((h) => esc(ZG.Heroes.get(h.id).name)).join(', ')}: в сундуке есть карты, но в поход ничего не взято. Взять лучшие карты из сундука?</p><p class="muted">Экипированные карты изнашиваются: после похода они станут «на грани поломки».</p>`,
+          [{ label: 'Взять лучшие', value: 'fill', cls: 'primary' }, { label: 'Идти так', value: 'go' }, { label: 'Отмена' }]);
+        if (!v) return;
+        if (v === 'fill') {
+          empty.forEach((h) => {
+            while (h.equip.length < CMP.equipCap(h) && h.chest.length) {
+              let best = 0;
+              h.chest.forEach((it, i) => { if (!it.worn && (h.chest[best].worn || (ZG.Cards.get(it.id).value || 0) > (ZG.Cards.get(h.chest[best].id).value || 0))) best = i; });
+              CMP.move(c, h.id, 'chest', best, 'equip');
+            }
+          });
+          this.save();
+        }
       }
       Game.startCampaignMission(this.squad.slice());
     },
@@ -1558,8 +1575,10 @@
       $('#shelter-sub').innerHTML = done
         ? `<b class="${c.status}">${c.status === 'won' ? 'КАМПАНИЯ ПРОЙДЕНА' : 'КАМПАНИЯ ОКОНЧЕНА'}</b> — ${esc(c.endReason || '')}`
         : `Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
-      $('#btn-shelter-go').style.display = done ? 'none' : '';
-      $('#btn-shelter-go').textContent = `В поход: миссия ${c.missionNo + 1} ▶`;
+      $('#btn-shelter-go').style.display = '';
+      $('#btn-shelter-go').onclick = done ? () => App.newCampaign(App.campaign.slot) : () => this.go();
+      $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
+      if (done) $('#shelter-sub').insertAdjacentHTML('beforeend', `<div class="camp-sum">Пройдено миссий: <b>${c.missionNo - (c.status === 'over' ? 1 : 0)} из ${c.chainLength}</b>${c.fallen.length ? ` · выбыли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}` : ''}${c.roster.length ? ` · выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ')}` : ''}</div>`);
       this.renderReport(c);
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
@@ -1574,7 +1593,7 @@
       const name = (id) => esc(ZG.Heroes.get(id).name);
       box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
-        <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'}</div>`).join('')}</div>`;
+        <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },
     heroCard(c, h, done) {
       const def = ZG.Heroes.get(h.id), CFG = ZG.CAMPAIGN;
@@ -1596,7 +1615,8 @@
       ['equip', 'chest', 'junk'].forEach((list) => {
         const capN = list === 'equip' ? CMP.equipCap(h) : list === 'chest' ? CMP.chestCap(h) : null;
         const row = el('div', 'sh-row ' + list);
-        row.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : h[list].length ? ' — продастся при выходе' : ''}`));
+        const junkSum = list === 'junk' ? h.junk.reduce((sum, it) => sum + (CMP.price(it.id) || 0), 0) : 0;
+        row.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : h[list].length ? ` — продастся при выходе ≈ +${junkSum} 🎫` : ''}`));
         const cards = el('div', 'sh-cards');
         h[list].forEach((it, i) => {
           const d = ZG.Cards.get(it.id);
@@ -1636,7 +1656,7 @@
       ['equip', 'chest', 'junk'].filter((l) => l !== list).forEach((l) => btns.push({ label: { equip: 'В экипировку', chest: 'В сундук', junk: 'В хлам' }[l], value: 'mv:' + l }));
       const p = CMP.price(it.id);
       if (p != null) btns.push({ label: `Продать (+${p} 🎫)`, value: 'sell' });
-      if (it.worn) btns.push({ label: `Починить (${CFG.prices.repair} 🎫)${CMP.built(h, 'workshop') ? '' : ' — нужна Мастерская'}`, value: 'repair' });
+      if (it.worn) btns.push({ label: `Починить (${CMP.repairPrice(it.id)} 🎫)${CMP.built(h, 'workshop') ? '' : ' — нужна Мастерская'}`, value: 'repair' });
       if (c.roster.length > 1) btns.push({ label: 'Передать…', value: 'give' });
       btns.push({ label: 'Закрыть', cls: 'primary' });
       const cel = CV.card(d);
@@ -1654,8 +1674,8 @@
       }
     },
     async buildMenu(c, h) {
-      const rows = ZG.Buildings.all().map((b) => `<div class="bld-row${CMP.built(h, b.id) ? ' have' : ''}"><b>${esc(b.name)}</b> <small>${b.cost} 🎫</small><div>${esc(b.text)}</div></div>`).join('');
-      const btns = ZG.Buildings.all().filter((b) => !CMP.built(h, b.id)).map((b) => ({ label: `${b.name} (${b.cost} 🎫)`, value: b.id }));
+      const rows = ZG.Buildings.all().map((b) => { const have = CMP.built(h, b.id), poor = !have && h.talons < b.cost; return `<div class="bld-row${have ? ' have' : ''}${poor ? ' poor' : ''}"><b>${esc(b.name)}</b> <small>${b.cost} 🎫${poor ? ` — не хватает ${b.cost - h.talons} 🎫` : ''}</small><div>${esc(b.text)}</div></div>`; }).join('');
+      const btns = ZG.Buildings.all().filter((b) => !CMP.built(h, b.id) && h.talons >= b.cost).map((b) => ({ label: `${b.name} (${b.cost} 🎫)`, value: b.id }));
       btns.push({ label: 'Закрыть', cls: 'primary' });
       const v = await Modal.show(`<div class="kicker">Личное убежище — ${esc(ZG.Heroes.get(h.id).name)} · 🎫 ${h.talons}</div><h2>Постройки</h2><div class="bld-list">${rows}</div>`, btns, null, 'wide');
       if (v) this.act(() => CMP.build(c, h.id, v));

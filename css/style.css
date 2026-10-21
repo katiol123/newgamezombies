@@ -449,7 +449,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .modal-box h2 { font-family: var(--font-d); margin: 4px 0 10px; font-size: 24px; }
 .kicker { font-family: var(--font-d); font-size: 12px; letter-spacing: .3em; color: var(--amber); }
 .kicker.red { color: #ff6a5a; } .kicker.gold { color: var(--gold); }
-.modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+.modal-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 .confirm { font-size: 17px; }
 .block-cards { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 10px; padding-top: 14px; }
 .block-info { text-align: center; font-size: 17px; }
@@ -777,3 +777,8 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 }
 
 .rep-brief { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(232,220,192,.15); color: var(--paper); font-style: italic; }
+
+.rep-sum { color: var(--gold); white-space: nowrap; }
+.bld-row.poor { opacity: .55; }
+.camp-sum { margin-top: 4px; color: var(--paper); }
+.end-camp { margin-top: 8px; color: var(--gold); }

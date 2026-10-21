@@ -51,6 +51,8 @@
     if (d.campaignOnly) return null; // уникальные карты кампании не продаются
     return CFG().prices.sell[d.rarity || 'common'];
   };
+  C.repairPrice = (id) => { const r = CFG().prices.repair; return typeof r === 'number' ? r : r[ZG.Cards.get(id).rarity || 'common']; };
+  C.sellValue = (h) => h.chest.concat(h.junk, h.equip).reduce((s, it) => s + (C.price(it.id) || 0), 0);
   C.mission = (c) => ({ no: c.missionNo + 1, total: c.chainLength });
   C.missionDef = (c) => CFG().chain[Math.min(c.missionNo, CFG().chain.length - 1)] || {};
 
@@ -201,7 +203,7 @@
   C.hireable = (c) => ZG.Heroes.all().map((d) => d.id).filter((id) => !C.hero(c, id) && !c.fallen.includes(id) && !c.wanderers.includes(id));
   C.checkSquad = function (c) {
     if (c.status !== 'ready' || c.roster.length >= c.squad) return true;
-    const can = C.hireable(c).length && c.roster.some((h) => h.talons >= CFG().prices.hire);
+    const can = C.hireable(c).length && c.roster.some((h) => h.talons + C.sellValue(h) >= CFG().prices.hire);
     if (!can) { c.status = 'over'; c.endReason = 'Отряд не собрать: героев не хватает, а талонов на наём нет.'; }
     return !!can;
   };
@@ -242,8 +244,9 @@
     return null;
   };
   C.repair = function (c, heroId, from, idx) {
-    const h = C.hero(c, heroId), it = h && h[from] && h[from][idx], p = CFG().prices.repair;
+    const h = C.hero(c, heroId), it = h && h[from] && h[from][idx];
     if (!it || !it.worn) return 'Карта не нуждается в ремонте.';
+    const p = C.repairPrice(it.id);
     if (!C.built(h, 'workshop')) return 'Нужна Мастерская.';
     if (h.talons < p) return 'Не хватает талонов.';
     h.talons -= p; it.worn = false;
@@ -260,6 +263,7 @@
   // Наём: платит один герой. Ему — подарок новичка (уникальная карта героя) и долг на 3 миссии новичка.
   C.hire = function (c, payerId, newId) {
     const payer = C.hero(c, payerId), P = CFG().prices;
+    if (c.status !== 'ready') return 'Кампания не в убежище.';
     if (!payer) return 'Нет такого героя.';
     if (!C.hireable(c).includes(newId)) return 'Этого героя нельзя нанять.';
     if (c.roster.length >= c.squad + 2) return 'Убежище переполнено (не больше размера отряда +2).';
@@ -273,9 +277,9 @@
     const gift = ZG.Heroes.get(newId).gift;
     if (gift && ZG.Cards.has(gift)) (payer.chest.length < C.chestCap(payer) ? payer.chest : payer.junk).push(item(c, gift));
     h.debt = { to: payer.id, left: 3 };
+    h.talons = P.hireTalons || 0;
     c.roster.push(h);
     payer.morale = Math.min(CFG().morale.max, payer.morale + 1);
-    if (c.status === 'over' && c.roster.length >= c.squad) c.status = 'ready';
     return null;
   };
   C.setControl = function (c, heroId, player, ai) {
