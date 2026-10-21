@@ -137,6 +137,8 @@
       $('#setup-seed').value = s.seed || '';
       $('#setup-fog').checked = s.fog !== false;
       $('#setup-fog').onchange = (ev) => { s.fog = ev.target.checked; };
+      $('#setup-missions').checked = s.missions !== false;
+      $('#setup-missions').onchange = (ev) => { s.missions = ev.target.checked; };
       $('#setup-stealth').checked = s.stealth !== false;
       $('#setup-stealth').onchange = (ev) => { s.stealth = ev.target.checked; };
       $('#setup-seed').oninput = (ev) => { s.seed = ev.target.value.trim(); };
@@ -153,6 +155,7 @@
           difficultyId: s.difficulty,
           fog: s.fog !== false,
           stealth: s.stealth !== false,
+          missions: s.missions !== false,
           players: s.players,
         });
       };
@@ -230,6 +233,7 @@
       this.g = g;
       this.logSeen = 0;
       this.lastPlayer = null;
+      this.seenMission = {};
       $('#log').innerHTML = '';
       this.paused = false;
       $('#btn-pause').textContent = '⏸';
@@ -735,7 +739,8 @@
             ${h.adrenaline ? `<span title="Адреналин">+${h.adrenaline}⚡</span>` : ''}
             ${h.hidden ? '<span>👻</span>' : ''}
           </div>
-          ${h.talents.length ? `<div class="hp-talents">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
+          ${this.missionLine(h)}
+          ${h.talents.length || (h.perks || []).length ? `<div class="hp-talents">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).concat((h.perks || []).map((id) => '✦ ' + esc(ZG.Missions.get(id).perk.name))).join(' · ')}</div>` : ''}
           ${h.equip.length ? `<div class="hp-equip">${h.equip.map((u) => esc(E.cardDef(g, u).name)).join(' · ')}</div>` : ''}`;
         c.appendChild(info);
         c.onclick = () => {
@@ -744,6 +749,26 @@
         };
         box.appendChild(c);
       });
+    },
+
+    // секретная миссия: своя видна только своему игроку (и только человеку); выполненная — всем
+    canSeeMission(h) {
+      const g = this.g;
+      if (h.ai) return false;
+      if (this.players !== 2) return true;
+      const cur = g.active != null ? g.heroes[g.active] : null;
+      return !!cur && !cur.ai && cur.player === h.player;
+    },
+    missionLine(h) {
+      const g = this.g;
+      if (!g.missions || !h.mission) return '';
+      const m = ZG.Missions.get(h.mission);
+      if (h.missionDone) {
+        const won = g.missionFirst === h.idx;
+        return `<div class="hp-mission ${won ? 'won' : 'late'}" title="${esc(m.text)}">${won ? '✦' : '✗'} ${esc(m.name)}${m.traitor && won ? ' — ПРЕДАТЕЛЬ' : ''}${won ? '' : ' (не первым)'}</div>`;
+      }
+      if (!this.canSeeMission(h)) return `<div class="hp-mission hidden" title="Секретная миссия — видна только её владельцу">🂠 секретная миссия</div>`;
+      return `<div class="hp-mission mine" title="${esc(m.text)}\nНаграда (только первому): ${esc(m.rewardText)}">🂠 ${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}${g.missionFirst != null ? ' · награда уже ушла' : ''}</div>`;
     },
 
     refreshHand() {
@@ -913,6 +938,7 @@
       clearTimeout(toast._t); $('#toast').classList.remove('show'); // старые подсказки не висят поверх итогов
       const r = g.result;
       const scr = $('#screen-end');
+      const old = $('#end-missions'); if (old) old.remove();
       scr.className = 'screen ' + (r.win ? 'win' : 'lose');
       $('#end-title').textContent = r.win ? 'ВЫ ВЫЖИЛИ' : 'КВАРТАЛ ПАЛ';
       $('#end-reason').textContent = r.reason;
@@ -937,9 +963,11 @@
         <div><b>${st.chains}</b><span>связок</span></div>
         <div><b>${st.waves}</b><span>волн</span></div>
         <div><b>${st.searches}</b><span>обысков</span></div>`;
+      // раскрытие секретных миссий
+      if (g.missions) $('#end-stats').insertAdjacentHTML('afterend', `<div class="end-missions" id="end-missions">${g.heroes.filter((h) => h.mission).map((h) => { const m = ZG.Missions.get(h.mission); return `<span class="${g.missionFirst === h.idx ? 'won' : ''}">${esc(E.heroName(h))}: «${esc(m.name)}» ${h.missionDone ? (g.missionFirst === h.idx ? '✦ первым' : '✓ поздно') : `${E.missionProgress(g, h)}/${m.goal}`}</span>`; }).join('')}</div>`);
       $('#end-seed').textContent = `Сид: ${g.seed} · ${E.scenario(g).name} · ${ZG.Conditions.get(g.conditionId).name} · ${ZG.Difficulties.get(g.difficultyId).name}`;
-      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, players: this.players });
-      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, players: this.players });
+      $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, missions: g.missions, players: this.players });
+      $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, missions: g.missions, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
       App.show('end');
     },
@@ -960,6 +988,11 @@
     async turn(ev) {
       const h = this.g.heroes[ev.hero];
       this.refresh();
+      if (this.g.missions && h.mission && !h.ai && !h.missionDone && !(this.seenMission || {})[h.idx] && this.canSeeMission(h)) {
+        (this.seenMission = this.seenMission || {})[h.idx] = true;
+        const m = ZG.Missions.get(h.mission);
+        await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше.</p>`, [{ label: 'Понятно', cls: 'primary' }]);
+      }
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
         this.lastPlayer = h.player;
@@ -992,6 +1025,13 @@
       this.refreshHeroes();
       toast(`☣ ${E.heroName(this.g.heroes[ev.hero])}: укус! Заражение ×${ev.n} в руке — вылечите до конца своего хода, иначе обращение (аптечка, Марина или «Прижечь укус», 2 ⚡).`, 5000);
       await sleep(250);
+    },
+    async mission(ev) {
+      const h = this.g.heroes[ev.hero], m = ZG.Missions.get(ev.id);
+      this.refreshHeroes();
+      if (!ev.rewarded) { toast(`${E.heroName(h)} выполнил миссию «${m.name}», но не первым — без награды.`, 4000); return; }
+      await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
+      toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
     },
     async infectTick(ev) { this.view.play([ev]); this.refreshHeroes(); await sleep(300); },
     async turn_hero(ev) {

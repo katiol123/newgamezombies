@@ -44,6 +44,7 @@
   ZG.Difficulties = makeRegistry('difficulty');
   ZG.Bonuses = makeRegistry('bonus');
   ZG.Events = makeRegistry('event');
+  ZG.Missions = makeRegistry('mission');
 
   // ---------------------------------------------------------------------------
   // Детерминированный ГСЧ (mulberry32). Состояние лежит в объекте игры,
@@ -89,6 +90,7 @@
       if (hero) {
         list.push(ZG.Heroes.get(hero.id));
         hero.talents.forEach((t) => list.push(ZG.Talents.get(t)));
+        (hero.perks || []).forEach((id) => list.push(ZG.Missions.get(id).perk)); // пассивки за секретные миссии
         hero.equip.forEach((uid) => list.push(ZG.Cards.get(g.cards[uid])));
       }
       if (g.conditionId) list.push(ZG.Conditions.get(g.conditionId));

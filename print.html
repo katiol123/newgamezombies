@@ -58,6 +58,7 @@
 <script src="src/data/spawns.js"></script>
 <script src="src/data/scenarios.js"></script>
 <script src="src/data/events.js"></script>
+  <script src="src/data/missions.js"></script>
 <script src="src/data/levels.js"></script>
 <script src="src/engine/board.js"></script>
 <script src="src/render/art.js"></script>
@@ -128,6 +129,7 @@
   wideSheets('Задания', lvl.scenarios.map((id) => CV.scenarioCard(id)));
   wideSheets('Условия партии', lvl.conditions.map((id) => CV.conditionCard(id)));
   wideSheets('События раунда', lvl.events.map((id) => CV.eventCard(id)));
+  wideSheets('Секретные миссии', ZG.MISSION_DECK.map((id) => CV.missionCard(id)));
   wideSheets('Бонусные цели', lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; return d; }));
 
   // ---------------------------------------------------- планшеты героев

@@ -204,6 +204,14 @@
     return c;
   }
 
+  function missionCard(id) {
+    const m = ZG.Missions.get(id);
+    const c = el('div', 'scen-card mission-card' + (m.rarity === 'rare' ? ' rare' : '') + (m.traitor ? ' traitor' : ''));
+    const req = [m.needsAlly && 'нужен союзник', m.needsStealth && 'нужна скрытность', m.needsFog && 'нужен туман'].filter(Boolean);
+    c.innerHTML = `<div class="scen-kicker">СЕКРЕТНАЯ МИССИЯ${m.rarity === 'rare' ? ' · РЕДКАЯ' : ''}</div><div class="scen-name">${esc(m.name)}</div><div class="scen-brief">${esc(m.text)}</div>${req.length ? `<div class="scen-setup"><b>⚑ ${esc(req.join(', '))}</b></div>` : ''}<div class="scen-short">Награда (только первому): ${esc(m.rewardText)}</div><div class="scen-setup">Прогресс: ${'□ '.repeat(m.goal)}</div>`;
+    return c;
+  }
+
   function scenarioCard(id) {
     const def = ZG.Scenarios.get(id);
     const c = el('div', 'scen-card');
@@ -232,5 +240,5 @@
     if (c.isConnected) run(); else requestAnimationFrame(run);
   }
 
-  ZG.CardView = { eventCard, fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
+  ZG.CardView = { missionCard, eventCard, fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

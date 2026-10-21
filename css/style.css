@@ -579,3 +579,13 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .card.r-unique { box-shadow: 0 0 0 2px #f0c040, 0 0 18px rgba(240,192,64,.6); }
 .card.r-rare .card-type { color: #2d6fb5; font-weight: bold; }
 .card.r-unique .card-type { color: #b07a10; font-weight: bold; }
+/* секретные миссии */
+.hp-mission { font-size: 12px; margin-top: 2px; color: var(--muted); }
+.hp-mission.mine { color: #c9b78f; }
+.hp-mission.won { color: #f0c040; font-weight: bold; }
+.hp-mission.late { color: #8a7a6a; text-decoration: line-through; }
+.end-missions { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; max-width: 760px; margin: 14px auto 0; font-family: var(--font-t); color: #c9b78f; animation: fadeUp .6s 1.8s both; }
+.end-missions .won { color: #f0c040; font-weight: bold; }
+.mission-card { border-color: #6b5b95 !important; }
+.mission-card.rare { box-shadow: inset 0 0 0 2px #4aa3df; }
+.mission-card.traitor { box-shadow: inset 0 0 0 2px #c0392b; }

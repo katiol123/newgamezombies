@@ -73,6 +73,25 @@
       seen.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
     s += g.traps.length * W.trap;
+    // секретная миссия героя, который сейчас ходит: прогресс ценен, пока никто не успел первым
+    const fh = g.missions && g.turnHero != null ? g.heroes[g.turnHero] : null;
+    if (fh && fh.mission) {
+      const m = ZG.Missions.get(fh.mission);
+      if (g.missionFirst === fh.idx) s += 350;
+      else if (g.missionFirst == null && !fh.missionDone) {
+        s += (E.missionProgress(g, fh) / m.goal) * 260;
+        if (m.traitor) {
+          // предатель: разбуженные им зомби рядом с союзниками
+          let n = 0;
+          g.zombies.forEach((z) => {
+            if (z.wokenBy !== fh.idx || n >= 3) return;
+            const d = E.distV(g, z.pos);
+            if (g.heroes.some((o) => o.onBoard && o !== fh && d[o.pos] <= E.zombieSpeed(g, z))) n++;
+          });
+          s += n * 50;
+        }
+      }
+    }
     // заглушенные люки: каждый раунд тишины — меньше зомби
     Object.keys(g.plugs || {}).forEach((k) => { const left = g.plugs[k] - g.round + 1; if (left > 0) s += left * 45; });
     g.heroes.forEach((h) => {
@@ -167,7 +186,10 @@
 
   function candidateActions(g) {
     // give: ИИ передаёт только грузы — иначе слишком широкий перебор
-    return E.legal(g).filter((a) => a.t !== 'give' || ZG.Cards.get(g.cards[a.card]).kind === 'cargo');
+    // «Ангел-хранитель» передаёт карты охотно, остальные — только грузы
+    const h = g.active != null ? g.heroes[g.active] : null;
+    const angel = h && h.mission === 'm_angel' && !h.missionDone && g.missionFirst == null;
+    return E.legal(g).filter((a) => a.t !== 'give' || angel || ZG.Cards.get(g.cards[a.card]).kind === 'cargo');
   }
 
   function bestAction(g, opts) {
