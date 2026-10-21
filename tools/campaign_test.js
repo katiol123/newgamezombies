@@ -159,5 +159,32 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.zombies.filter((z) => z.type === 'brute').length === 3, 'босс появился сверх лимита жетонов');
 }
 
+// 13) износ: шанс поломки — худший из двух владельцев (передача «Рукастому» не помогает)
+{
+  const rate = (startHandy, endHandy, give) => {
+    let broke = 0;
+    for (let k = 0; k < 400; k++) {
+      const c = C.create({ heroes: [{ id: 'boris' }, { id: 'lisa' }], seed: 't13-' + k + startHandy + endHandy + give });
+      const b = C.hero(c, 'boris'), l = C.hero(c, 'lisa');
+      if (startHandy) b.talents.push('sh_handy');
+      if (endHandy) l.talents.push('sh_handy');
+      b.equip.push({ key: 'kw', id: 'crowbar', worn: true });
+      const opts = C.startMission(c, ['boris', 'lisa']); opts.quiet = true;
+      const g = E.create(opts);
+      const gb = g.heroes[0], gl = g.heroes[1];
+      const u = Object.keys(g.carried).find((x) => g.carried[x] === 'kw');
+      if (give) { for (const pile of ['deck', 'hand', 'discard']) { const i = gb[pile].indexOf(u); if (i >= 0) gb[pile].splice(i, 1); } gl.hand.push(u); }
+      g.result = { win: true, stars: 1 };
+      C.finishMission(c, g);
+      if (!C.hero(c, 'boris').chest.concat(C.hero(c, 'lisa').chest, b.junk, l.junk).some((it) => it.key === 'kw')) broke++;
+    }
+    return broke / 400;
+  };
+  const own = rate(true, false, false), toHandy = rate(false, true, true), fromHandy = rate(true, false, true);
+  ok(own < 0.33, `Рукастый донёс сам: ломается ${Math.round(own * 100)}% (≈25%)`);
+  ok(toHandy > 0.42, `передал Рукастому в бою: ${Math.round(toHandy * 100)}% (≈50%)`);
+  ok(fromHandy > 0.42, `Рукастый взял, отдал в бою другому: ${Math.round(fromHandy * 100)}% (≈50%)`);
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

@@ -226,7 +226,19 @@
       this.view.onClick = (p) => this.onBoardClick(p);
       this.view.onHover = (h, changed) => this.onBoardHover(h, changed);
       $('#btn-end').onclick = () => this.endTurn();
-      $('#btn-menu').onclick = () => Modal.confirm('Выйти в меню? Партия сохранится.', () => { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); $('#btn-continue').style.display = ''; });
+      $('#btn-menu').onclick = async () => {
+        if (!this.camp) return Modal.confirm('Выйти в меню? Партия сохранится.', () => { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); });
+        // кампания: выход и отладочное завершение миссии (для проверки убежища без прохождения)
+        const v = await Modal.show('<h2>Меню</h2><p>Миссия кампании сохранится в слоте.</p><p class="muted">🛠 Отладка: завершить миссию сразу — чтобы проверить переходы, покупки, износ и мораль.</p>',
+          [{ label: 'Выйти в меню', value: 'exit' }, { label: '🛠 Победа ★', value: 'w1' }, { label: '🛠 Победа ★★', value: 'w2' }, { label: '🛠 Победа ★★★', value: 'w3' }, { label: '🛠 Провал', value: 'lose' }, { label: 'Отмена', cls: 'primary' }]);
+        if (v === 'exit') { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); return; }
+        if (v && this.g && !this.g.result) {
+          const g = this.g, win = v !== 'lose';
+          g.result = { win, stars: win ? +v.slice(1) : 0, reason: win ? 'Отладка: миссия засчитана' : 'Отладка: миссия провалена', round: g.round };
+          g.phase = 'over'; g.pending = null; g.active = null; g.turn = null;
+          this.gameOver();
+        }
+      };
       $('#btn-rules-in').onclick = () => Rules.open();
       $('#btn-hint').onclick = () => this.hint();
       $('#btn-auto').onclick = () => this.autoTurn();
