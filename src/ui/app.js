@@ -223,7 +223,7 @@
       sb.onclick = () => { ZG.Sound.toggle(); showSound(); if (!ZG.Sound.muted) ZG.Sound.play('growl', { volume: 0.5 }); };
       // режим «стол»: поле под углом, как настоящая коробка на столе
       const tb = $('#btn-table');
-      const applyTable = () => { const on = store.get('table', false); document.querySelector('.board-wrap').classList.toggle('table', on); tb.classList.toggle('on', on); if (this.view) { this.view.table = on; this.view.resize(); } };
+      const applyTable = () => { const on = store.get('table', false) && innerWidth >= 900; document.querySelector('.board-wrap').classList.toggle('table', on); tb.classList.toggle('on', on); if (this.view) { this.view.table = on; this.view.resize(); } };
       tb.onclick = () => { store.set('table', !store.get('table', false)); applyTable(); };
       this.applyTable = applyTable;
       $('#deck-pile').onclick = () => this.showPile('deck');
@@ -733,19 +733,25 @@
         pw.appendChild(el('span', 'hp-lvl', String(h.level)));
         c.appendChild(pw);
         // треки: Стойкость (фишки-сердца в ячейках) и опыт (фишка скользит по шкале)
-        this.heroPrev = this.heroPrev || {};
-        const prev = this.heroPrev[h.idx];
+        // панель перерисовывается часто: изменение запоминаем на время анимации и продолжаем её
+        // (отрицательный animation-delay), а не обнуляем при следующей перерисовке
+        this.heroPrev = this.heroPrev || {}; this.heroAnim = this.heroAnim || {};
         const okN = hp - w - inf;
+        const last = this.heroPrev[h.idx], now = performance.now();
+        if (last && (last.ok !== okN || last.inf !== inf || last.xp !== h.xp)) this.heroAnim[h.idx] = { t0: now, base: last, hit: okN < last.ok };
+        this.heroPrev[h.idx] = { ok: okN, inf, xp: h.xp };
+        const an = this.heroAnim[h.idx], el0 = an ? now - an.t0 : Infinity;
+        const prev = el0 < 1000 ? an.base : null, dl = prev ? ` style="animation-delay:-${Math.round(el0)}ms"` : '';
         const pips = [];
         for (let i = 0; i < hp; i++) {
           const st = i < okN ? 'ok' : i < hp - w ? 'inf' : 'hurt';
           const was = prev ? (i < prev.ok ? 'ok' : i < prev.ok + prev.inf ? 'inf' : 'hurt') : st;
           const anim = prev && was !== st ? (st === 'ok' ? ' gain' : was === 'ok' ? ' lose' : '') : '';
-          pips.push(`<span class="slot"><i class="tok ${st}${anim}"></i></span>`);
+          pips.push(`<span class="slot"><i class="tok ${st}${anim}"${anim ? dl : ''}></i></span>`);
         }
-        if (prev && okN < prev.ok && h.onBoard) { c.classList.add('shake'); setTimeout(() => c.classList.remove('shake'), 700); }
-        const XPMAX = 10, xpFrom = prev ? Math.min(XPMAX, prev.xp) : Math.min(XPMAX, h.xp), xpTo = Math.min(XPMAX, h.xp);
-        this.heroPrev[h.idx] = { ok: okN, inf, xp: h.xp };
+        if (an && an.hit && el0 < 600 && h.onBoard) { c.classList.add('shake'); c.style.animationDelay = -Math.round(el0) + 'ms'; }
+        const XPMAX = 10, xpTo = Math.min(XPMAX, h.xp);
+        const xpFrom = prev ? Math.min(XPMAX, prev.xp) + (xpTo - Math.min(XPMAX, prev.xp)) * Math.min(1, el0 / 1000) : xpTo;
         const xpNext = h.xp < 4 ? 4 : h.xp < 10 ? 10 : null;
         const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');

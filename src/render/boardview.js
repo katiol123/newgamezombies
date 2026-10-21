@@ -27,6 +27,8 @@
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
       this.opts = opts || {};
+      this.vignette = typeof document !== 'undefined' ? document.getElementById('vignette') : null;
+      if (typeof matchMedia !== 'undefined') ZG.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       this.g = null;
       this.cell = 90;
       this.pad = 18;
@@ -237,6 +239,12 @@
     _wait(ms) { return new Promise((r) => setTimeout(r, ms / this.speed)); }
 
     // привести отображение в соответствие с моделью
+    // переворот жетона к нужной стороне; если переворот уже идёт — доводим его и крутим заново
+    _flipTo(e, to) {
+      if (e.flip) { e.awake = e.flip.to; e.flip = null; }
+      if ((e.awake !== false) !== to) e.flip = { t0: this.time, to };
+    }
+
     _sync(force) {
       const g = this.g;
       if (!g) return;
@@ -249,7 +257,7 @@
       g.zombies.forEach((z) => {
         const e = this.zombies.get(z.uid);
         if (!e) this._addZombie(z.uid, z.type, z.pos, 1);
-        else { e.cell = z.pos; e.awake = z.awake !== false; if (e.scale < 1 && !e.dying) e.scale = 1; }
+        else { e.cell = z.pos; if (e.flip) e.flip.to = z.awake !== false; else e.awake = z.awake !== false; if (e.scale < 1 && !e.dying) e.scale = 1; }
       });
       g.heroes.forEach((h) => {
         const e = this.heroes.get(h.idx);
@@ -295,7 +303,7 @@
         case 'zwake': {
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
-          if (e.awake === false) e.flip = { t0: this.time, to: true }; else e.awake = true;
+          this._flipTo(e, true);
           e.flash = 1;
           this._float(e.x, e.y - this.cell * 0.32, ev.sound ? '?!' : '!', '#ff5a3a', 1.3);
           if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('wake', { soft: true });
@@ -304,7 +312,7 @@
         case 'zsleep': {
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
-          if (e.awake !== false) e.flip = { t0: this.time, to: false }; else e.awake = false;
+          this._flipTo(e, false);
           this._float(e.x, e.y - this.cell * 0.32, '?', '#9aa4b0', 1.1);
           return 40;
         }
@@ -567,7 +575,7 @@
     }
 
     // --------------------------------------------------------- частицы
-    addShake(n) { this.shake = Math.min(22, this.shake + n); }
+    addShake(n) { if (ZG.reducedMotion) return; this.shake = Math.min(22, this.shake + n); }
     _float(x, y, text, color, scale) { this.floats.push({ x, y, text, color, scale: scale || 1, t: 0, life: 1.3 }); }
     _ring(p, color, r, ms) { this.effects.push({ type: 'ring', x: p.x, y: p.y, color, r, t0: this.time, dur: ms / 1000 }); }
     _dust(p, n, color) {
@@ -696,13 +704,17 @@
         const vg = ctx.createRadialGradient(this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.35, this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.7);
         vg.addColorStop(0, 'rgba(120,0,0,0)'); vg.addColorStop(1, `rgba(150,0,0,${0.18 + beat * 0.3})`);
         ctx.fillStyle = vg; ctx.fillRect(0, 0, this.W, this.H);
-      }
+        // виньетка поверх всего экрана (в режиме «стол» поле наклонено — нужна ещё и плоская) + звук сердца
+        if (this.vignette) this.vignette.style.opacity = (0.35 + beat * 0.65).toFixed(2);
+        const cyc = Math.floor(this.time * 1.1);
+        if (cyc !== this.beatCyc) { this.beatCyc = cyc; if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('heart', { soft: true }); }
+      } else if (this.vignette && this.vignette.style.opacity !== '0') this.vignette.style.opacity = '0';
       if (g.event === 'ev_storm') {
         this.nextBolt = this.nextBolt || this.time + 2;
-        if (this.time > this.nextBolt) { this.bolt = this.time; this.nextBolt = this.time + 3 + Math.random() * 5; this.addShake(3); if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('blast', { soft: true }); }
+        if (this.time > this.nextBolt) { this.bolt = this.time; this.nextBolt = this.time + 3 + Math.random() * 5; if (!ZG.reducedMotion) this.addShake(3); if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('thunder'); }
         if (this.bolt) {
           const k = (this.time - this.bolt) / 0.35;
-          if (k < 1) { ctx.fillStyle = `rgba(210,225,255,${(k < 0.15 || (k > 0.3 && k < 0.45) ? 0.45 : 0.12) * (1 - k)})`; ctx.fillRect(0, 0, this.W, this.H); }
+          if (k < 1) { ctx.fillStyle = `rgba(210,225,255,${(k < 0.15 || (k > 0.3 && k < 0.45) ? (ZG.reducedMotion ? 0.12 : 0.4) : 0.1) * (1 - k)})`; ctx.fillRect(0, 0, this.W, this.H); }
         }
       }
     }
@@ -1051,11 +1063,13 @@
         ctx.beginPath(); ctx.ellipse(x + 2, y + 2, rx, ry, 0, 0, TAU); ctx.fill();
         return;
       }
+      // мягкая тень радиальным градиентом (фильтр blur на каждую фишку слишком дорог)
       const off = 4 + (lift || 0) * 0.6;
       ctx.save();
-      ctx.filter = 'blur(' + (2 + (lift || 0) * 0.15).toFixed(1) + 'px)';
-      ctx.fillStyle = 'rgba(0,0,0,' + (a * 0.9) + ')';
-      ctx.beginPath(); ctx.ellipse(x + off * 1.3, y + off, rx * 1.08, ry * 1.1, 0, 0, TAU); ctx.fill();
+      ctx.translate(x + off * 1.3, y + off); ctx.scale(rx * 1.25, ry * 1.3);
+      const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      gr.addColorStop(0, 'rgba(0,0,0,' + (a * 0.95) + ')'); gr.addColorStop(0.6, 'rgba(0,0,0,' + (a * 0.6) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 1, 0, TAU); ctx.fill();
       ctx.restore();
       // ребро картонной фишки
       ctx.fillStyle = 'rgba(60,42,24,.85)';
@@ -1091,8 +1105,6 @@
       const hop = Math.sin((e.hop || 0) * Math.PI) * r * 0.5;
       ctx.save();
       ctx.globalAlpha = alpha;
-      // тень
-      this._tokShadow(ctx, x, y + r * 0.35, r * scale, r * 0.55 * scale, 0.45, hop);
       // переворот жетона «бродит ↔ охотится»: сжатие по ширине, подскок, смена стороны на середине
       let fx = 1, fhop = 0, awakeNow = e.awake;
       if (e.flip) {
@@ -1100,6 +1112,8 @@
         if (k >= 1) { e.awake = e.flip.to; awakeNow = e.awake; e.flip = null; }
         else { fx = Math.max(0.05, Math.abs(Math.cos(k * Math.PI))); fhop = Math.sin(k * Math.PI) * r * 0.8; awakeNow = k < 0.5 ? !e.flip.to : e.flip.to; }
       }
+      // тень (сужается вместе с жетоном при перевороте)
+      this._tokShadow(ctx, x, y + r * 0.35, r * scale * Math.max(fx, 0.3), r * 0.55 * scale, 0.45, hop + fhop);
       if (fx !== 1) { ctx.translate(x, y - hop - fhop); ctx.scale(fx, 1); ctx.translate(-x, -(y - hop - fhop)); }
       if (fhop) ctx.translate(0, -fhop);
       const s = r * 2 * scale;
@@ -1170,10 +1184,15 @@
       let flipX = 1, showTurned = false;
       if (e.flipT) {
         const k = (this.time - e.flipT) / 0.7;
-        if (k > 1.6) return;
+        // оборот держится, пока на клетке не встанет жетон обращённого (но не дольше ~5 с)
+        let zIn = false;
+        this.zombies.forEach((z) => { if (z.type === 'turned_' + h.id && z.cell === e.cell && z.scale >= 0.9 && !z.dying) zIn = true; });
+        if (k > 1 && !e.fadeT && (zIn || k > 7)) e.fadeT = this.time;
+        const fk = e.fadeT ? (this.time - e.fadeT) / 0.4 : 0;
+        if (fk > 1) return;
         flipX = k < 1 ? Math.max(0.04, Math.abs(Math.cos(k * Math.PI))) : 1;
         showTurned = k >= 0.5;
-        if (k > 1) alpha *= Math.max(0, 1 - (k - 1) / 0.6);
+        if (fk > 0) alpha *= 1 - fk;
       }
       if (e.lunge) {
         const lt = (this.time - e.lunge.t0) / 0.35;

@@ -651,3 +651,15 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 }
 .board-wrap #board { transition: transform .6s cubic-bezier(.3,1.2,.5,1); }
 #btn-table.on { background: var(--gold); color: #15110e; }
+
+/* пульс «на грани» поверх наклонённого поля */
+#vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 3;
+  background: radial-gradient(ellipse at center, rgba(120,0,0,0) 45%, rgba(150,0,0,.55) 100%); }
+/* на узких экранах «стол» превращает поле в полоску — кнопку прячем */
+@media (max-width: 899px) { #btn-table { display: none; } }
+/* уважение к настройке «меньше движения» */
+@media (prefers-reduced-motion: reduce) {
+  .hp-card.shake, .trk .tok.lose, .trk .tok.gain { animation-duration: 1ms !important; }
+  .xp-tok { transition: none; }
+  #vignette { display: none; }
+}
