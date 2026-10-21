@@ -103,8 +103,9 @@
     // карты, принесённые из убежища: key → предмет (износ следует за картой, даже если её передали в бою)
     const carriedItems = {}, carriedBy = {};
     squad.forEach((id) => { const h = C.hero(c, id); if (h) h.equip.forEach((it) => { carriedItems[it.key] = it; carriedBy[it.key] = h; }); });
-    // шанс поломки — худший из шансов того, кто взял карту в поход, и того, у кого она в конце (передачи не обходят износ)
-    const breakChance = (a, b) => Math.max(...[a, b].filter(Boolean).map((x) => (C.has(x, 'sh_handy') ? 0.25 : CFG().breakChance)));
+    // шанс поломки — худший среди всех героев, в чьих руках карта побывала за миссию (передачи не обходят износ)
+    const handy = (id) => { const gh = g.heroes.find((x) => x.id === id); return !!gh && gh.talents.includes('sh_handy'); };
+    const breakChance = (ids) => Math.max(...ids.map((id) => (handy(id) ? 0.25 : CFG().breakChance)));
 
     // 1) судьба участников
     const deaths = [];
@@ -136,7 +137,7 @@
           const it = carriedItems[key];
           delete carriedItems[key];
           if (!it.worn) { it.worn = true; line(h.id, `«${d.name}» на грани поломки`); found.push(it); }
-          else if (Rng.next(rng) < breakChance(carriedBy[key], h)) { line(h.id, `«${d.name}» сломалась`); moraleAdd(h, -1, `сломалась «${d.name}»`); }
+          else if (Rng.next(rng) < breakChance([carriedBy[key] && carriedBy[key].id, h.id].concat((g.carriedHolders && g.carriedHolders[u]) || []).filter(Boolean))) { line(h.id, `«${d.name}» сломалась`); moraleAdd(h, -1, `сломалась «${d.name}»`); }
           else { line(h.id, `«${d.name}» уцелела (всё ещё на грани)`); found.push(it); }
         } else found.push(item(c, id));
       });

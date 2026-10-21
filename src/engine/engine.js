@@ -334,7 +334,7 @@
       if (cv) {
         h.level = cv.level || 1; h.xp = cv.xp || 0; h.talents = (cv.talents || []).slice(); h.perks = (cv.perks || []).slice();
         h.injury = cv.injury || 0; h.missionsDone = (cv.missionsDone || []).slice(); h.talentQueue = (cv.talentQueue || []).slice();
-        (cv.cards || []).forEach((it) => { const u = E.newUid(g, 'c'); g.cards[u] = it.id; h.deck.push(u); (g.carried = g.carried || {})[u] = it.key; });
+        (cv.cards || []).forEach((it) => { const u = E.newUid(g, 'c'); g.cards[u] = it.id; h.deck.push(u); (g.carried = g.carried || {})[u] = it.key; (g.carriedHolders = g.carriedHolders || {})[u] = [h.id]; });
         (cv.temp || []).forEach((id) => { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.push(u); });
       }
       Rng.shuffle(g, h.deck);
@@ -582,9 +582,10 @@
 
   // 2 случайные карты героя (не Раны/Заражения/грузы) падают в зоне вместе с грузом
   function dropBelongings(g, h) {
-    h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach((u) => g.drops.push({ pos: h.pos, card: g.cards[u] }));
+    const drop = (u) => g.drops.push({ pos: h.pos, card: g.cards[u], carried: g.carried && g.carried[u], holders: g.carriedHolders && g.carriedHolders[u] });
+    h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach(drop);
     const pool = h.deck.concat(h.hand, h.discard, h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return !d.kind || d.kind === 'action'; });
-    Rng.shuffle(g, pool).slice(0, 2).forEach((u) => g.drops.push({ pos: h.pos, card: g.cards[u] }));
+    Rng.shuffle(g, pool).slice(0, 2).forEach(drop);
     h.hand = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind !== 'cargo');
   }
 
@@ -1526,6 +1527,7 @@
         spend(g, h, 1);
         g.drops.splice(g.drops.indexOf(d), 1);
         const u = E.newUid(g, 'c'); g.cards[u] = d.card; h.hand.push(u);
+        if (d.carried) { g.carried[u] = d.carried; g.carriedHolders[u] = (d.holders || []).concat(h.id); } // принесённая карта сохраняет износ
         E.log(g, `${E.heroName(h)} подбирает: «${ZG.Cards.get(d.card).name}».`, 'good');
         return true;
       }
@@ -1609,6 +1611,7 @@
         const i = h.hand.indexOf(a.card);
         if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || ['wound', 'infection'].includes(g.cards[a.card]) || ZG.Cards.get(g.cards[a.card]).kind === 'temp') return fail(g, 'Передать нельзя.');
         h.hand.splice(i, 1); o.hand.push(a.card);
+        if (g.carriedHolders && g.carriedHolders[a.card]) g.carriedHolders[a.card].push(o.id); // кампания: износ учитывает всех, кто держал карту
         g.turn.gave = true;
         // помощь передачей: находку/груз — любому, любую карту — раненому; раз за ход и не одной и той же картой
         const cd = E.cardDef(g, a.card);

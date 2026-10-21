@@ -173,7 +173,7 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
       const g = E.create(opts);
       const gb = g.heroes[0], gl = g.heroes[1];
       const u = Object.keys(g.carried).find((x) => g.carried[x] === 'kw');
-      if (give) { for (const pile of ['deck', 'hand', 'discard']) { const i = gb[pile].indexOf(u); if (i >= 0) gb[pile].splice(i, 1); } gl.hand.push(u); }
+      if (give) { for (const pile of ['deck', 'hand', 'discard']) { const i = gb[pile].indexOf(u); if (i >= 0) gb[pile].splice(i, 1); } gl.hand.push(u); g.carriedHolders[u].push('lisa'); }
       g.result = { win: true, stars: 1 };
       C.finishMission(c, g);
       if (!C.hero(c, 'boris').chest.concat(C.hero(c, 'lisa').chest, b.junk, l.junk).some((it) => it.key === 'kw')) broke++;
@@ -184,6 +184,21 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(own < 0.33, `Рукастый донёс сам: ломается ${Math.round(own * 100)}% (≈25%)`);
   ok(toHandy > 0.42, `передал Рукастому в бою: ${Math.round(toHandy * 100)}% (≈50%)`);
   ok(fromHandy > 0.42, `Рукастый взял, отдал в бою другому: ${Math.round(fromHandy * 100)}% (≈50%)`);
+}
+
+// 14) передача действием «Передать» и обратно: держатели запоминаются, шанс — худший
+{
+  const c = C.create({ heroes: [{ id: 'boris' }, { id: 'lisa' }], seed: 't14' });
+  C.hero(c, 'boris').talents.push('sh_handy');
+  C.hero(c, 'boris').equip.push({ key: 'kq', id: 'crowbar', worn: true });
+  const opts = C.startMission(c, ['boris', 'lisa']); opts.quiet = true;
+  const g = E.create(opts);
+  const u = Object.keys(g.carried).find((x) => g.carried[x] === 'kq');
+  const gb = g.heroes[0];
+  for (const pile of ['deck', 'discard']) { const i = gb[pile].indexOf(u); if (i >= 0) { gb[pile].splice(i, 1); gb.hand.push(u); } }
+  E.act(g, { t: 'begin', hero: 0 });
+  const okGive = E.act(g, { t: 'give', card: u, hero: 1 });
+  ok(okGive && g.carriedHolders[u].join() === 'boris,lisa', `передача записала держателя: ${g.carriedHolders[u]}`);
 }
 
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
