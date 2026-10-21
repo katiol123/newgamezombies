@@ -588,10 +588,8 @@
     if (!targets.length) return false;
     if (targets.some((t) => t.pos === z.pos)) return false;
     const zdef = ZG.Zombies.get(z.type);
-    const noBarr = zdef.climber ? () => true : (a, b) => !E.barricadeAt(g, a, b);
-    let dz = E.distV(g, z.pos, noBarr);
-    let viaBarricade = false;
-    if (!targets.some((t) => dz[t.pos] < Infinity)) { dz = E.distV(g, z.pos); viaBarricade = true; }
+    // Зомби идёт кратчайшим путём, не считаясь с баррикадами: упёршись — ломает
+    const dz = E.distV(g, z.pos);
     let best = null;
     targets.forEach((t) => {
       if (dz[t.pos] === Infinity) return;
@@ -607,8 +605,10 @@
       const a = g.board.tiles[tileOf(g, z.pos)], b = g.board.tiles[tileOf(g, best.pos)];
       if (Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) > 1) return false;
     }
-    const dt = E.distV(g, best.pos, viaBarricade ? null : noBarr);
-    const next = g.board.adj[z.pos].find((n) => dt[n] === dt[z.pos] - 1 && (viaBarricade || noBarr(z.pos, n)));
+    const dt = E.distV(g, best.pos);
+    // из равных шагов — тот, где нет баррикады
+    const steps = g.board.adj[z.pos].filter((n) => dt[n] === dt[z.pos] - 1);
+    const next = steps.find((n) => zdef.climber || !E.barricadeAt(g, z.pos, n)) ?? steps[0];
     if (next == null) return false;
     const bar = zdef.climber ? null : E.barricadeAt(g, z.pos, next);
     if (bar && zdef.breaker) bar.hp = 0;
@@ -653,14 +653,16 @@
     while (g.phase === 'zombies' && !g.pending && !g.result) {
       const zs = g.zs;
       if (zs.step === 'move') {
-        const order = g.zombies.slice();
-        order.forEach((z) => {
-          if (!g.zombies.includes(z)) return;
-          const def = ZG.Zombies.get(z.type);
-          if (def.immobile || z.suppressed) return;
-          const speed = E.zombieSpeed(g, z);
-          for (let s = 0; s < speed; s++) if (!moveZombieStep(g, z)) break;
-        });
+        // волнами: все зомби делают по шагу одновременно, затем следующий шаг — и так до макс. скорости
+        const left = new Map();
+        g.zombies.forEach((z) => { const sp = E.zombieSpeed(g, z); if (!ZG.Zombies.get(z.type).immobile && !z.suppressed && sp > 0) left.set(z, sp); });
+        for (let wave = 0; left.size; wave++) {
+          if (wave) E.fx(g, { t: 'zwave' });
+          [...left.keys()].forEach((z) => {
+            if (!g.zombies.includes(z) || !moveZombieStep(g, z) || left.get(z) <= 1) left.delete(z);
+            else left.set(z, left.get(z) - 1);
+          });
+        }
         zs.step = 'attack';
       } else if (zs.step === 'attack') {
         if (!zs.queue) zs.queue = buildAttacks(g);

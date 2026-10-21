@@ -257,16 +257,16 @@
       const C = this.cell;
       switch (ev.t) {
         case 'zmove': {
+          // все шаги одной волны идут разом; между волнами — пауза (событие zwave)
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
-          let wait = 0;
-          if (this.batch.has(ev.zombie)) { this.batch.clear(); wait = 300; }
-          this.batch.add(ev.zombie);
-          const doMove = () => { e.cell = ev.to; e.hop = 1; this._layout(false); this._dust(this.cellXY(ev.to), 3, '#6b5d4a'); };
-          if (wait) { setTimeout(doMove, wait / this.speed); return wait + (nextEv && nextEv.t === 'zmove' ? 0 : 320); }
-          doMove();
-          return nextEv && nextEv.t === 'zmove' ? 0 : 340;
+          e.cell = ev.to; e.hop = 1;
+          this._layout(false);
+          this._dust(this.cellXY(ev.to), 3, '#6b5d4a');
+          if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('step', { soft: true });
+          return nextEv && (nextEv.t === 'zmove' || nextEv.t === 'bash') ? 0 : 420;
         }
+        case 'zwave': return 420;
         case 'hmove': {
           const e = this.heroes.get(ev.hero);
           if (!e) return 0;
