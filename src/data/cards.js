@@ -253,9 +253,9 @@
     },
     {
       id: 'medkit', name: 'Аптечка', suit: 'mind', cost: 1, shield: 0, type: 'Расходник', tags: ['heal'], loot: true, consumable: true,
-      text: 'Герой в твоей зоне убирает 2 Раны. Уходит из игры.', chainText: '+1 Рана.', art: 'medkit', value: 11,
+      text: 'Герой в твоей зоне убирает 2 Раны или Заражения (сначала Заражения). Уходит из игры.', chainText: '+1 Рана.', art: 'medkit', value: 11, cures: true,
       target: { kind: 'hero', range: 0, self: true, wounded: true },
-      play(c) { c.heal(c.target, 2 + (c.chain ? 1 : 0)); },
+      play(c) { c.heal(c.target, 2 + (c.chain ? 1 : 0), true); },
     },
     {
       id: 'energy', name: 'Энергетик', suit: 'agility', cost: 0, shield: 0, type: 'Расходник', tags: ['energy'], loot: true, consumable: true,

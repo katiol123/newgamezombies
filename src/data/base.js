@@ -50,12 +50,45 @@
     },
   ]);
 
+  // ------------------------------------------- Обращённые герои (особые) ---
+  // Фишка героя переворачивается этой стороной. Поведение — как у обычных зомби,
+  // плюс особое свойство из текста. Все — крупные цели (урон сохраняется).
+  ZG.Zombies.addAll([
+    {
+      id: 'turned_boris', name: 'Борис-Обращённый', hp: 8, dmg: 2, speed: 1, xp: 5, armor: 1, threat: 9, big: true, turned: 'boris',
+      text: 'Броня 1. Таран: проламывает баррикаду с одного удара.', art: 'z_turned_boris', breaker: true,
+    },
+    {
+      id: 'turned_marina', name: 'Марина-Обращённая', hp: 5, dmg: 1, speed: 1, xp: 4, armor: 0, threat: 7, big: true, turned: 'marina',
+      text: 'Заразная: каждый неотражённый её удар — Заражение, без броска.', art: 'z_turned_marina', infects: true,
+    },
+    {
+      id: 'turned_lisa', name: 'Лиза-Обращённая', hp: 4, dmg: 1, speed: 3, xp: 4, armor: 0, threat: 8, big: true, turned: 'lisa',
+      text: 'Стремительная: ходит на 3 зоны и перелезает баррикады.', art: 'z_turned_lisa', climber: true,
+    },
+    {
+      id: 'turned_viktor', name: 'Виктор-Обращённый', hp: 6, dmg: 2, speed: 1, xp: 5, armor: 0, threat: 9, big: true, turned: 'viktor',
+      text: 'Стреляет по привычке: в фазу зомби 1 урон герою на линии огня в 1–2 зонах (Рана, без броска).', art: 'z_turned_viktor',
+      hooks: { zombiePhase(g, z, E) { E.turnedShot(g, z, 2); } },
+    },
+    {
+      id: 'turned_kira', name: 'Кира-Обращённая', hp: 6, dmg: 2, speed: 1, xp: 5, armor: 0, threat: 8, big: true, turned: 'kira',
+      text: 'Самоделка на поясе: когда её убивают — взрыв, 2 урона всем зомби и 1 Рана всем героям в её зоне.', art: 'z_turned_kira',
+      onDeath(g, z, E) { E.blast(g, z.pos, 2, 1); },
+    },
+  ]);
+
   // ---------------------------------------------------------- Служебные ---
   ZG.Cards.addAll([
     {
       id: 'wound', name: 'Рана', suit: 'none', cost: null, shield: 0, kind: 'wound',
       type: 'Рана', text: 'Нельзя сыграть или сбросить для защиты.\nУбирается лечением или действием «Отдышаться».',
       art: 'wound', unplayable: true, value: -10,
+    },
+    {
+      id: 'infection', name: 'Заражение', suit: 'none', cost: null, shield: 0, kind: 'infection',
+      type: 'Укус', text: 'Нельзя сыграть или сбросить для защиты. Не Рана.\nЕсли в конце твоего хода эта карта в руке — трек заражения +1, карта уходит в сброс. На 3 — обращение.',
+      art: 'infection', unplayable: true, value: -14,
     },
     {
       id: 'cargo_fuel', name: 'Канистра', suit: 'none', cost: null, shield: 0, kind: 'cargo', cargo: 'fuel',

@@ -41,7 +41,7 @@ function runBatch(heroIds, o, tag) {
     const r = g.result || { win: false, reason: 'timeout', stars: 0 };
     if (r.win) { res.wins++; res.stars += r.stars; }
     res.rounds += g.round; res.kills += g.stats.kills; res.wounds += g.stats.wounds; res.fell += g.stats.fell;
-    res.waves += g.stats.waves; res.chains += g.stats.chains; res.played += g.stats.cardsPlayed;
+    res.waves += g.stats.waves; res.infections = (res.infections || 0) + (g.stats.infections || 0); res.turned = (res.turned || 0) + (g.stats.turned || 0); res.chains += g.stats.chains; res.played += g.stats.cardsPlayed;
     const sc = (res.byScenario[g.scenarioId] = res.byScenario[g.scenarioId] || { n: 0, w: 0 });
     sc.n++; if (r.win) sc.w++;
     res.reasons[r.reason] = (res.reasons[r.reason] || 0) + 1;
@@ -52,7 +52,7 @@ function runBatch(heroIds, o, tag) {
 function fmt(heroIds, r) {
   const pct = (x) => ((100 * x) / r.games).toFixed(0) + '%';
   const sc = Object.entries(r.byScenario).map(([k, v]) => `${k} ${v.w}/${v.n}`).join(' ');
-  return `${heroIds.join('+').padEnd(22)} win ${pct(r.wins).padStart(4)}  ★avg ${(r.stars / Math.max(1, r.wins)).toFixed(2)}  rnd ${(r.rounds / r.games).toFixed(1)}  kills ${(r.kills / r.games).toFixed(1)}  wounds ${(r.wounds / r.games).toFixed(1)}  fell ${(r.fell / r.games).toFixed(2)}  waves ${(r.waves / r.games).toFixed(1)}  chain% ${((100 * r.chains) / Math.max(1, r.played)).toFixed(0)}  | ${sc}`;
+  return `${heroIds.join('+').padEnd(22)} win ${pct(r.wins).padStart(4)}  ★avg ${(r.stars / Math.max(1, r.wins)).toFixed(2)}  rnd ${(r.rounds / r.games).toFixed(1)}  kills ${(r.kills / r.games).toFixed(1)}  wounds ${(r.wounds / r.games).toFixed(1)}  fell ${(r.fell / r.games).toFixed(2)}  waves ${(r.waves / r.games).toFixed(1)}  chain% ${((100 * r.chains) / Math.max(1, r.played)).toFixed(0)}  infect ${((r.infections || 0) / r.games).toFixed(1)}  turned ${((r.turned || 0) / r.games).toFixed(2)}  | ${sc}`;
 }
 
 function main() {

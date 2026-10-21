@@ -37,6 +37,8 @@
   E.zombie = (g, uid) => g.zombies.find((z) => z.uid === uid);
   E.newUid = (g, prefix) => prefix + (g.nextUid++);
   E.woundCount = (g, h) => h.deck.concat(h.hand, h.discard).filter((u) => g.cards[u] === 'wound').length;
+  E.infectCount = (g, h) => h.deck.concat(h.hand, h.discard).filter((u) => g.cards[u] === 'infection').length;
+  E.infectTurnAt = (g) => ((ZG.Levels.get(g.levelId).infection || {}).turnAt || 3);
   E.maxHp = (g, h) => Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp);
   // «Одиночка»: в соло герой держит на 1 карту больше
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0);
@@ -132,7 +134,7 @@
       const h = {
         idx, id: def.id, player: hs.player || 1, pos: null, deck: [], hand: [], discard: [], equip: [],
         energy: 0, adrenaline: 0, block: 0, xp: 0, level: 1, talents: [], talentQueue: [],
-        ai: !!hs.ai, acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
+        ai: !!hs.ai, infection: 0, acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
       };
       def.deck.forEach((cid) => { const u = E.newUid(g, 'c'); g.cards[u] = cid; h.deck.push(u); });
       Rng.shuffle(g, h.deck);
@@ -315,6 +317,79 @@
     return drawn;
   }
 
+  // Укус: за каждый неотражённый удар зомби — кубик. 1..die — Заражение, иначе Рана.
+  function bite(g, h, n, attackers) {
+    if (n <= 0) return;
+    const inf = ZG.Levels.get(g.levelId).infection;
+    const always = (attackers || []).some((u) => { const z = E.zombie(g, u); return z && ZG.Zombies.get(z.type).infects; });
+    let wounds = 0, infections = 0;
+    for (let i = 0; i < n; i++) {
+      const roll = 1 + Rng.int(g, 6);
+      if (inf && (always || roll <= inf.die)) infections++; else wounds++;
+    }
+    if (infections) {
+      // карта Заражения замешивается в колоду добора — укус скоро даст о себе знать
+      for (let i = 0; i < infections; i++) { const u = E.newUid(g, 'i'); g.cards[u] = 'infection'; const span = inf.top ? Math.min(inf.top, h.deck.length) : h.deck.length; h.deck.splice(Rng.int(g, span + 1), 0, u); }
+      g.stats.infections = (g.stats.infections || 0) + infections;
+      E.log(g, `${E.heroName(h)}: укус! Заражение ×${infections} (замешано в колоду).`, 'bad');
+      E.fx(g, { t: 'infect', hero: h.idx, pos: h.pos, n: infections });
+    }
+    addWounds(g, h, wounds);
+  }
+  E.bite = bite;
+
+  // Конец хода: каждое Заражение в руке двигает трек, карта уходит в сброс
+  function tickInfection(g, h) {
+    const inHand = h.hand.filter((u) => g.cards[u] === 'infection');
+    if (!inHand.length) return;
+    h.infection += inHand.length;
+    h.hand = h.hand.filter((u) => g.cards[u] !== 'infection');
+    inHand.forEach((u) => h.discard.push(u));
+    const at = E.infectTurnAt(g);
+    E.log(g, `${E.heroName(h)}: заражение растёт — ${Math.min(h.infection, at)}/${at}.`, 'bad');
+    E.fx(g, { t: 'infectTick', hero: h.idx, pos: h.pos, n: h.infection, at });
+    if (h.infection >= at) turnHero(g, h);
+  }
+
+  // 2 случайные карты героя (не Раны/Заражения/грузы) падают в зоне вместе с грузом
+  function dropBelongings(g, h) {
+    h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach((u) => g.drops.push({ pos: h.pos, card: g.cards[u] }));
+    const pool = h.deck.concat(h.hand, h.discard, h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return !d.kind || d.kind === 'action'; });
+    Rng.shuffle(g, pool).slice(0, 2).forEach((u) => g.drops.push({ pos: h.pos, card: g.cards[u] }));
+    h.hand = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind !== 'cargo');
+  }
+
+  // Обращение: фишка героя переворачивается особым монстром
+  function turnHero(g, h) {
+    if (!h.onBoard) return;
+    h.onBoard = false; h.fallen = true; h.turned = true;
+    g.stats.fell++; g.stats.turned = (g.stats.turned || 0) + 1;
+    dropBelongings(g, h);
+    const type = 'turned_' + h.id;
+    E.log(g, `${E.heroName(h)} обращается! Перед вами — ${ZG.Zombies.has(type) ? ZG.Zombies.get(type).name : 'Шатун'}.`, 'bad');
+    E.fx(g, { t: 'turn_hero', hero: h.idx, pos: h.pos });
+    E.spawnZombie(g, ZG.Zombies.has(type) ? type : 'walker', h.pos, null, true);
+    if (g.active === h.idx) { g.active = null; g.turn = null; }
+    checkEnd(g);
+  }
+  E.turnHero = turnHero;
+
+  // свойства обращённых
+  E.turnedShot = function (g, z, R) {
+    const target = Board.lineCells(g.board, z.pos, R, (c) => E.hidden(g, c)).filter((c) => c.dist >= 1).map((c) => E.heroesAt(g, c.cell)).find((hs) => hs.length);
+    if (!target) return;
+    const h = target[0];
+    E.log(g, `${ZG.Zombies.get(z.type).name} стреляет в ${E.heroName(h)}!`, 'bad');
+    E.fx(g, { t: 'shot', hero: null, from: z.pos, to: h.pos });
+    addWounds(g, h, 1);
+  };
+  E.blast = function (g, pos, dmg, wounds) {
+    E.log(g, 'Взрыв!', 'warn');
+    E.fx(g, { t: 'explode', pos });
+    killOrder(g, E.zombiesAt(g, pos), dmg).forEach((z) => damageZombie(g, z, dmg, null, 'fire'));
+    E.heroesAt(g, pos).forEach((h) => addWounds(g, h, wounds));
+  };
+
   function addWounds(g, h, n, silent) {
     for (let i = 0; i < n; i++) {
       const u = E.newUid(g, 'w'); g.cards[u] = 'wound'; h.discard.push(u);
@@ -324,8 +399,16 @@
   }
   E.addWounds = addWounds;
 
-  function healWounds(g, h, n) {
+  function healWounds(g, h, n, cures) {
     let left = n;
+    if (cures) {
+      // лекарство сначала убирает Заражения
+      for (const pile of ['hand', 'discard', 'deck']) {
+        for (let i = h[pile].length - 1; i >= 0 && left > 0; i--) {
+          if (g.cards[h[pile][i]] === 'infection') { h[pile].splice(i, 1); left--; }
+        }
+      }
+    }
     for (const pile of ['hand', 'discard', 'deck']) {
       for (let i = h[pile].length - 1; i >= 0 && left > 0; i--) {
         if (g.cards[h[pile][i]] === 'wound') { h[pile].splice(i, 1); left--; }
@@ -338,7 +421,8 @@
 
   function checkFall(g, h) {
     if (!h.onBoard) return;
-    if (E.woundCount(g, h) < E.maxHp(g, h)) return;
+    const inf = ZG.Levels.get(g.levelId).infection || {};
+    if (E.woundCount(g, h) + (inf.hurts ? E.infectCount(g, h) : 0) < E.maxHp(g, h)) return;
     const saver = g.heroes.find((o) => o.onBoard && o.pos === h.pos && !o.secondWindUsed && Mods.flag(g, o, 'secondWind'));
     if (saver) {
       saver.secondWindUsed = true;
@@ -348,8 +432,7 @@
     }
     h.onBoard = false; h.fallen = true;
     g.stats.fell++;
-    h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach((u) => g.drops.push({ pos: h.pos, card: g.cards[u] }));
-    h.hand = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind !== 'cargo');
+    dropBelongings(g, h);
     E.log(g, `${E.heroName(h)} падает… и через минуту поднимается снова — уже Шатуном.`, 'bad');
     E.fx(g, { t: 'fall', hero: h.idx, pos: h.pos });
     E.spawnZombie(g, 'walker', h.pos, null, true);
@@ -434,6 +517,7 @@
       g.stats.kills++;
       g.stats.killsBy[z.type] = (g.stats.killsBy[z.type] || 0) + 1;
       E.fx(g, { t: 'kill', zombie: z.uid, pos: z.pos, ztype: z.type });
+      if (def.onDeath) def.onDeath(g, z, E);
       if (heroIdx != null) {
         const h = g.heroes[heroIdx];
         gainXp(g, h, def.xp);
@@ -503,7 +587,8 @@
     const targets = zombieTargets(g, z);
     if (!targets.length) return false;
     if (targets.some((t) => t.pos === z.pos)) return false;
-    const noBarr = (a, b) => !E.barricadeAt(g, a, b);
+    const zdef = ZG.Zombies.get(z.type);
+    const noBarr = zdef.climber ? () => true : (a, b) => !E.barricadeAt(g, a, b);
     let dz = E.distV(g, z.pos, noBarr);
     let viaBarricade = false;
     if (!targets.some((t) => dz[t.pos] < Infinity)) { dz = E.distV(g, z.pos); viaBarricade = true; }
@@ -525,7 +610,8 @@
     const dt = E.distV(g, best.pos, viaBarricade ? null : noBarr);
     const next = g.board.adj[z.pos].find((n) => dt[n] === dt[z.pos] - 1 && (viaBarricade || noBarr(z.pos, n)));
     if (next == null) return false;
-    const bar = E.barricadeAt(g, z.pos, next);
+    const bar = zdef.climber ? null : E.barricadeAt(g, z.pos, next);
+    if (bar && zdef.breaker) bar.hp = 0;
     if (bar) {
       const def = ZG.Zombies.get(z.type);
       bar.hp -= Math.max(1, def.dmg);
@@ -692,7 +778,7 @@
       E.fx(g, { t: 'wound', hero: h.idx, pos: h.pos, n: taken });
     } else E.log(g, `${E.heroName(h)} отражает атаку (${entry.incoming}).`, 'good');
     g.pending = null;
-    addWounds(g, h, taken);
+    bite(g, h, taken, entry.attackers);
     if (h.onBoard && h.thorns) {
       entry.attackers.forEach((u) => { const z = E.zombie(g, u); if (z) damageZombie(g, z, h.thorns, h.idx, 'melee'); });
     }
@@ -778,7 +864,8 @@
 
   function endTurn(g) {
     const h = E.activeHero(g);
-    if (h) h.acted = true;
+    if (h) { h.acted = true; tickInfection(g, h); }
+    if (g.result) return;
     // Эстафета: следующий герой может продолжить Связку мастью последней карты
     g.relaySuit = g.turn && g.turn.played ? g.turn.lastSuit : null;
     g.active = null; g.turn = null;
@@ -832,7 +919,7 @@
       }
       case 'hero': {
         const d = E.distV(g, h.pos);
-        return g.heroes.filter((o) => o.onBoard && d[o.pos] <= spec.range && (spec.self || o !== h) && (!spec.wounded || E.woundCount(g, o) > 0)).map((o) => o.idx);
+        return g.heroes.filter((o) => o.onBoard && d[o.pos] <= spec.range && (spec.self || o !== h) && (!spec.wounded || E.woundCount(g, o) > 0 || (def.cures && E.infectCount(g, o) > 0))).map((o) => o.idx);
       }
       case 'cell': {
         const d = E.distV(g, h.pos);
@@ -906,7 +993,10 @@
       g.board.adj[h.pos].forEach((n) => { if (!E.barricadeAt(g, h.pos, n)) out.push({ t: 'barricade', to: n }); });
     }
     if (Mods.flag(g, h, 'healAction') && g.turn.healUsed < Mods.value(g, h, 'healAction', 0) && h.energy >= 1) {
-      E.heroesAt(g, h.pos).forEach((o) => { if (E.woundCount(g, o) > 0) out.push({ t: 'heal', hero: o.idx }); });
+      E.heroesAt(g, h.pos).forEach((o) => {
+        if (E.woundCount(g, o) > 0) out.push({ t: 'heal', hero: o.idx });
+        if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'cleanse', hero: o.idx });
+      });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
     if (!g.turn.gave) {
@@ -1017,7 +1107,7 @@
         spend(g, h, 1);
         g.drops.splice(g.drops.indexOf(d), 1);
         const u = E.newUid(g, 'c'); g.cards[u] = d.card; h.hand.push(u);
-        E.log(g, `${E.heroName(h)} подбирает груз.`, 'good');
+        E.log(g, `${E.heroName(h)} подбирает: «${ZG.Cards.get(d.card).name}».`, 'good');
         return true;
       }
       case 'barricade': {
@@ -1035,6 +1125,19 @@
         g.turn.healUsed++;
         const n = healWounds(g, o, 1 + Mods.value(g, h, 'healBonus', 0));
         E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} −${n} Рана.`, 'good');
+        return true;
+      }
+      case 'cleanse': {
+        const o = g.heroes[a.hero];
+        if (!Mods.flag(g, h, 'healAction') || g.turn.healUsed >= Mods.value(g, h, 'healAction', 0) || h.energy < 1 || o.pos !== h.pos) return fail(g, 'Нельзя.');
+        const inf = o.hand.filter((u) => g.cards[u] === 'infection');
+        if (!inf.length) return fail(g, 'В руке нет Заражений.');
+        spend(g, h, 1);
+        g.turn.healUsed++;
+        inf.forEach((u) => { g.cards[u] = 'wound'; });
+        E.log(g, `${E.heroName(h)} вскрывает и прижигает укус: у ${E.heroName(o)} ${inf.length} Заражение → Рана.`, 'good');
+        E.fx(g, { t: 'heal', hero: o.idx, n: inf.length, pos: o.pos });
+        checkFall(g, o);
         return true;
       }
       case 'rest': {
@@ -1176,6 +1279,7 @@
       h.equip.push(uid);
       if (h.equip.length > MAX_EQUIP) h.discard.push(h.equip.shift());
     }
+    if (!g.turn) return true; // герой пал/обратился от эффекта карты
     g.turn.lastSuit = def.suit;
     g.turn.played++;
     if (def.tags && def.tags.includes('ranged')) g.turn.rangedPlayed = true;
@@ -1224,9 +1328,9 @@
         E.fx(g, { t: 'shield', hero: o.idx, pos: o.pos, n });
       },
       moveTo(cell) { moveHero(g, h, cell); },
-      heal(heroIdx, n) {
+      heal(heroIdx, n, cures) {
         const o = g.heroes[heroIdx];
-        const healed = healWounds(g, o, n + Mods.value(g, h, 'healBonus', 0));
+        const healed = healWounds(g, o, n + Mods.value(g, h, 'healBonus', 0), cures);
         E.log(g, `${E.heroName(o)}: −${healed} ${ZG.util.plural(healed, 'Рана', 'Раны', 'Ран')}.`, 'good');
       },
       adrenaline(heroIdx, n) {

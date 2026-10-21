@@ -79,6 +79,10 @@
       const urg = (E.isComplete(g) ? 2.5 : 1) * (left <= 3 ? 1.8 : 1);
       if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist * urg;
       s += h.adrenaline * W.adrenaline + h.block * W.block;
+      // заражение: каждая карта в руке в конце хода — шаг к обращению
+      const at = E.infectTurnAt(g);
+      const infHand = h.hand.filter((u) => g.cards[u] === 'infection').length;
+      s -= (h.infection * 140 + infHand * 160 + E.infectCount(g, h) * 45) * (h.infection + infHand >= at - 1 ? 1.8 : 1);
       const hp = E.maxHp(g, h);
       const wounds = E.woundCount(g, h);
       s -= wounds * W.wound;

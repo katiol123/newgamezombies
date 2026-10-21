@@ -356,6 +356,17 @@
       c.beginPath(); c.moveTo(30, 22); c.lineTo(76, 82); strokeInk(c, 6, o.shadow ? o.ink : '#5a0d08');
       if (!o.shadow) for (let i = 0; i < 9; i++) { circle(c, 20 + hash(i) * 60, 30 + hash(i + 9) * 50, 2 + hash(i + 3) * 4); fillInk(c, '#8e140c'); }
     },
+    infection(c, o) {
+      // знак биоопасности: три серпа вокруг кольца
+      const col = o.shadow ? o.ink : '#9be04a';
+      for (let i = 0; i < 3; i++) {
+        c.save(); c.translate(50, 52); c.rotate(i * Math.PI * 2 / 3);
+        c.beginPath(); c.arc(0, -20, 19, 0, Math.PI * 2); c.arc(0, -27, 12, 0, Math.PI * 2, true); fillInk(c, col);
+        c.restore();
+      }
+      circle(c, 50, 52, 16); c.lineWidth = 6; c.strokeStyle = col; c.stroke();
+      if (!o.shadow) { circle(c, 50, 52, 6); fillInk(c, INK); for (let i = 0; i < 7; i++) { circle(c, 18 + hash(i + 40) * 64, 14 + hash(i + 50) * 74, 1.5 + hash(i + 60) * 3); fillInk(c, '#6fa830'); } }
+    },
     cargo_fuel(c, o) {
       poly(c, [24, 26, 66, 26, 78, 38, 78, 88, 24, 88]); fillInk(c, o.shadow ? o.ink : '#a31f14');
       if (!o.shadow) { c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(26, 30); c.lineTo(76, 86); c.moveTo(76, 40); c.lineTo(26, 86); c.stroke(); }
@@ -406,6 +417,14 @@
     give(c, o) { c.beginPath(); c.moveTo(12, 40); c.lineTo(62, 40); c.lineTo(62, 28); c.lineTo(86, 48); c.lineTo(62, 68); c.lineTo(62, 56); c.lineTo(12, 56); c.closePath(); fillInk(c, o.ink); if (!o.shadow) { rr(c, 18, 70, 26, 18, 3); c.fillStyle = '#e8dcc0'; c.fill(); strokeInk(c, 2.5); } },
     rest(c, o) { c.beginPath(); c.moveTo(50, 84); c.bezierCurveTo(10, 56, 14, 22, 36, 22); c.bezierCurveTo(44, 22, 50, 30, 50, 34); c.bezierCurveTo(50, 30, 56, 22, 64, 22); c.bezierCurveTo(86, 22, 90, 56, 50, 84); fillInk(c, o.shadow ? o.ink : '#c0392b'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.moveTo(24, 50); c.lineTo(38, 50); c.lineTo(44, 40); c.lineTo(52, 62); c.lineTo(58, 50); c.lineTo(76, 50); c.stroke(); } },
     heal(c, o) { rr(c, 38, 14, 24, 72, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); rr(c, 14, 38, 72, 24, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(41, 17, 18, 66); c.fillRect(17, 41, 66, 18); } },
+    cleanse(c, o) {
+      // шприц с антидотом
+      c.save(); c.translate(50, 50); c.rotate(-Math.PI / 4);
+      rr(c, -10, -34, 20, 52, 4); fillInk(c, o.shadow ? o.ink : '#dfe9ee'); strokeInk(c, 4, o.ink);
+      if (!o.shadow) { c.fillStyle = '#9be04a'; c.fillRect(-7, -8, 14, 23); }
+      c.fillStyle = o.ink; c.fillRect(-16, -40, 32, 7); c.fillRect(-3, -50, 6, 12); c.fillRect(-1.5, 18, 3, 26);
+      c.restore();
+    },
     pickup(c, o) { rr(c, 20, 36, 60, 46, 4); fillInk(c, o.shadow ? o.ink : '#9a6a32'); strokeInk(c, 4, o.ink); c.beginPath(); c.moveTo(50, 8); c.lineTo(66, 26); c.lineTo(56, 26); c.lineTo(56, 40); c.lineTo(44, 40); c.lineTo(44, 26); c.lineTo(34, 26); c.closePath(); fillInk(c, o.ink); },
     task(c, o) { poly(c, [50, 8, 61, 38, 94, 39, 68, 59, 77, 91, 50, 72, 23, 91, 32, 59, 6, 39, 39, 38]); fillInk(c, o.shadow ? o.ink : '#f0c040'); strokeInk(c, 4, o.ink); },
     evac(c, o) { c.beginPath(); c.moveTo(50, 8); c.lineTo(80, 42); c.lineTo(62, 42); c.lineTo(62, 88); c.lineTo(38, 88); c.lineTo(38, 42); c.lineTo(20, 42); c.closePath(); fillInk(c, o.shadow ? o.ink : '#6fe08a'); strokeInk(c, 4, o.ink); },
@@ -555,6 +574,56 @@
       ctx.save();
       ctx.translate((w - s) / 2, h - s);
       Art.unit(ctx, s, s, PORTRAITS[id]);
+      ctx.restore();
+    });
+  });
+
+  // --------------------------------- обращённые герои (оборот фишки героя) ---
+  // портрет героя, «отравленный» трупной зеленью: светящиеся глаза, вены, кровь у рта
+  function turnedFace(c, id) {
+    PORTRAITS[id](c);
+    c.save();
+    c.globalCompositeOperation = 'source-atop';
+    c.fillStyle = 'rgba(70,120,40,.42)'; c.fillRect(0, 0, 100, 100);
+    c.restore();
+    c.fillStyle = '#d8ff4a'; c.shadowColor = '#d8ff4a'; c.shadowBlur = 6;
+    c.beginPath(); c.ellipse(41, 44, 3.4, 2.2, 0, 0, 7); c.fill(); c.beginPath(); c.ellipse(59, 44, 3.4, 2.2, 0, 0, 7); c.fill();
+    c.shadowBlur = 0;
+    c.strokeStyle = 'rgba(40,10,40,.55)'; c.lineWidth = 1.2;
+    [[32, 52, 38, 60, 35, 66], [66, 50, 62, 58, 67, 64], [44, 24, 48, 30, 45, 34]].forEach(([a, b, d, e, f, k]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(d, e); c.lineTo(f, k); c.stroke(); });
+    c.fillStyle = '#7a120c'; c.fillRect(46, 57, 2, 9); c.fillRect(52, 57, 1.6, 6);
+    c.beginPath(); c.ellipse(50, 57, 6, 2, 0, 0, 7); c.fill();
+  }
+  const TURNED_RING = '#7fae3a';
+  Object.keys(PORTRAITS).forEach((id) => {
+    Art.define('zp_turned_' + id, (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, TURNED_RING); g.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      const s = Math.min(w, h);
+      ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, (c) => turnedFace(c, id)); ctx.restore();
+    });
+    Art.define('z_turned_' + id, (ctx, w, h) => {
+      const def = ZG.Heroes.get(id);
+      const r = Math.min(w, h) / 2;
+      ctx.save(); ctx.translate(w / 2, h / 2);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
+      const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r);
+      gr.addColorStop(0, '#4a6a2a'); gr.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, 7); ctx.clip();
+      ctx.translate(-r * 0.9, -r * 0.88);
+      Art.unit(ctx, r * 1.8, r * 1.8, (c) => turnedFace(c, id));
+      ctx.restore();
+      // двойной обод: цвет героя, поверх — рваная трупная зелень
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.14; ctx.strokeStyle = def ? def.color : TURNED_RING; ctx.stroke();
+      ctx.setLineDash([r * 0.22, r * 0.14]); ctx.lineWidth = r * 0.08; ctx.strokeStyle = TURNED_RING; ctx.stroke(); ctx.setLineDash([]);
+      ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+      // значок биоопасности сверху справа
+      ctx.save(); ctx.translate(r * 0.42, -r * 0.84);
+      ctx.beginPath(); ctx.arc(r * 0.17, r * 0.17, r * 0.2, 0, 7); ctx.fillStyle = INK; ctx.fill();
+      Art.unit(ctx, r * 0.34, r * 0.34, (c) => ICONS.infection(c, { ink: INK }));
+      ctx.restore();
       ctx.restore();
     });
   });
