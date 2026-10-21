@@ -11,7 +11,7 @@
 
   const W = {
     progress: 450, complete: 500, evac: 600, fallen: 2200, dist: 22, wound: 40, nearDeath: 70,
-    unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 6, cardValue: 0.7, chainReady: 3, chainDone: 6, hand: 1.5,
+    unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 6, cardValue: 0.7, chainReady: 3, chainDone: 6, reserve: 2.2, hand: 1.5,
     zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, partDmg: 6, adrenaline: 9, trap: 14, block: 2,
   };
   ZG.BotWeights = W;
@@ -123,6 +123,18 @@
       s += h.xp * W.xp;
       let val = 0;
       h.deck.concat(h.hand, h.discard, h.equip).forEach((u) => { val += ZG.Cards.get(g.cards[u]).value || 0; });
+      // запас полезных расходников: не тратить ради связки или «лишней» энергии, а ждать момента.
+      // Лечилки ценны, пока герой почти здоров; остальное — пока миссия не близка к концу (в кампании запас переносится).
+      const roundsLeft = E.maxRounds(g) - g.round;
+      const tail = g.campaign ? 1.4 : Math.min(1, roundsLeft / 5);
+      const hurtR = E.hurtCount(g, h) / Math.max(1, E.maxHp(g, h));
+      h.deck.concat(h.hand, h.discard).forEach((u) => {
+        const cd = E.cardDef(g, u);
+        if (!cd.consumable || !(cd.loot || cd.campaignOnly)) return;
+        const heal = (cd.tags || []).includes('heal');
+        const f = heal ? (infHand ? 0 : Math.max(0, 1 - hurtR * 1.6)) : 1;
+        val += (cd.value || 0) * W.reserve * f * (heal ? Math.max(tail, 0.6) : tail) / W.cardValue;
+      });
       s += val * W.cardValue + h.hand.length * W.hand;
     });
     // заготовленная связка: после розыгрыша в руке осталась доступная карта той же масти —
