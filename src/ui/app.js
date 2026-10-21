@@ -728,7 +728,8 @@
         if (!h.onBoard) c.classList.add(h.fallen ? 'fallen' : 'evac');
         if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) c.classList.add('ready');
         const img = el('img', 'hp-portrait');
-        img.src = CV.artURL(h.turned ? 'z_turned_' + h.id : def.art, 96, 96, {});
+        const drawn = CV.artURL(h.turned ? 'z_turned_' + h.id : def.art, 96, 96, {});
+        if (def.face && !h.turned) { img.onerror = () => { img.onerror = null; img.src = drawn; }; img.src = def.face; } else img.src = drawn;
         const pw = el('div', 'hp-pwrap'); pw.appendChild(img);
         pw.appendChild(el('span', 'hp-lvl', String(h.level)));
         c.appendChild(pw);

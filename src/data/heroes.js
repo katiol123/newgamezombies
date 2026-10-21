@@ -16,7 +16,7 @@
 
   ZG.Heroes.addAll([
     {
-      id: 'boris', name: 'Борис', nick: 'Кувалда', role: 'Танк', color: '#c0392b',
+      id: 'boris', pic: 'art/heroes/boris.jpg', face: 'art/heroes/boris_face.jpg', name: 'Борис', nick: 'Кувалда', role: 'Танк', color: '#c0392b',
       hp: 7, hand: 4, energy: 3,
       bio: 'Прораб со стройки на окраине. Медленный, упрямый, непробиваемый.',
       ability: 'Живой щит', abilityText: 'Зомби в его зоне атакуют только Бориса. Каждая карта, сброшенная им для защиты, блокирует +1, и ещё 1 урон за фазу он держит сам. Толстая шкура: Заражение у него — только на «1».',
@@ -26,7 +26,7 @@
       art: 'hero_boris',
     },
     {
-      id: 'marina', name: 'Марина', nick: 'Скальпель', role: 'Медик', color: '#e8e8e8',
+      id: 'marina', pic: 'art/heroes/marina.jpg', face: 'art/heroes/marina_face.jpg', name: 'Марина', nick: 'Скальпель', role: 'Медик', color: '#e8e8e8',
       hp: 6, hand: 5, energy: 3,
       bio: 'Хирург районной больницы. Ушла с последней смены с полной сумкой.',
       ability: 'Полевой врач', abilityText: 'Раз за ход, 1 ⚡, герою в её зоне (можно себе): убрать 1 Рану ИЛИ обеззаразить: все его Заражения (в руке, колоде и сбросе) → Раны.',
@@ -36,7 +36,7 @@
       art: 'hero_marina',
     },
     {
-      id: 'lisa', name: 'Лиза', nick: 'Тень', role: 'Разведчица', color: '#2e8b57',
+      id: 'lisa', pic: 'art/heroes/lisa.jpg', face: 'art/heroes/lisa_face.jpg', name: 'Лиза', nick: 'Тень', role: 'Разведчица', color: '#2e8b57',
       hp: 4, hand: 4, energy: 3,
       bio: 'Курьер и паркурщица. Знает каждую крышу квартала.',
       ability: 'Паркур', abilityText: 'Первый за ход выход из зоны с зомби ей ничего не стоит (Хватка не действует). Перелезает баррикады бесплатно.',
@@ -46,7 +46,7 @@
       art: 'hero_lisa',
     },
     {
-      id: 'viktor', name: 'Виктор', nick: 'Гром', role: 'Стрелок', color: '#2d6fb5',
+      id: 'viktor', pic: 'art/heroes/viktor.jpg', face: 'art/heroes/viktor_face.jpg', name: 'Виктор', nick: 'Гром', role: 'Стрелок', color: '#2d6fb5',
       hp: 6, hand: 5, energy: 3,
       bio: 'Участковый. Патронов мало, выдержки много.',
       ability: 'Выучка', abilityText: '+1 к дальности его дальних атак. Первый выстрел за ход — на 1 Шум тише.',
@@ -56,7 +56,7 @@
       art: 'hero_viktor',
     },
     {
-      id: 'kira', name: 'Кира', nick: 'Ключ', role: 'Механик', color: '#d4a017',
+      id: 'kira', pic: 'art/heroes/kira.jpg', face: 'art/heroes/kira_face.jpg', name: 'Кира', nick: 'Ключ', role: 'Механик', color: '#d4a017',
       hp: 6, hand: 5, energy: 3,
       bio: 'Чинит всё, что ездит, и ломает всё, что ходит.',
       ability: 'Инженер', abilityText: 'Базовое действие «Баррикада» стоит ей 1 ⚡ вместо 2. Её баррикады прочнее на 1, ловушки — на 1 урон сильнее.',
@@ -66,7 +66,7 @@
       art: 'hero_kira',
     },
     {
-      id: 'sava', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
+      id: 'sava', pic: 'art/heroes/sava.jpg', face: 'art/heroes/sava_face.jpg', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
       hp: 4, hand: 5, energy: 3,
       bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
       ability: 'Бесшумный', abilityText: 'Бродячие зомби не замечают Саву издалека — только из своей или соседней зоны. Двери под ним не скрипят.',
@@ -76,7 +76,7 @@
       art: 'hero_sava',
     },
     {
-      id: 'gosha', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
+      id: 'gosha', pic: 'art/heroes/gosha.jpg', face: 'art/heroes/gosha_face.jpg', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
       hp: 7, hand: 6, energy: 3,
       bio: 'Бригадир ремонтной бригады. Тихо не умеет, зато умеет закатать в асфальт что угодно.',
       ability: 'Шумный и Заглушка', abilityText: 'Шумный: бродячие замечают Гошу за 2 зоны даже сквозь стены, укрытие ему не помогает, двери под ним скрипят на 2 зоны. Заглушка (1 ⚡, действие): в зоне с люком — люк молчит 2 раунда. Шум 1.',

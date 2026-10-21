@@ -120,7 +120,9 @@
     c.style.setProperty('--hero', def.color);
     const portrait = el('div', 'hero-portrait');
     const img = el('img');
-    img.src = artURL(def.art, 200, 200, {});
+    // иллюстрация героя (если есть), иначе — портрет, нарисованный кодом
+    const drawn = artURL(def.art, 200, 200, {});
+    if (def.pic) { img.onerror = () => { img.onerror = null; img.src = drawn; }; img.src = def.pic; portrait.classList.add('pic'); } else img.src = drawn;
     portrait.appendChild(img);
     c.appendChild(portrait);
     const info = el('div', 'hero-info');

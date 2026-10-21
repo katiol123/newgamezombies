@@ -150,6 +150,7 @@ small { opacity: .75; }
 .hero-card.picked.p2 { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue), 0 10px 30px rgba(63,167,214,.25); }
 .hero-portrait { height: 150px; position: relative; overflow: hidden; border-bottom: 3px solid var(--hero); }
 .hero-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.hero-portrait.pic img { object-position: 50% 28%; }
 .hero-info { padding: 10px 12px 12px; font-family: var(--font-t); font-size: 14px; }
 .hero-role { font-size: 12px; text-transform: uppercase; letter-spacing: .25em; color: var(--hero); filter: brightness(1.4); }
 .hero-name { font-family: var(--font-d); font-size: 20px; }

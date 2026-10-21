@@ -586,13 +586,14 @@
     ctx.globalAlpha = 1;
   }
   const PORTRAITS = {
-    boris: (c) => bust(c, '#d4a07a', '#c86a1a', (c) => {
+    boris: (c) => bust(c, '#c49470', '#a8341e', (c) => {
       eyes(c, '#3a2a1a', 44);
-      // борода
-      c.beginPath(); c.moveTo(31, 46); c.quadraticCurveTo(32, 70, 50, 70); c.quadraticCurveTo(68, 70, 69, 46); c.quadraticCurveTo(60, 58, 50, 56); c.quadraticCurveTo(40, 58, 31, 46); c.fillStyle = '#5a3a22'; c.fill();
+      // щетина и густые тёмные усы подковой
+      c.fillStyle = 'rgba(50,30,20,.3)'; c.beginPath(); c.ellipse(50, 58, 16, 10, 0, 0, Math.PI); c.fill();
+      c.fillStyle = '#2e1e14'; c.beginPath(); c.moveTo(37, 62); c.quadraticCurveTo(38, 51, 50, 51); c.quadraticCurveTo(62, 51, 63, 62); c.lineTo(59, 62); c.quadraticCurveTo(57, 55, 50, 55); c.quadraticCurveTo(43, 55, 41, 62); c.closePath(); c.fill();
       // каска
-      c.beginPath(); c.arc(50, 34, 23, Math.PI, 0); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 2.5);
-      c.fillStyle = '#f0c040'; rr(c, 22, 31, 56, 6, 2); c.fill(); strokeInk(c, 2);
+      c.beginPath(); c.arc(50, 34, 23, Math.PI, 0); c.fillStyle = '#b8352a'; c.fill(); strokeInk(c, 2.5);
+      c.fillStyle = '#b8352a'; rr(c, 22, 31, 56, 6, 2); c.fill(); strokeInk(c, 2);
       c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(46, 13, 8, 18);
       // светоотражающие полосы
       c.fillStyle = '#e8e8e8'; c.fillRect(20, 80, 60, 5);
@@ -600,44 +601,48 @@
     marina: (c) => bust(c, '#e6c3a5', '#e9e9e9', (c) => {
       eyes(c, '#2d6fb5', 41);
       // шапочка
-      c.beginPath(); c.arc(50, 34, 21, Math.PI * 1.02, -0.02); c.quadraticCurveTo(70, 28, 30, 28); c.fillStyle = '#5aa6a0'; c.fill(); strokeInk(c, 2);
+      c.beginPath(); c.arc(50, 34, 21, Math.PI * 1.02, -0.02); c.quadraticCurveTo(70, 28, 30, 28); c.fillStyle = '#a8cfd0'; c.fill(); strokeInk(c, 2);
       // волосы
       c.fillStyle = '#3a2418'; c.beginPath(); c.moveTo(30, 34); c.quadraticCurveTo(26, 56, 32, 62); c.lineTo(34, 38); c.fill(); c.beginPath(); c.moveTo(70, 34); c.quadraticCurveTo(74, 56, 68, 62); c.lineTo(66, 38); c.fill();
-      // маска на подбородке
-      c.fillStyle = '#9fd0cc'; rr(c, 37, 52, 26, 12, 4); c.fill(); strokeInk(c, 1.5);
+      // медицинская маска на носу и рту
+      c.fillStyle = '#9fd0d8'; rr(c, 33, 47, 34, 18, 6); c.fill(); strokeInk(c, 1.5);
+      c.strokeStyle = 'rgba(40,70,80,.45)'; c.lineWidth = 1; [52, 56, 60].forEach((y) => { c.beginPath(); c.moveTo(36, y); c.lineTo(64, y); c.stroke(); });
       // халат и стетоскоп
       c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(50, 70); c.lineTo(42, 100); c.moveTo(50, 70); c.lineTo(58, 100); c.stroke();
       c.strokeStyle = '#333'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(36, 68); c.quadraticCurveTo(40, 90, 52, 88); c.stroke();
       c.fillStyle = '#c0392b'; c.fillRect(64, 78, 8, 3); c.fillRect(66.5, 75.5, 3, 8);
     }),
-    lisa: (c) => bust(c, '#c99a72', '#2e6b4a', (c) => {
+    lisa: (c) => bust(c, '#c99a72', '#4a6658', (c) => {
       eyes(c, '#4e7a3a', 43);
       // капюшон
-      c.beginPath(); c.moveTo(24, 66); c.quadraticCurveTo(20, 18, 50, 14); c.quadraticCurveTo(80, 18, 76, 66); c.quadraticCurveTo(70, 40, 50, 28); c.quadraticCurveTo(30, 40, 24, 66); c.fillStyle = '#1f4a33'; c.fill(); strokeInk(c, 2.5);
+      c.beginPath(); c.moveTo(24, 66); c.quadraticCurveTo(20, 18, 50, 14); c.quadraticCurveTo(80, 18, 76, 66); c.quadraticCurveTo(70, 40, 50, 28); c.quadraticCurveTo(30, 40, 24, 66); c.fillStyle = '#4f6e60'; c.fill(); strokeInk(c, 2.5);
       // бандана
-      c.beginPath(); c.moveTo(31, 50); c.lineTo(69, 50); c.lineTo(64, 64); c.lineTo(50, 70); c.lineTo(36, 64); c.closePath(); c.fillStyle = '#7a1f1f'; c.fill(); strokeInk(c, 1.5);
-      c.fillStyle = 'rgba(255,255,255,.4)'; for (let i = 0; i < 4; i++) { circle(c, 40 + i * 7, 58, 1.2); c.fill(); }
+      c.beginPath(); c.moveTo(31, 50); c.lineTo(69, 50); c.lineTo(64, 64); c.lineTo(50, 70); c.lineTo(36, 64); c.closePath(); c.fillStyle = '#8f8a5c'; c.fill(); strokeInk(c, 1.5);
+      c.fillStyle = 'rgba(60,60,30,.45)'; [[38, 56, 5], [50, 60, 4], [60, 55, 4], [45, 65, 3]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); });
       // чёлка
-      c.fillStyle = '#2a1a10'; poly(c, [34, 30, 56, 26, 46, 36, 40, 34]); c.fill();
+      c.fillStyle = '#4a2c18'; poly(c, [34, 30, 56, 26, 46, 36, 40, 34]); c.fill(); poly(c, [32, 34, 36, 33, 33, 52]); c.fill(); poly(c, [68, 34, 64, 33, 67, 52]); c.fill();
     }),
-    sava: (c) => bust(c, '#bf9474', '#3a3350', (c) => {
+    sava: (c) => bust(c, '#bf9474', '#34484a', (c) => {
+      c.fillStyle = '#5a3a78'; poly(c, [30, 68, 50, 80, 70, 68, 66, 74, 50, 86, 34, 74]); c.fill();
       eyes(c, '#9ab0c0', 43);
       // глубокий капюшон и тень на лице
-      c.beginPath(); c.moveTo(22, 70); c.quadraticCurveTo(16, 14, 50, 10); c.quadraticCurveTo(84, 14, 78, 70); c.quadraticCurveTo(72, 34, 50, 24); c.quadraticCurveTo(28, 34, 22, 70); c.fillStyle = '#2a2438'; c.fill(); strokeInk(c, 2.5);
+      c.beginPath(); c.moveTo(22, 70); c.quadraticCurveTo(16, 14, 50, 10); c.quadraticCurveTo(84, 14, 78, 70); c.quadraticCurveTo(72, 34, 50, 24); c.quadraticCurveTo(28, 34, 22, 70); c.fillStyle = '#2c4442'; c.fill(); strokeInk(c, 2.5);
       c.fillStyle = 'rgba(10,8,20,.35)'; c.fillRect(30, 28, 40, 12);
       // шарф до носа
-      c.beginPath(); c.moveTo(30, 48); c.lineTo(70, 48); c.lineTo(68, 66); c.lineTo(32, 66); c.closePath(); c.fillStyle = '#5a4e70'; c.fill(); strokeInk(c, 1.5);
+      c.beginPath(); c.moveTo(30, 48); c.lineTo(70, 48); c.lineTo(68, 66); c.lineTo(32, 66); c.closePath(); c.fillStyle = '#3c5650'; c.fill(); strokeInk(c, 1.5);
       c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1.2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(33, 53 + i * 4); c.lineTo(67, 53 + i * 4); c.stroke(); }
-      // перо на капюшоне (сыч)
-      c.fillStyle = '#c9b78f'; poly(c, [70, 20, 80, 8, 76, 24]); c.fill();
+      // перо за шарфом (сыч)
+      c.fillStyle = '#c9b78f'; poly(c, [34, 60, 20, 50, 24, 56, 36, 64]); c.fill();
     }),
     gosha: (c) => bust(c, '#d8a882', '#b8d02a', (c) => {
       eyes(c, '#5a3a1a', 44);
-      // синяя кепка козырьком назад и наушники-противошумы
+      // синяя кепка козырьком назад
       c.beginPath(); c.arc(50, 33, 22, Math.PI, 0); c.closePath(); c.fillStyle = '#2d5fa0'; c.fill(); strokeInk(c, 2.5);
       c.fillStyle = '#1f4a80'; c.fillRect(64, 28, 16, 6);
-      c.strokeStyle = '#222'; c.lineWidth = 3; c.beginPath(); c.arc(50, 34, 26, Math.PI * 1.05, -0.05); c.stroke();
-      [[24, 44], [76, 44]].forEach(([x, y]) => { rr(c, x - 6, y - 9, 12, 18, 5); c.fillStyle = '#e8701a'; c.fill(); strokeInk(c, 2); });
+      // наушники-противошумы висят на шее
+      c.strokeStyle = '#222'; c.lineWidth = 3; c.beginPath(); c.arc(50, 62, 20, 0.15, Math.PI - 0.15); c.stroke();
+      [[30, 70], [70, 70]].forEach(([x, y]) => { rr(c, x - 7, y - 8, 14, 16, 5); c.fillStyle = '#e8701a'; c.fill(); strokeInk(c, 2); });
+      c.fillStyle = '#5a3a20'; poly(c, [30, 36, 34, 46, 32, 50]); c.fill(); poly(c, [70, 36, 66, 46, 68, 50]); c.fill();
       // щетина и широкая горластая ухмылка с щербинкой (без усов — усы у Виктора)
       c.fillStyle = 'rgba(60,40,30,.22)'; c.beginPath(); c.ellipse(50, 60, 15, 8, 0, 0, Math.PI); c.fill();
       c.fillStyle = '#5a1a14'; c.beginPath(); c.moveTo(39, 54); c.quadraticCurveTo(50, 66, 61, 54); c.closePath(); c.fill(); strokeInk(c, 1.5);
@@ -646,32 +651,33 @@
       // светоотражающие полосы на жилете
       c.fillStyle = '#e8e8d0'; c.fillRect(26, 82, 48, 4); c.fillRect(30, 90, 40, 4);
     }),
-    viktor: (c) => bust(c, '#cfa07e', '#2b3f5c', (c) => {
+    viktor: (c) => bust(c, '#cfa07e', '#6f8ea6', (c) => {
       eyes(c, '#3a2a1a', 44);
       // усы
-      c.fillStyle = '#3a2a1a'; c.beginPath(); c.moveTo(38, 54); c.quadraticCurveTo(50, 48, 62, 54); c.quadraticCurveTo(50, 52, 38, 54); c.fill();
-      c.fillStyle = '#3a2a1a'; rr(c, 38, 52, 24, 4, 2); c.fill();
+      c.fillStyle = '#9a9488'; c.beginPath(); c.moveTo(34, 60); c.quadraticCurveTo(38, 49, 50, 51); c.quadraticCurveTo(62, 49, 66, 60); c.quadraticCurveTo(58, 56, 50, 57); c.quadraticCurveTo(42, 56, 34, 60); c.fill(); strokeInk(c, 1.2);
       // фуражка
-      c.fillStyle = '#2b3f5c'; c.beginPath(); c.ellipse(50, 24, 26, 9, 0, 0, 7); c.fill(); strokeInk(c, 2);
-      c.fillStyle = '#1a2638'; rr(c, 30, 24, 40, 10, 2); c.fill();
+      c.fillStyle = '#7f9fb6'; c.beginPath(); c.ellipse(50, 24, 26, 9, 0, 0, 7); c.fill(); strokeInk(c, 2);
+      c.fillStyle = '#4a6478'; rr(c, 30, 24, 40, 10, 2); c.fill();
       c.fillStyle = INK; c.beginPath(); c.ellipse(50, 35, 20, 4, 0, 0, Math.PI); c.fill();
-      c.fillStyle = '#c0392b'; c.fillRect(30, 30, 40, 3);
+      c.fillStyle = '#2a3a48'; c.fillRect(30, 30, 40, 3);
       c.fillStyle = '#e0a83a'; circle(c, 50, 26, 3.5); c.fill();
       // погоны
       c.fillStyle = '#e0a83a'; c.fillRect(16, 76, 14, 3); c.fillRect(70, 76, 14, 3);
     }),
-    kira: (c) => bust(c, '#e2b896', '#4a4f57', (c) => {
-      eyes(c, '#6b4a1a', 44);
+    kira: (c) => bust(c, '#e2b896', '#6f7448', (c) => {
+      // ухмылка
+      c.fillStyle = '#f2ead8'; c.beginPath(); c.moveTo(42, 55); c.quadraticCurveTo(50, 62, 58, 55); c.closePath(); c.fill(); strokeInk(c, 1.3);
       // волосы с хвостом
-      c.fillStyle = '#b8481c'; c.beginPath(); c.arc(50, 34, 21, Math.PI, 0); c.fill();
+      c.fillStyle = '#3a2618'; c.beginPath(); c.arc(50, 34, 21, Math.PI, 0); c.fill();
       c.beginPath(); c.moveTo(68, 30); c.quadraticCurveTo(90, 40, 82, 70); c.quadraticCurveTo(78, 50, 66, 40); c.fill();
       // очки-гогглы
-      c.fillStyle = '#333'; c.fillRect(28, 25, 44, 6);
-      c.fillStyle = '#6ec6e8'; circle(c, 40, 28, 7); c.fill(); strokeInk(c, 2.5); circle(c, 60, 28, 7); c.fill(); strokeInk(c, 2.5);
+      c.fillStyle = '#333'; c.fillRect(28, 40, 44, 6);
+      c.fillStyle = '#5fb0b8'; rr(c, 32, 36, 16, 12, 5); c.fill(); strokeInk(c, 2.5); rr(c, 52, 36, 16, 12, 5); c.fill(); strokeInk(c, 2.5);
+      c.fillStyle = 'rgba(255,255,255,.45)'; c.fillRect(35, 38, 4, 3); c.fillRect(55, 38, 4, 3);
       // масло на щеке
       c.fillStyle = 'rgba(30,20,10,.5)'; c.fillRect(56, 50, 8, 3);
       // комбинезон
-      c.fillStyle = '#d4a017'; c.fillRect(34, 76, 6, 24); c.fillRect(60, 76, 6, 24);
+      c.fillStyle = '#8a7a40'; c.fillRect(34, 76, 6, 24); c.fillRect(60, 76, 6, 24);
     }),
   };
   Object.keys(PORTRAITS).forEach((id) => {
