@@ -201,5 +201,17 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(okGive && g.carriedHolders[u].join() === 'boris,lisa', `передача записала держателя: ${g.carriedHolders[u]}`);
 }
 
+// 15) Заражения тоже переносятся как потерянная Стойкость
+{
+  const c = C.create({ heroes: [{ id: 'boris' }], seed: 't15' });
+  const opts = C.startMission(c); opts.quiet = true;
+  const g = E.create(opts);
+  const h = g.heroes[0];
+  ['wound', 'infection', 'infection'].forEach((id) => { const u = E.newUid(g, 'c'); g.cards[u] = id; h.discard.push(u); });
+  g.result = { win: true, stars: 1 };
+  C.finishMission(c, g);
+  ok(C.hero(c, 'boris').injury === 3 - 1, `1 Рана + 2 Заражения − паёк = травмы ${C.hero(c, 'boris').injury}`);
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);
