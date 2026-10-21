@@ -1162,6 +1162,10 @@
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
     },
+    async wakeall(ev) {
+      this.view.play([ev]);
+      await Banner.show('ВСЕ ПРОСНУЛИСЬ!', ev.why ? `${ev.why}: мертвецы со всего квартала идут сюда` : 'мертвецы со всего квартала идут сюда', 'wave');
+    },
     async wanderer(ev) {
       this.view.play([ev]);
       await Banner.show('ОН ЗДЕСЬ!', `${ZG.Zombies.get(ev.ztype).name} бродит в этом квартале`, 'wave');

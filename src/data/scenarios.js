@@ -165,10 +165,10 @@
       id: 'autobase', campaignOnly: true, name: 'Автобаза №3',
       short: 'Ликвидируй двух Толстяков в боксе автобазы и уезжай на фургоне.',
       brief: 'В боксе автобазы засели двое разжиревших мертвецов, а во дворе ждёт заправленная «буханка» — последний шанс выбраться из района.',
-      setupText: 'Поле 3×2, люков нет. Уникальный тайл «Автобаза №3» — в правом (дальнем) столбце, строка случайна; лежит рубашкой вверх, но его место известно; в боксе — 2 притаившихся Толстяка, во дворе — фургон (выход). На 4 остальных закрытых тайла рубашкой вверх кладутся 4 карты «Стая/Пусто» (2 и 2): при открытии тайла с «Стаей» в его центр выставьте стаю — 3 Шатуна и 2 Бегуна (при 3 героях: 4 Шатуна и 3 Бегуна, при 4: 5 Шатунов и 4 Бегуна). Раундов 10 (соло — 13, четверо — 8). Притаившиеся зомби не бродят, пока их не разбудят (увидят героя или услышат шум). Открыт только стартовый тайл.',
+      setupText: 'Поле 3×2, люков нет. Уникальный тайл «Автобаза №3» — в правом (дальнем) столбце, строка случайна; лежит рубашкой вверх, но его место известно; в боксе — 2 притаившихся Толстяка, во дворе — фургон (выход). На 4 остальных закрытых тайла рубашкой вверх кладутся 4 карты «Стая/Пусто» (2 и 2): при открытии тайла с «Стаей» в его центр выставьте стаю — 3 Шатуна и 2 Бегуна (соло: 2 и 2; при 3 героях: 4 и 3; при 4: 5 и 4). Раундов 10 (соло — 15, четверо — 8). Притаившиеся зомби не бродят, пока их не разбудят (увидят героя или услышат шум). Открыт только стартовый тайл.',
       exitLabel: 'Фургон', exitArt: 'exit_van',
       // состав одной стаи (обе стаи одинаковые) — по размеру отряда
-      stacks: { 1: ['walker', 'walker', 'walker', 'runner', 'runner'], 2: ['walker', 'walker', 'walker', 'runner', 'runner'], 3: ['walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner', 'runner'] },
+      stacks: { 1: ['walker', 'walker', 'runner', 'runner'], 2: ['walker', 'walker', 'walker', 'runner', 'runner'], 3: ['walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'walker', 'walker', 'runner', 'runner', 'runner', 'runner'] },
       setup(g, E) {
         const b = g.board, Rng = ZG.Rng;
         const ut = b.tiles.findIndex((t) => t.id === 'autobase');
@@ -199,6 +199,19 @@
           });
         });
       },
+      // Особое правило: драка с Толстяками будит всех. Карты «Стая/Пусто» переворачиваются:
+      // тайлы со стаями открываются, стаи вылетают уже охотящимися.
+      rouse(g, z, E) {
+        if (g.obj.roused || !g.obj.bosses.includes(z.uid)) return;
+        g.obj.roused = true;
+        (g.stackTiles || []).forEach((ti) => {
+          if (g.revealed && !g.revealed[ti] && g.zombies.some((q) => g.board.cells[q.pos].tile === ti)) E.reveal(g, ti, 'Стая вырвалась из двора');
+        });
+        g.stackTiles = [];
+        E.wakeAll(g, z.pos, 'Драка в боксе');
+      },
+      onZombieHit(g, z, heroIdx, E) { this.rouse(g, z, E); },
+      onZombieAttack(g, z, h, E) { this.rouse(g, z, E); },
       bossesLeft(g) { return g.zombies.filter((z) => g.obj.bosses.includes(z.uid)).length; },
       goals(g) {
         const left = this.bossesLeft(g);

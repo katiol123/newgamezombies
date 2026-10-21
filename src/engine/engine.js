@@ -144,6 +144,12 @@
     }
     return false;
   };
+  // будит всех зомби на поле и снимает «притаился»; все идут на место события
+  E.wakeAll = function (g, cell, why) {
+    g.zombies.forEach((z) => { if (ZG.Zombies.get(z.type).immobile) return; z.lurk = false; wake(g, z, cell, true); });
+    E.log(g, `${why}: все зомби в квартале проснулись и идут сюда!`, 'bad');
+    E.fx(g, { t: 'wakeall', pos: cell, why });
+  };
   function wake(g, z, trail, sound, by) {
     if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: !!sound }); }
     if (by != null) z.wokenBy = by; // кто натравил (для миссии «Предатель»)
@@ -768,6 +774,7 @@
     if (heroIdx != null && kind !== 'trap' && kind !== 'silent' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     if (g.stealth && heroIdx != null && g.heroes[heroIdx] && kind !== 'silent') wake(g, z, g.heroes[heroIdx].pos, false, heroIdx); // на него напали
     const def = ZG.Zombies.get(z.type);
+    if (heroIdx != null && E.scenario(g).onZombieHit) E.scenario(g).onZombieHit(g, z, heroIdx, E); // особые правила задания
     if (g.turn && g.turn.courage && heroIdx === g.active && (kind === 'melee' || kind === 'ranged' || kind === 'fire')) n += 1;
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
@@ -1101,6 +1108,7 @@
       if (taunt.length) hs = taunt;
       hs.sort((a, b) => E.hurtCount(g, a) - E.hurtCount(g, b) || a.idx - b.idx);
       const h = hs[0];
+      if (E.scenario(g).onZombieAttack) E.scenario(g).onZombieAttack(g, z, h, E); // особые правила задания
       (byHero[h.idx] = byHero[h.idx] || { hero: h.idx, incoming: 0, attackers: [] });
       byHero[h.idx].incoming += def.dmg;
       g.stats.incoming = (g.stats.incoming || 0) + def.dmg;
