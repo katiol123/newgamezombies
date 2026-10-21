@@ -1673,7 +1673,7 @@
     h.hand.splice(i, 1);
     const chain = def.suit !== 'none' && g.turn.lastSuit === def.suit;
     g.stats.cardsPlayed++;
-    if (chain) g.stats.chains++;
+    if (chain) { g.stats.chains++; g.turn.chains = (g.turn.chains || 0) + 1; }
     E.log(g, `${E.heroName(h)} играет «${def.name}»${chain ? ' — СВЯЗКА!' : ''}.`, chain ? 'chain' : 'info');
     E.fx(g, { t: 'play', hero: h.idx, card: uid, chain, target, pos: h.pos });
     let dest = def.consumable ? 'removed' : 'discard';
@@ -1696,14 +1696,10 @@
     const c = {
       g, hero: h, def, target, chain, E,
       zombie: (uid) => E.zombie(g, uid),
-      // опыт за связку (у части уникальных карт героев): только под угрозой — зомби в 2 зонах — и раз за ход,
-      // чтобы нельзя было «фармить» опыт в безопасном углу
+      // опыт за связку — только у немногих уникальных карт героев (написано в их эффекте связки)
       chainXp() {
-        if (!chain || !g.turn || g.turn.chainXp) return;
-        const d = E.distV(g, h.pos);
-        if (!g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && d[z.pos] <= 2)) return;
-        g.turn.chainXp = true;
-        E.log(g, `${E.heroName(h)}: связка под носом у мертвецов — +1 ★ опыта.`, 'good');
+        if (!chain) return;
+        E.log(g, `${E.heroName(h)}: связка — +1 ★ опыта.`, 'good');
         gainXp(g, h, 1);
       },
       melee(uid, n) {

@@ -11,7 +11,7 @@
 
   const W = {
     progress: 450, complete: 500, evac: 600, fallen: 2200, dist: 22, wound: 40, nearDeath: 70,
-    unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 3, cardValue: 0.7, hand: 1.5,
+    unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 6, cardValue: 0.7, chainReady: 3, chainDone: 6, hand: 1.5,
     zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, partDmg: 6, adrenaline: 9, trap: 14, block: 2,
   };
   ZG.BotWeights = W;
@@ -125,6 +125,16 @@
       h.deck.concat(h.hand, h.discard, h.equip).forEach((u) => { val += ZG.Cards.get(g.cards[u]).value || 0; });
       s += val * W.cardValue + h.hand.length * W.hand;
     });
+    // заготовленная связка: после розыгрыша в руке осталась доступная карта той же масти —
+    // учит ИИ выстраивать порядок карт, чтобы срабатывали эффекты связки (без погони за ней любой ценой)
+    if (g.turn && g.active != null) {
+      const h = g.heroes[g.active];
+      if (h && h.onBoard) {
+        let n = 0;
+        h.hand.forEach((u) => { const d = E.cardDef(g, u); if (g.turn.lastSuit && d.chainText && !d.unplayable && d.suit === g.turn.lastSuit && E.cardCost(g, h, u) <= h.energy) n++; });
+        s += Math.min(1, n) * W.chainReady + (g.turn.chains || 0) * W.chainDone;
+      }
+    }
     s -= g.alarm * W.alarm;
     // событие «Утечка газа»: героям там стоять опасно, зомби там — хорошо
     if (g.hazard) {

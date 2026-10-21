@@ -23,15 +23,15 @@
   // ---------------------------------------------------------------- Враги ---
   ZG.Zombies.addAll([
     {
-      id: 'walker', name: 'Шатун', hp: 2, dmg: 1, speed: 1, xp: 1, armor: 0, threat: 2,
+      id: 'walker', name: 'Шатун', hp: 2, dmg: 1, speed: 1, xp: 0, armor: 0, threat: 2,
       text: 'Медленный, но их много.', art: 'z_walker',
     },
     {
-      id: 'runner', name: 'Бегун', hp: 1, dmg: 1, speed: 2, xp: 1, armor: 0, threat: 3,
+      id: 'runner', name: 'Бегун', hp: 1, dmg: 1, speed: 2, xp: 0, armor: 0, threat: 3,
       text: 'Ходит на 2 зоны. Хрупкий.', art: 'z_runner',
     },
     {
-      id: 'screamer', name: 'Крикун', hp: 1, dmg: 0, speed: 1, xp: 2, armor: 0, threat: 4,
+      id: 'screamer', name: 'Крикун', hp: 1, dmg: 0, speed: 1, xp: 0, armor: 0, threat: 4,
       text: 'Не атакует. В фазу зомби, если герой в 2 зонах от него: Тревога +1.', art: 'z_screamer',
       hooks: { zombiePhase(g, z, E) { const d = E.dist(g, z.pos); if (g.heroes.some((h) => h.onBoard && d[h.pos] <= 2)) E.raiseAlarm(g, 1, 'Крикун воет'); } },
     },
