@@ -572,3 +572,5 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
   .chain-pop { font-size: 32px; bottom: 40%; }
   .chain-pop small { font-size: 14px; max-width: 90vw; }
 }
+.setup-modes { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.03); }
+.setup-modes .fog-toggle { margin-top: 0; }

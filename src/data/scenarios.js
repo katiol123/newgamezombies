@@ -67,9 +67,9 @@
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     {
-      setupText: 'Ящики: 6, с медикаментами: 5 (нужно 3, при 3–4 героях — 4). Выход — Скорая. Задание долгое: +1 раунд.', id: 'meds', name: 'Лекарство', short: 'Собери 3 упаковки медикаментов для скорой.',
-      brief: 'В скорой — раненые, которым нужны лекарства. Пять ящиков, в четырёх — медикаменты; нужно три.',
-      crates: 6, real: 5, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance', mods: { maxRounds: 1 },
+      setupText: 'Ящики: 6, с медикаментами: 5 (нужно 3, при 3–4 героях — 4). Выход — Скорая.', id: 'meds', name: 'Лекарство', short: 'Собери медикаменты для скорой (3, при 3–4 героях — 4).',
+      brief: 'В скорой — раненые, которым нужны лекарства. Шесть ящиков, в пяти — медикаменты; нужно три (большому отряду — четыре).',
+      crates: 6, real: 5, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
       setup(g, E) { g.obj = { delivered: 0, need: g.heroes.length >= 3 ? 4 : 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
       goals(g) {
         return [

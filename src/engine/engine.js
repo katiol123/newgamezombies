@@ -120,9 +120,10 @@
     if (z.pos === h.pos) return true;
     if (h.lurk) return false; // «Затаиться»: видят только в своей зоне
     // бродячие не замечают бесшумного героя (Тень) и того, кто идёт «Тихим шагом»
-    const sneaky = !z.awake && (Mods.flag(g, h, 'stealthy') || (g.turn && g.active === h.idx && g.turn.quiet));
-    if (sneaky) return false;
+    const quiet = !z.awake && g.turn && g.active === h.idx && g.turn.quiet;
+    if (quiet) return false;
     if (g.board.adj[z.pos].includes(h.pos)) return true;
+    if (!z.awake && Mods.flag(g, h, 'stealthy')) return false; // бесшумного издалека не замечают
     if (E.sheltered(g, h)) return false;
     const b = g.board, c0 = b.cells[z.pos];
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -143,11 +144,12 @@
     if (trail != null) z.trail = trail;
   }
   // зомби замечают героев (после каждого действия героя и в фазу зомби)
-  E.perceive = function (g) {
+  // skip — индекс героя, которого пока не проверяем (бесшумный в свой ход: его заметят в конце хода)
+  E.perceive = function (g, skip) {
     if (!g.stealth) return;
     g.zombies.forEach((z) => {
       if (ZG.Zombies.get(z.type).immobile) return;
-      const seen = g.heroes.filter((h) => E.sees(g, z, h));
+      const seen = g.heroes.filter((h) => h.idx !== skip && E.sees(g, z, h));
       if (!seen.length) return;
       if (seen.length > 1) { const d = E.distV(g, z.pos); seen.sort((a, b) => d[a.pos] - d[b.pos]); }
       wake(g, z, seen[0].pos);
@@ -1247,6 +1249,8 @@
     if (!h) return fail(g, 'Выберите героя.');
     const ok = applyHeroAction(g, h, a);
     if (ok === false) return false;
+    // зомби замечают героев сразу; бесшумного (Сава, «Тихий шаг») — только в конце его хода
+    if (g.phase === 'heroes' && !g.result && g.active === h.idx) E.perceive(g, Mods.flag(g, h, 'stealthy') || (g.turn && g.turn.quiet) ? h.idx : null);
     queueTalent(g);
     return true;
   };

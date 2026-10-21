@@ -69,7 +69,7 @@
       id: 'sava', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
       hp: 5, hand: 5, energy: 3,
       bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
-      ability: 'Бесшумный', abilityText: 'Бродячие зомби замечают Саву, только если он в их зоне. Двери под ним не скрипят.',
+      ability: 'Бесшумный', abilityText: 'Бродячие зомби замечают Саву только вблизи (своя или соседняя зона), а в его ход — лишь в конце хода. Двери под ним не скрипят.',
       deck: STARTER.concat(['silent_step', 'shiv', 'pebble', 'lurk']),
       talents: [['sharp', 'softfoot'], ['decoy', 'assassin']],
       mods: { stealthy: 1, silentDoors: 1 },
