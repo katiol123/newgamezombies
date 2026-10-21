@@ -66,7 +66,7 @@
       art: 'hero_kira',
     },
     {
-      id: 'sava', pic: 'art/heroes/sava.jpg', face: 'art/heroes/sava_face.jpg', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
+      id: 'sava', pic: 'art/heroes/sava.jpg', face: 'art/heroes/sava_face.jpg', turnedPic: 'art/heroes/sava_turned.jpg', turnedFace: 'art/heroes/sava_turned_face.jpg', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
       hp: 4, hand: 5, energy: 3,
       bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
       ability: 'Бесшумный', abilityText: 'Бродячие зомби не замечают Саву издалека — только из своей или соседней зоны. Двери под ним не скрипят.',
@@ -76,7 +76,7 @@
       art: 'hero_sava',
     },
     {
-      id: 'gosha', pic: 'art/heroes/gosha.jpg', face: 'art/heroes/gosha_face.jpg', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
+      id: 'gosha', pic: 'art/heroes/gosha.jpg', face: 'art/heroes/gosha_face.jpg', turnedPic: 'art/heroes/gosha_turned.jpg', turnedFace: 'art/heroes/gosha_turned_face.jpg', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
       hp: 7, hand: 6, energy: 3,
       bio: 'Бригадир ремонтной бригады. Тихо не умеет, зато умеет закатать в асфальт что угодно.',
       ability: 'Шумный и Заглушка', abilityText: 'Шумный: бродячие замечают Гошу за 2 зоны даже сквозь стены, укрытие ему не помогает, двери под ним скрипят на 2 зоны. Заглушка (1 ⚡, действие): в зоне с люком — люк молчит 2 раунда. Шум 1.',
