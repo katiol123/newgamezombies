@@ -124,8 +124,9 @@
       h.level = gh.level; h.xp = gh.xp; h.talents = gh.talents.slice(); h.perks = gh.perks.slice(); h.talentQueue = (gh.talentQueue || []).slice();
       h.missionsDone = (gh.missionsDone || h.missionsDone).slice();
       // здоровье: карты Ран и Заражений уничтожаются, но потерянная Стойкость остаётся травмой
-      // Раны и Заражения отнимают Стойкость; сами карты после миссии уничтожаются, а потеря остаётся травмой (раны сложности — не травмы)
-      const wounds = gh.deck.concat(gh.hand, gh.discard).filter((u) => (g.cards[u] === 'wound' || g.cards[u] === 'infection') && !String(u).startsWith('sw')).length;
+      // в убежище переносится столько Стойкости, сколько было на момент окончания миссии
+      // (карты Ран и Заражений уничтожаются, а потерянная от них Стойкость остаётся травмой)
+      const wounds = ZG.Engine.hurtCount(g, gh);
       h.injury = Math.min(C.baseHp(h) + C.hpTalents(h) - 1, h.injury + wounds);
       if (wounds) line(h.id, `−${wounds} Стойкость (раны и заражения)`);
       // добыча: карты добычи из всего, что у героя (принесённые — со своим износом, новые — целые)
