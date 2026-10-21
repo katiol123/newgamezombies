@@ -428,6 +428,20 @@
       zombieHead(c, o, 50, 52, 30);
       if (!o.shadow) { c.fillStyle = '#ffd36b'; c.font = 'bold 34px sans-serif'; c.textAlign = 'center'; c.fillText('!', 84, 30); }
     },
+    despair(c, o) {
+      // тучка с дождём и опущенный уголок рта
+      const ink = o.shadow ? o.ink : '#6f7d8c';
+      c.beginPath(); c.arc(38, 40, 14, Math.PI * 0.9, Math.PI * 2); c.arc(58, 36, 18, Math.PI, Math.PI * 2.1); c.arc(72, 46, 11, Math.PI * 1.4, Math.PI * 0.5); c.lineTo(30, 54); c.closePath(); fillInk(c, ink);
+      if (!o.shadow) for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(34 + i * 7, 62); c.lineTo(31 + i * 7, 74); strokeInk(c, 2.5, '#5aa6d6'); }
+      c.beginPath(); c.arc(50, 92, 10, Math.PI * 1.15, Math.PI * 1.85); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
+    },
+    courage(c, o) {
+      // поднятый кулак в лучах
+      if (!o.shadow) for (let i = 0; i < 10; i++) { c.save(); c.translate(50, 55); c.rotate(i * Math.PI / 5); c.fillStyle = 'rgba(240,192,64,.55)'; c.fillRect(-2, -44, 4, 14); c.restore(); }
+      rr(c, 34, 36, 32, 30, 8); fillInk(c, o.shadow ? o.ink : '#e0a070');
+      for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(38 + i * 7, 38); c.lineTo(38 + i * 7, 50); strokeInk(c, 2, o.shadow ? o.ink : '#8a5a3a'); }
+      rr(c, 40, 64, 20, 22, 4); fillInk(c, o.shadow ? o.ink : '#c0392b');
+    },
     wound(c, o) {
       c.beginPath(); c.moveTo(18, 30); c.lineTo(82, 70); strokeInk(c, 10, o.shadow ? o.ink : '#5a0d08');
       c.beginPath(); c.moveTo(30, 22); c.lineTo(76, 82); strokeInk(c, 6, o.shadow ? o.ink : '#5a0d08');

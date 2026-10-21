@@ -18,6 +18,7 @@
   const Rng = ZG.Rng, Mods = ZG.Mods, Board = ZG.Board;
   // пороги опыта для уровней 2 и 3 (общие для всех героев; интерфейс рисует трек по ним)
   const XP_LEVELS = [4, 10];
+  const REPEAT_MISSION_XP = 2; // кампания: повторно выпавшая миссия, награда за которую уже получена
   const MAX_BARRICADES = 4;
   const MAX_TRAPS = 3;
   const MAX_EQUIP = 2;
@@ -43,7 +44,8 @@
   // Раны для падения, «На грани» и выбора цели: Заражение тоже Рана (если hurts)
   E.hurtCount = (g, h) => E.woundCount(g, h) + ((ZG.Levels.get(g.levelId).infection || {}).hurts ? E.infectCount(g, h) : 0);
   E.infectTurnAt = (g) => ((ZG.Levels.get(g.levelId).infection || {}).turnAt || 3);
-  E.maxHp = (g, h) => Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp);
+  // травмы (кампания): непролеченные раны прошлых миссий снижают Стойкость
+  E.maxHp = (g, h) => Math.max(1, Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp) - (h.injury || 0));
   // «Одиночка»: в соло герой держит на 1 карту больше
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
@@ -212,7 +214,30 @@
     resolveDecoys(g, ti);
     E.log(g, `${why || 'Разведка'}: открыт тайл «${def.name}»${n ? ` — там ${n} ${ZG.util.plural(n, 'зомби', 'зомби', 'зомби')}!` : '.'}`, n ? 'bad' : 'info');
     E.fx(g, { t: 'reveal', tile: ti, n, why });
+    wanderCheck(g, ti);
   };
+  // Блуждающая угроза (обращённые союзники прошлых миссий, боссы локации): при открытии тайла —
+  // кубик за каждую, на «6» появляется здесь; на последнем закрытом тайле — без броска.
+  // Появляется в зоне тайла, самой дальней от героев; в скрытности — бродячей.
+  function wanderCheck(g, ti) {
+    if (!g.wanderers || !g.wanderers.length) return;
+    const last = !g.revealed.some((r) => !r);
+    g.wanderers.forEach((w) => {
+      if (w.out) return;
+      const roll = last ? null : Rng.int(g, 6) + 1;
+      if (roll != null && roll !== 6) return;
+      w.out = true;
+      const zd = ZG.Zombies.get(w.type);
+      const cells = g.board.cells.filter((c) => c.tile === ti && c.type !== 'blocked').map((c) => c.i);
+      const dists = g.heroes.filter((h) => h.onBoard).map((h) => E.dist(g, h.pos));
+      const far = (c) => Math.min(...dists.map((d) => (d[c] == null ? 99 : d[c])), 99);
+      const cell = cells.sort((a, b) => far(b) - far(a) || a - b)[0];
+      const z = E.spawnZombie(g, w.type, cell, null, true, true);
+      if (z && g.stealth && !zd.relentless) { z.awake = false; z.trail = null; }
+      E.log(g, `${last ? 'Последний тайл' : 'На кубике «6»'}: здесь бродит ${zd.name}!`, 'bad');
+      E.fx(g, { t: 'wanderer', ztype: w.type, pos: cell, zombie: z && z.uid });
+    });
+  }
   // раскрытие пустышек при перевороте тайла
   function resolveDecoys(g, ti) {
     const list = E.decoysOn(g, ti);
@@ -286,6 +311,8 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null,
+      wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
     g.scenarioId = opts.scenarioId || Rng.pick(g, level.scenarios);
@@ -301,6 +328,14 @@
         ai: !!hs.ai, infection: 0, ms: {}, mission: null, missionDone: false, perks: [], acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
       };
       def.deck.forEach((cid) => { const u = E.newUid(g, 'c'); g.cards[u] = cid; h.deck.push(u); });
+      // кампания: герой приходит со своим уровнем, талантами, травмами, экипировкой и временными картами морали
+      const cv = hs.carry;
+      if (cv) {
+        h.level = cv.level || 1; h.xp = cv.xp || 0; h.talents = (cv.talents || []).slice(); h.perks = (cv.perks || []).slice();
+        h.injury = cv.injury || 0; h.missionsDone = (cv.missionsDone || []).slice();
+        (cv.cards || []).forEach((it) => { const u = E.newUid(g, 'c'); g.cards[u] = it.id; h.deck.push(u); (g.carried = g.carried || {})[u] = it.key; });
+        (cv.temp || []).forEach((id) => { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.push(u); });
+      }
       Rng.shuffle(g, h.deck);
       g.heroes.push(h);
     });
@@ -342,7 +377,7 @@
       });
     }
     // стартовая рука: каждый герой сразу набирает полную руку
-    g.heroes.forEach((h) => drawCards(g, h, Math.max(0, E.handSize(g, h) - h.hand.length)));
+    g.heroes.forEach((h) => drawCards(g, h, Math.max(0, E.handSize(g, h) - h.hand.length) + Mods.value(g, h, 'startDraw', 0)));
     g.fx = [];
     // начальное появление
     g.spawnPoints.forEach((p) => drawSpawn(g, p));
@@ -490,6 +525,10 @@
       const u = h.deck.shift();
       h.hand.push(u);
       drawn++;
+      if (ZG.Cards.get(g.cards[u]).drainOnDraw) {
+        if (g.turn && g.active === h.idx && !g.turn.starting) { h.energy = Math.max(0, h.energy - 1); E.log(g, `${E.heroName(h)}: «Уныние» — −1 ⚡.`, 'warn'); }
+        else h.drainDue = (h.drainDue || 0) + 1;
+      }
       E.fx(g, { t: 'draw', hero: h.idx, card: u });
     }
     return drawn;
@@ -717,6 +756,7 @@
     if (heroIdx != null && kind !== 'trap' && kind !== 'silent' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     if (g.stealth && heroIdx != null && g.heroes[heroIdx] && kind !== 'silent') wake(g, z, g.heroes[heroIdx].pos, false, heroIdx); // на него напали
     const def = ZG.Zombies.get(z.type);
+    if (g.turn && g.turn.courage && heroIdx === g.active && (kind === 'melee' || kind === 'ranged')) n += 1;
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
     z.dmg += eff;
@@ -734,6 +774,7 @@
         if (def.big) ms(h, 'bigKills');
         if (g.turn && g.active === heroIdx) { g.turn.kills = (g.turn.kills || 0) + 1; h.ms.bestTurnKills = Math.max(h.ms.bestTurnKills || 0, g.turn.kills); }
         gainXp(g, h, def.xp);
+        if (def.turned) (g.putDown = g.putDown || []).push({ hero: heroIdx, turned: def.turned }); // упокоил бывшего союзника
         Mods.emit(g, h, 'kill', { zombie: z, kind, E });
       }
       return true;
@@ -779,9 +820,14 @@
       h.missionDone = true;
       if (g.missionFirst == null && !h.fallen) {
         g.missionFirst = h.idx;
-        if (m.perk) h.perks.push(m.id);
-        if (m.reward) m.reward(g, h, E);
-        E.log(g, `${E.heroName(h)} выполняет секретную миссию «${m.name}» ПЕРВЫМ! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
+        const repeat = h.missionsDone && h.missionsDone.includes(m.id);
+        if (repeat) gainXp(g, h, REPEAT_MISSION_XP);
+        else {
+          if (m.perk) h.perks.push(m.id);
+          if (m.reward) m.reward(g, h, E);
+          if (h.missionsDone) h.missionsDone.push(m.id);
+        }
+        E.log(g, repeat ? `${E.heroName(h)} снова выполняет «${m.name}» ПЕРВЫМ — награда уже получена раньше, вместо неё +${REPEAT_MISSION_XP} 🎖.` : `${E.heroName(h)} выполняет секретную миссию «${m.name}» ПЕРВЫМ! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: true });
       } else {
         E.log(g, `${E.heroName(h)} выполняет миссию «${m.name}», но кто-то успел раньше — награды нет.`, 'dim');
@@ -793,7 +839,7 @@
   function gainXp(g, h, n) {
     const before = h.xp;
     h.xp += n;
-    XP_LEVELS.forEach((lv, i) => {
+    (g.xpLevels || XP_LEVELS).forEach((lv, i) => {
       if (before < lv && h.xp >= lv) {
         h.level = i + 2;
         h.talentQueue.push(i);
@@ -808,7 +854,11 @@
     const h = g.heroes.find((x) => x.talentQueue.length && !x.fallen);
     if (!h) return;
     const tier = h.talentQueue[0];
-    g.pending = { type: 'talent', hero: h.idx, options: ZG.Heroes.get(h.id).talents[tier].slice() };
+    const own = ZG.Heroes.get(h.id).talents[tier];
+    // поздние уровни (кампания): 2 случайных общих таланта убежища из пула
+    const options = own ? own.slice() : Rng.shuffle(g, ZG.Talents.all().filter((t) => t.shelter && !h.talents.includes(t.id)).map((t) => t.id)).slice(0, 2);
+    if (!options.length) { h.talentQueue.shift(); return queueTalent(g); }
+    g.pending = { type: 'talent', hero: h.idx, options };
   }
 
   E.retaliate = function (g, h, n) {
@@ -1171,13 +1221,16 @@
     g.turn = { lastSuit: g.relaySuit || null, relay: g.relaySuit || null, played: 0, moves: 0, searched: 0, healUsed: 0, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
     const hs = E.handSize(g, h);
     const cap = ZG.Levels.get(g.levelId).drawMax || 99;
+    g.turn.starting = true;
     if (h.hand.length < hs) drawCards(g, h, Math.min(cap, hs - h.hand.length));
+    g.turn.starting = false;
     let en = Mods.value(g, h, 'energy', ZG.Heroes.get(h.id).energy) + h.adrenaline;
     if (E.hurtCount(g, h) === E.maxHp(g, h) - 1) {
       en += 1;
       E.log(g, `${E.heroName(h)} на грани — +1 ⚡.`, 'warn');
     }
     h.adrenaline = 0;
+    if (h.drainDue) { en = Math.max(0, en - h.drainDue); E.log(g, `${E.heroName(h)}: «Уныние» — −${h.drainDue} ⚡.`, 'warn'); h.drainDue = 0; }
     h.energy = en;
     if (g.relayBonus) { h.energy += g.relayBonus; E.log(g, `${E.heroName(h)}: +${g.relayBonus} ⚡ от товарища.`, 'good'); g.relayBonus = 0; }
     E.log(g, `Ход: ${E.heroName(h)} (${h.energy} ⚡).`, 'turn');
@@ -1194,7 +1247,13 @@
       const near = g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && !E.hidden(g, z.pos) && d[z.pos] <= 3);
       if (near && !g.zombies.some((z) => !ZG.Zombies.get(z.type).immobile && E.sees(g, Object.assign({}, z, { awake: true }), h))) ms(h, 'unseen');
     }
-    if (h) { h.acted = true; tickInfection(g, h); }
+    if (h) {
+      h.acted = true;
+      // временные карты, уходящие в сброс в конце хода (Уныние)
+      const gone = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).discardEndTurn);
+      if (gone.length) { h.hand = h.hand.filter((u) => !gone.includes(u)); h.discard.push(...gone); }
+      tickInfection(g, h);
+    }
     if (g.result) return;
     // Эстафета: следующий герой может продолжить Связку мастью последней карты
     g.relaySuit = g.turn && g.turn.played ? g.turn.lastSuit : null;
