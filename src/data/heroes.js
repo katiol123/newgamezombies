@@ -37,7 +37,7 @@
     },
     {
       id: 'lisa', name: 'Лиза', nick: 'Тень', role: 'Разведчица', color: '#2e8b57',
-      hp: 4, hand: 5, energy: 3,
+      hp: 4, hand: 4, energy: 3,
       bio: 'Курьер и паркурщица. Знает каждую крышу квартала.',
       ability: 'Паркур', abilityText: 'Первый за ход выход из зоны с зомби ей ничего не стоит (Хватка не действует). Перелезает баррикады бесплатно.',
       deck: STARTER.concat(['knife', 'lure', 'rooftops', 'vanish']),
@@ -67,7 +67,7 @@
     },
     {
       id: 'sava', name: 'Сава', nick: 'Сыч', role: 'Диверсант', color: '#6b5b95',
-      hp: 5, hand: 5, energy: 3,
+      hp: 4, hand: 5, energy: 3,
       bio: 'Бывший охотник. Ходит так тихо, что его не слышат даже мёртвые.',
       ability: 'Бесшумный', abilityText: 'Бродячие зомби не замечают Саву издалека — только из своей или соседней зоны. Двери под ним не скрипят.',
       deck: STARTER.concat(['silent_step', 'shiv', 'pebble', 'lurk']),
@@ -77,7 +77,7 @@
     },
     {
       id: 'gosha', name: 'Гоша', nick: 'Гудок', role: 'Дорожник', color: '#e67e22',
-      hp: 7, hand: 5, energy: 3,
+      hp: 7, hand: 6, energy: 3,
       bio: 'Бригадир ремонтной бригады. Тихо не умеет, зато умеет закатать в асфальт что угодно.',
       ability: 'Шумный и Заглушка', abilityText: 'Шумный: бродячие замечают Гошу за 2 зоны даже сквозь стены, укрытие ему не помогает, двери под ним скрипят на 2 зоны. Заглушка (1 ⚡, действие): в зоне с люком — люк молчит 2 раунда. Шум 1.',
       deck: STARTER.concat(['jackhammer', 'generator', 'cones', 'rebar']),
@@ -155,6 +155,6 @@
     { id: 'weld_seam', name: 'Сварной шов', text: 'Заглушка держит на 1 раунд дольше.', mods: { plugRounds: 1 } },
     { id: 'workwear', name: 'Спецовка', text: '+1 Стойкость.', mods: { hp: 1 } },
     { id: 'foreman', name: 'Бригадир', text: 'После Заглушки возьми 1 карту и получи 1 Блок.', mods: { plugBonus: 1 } },
-    { id: 'overtime', name: 'Сверхурочные', text: '«Отбойный молоток» стоит 1 ⚡.', mods: { costDelta: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'jackhammer' ? -1 : 0) } },
+    { id: 'overtime', name: 'Сверхурочные', text: '«Отбойный молоток» бьёт на 1 сильнее.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'jackhammer' ? 1 : 0) } },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

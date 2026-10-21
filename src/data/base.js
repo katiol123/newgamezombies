@@ -56,7 +56,7 @@
       text: 'Мёртвый пёс: всегда охотится и чует ближайшего героя на любом расстоянии. Ходит на 2 зоны. Появляется только от события «Ищейка».', art: 'z_hound',
     },
     {
-      id: 'nest', name: 'Гнездо', hp: 7, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
+      id: 'nest', name: 'Гнездо', hp: 5, dmg: 0, speed: 0, xp: 3, armor: 0, threat: 5, immobile: true, big: true,
       text: 'Крупная цель: урон сохраняется. Не движется. В фазу зомби порождает Шатуна в своей зоне (в Глухую ночь — Бегуна).', art: 'z_nest',
       hooks: { zombiePhase(g, z, E) { const t = E.phase(g) >= 2 ? 'runner' : 'walker'; E.spawnZombie(g, t, z.pos, 'Гнездо порождает: ' + ZG.Zombies.get(t).name); } },
     },

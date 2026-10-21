@@ -224,7 +224,7 @@
     },
     // --- Гоша ---
     {
-      id: 'jackhammer', name: 'Отбойный молоток', suit: 'rage', cost: 2, shield: 0, noise: 2, type: 'Атака', tags: ['melee'], hero: 'gosha',
+      id: 'jackhammer', name: 'Отбойный молоток', suit: 'rage', cost: 1, shield: 0, noise: 2, type: 'Атака', tags: ['melee'], hero: 'gosha',
       text: 'Ближний бой: 3 урона каждому зомби в твоей зоне. Шум 2.', chainText: '+1 урон каждому.', art: 'jackhammer', value: 12,
       target: { kind: 'zone', range: 0 },
       play(c) { c.noise(2); c.zoneDamage(c.target, 3 + (c.chain ? 1 : 0), { kind: 'melee' }); },
