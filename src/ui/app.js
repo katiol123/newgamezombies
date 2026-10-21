@@ -729,7 +729,8 @@
         if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) c.classList.add('ready');
         const img = el('img', 'hp-portrait');
         const drawn = CV.artURL(h.turned ? 'z_turned_' + h.id : def.art, 96, 96, {});
-        if (def.face && !h.turned) { img.onerror = () => { img.onerror = null; img.src = drawn; }; img.src = def.face; } else img.src = drawn;
+        const face = h.turned ? def.turnedFace : def.face;
+        if (face) { img.onerror = () => { img.onerror = null; img.src = drawn; }; img.src = face; } else img.src = drawn;
         const pw = el('div', 'hp-pwrap'); pw.appendChild(img);
         pw.appendChild(el('span', 'hp-lvl', String(h.level)));
         c.appendChild(pw);
@@ -1090,7 +1091,9 @@
       this.view.play([ev]);
       const h = this.g.heroes[ev.hero];
       this.refreshHeroes();
-      await Banner.show('ОБРАЩЕНИЕ!', `${E.heroName(h)} больше не человек`, 'wave');
+      const def = ZG.Heroes.get(h.id);
+      if (def.pic && def.turnedPic) await TurnReveal.show(def, `${E.heroName(h)} больше не человек`);
+      else await Banner.show('ОБРАЩЕНИЕ!', `${E.heroName(h)} больше не человек`, 'wave');
     },
     async play(ev) {
       this.view.play([ev]);
@@ -1219,6 +1222,23 @@
       c.innerHTML = 'СВЯЗКА!' + (text ? `<small>${esc(text)}</small>` : '');
       c.style.setProperty('--suit', suit.color);
       c.classList.remove('go'); void c.offsetWidth; c.classList.add('go');
+    },
+  };
+
+  // ===================================== обращение: живой портрет перетекает в мёртвый
+  const TurnReveal = {
+    async show(def, sub) {
+      ZG.Sound.play('zombies');
+      const sp = Game.view ? Game.view.speed : 1;
+      const o = el('div', 'turn-reveal');
+      o.innerHTML = `<div class="tr-card"><img class="tr-live" src="${def.pic}"><img class="tr-dead" src="${def.turnedPic}"><div class="tr-flash"></div></div><div class="tr-title">ОБРАЩЕНИЕ!</div><div class="tr-sub">${esc(sub)}</div>`;
+      o.style.setProperty('--sp', String(1 / sp));
+      document.body.appendChild(o);
+      void o.offsetWidth; o.classList.add('go');
+      await sleep(2600 / sp);
+      o.classList.add('out');
+      await sleep(450 / sp);
+      o.remove();
     },
   };
 

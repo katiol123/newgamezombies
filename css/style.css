@@ -664,3 +664,28 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
   .xp-tok { transition: none; }
   #vignette { display: none; }
 }
+
+/* обращение героя: живой портрет перетекает в обращённого */
+.turn-reveal { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(20,40,10,.55), rgba(0,0,0,.85)); opacity: 0; transition: opacity calc(.35s * var(--sp, 1)); }
+.turn-reveal.go { opacity: 1; }
+.turn-reveal.out { opacity: 0; }
+.tr-card { position: relative; width: min(340px, 70vw); aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 0 0 4px #15110e, 0 0 0 7px #6a8a2a, 0 20px 60px rgba(0,0,0,.8); transform: scale(.9) rotate(-1.5deg); }
+.turn-reveal.go .tr-card { animation: trCard calc(2.6s * var(--sp, 1)) ease-out forwards; }
+.tr-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tr-dead { opacity: 0; filter: brightness(2) saturate(.3); }
+.turn-reveal.go .tr-dead { animation: trDead calc(2.6s * var(--sp, 1)) ease-in forwards; }
+.turn-reveal.go .tr-live { animation: trLive calc(2.6s * var(--sp, 1)) ease-in forwards; }
+.tr-flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(200,255,106,.9), rgba(120,200,40,0) 70%); opacity: 0; mix-blend-mode: screen; }
+.turn-reveal.go .tr-flash { animation: trFlash calc(2.6s * var(--sp, 1)) ease-out forwards; }
+.tr-title { margin-top: 22px; font: 900 44px/1 var(--font-title, 'Russo One', sans-serif); color: #c8ff6a; letter-spacing: .06em; text-shadow: 0 0 18px rgba(150,230,60,.7), 0 3px 0 #000; opacity: 0; }
+.turn-reveal.go .tr-title { animation: trTitle calc(2.6s * var(--sp, 1)) ease-out forwards; }
+.tr-sub { margin-top: 8px; color: #e8e0cc; font-size: 18px; opacity: 0; }
+.turn-reveal.go .tr-sub { animation: trTitle calc(2.6s * var(--sp, 1)) ease-out forwards; }
+@keyframes trCard { 0% { transform: scale(.9) rotate(-1.5deg); } 30% { transform: scale(1) rotate(0); } 38% { transform: scale(1.03) translate(-5px, 2px) rotate(-1deg); } 42% { transform: scale(1.03) translate(6px, -2px) rotate(1deg); } 46% { transform: scale(1.03) translate(-4px, 1px); } 50%, 100% { transform: scale(1.04); } }
+@keyframes trLive { 0%, 32% { filter: none; } 44% { filter: hue-rotate(60deg) saturate(.4) brightness(.8); opacity: 1; } 56%, 100% { opacity: 0; } }
+@keyframes trDead { 0%, 38% { opacity: 0; filter: brightness(2) saturate(.3); } 56% { opacity: 1; filter: brightness(1.4) saturate(.6); } 100% { opacity: 1; filter: none; } }
+@keyframes trFlash { 0%, 36% { opacity: 0; } 44% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes trTitle { 0%, 44% { opacity: 0; transform: translateY(10px) scale(1.3); } 54% { opacity: 1; transform: none; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .turn-reveal.go .tr-card { animation: none; } }

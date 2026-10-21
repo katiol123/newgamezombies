@@ -179,7 +179,9 @@
     const def = ZG.Zombies.get(id);
     const c = el('div', 'zombie-card');
     const img = el('img');
-    img.src = artURL(def.id === 'nest' ? 'z_nest' : 'zp_' + def.id, 96, 96, { t: 0 });
+    const hd = def.turned && ZG.Heroes.get(def.turned);
+    const drawn = artURL(def.id === 'nest' ? 'z_nest' : 'zp_' + def.id, 96, 96, { t: 0 });
+    if (hd && hd.turnedFace) { img.onerror = () => { img.onerror = null; img.src = drawn; }; img.src = hd.turnedFace; img.classList.add('pic'); } else img.src = drawn;
     c.appendChild(img);
     const info = el('div', 'zinfo');
     info.innerHTML = `<div class="zname">${esc(def.name)}</div>
