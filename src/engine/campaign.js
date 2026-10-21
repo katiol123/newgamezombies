@@ -200,7 +200,7 @@
     c.updated = Date.now();
     if (!rep.win) { c.status = 'over'; c.endReason = 'Миссия провалена: ' + (rep.reason || ''); }
     else if (c.missionNo >= c.chainLength) { c.status = 'won'; c.endReason = 'Кампания пройдена!'; }
-    else { c.status = 'ready'; C.checkSquad(c); }
+    else { c.status = 'ready'; c.roster.forEach((h) => { if (h.ai) C.autoManage(c, h.id); }); C.checkSquad(c); }
     return rep;
   };
 
@@ -284,9 +284,34 @@
     h.debt = { to: payer.id, left: 3 };
     h.talons = P.hireTalons || 0;
     c.roster.push(h);
+    if (h.ai) C.autoManage(c, h.id);
+    if (payer.ai) C.autoManage(c, payer.id);
     payer.morale = Math.min(CFG().morale.max, payer.morale + 1);
     return null;
   };
+  // ИИ раскладывает карты сам: лучшие — в экипировку (целые важнее изношенных),
+  // ценные, но не поместившиеся — в сундук, ненужное — в хлам (продастся при выходе)
+  C.cardScore = (it) => (ZG.Cards.get(it.id).value || 0) - (it.worn ? 3 : 0);
+  C.isValuable = (it) => { const d = ZG.Cards.get(it.id); return !!d.campaignOnly || (d.rarity && d.rarity !== 'common') || (d.value || 0) >= 8; };
+  // Отчаяние: Стойкость на половине и ниже — герой берёт в поход даже мелочь (риск смерти велик),
+  // а лечение и защиту ставит в приоритет; обычно мелочь не берёт и продаёт.
+  C.desperate = (h) => C.hp(h) * 2 <= C.baseHp(h) + C.hpTalents(h);
+  C.autoManage = function (c, heroId) {
+    const h = C.hero(c, heroId);
+    if (!h) return 'Нет такого героя.';
+    const desp = C.desperate(h);
+    const survival = (it) => { const t = ZG.Cards.get(it.id).tags || []; return t.includes('heal') || t.includes('block') ? 4 : 0; };
+    const score = (it) => C.cardScore(it) + (desp ? survival(it) : 0);
+    const all = h.equip.concat(h.chest, h.junk).sort((a, b) => score(b) - score(a));
+    h.equip = []; h.chest = []; h.junk = [];
+    all.forEach((it) => {
+      if (h.equip.length < C.equipCap(h) && !ZG.Cards.get(it.id).event && (desp || C.isValuable(it))) h.equip.push(it);
+      else if (C.isValuable(it) && h.chest.length < C.chestCap(h)) h.chest.push(it);
+      else h.junk.push(it);
+    });
+    return null;
+  };
+
   C.setControl = function (c, heroId, player, ai) {
     const h = C.hero(c, heroId);
     if (!h) return 'Нет такого героя.';

@@ -213,5 +213,28 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(C.hero(c, 'boris').injury === 3 - 1, `1 Рана + 2 Заражения − паёк = травмы ${C.hero(c, 'boris').injury}`);
 }
 
+// 16) ИИ сам раскладывает карты: лучшее — в экипировку, ценное — в сундук, мелочь — в хлам
+{
+  const c = C.create({ heroes: [{ id: 'boris', ai: true }], seed: 't16' });
+  const b = C.hero(c, 'boris');
+  ['chocolate', 'katana', 'brick', 'medkit', 'bat', 'crowbar', 'spear', 'vest', 'energy'].forEach((id, i) => b.chest.push({ key: 'a' + i, id, worn: id === 'medkit' }));
+  C.autoManage(c, 'boris');
+  ok(b.equip.map((x) => x.id).join() === 'katana,bat,vest' || b.equip.length === 3, `экипировка: ${b.equip.map((x) => x.id)}`);
+  ok(b.chest.every((x) => C.isValuable(x)) && b.junk.every((x) => !C.isValuable(x) || b.chest.length >= C.chestCap(b)), `сундук: ${b.chest.map((x) => x.id)} · хлам: ${b.junk.map((x) => x.id)}`);
+  ok(b.junk.some((x) => x.id === 'chocolate') && !b.equip.some((x) => x.id === 'medkit'), 'шоколад — в хлам, изношенная аптечка не вытесняет целые карты');
+}
+
+// 17) отчаяние: при низкой Стойкости ИИ берёт в поход и мелочь вместо продажи
+{
+  const c = C.create({ heroes: [{ id: 'lisa', ai: true }], seed: 't17' });
+  const l = C.hero(c, 'lisa');
+  ['katana', 'chocolate', 'bandage_roll'].forEach((id, i) => l.chest.push({ key: 'd' + i, id, worn: false }));
+  C.autoManage(c, 'lisa');
+  ok(l.equip.length === 1 && l.junk.length === 2, `здорова: в поход только ценное (${l.equip.map((x) => x.id)}), мелочь в хлам`);
+  l.injury = 2; // 2 из 4
+  C.autoManage(c, 'lisa');
+  ok(l.equip.length === 3 && !l.junk.length && l.equip[1].id === 'bandage_roll', `ранена: берёт всё, лечение вперёд (${l.equip.map((x) => x.id)})`);
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

@@ -1600,8 +1600,23 @@
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       const box = $('#shelter-heroes');
       box.innerHTML = '';
-      c.roster.forEach((h) => box.appendChild(this.heroCard(c, h, done)));
+      if (!c.roster.length) { this.renderHire(c, done); return; }
+      if (!CMP.hero(c, this.sel)) this.sel = c.roster[0].id;
+      // вкладки героев: переключение и цель для передачи карты (перетащите карту на вкладку)
+      const tabs = el('div', 'sh-tabs');
+      c.roster.forEach((h) => {
+        const def = ZG.Heroes.get(h.id);
+        const t = el('button', 'sh-tab' + (h.id === this.sel ? ' on' : '') + (this.squad.includes(h.id) ? ' in-squad' : ''));
+        t.dataset.hero = h.id;
+        t.style.setProperty('--hero', def.color);
+        t.innerHTML = `<img src="${def.face || CV.artURL(def.art, 96, 96, {})}"><span><b>${esc(def.name)}</b><small>ур. ${h.level} · ♥ ${CMP.hp(h)}/${CMP.baseHp(h) + CMP.hpTalents(h)} · 🎫 ${h.talons}</small></span>${this.squad.includes(h.id) ? '<i class="sq">✓</i>' : ''}${h.ai ? '<i class="ai">🤖</i>' : ''}`;
+        t.onclick = () => { this.sel = h.id; this.render(); };
+        tabs.appendChild(t);
+      });
+      box.appendChild(tabs);
+      box.appendChild(this.heroPanel(c, CMP.hero(c, this.sel), done));
       this.renderHire(c, done);
+      this.bindDrag(c, CMP.hero(c, this.sel));
     },
     renderReport(c) {
       const r = c.report, box = $('#shelter-report');
@@ -1611,43 +1626,30 @@
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },
-    heroCard(c, h, done) {
+    heroPanel(c, h, done) {
       const def = ZG.Heroes.get(h.id), CFG = ZG.CAMPAIGN;
       const next = CFG.xpLevels.find((v) => h.xp < v);
-      const card = el('div', 'sh-hero' + (this.squad.includes(h.id) ? ' in-squad' : ''));
-      card.style.setProperty('--hero', def.color);
       const m = h.morale, M = CFG.morale;
       const pips = Array.from({ length: M.max }, (_, i) => `<i class="${i < m ? 'on' : ''}"></i>`).join('');
       const temp = m <= 0 ? '2× «Уныние»' : m <= M.low ? '«Уныние»' : m >= M.max ? '«Кураж»' : '';
-      card.innerHTML = `
-        <div class="sh-top"><img class="sh-face" src="${def.face || CV.artURL(def.art, 96, 96, {})}">
-          <div class="sh-name"><b>${esc(def.name)}</b> <small>«${esc(def.nick)}»</small><div class="sh-lvl">Уровень ${h.level} · 🎖 ${h.xp}${next ? ' / ' + next : ''}</div></div>
-          <div class="sh-talons" title="Личные талоны">🎫 ${h.talons}</div></div>
-        <div class="sh-stats"><span title="Стойкость на следующую миссию (травмы снижают)">♥ ${CMP.hp(h)} / ${CMP.baseHp(h)}</span>
-          <span class="sh-morale m${m <= M.low ? 'low' : m >= M.max ? 'max' : ''}" title="Мораль ${m} из ${M.max}">Мораль <span class="pips">${pips}</span>${temp ? ` <small>${temp}</small>` : ''}</span></div>
-        ${h.buildings.length ? `<div class="sh-build">${h.buildings.map((b) => `<span>${esc(ZG.Buildings.get(b).name)}</span>`).join('')}</div>` : ''}
-        ${h.talents.length ? `<div class="sh-tal">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
-        ${h.debt ? `<div class="sh-debt">Долг ${esc(ZG.Heroes.get(h.debt.to).name)}: половина талонов за звёзды ещё ${h.debt.left} ${ZG.util.plural(h.debt.left, 'миссию', 'миссии', 'миссий')}</div>` : ''}`;
-      ['equip', 'chest', 'junk'].forEach((list) => {
-        const capN = list === 'equip' ? CMP.equipCap(h) : list === 'chest' ? CMP.chestCap(h) : null;
-        const row = el('div', 'sh-row ' + list);
-        const junkSum = list === 'junk' ? h.junk.reduce((sum, it) => sum + (CMP.price(it.id) || 0), 0) : 0;
-        row.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : h[list].length ? ` — продастся при выходе ≈ +${junkSum} 🎫` : ''}`));
-        const cards = el('div', 'sh-cards');
-        h[list].forEach((it, i) => {
-          const d = ZG.Cards.get(it.id);
-          const b = el('button', `sh-card r-${d.rarity || 'common'}${it.worn ? ' worn' : ''}`, `${it.worn ? '⚠ ' : ''}${esc(d.name)}`);
-          b.title = (it.worn ? 'На грани поломки! ' : '') + d.text;
-          b.onclick = () => this.cardMenu(c, h, list, i);
-          cards.appendChild(b);
-        });
-        if (!h[list].length) cards.appendChild(el('span', 'muted', '—'));
-        row.appendChild(cards);
-        card.appendChild(row);
-      });
+      const wrap = el('div', 'sh-main');
+      wrap.style.setProperty('--hero', def.color);
+      const top = el('div', 'sh-top2');
+      top.innerHTML = `
+        <img class="sh-pic" src="${def.pic || CV.artURL(def.art, 200, 200, {})}">
+        <div class="sh-info">
+          <div class="sh-name"><b>${esc(def.name)}</b> <small>«${esc(def.nick)}» · ${esc(def.role)}</small><span class="sh-talons" title="Личные талоны">🎫 ${h.talons}</span></div>
+          <div class="sh-lvl">Уровень ${h.level} · 🎖 ${h.xp}${next ? ' / ' + next : ''}</div>
+          <div class="sh-stats"><span title="Стойкость на следующую миссию (травмы снижают)">♥ ${CMP.hp(h)} / ${CMP.baseHp(h) + CMP.hpTalents(h)}</span>
+            <span class="sh-morale m${m <= M.low ? 'low' : m >= M.max ? 'max' : ''}" title="Мораль ${m} из ${M.max}">Мораль <span class="pips">${pips}</span>${temp ? ` <small>${temp}</small>` : ''}</span></div>
+          ${h.talents.length ? `<div class="sh-tal">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
+          ${h.debt ? `<div class="sh-debt">Долг ${esc(ZG.Heroes.get(h.debt.to).name)}: половина талонов за звёзды ещё ${h.debt.left} ${ZG.util.plural(h.debt.left, 'миссию', 'миссии', 'миссий')}</div>` : ''}
+          <div class="sh-actions"></div>
+        </div>`;
+      wrap.appendChild(top);
+      const acts = $('.sh-actions', top);
       if (!done) {
-        const acts = el('div', 'sh-actions');
-        const add = (label, fn, cls) => { const b = el('button', 'btn small ' + (cls || ''), label); b.onclick = fn; acts.appendChild(b); return b; };
+        const add = (label, fn, cls) => { const b = el('button', 'btn small ' + (cls || ''), label); b.onclick = fn; acts.appendChild(b); };
         const inSq = this.squad.includes(h.id);
         add(inSq ? '✓ В отряде' : 'В отряд', () => {
           if (inSq) this.squad = this.squad.filter((x) => x !== h.id);
@@ -1657,14 +1659,101 @@
         }, inSq ? 'primary' : '');
         const ctl = h.ai ? '🤖 ИИ' : c.players === 2 ? `🎮 Игрок ${h.player}` : '🎮 Игрок';
         add(ctl, () => this.act(() => {
-          if (c.players === 2) return h.ai ? CMP.setControl(c, h.id, 1, false) : h.player === 1 ? CMP.setControl(c, h.id, 2, false) : CMP.setControl(c, h.id, null, true);
-          return CMP.setControl(c, h.id, null, !h.ai);
+          const err = c.players === 2
+            ? (h.ai ? CMP.setControl(c, h.id, 1, false) : h.player === 1 ? CMP.setControl(c, h.id, 2, false) : CMP.setControl(c, h.id, null, true))
+            : CMP.setControl(c, h.id, null, !h.ai);
+          if (!err && h.ai) CMP.autoManage(c, h.id); // ИИ сразу раскладывает свои карты
+          return err;
         }));
         if (h.injury > 0) add(`Лечить +1 ♥ (${CFG.prices.heal} 🎫)`, () => this.act(() => CMP.heal(c, h.id)));
-        add('Постройки…', () => this.buildMenu(c, h));
-        card.appendChild(acts);
+        if (h.ai) add('🤖 Разложить карты', () => this.act(() => CMP.autoManage(c, h.id)));
       }
-      return card;
+      // постройки личного убежища: возведённые — в цвете, остальные — силуэтом с ценой
+      const blds = el('div', 'sh-blds');
+      ZG.Buildings.all().forEach((b) => {
+        const have = CMP.built(h, b.id), poor = h.talons < b.cost;
+        const t = el('button', 'sh-bld' + (have ? ' have' : poor ? ' poor' : ''));
+        t.title = b.text;
+        t.innerHTML = `<img src="${CV.artURL('bld_' + b.id, 120, 120, { off: !have })}"><b>${esc(b.name)}</b><small>${have ? '✓ построено' : `${b.cost} 🎫`}</small>`;
+        t.onclick = async () => {
+          if (have || done) return Modal.show(`<h2>${esc(b.name)}</h2><p>${esc(b.text)}</p>`, [{ label: 'Закрыть', cls: 'primary' }]);
+          if (poor) return toast(`${b.name}: нужно ${b.cost} 🎫, у ${ZG.Heroes.get(h.id).name} — ${h.talons}.`);
+          const v = await Modal.show(`<h2>Построить: ${esc(b.name)}</h2><p>${esc(b.text)}</p><p>Цена: <b>${b.cost} 🎫</b> из личного запаса (${h.talons} 🎫).</p>`, [{ label: `Построить (${b.cost} 🎫)`, value: 'y', cls: 'primary' }, { label: 'Отмена' }]);
+          if (v) this.act(() => CMP.build(c, h.id, b.id));
+        };
+        blds.appendChild(t);
+      });
+      const bwrap = el('div', 'sh-bwrap');
+      bwrap.appendChild(el('div', 'sh-row-h', 'Личное убежище'));
+      bwrap.appendChild(blds);
+      top.appendChild(bwrap);
+      // зоны карт: перетаскивайте карты мышкой между зонами; клик — меню карты
+      const zones = el('div', 'sh-zones');
+      ['equip', 'chest', 'junk'].forEach((list) => {
+        const capN = list === 'equip' ? CMP.equipCap(h) : list === 'chest' ? CMP.chestCap(h) : null;
+        const z = el('div', 'sh-zone ' + list);
+        const sum = list === 'junk' ? h.junk.reduce((s2, it) => s2 + (CMP.price(it.id) || 0), 0) : 0;
+        z.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : ''}${list === 'equip' ? ' <small>— замешается в колоду на миссию</small>' : list === 'junk' && h.junk.length ? ` <small>— продастся при выходе ≈ +${sum} 🎫</small>` : ''}`));
+        const drop = el('div', 'sh-drop');
+        drop.dataset.list = list;
+        h[list].forEach((it, i) => {
+          const d = ZG.Cards.get(it.id);
+          const w = el('div', 'sh-cw' + (it.worn ? ' worn' : ''));
+          w.dataset.list = list; w.dataset.i = i;
+          w.appendChild(CV.card(d));
+          const p = CMP.price(it.id);
+          w.appendChild(el('div', 'sh-price', p == null ? 'не продаётся' : `🎫 ${p}`));
+          if (it.worn) w.appendChild(el('div', 'sh-worn', '⚠ на грани поломки'));
+          drop.appendChild(w);
+        });
+        if (capN != null) for (let k = h[list].length; k < capN; k++) drop.appendChild(el('div', 'sh-empty', list === 'equip' ? 'место экипировки' : 'место в сундуке'));
+        if (!h[list].length && capN == null) drop.appendChild(el('div', 'sh-empty wide', 'перетащите сюда то, что продать'));
+        z.appendChild(drop);
+        zones.appendChild(z);
+      });
+      wrap.appendChild(zones);
+      return wrap;
+    },
+    // перетаскивание карт мышью/пальцем: между зонами героя или на вкладку другого героя (передать в его сундук)
+    bindDrag(c, h) {
+      $$('#shelter-heroes .sh-cw').forEach((w) => {
+        w.onpointerdown = (ev) => {
+          if (ev.button !== 0 || c.status === 'over' || c.status === 'won') return;
+          ev.preventDefault();
+          const list = w.dataset.list, idx = +w.dataset.i;
+          const sx = ev.clientX, sy = ev.clientY;
+          const r = w.getBoundingClientRect();
+          let ghost = null, over = null;
+          const target = (e) => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && (t.closest('.sh-drop') || t.closest('.sh-tab')); };
+          const move = (e) => {
+            if (!ghost && Math.hypot(e.clientX - sx, e.clientY - sy) > 6) {
+              ghost = w.cloneNode(true);
+              ghost.classList.add('sh-ghost');
+              ghost.style.width = r.width + 'px';
+              document.body.appendChild(ghost);
+              w.classList.add('dragging');
+            }
+            if (!ghost) return;
+            ghost.style.left = (e.clientX - r.width / 2) + 'px';
+            ghost.style.top = (e.clientY - r.height / 2) + 'px';
+            const t = target(e);
+            if (t !== over) { if (over) over.classList.remove('drop-on'); over = t; if (over) over.classList.add('drop-on'); }
+          };
+          const up = (e) => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+            if (over) over.classList.remove('drop-on');
+            if (!ghost) { this.cardMenu(c, h, list, idx); return; }
+            ghost.remove(); w.classList.remove('dragging');
+            const t = target(e);
+            if (!t) return;
+            if (t.classList.contains('sh-drop')) { if (t.dataset.list !== list) this.act(() => CMP.move(c, h.id, list, idx, t.dataset.list)); }
+            else if (t.dataset.hero && t.dataset.hero !== h.id) this.act(() => CMP.give(c, h.id, list, idx, t.dataset.hero));
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', up);
+        };
+      });
     },
     async cardMenu(c, h, list, i) {
       const it = h[list][i], d = ZG.Cards.get(it.id), CFG = ZG.CAMPAIGN;

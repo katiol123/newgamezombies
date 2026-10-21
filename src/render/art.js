@@ -564,6 +564,109 @@
     poly(c, [10, 38, 30, 38, 54, 16, 54, 84, 30, 62, 10, 62]); c.fillStyle = '#e0a83a'; c.fill(); strokeInk(c, 5);
     for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(56, 50, 16 + i * 14, -0.8, 0.8); strokeInk(c, 6, '#e0a83a'); }
   }));
+  // ------------------------------------------------- постройки убежища ---
+  // Сцены 100×100: стена-фон, пол и предметы; o.off — ещё не построено (силуэт).
+  function bldBase(c, wall, floor) {
+    const g = c.createLinearGradient(0, 0, 0, 70); g.addColorStop(0, wall[0]); g.addColorStop(1, wall[1]);
+    c.fillStyle = g; c.fillRect(0, 0, 100, 72);
+    c.fillStyle = 'rgba(0,0,0,.18)'; for (let i = 0; i < 6; i++) c.fillRect(0, 10 + i * 11, 100, 1.2); // доски/кирпич
+    const f = c.createLinearGradient(0, 72, 0, 100); f.addColorStop(0, floor[0]); f.addColorStop(1, floor[1]);
+    c.fillStyle = f; c.fillRect(0, 72, 100, 28);
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, 71, 100, 2);
+  }
+  const BLD = {
+    infirmary(c) {
+      bldBase(c, ['#4a5a5e', '#2c3638'], ['#5a5048', '#3a332c']);
+      // флаг с красным крестом
+      c.fillStyle = '#e8e4d8'; c.fillRect(12, 10, 26, 18); strokeInk(c, 1.5);
+      c.fillStyle = '#c0392b'; c.fillRect(22, 12, 6, 14); c.fillRect(16, 16, 18, 6);
+      // койка
+      rr(c, 30, 56, 58, 10, 3); fillInk(c, '#d8d0c0'); strokeInk(c, 1.5);
+      rr(c, 30, 52, 16, 8, 3); fillInk(c, '#f2ece0'); strokeInk(c, 1.2); // подушка
+      rr(c, 46, 54, 42, 8, 2); fillInk(c, '#6f8fa8'); // одеяло
+      c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(33, 66); c.lineTo(33, 80); c.moveTo(85, 66); c.lineTo(85, 80); c.stroke();
+      // капельница
+      c.beginPath(); c.moveTo(20, 34); c.lineTo(20, 82); c.moveTo(14, 82); c.lineTo(26, 82); strokeInk(c, 2);
+      rr(c, 15, 32, 10, 13, 3); fillInk(c, 'rgba(180,220,255,.85)'); strokeInk(c, 1.2);
+      c.beginPath(); c.moveTo(20, 45); c.quadraticCurveTo(24, 58, 34, 58); strokeInk(c, 1, '#7a9aaa');
+    },
+    storage(c) {
+      bldBase(c, ['#5a4a38', '#33291e'], ['#4a4036', '#2c251e']);
+      // стеллаж
+      c.fillStyle = '#7a5a36'; [18, 40, 62].forEach((y) => { c.fillRect(8, y, 60, 4); });
+      c.fillRect(8, 14, 4, 62); c.fillRect(64, 14, 4, 62);
+      // коробки на полках
+      [[14, 8, 14, 10], [30, 6, 12, 12], [46, 9, 14, 9], [14, 30, 18, 10], [36, 28, 10, 12], [50, 31, 12, 9], [16, 52, 14, 10], [34, 51, 24, 11]].forEach(([x, y, w, h], i) => {
+        rr(c, x, y, w, h, 1.5); fillInk(c, ['#c8a060', '#a8804a', '#d8b878'][i % 3]); strokeInk(c, 1.2);
+        c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(x + w / 2 - 1, y, 2, h);
+      });
+      // бочка и ящик у стены
+      rr(c, 74, 52, 18, 26, 6); fillInk(c, '#3f6a4a'); strokeInk(c, 1.5);
+      c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(74, 58, 18, 2); c.fillRect(74, 70, 18, 2);
+      rr(c, 70, 78, 26, 14, 2); fillInk(c, '#9a7040'); strokeInk(c, 1.5);
+      c.beginPath(); c.moveTo(70, 78); c.lineTo(96, 92); c.moveTo(96, 78); c.lineTo(70, 92); strokeInk(c, 1, '#5a3a1a');
+    },
+    workshop(c) {
+      bldBase(c, ['#3e4248', '#24272b'], ['#4a4440', '#2a2622']);
+      // инструменты на стене
+      c.strokeStyle = '#9aa4ac'; c.lineWidth = 3; c.beginPath(); c.moveTo(16, 14); c.lineTo(16, 34); c.stroke();
+      circle(c, 16, 14, 5); strokeInk(c, 3, '#9aa4ac');
+      rr(c, 30, 12, 6, 22, 2); fillInk(c, '#c0392b'); c.fillStyle = '#9aa4ac'; c.fillRect(31.5, 30, 3, 10);
+      c.beginPath(); c.moveTo(48, 14); c.lineTo(58, 30); c.moveTo(58, 14); c.lineTo(48, 30); strokeInk(c, 2.5, '#9aa4ac');
+      // верстак
+      rr(c, 8, 52, 84, 8, 2); fillInk(c, '#8a6038'); strokeInk(c, 1.5);
+      c.fillStyle = '#5a3a1a'; c.fillRect(12, 60, 5, 26); c.fillRect(83, 60, 5, 26);
+      // тиски и деталь
+      rr(c, 60, 42, 16, 10, 2); fillInk(c, '#4a5560'); strokeInk(c, 1.2);
+      rr(c, 64, 36, 8, 7, 1); fillInk(c, '#c8ccd0');
+      // искры
+      for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i - 4) * 0.28; c.beginPath(); c.moveTo(68 + Math.cos(a) * 5, 36 + Math.sin(a) * 5); c.lineTo(68 + Math.cos(a) * (12 + hash(i) * 10), 36 + Math.sin(a) * (12 + hash(i) * 10)); strokeInk(c, 1.4, i % 2 ? '#ffd36b' : '#ff9a3a'); }
+      // гаечный ключ на верстаке
+      c.beginPath(); c.moveTo(22, 48); c.lineTo(46, 48); strokeInk(c, 3, '#9aa4ac'); circle(c, 20, 48, 3.5); strokeInk(c, 2.5, '#9aa4ac');
+    },
+    redcorner(c) {
+      bldBase(c, ['#7a2a22', '#4a1712'], ['#5a4a3a', '#3a2e24']);
+      // знамя со звездой
+      c.fillStyle = '#c0392b'; poly(c, [36, 8, 64, 8, 64, 40, 50, 34, 36, 40]); c.fill(); strokeInk(c, 1.5);
+      c.fillStyle = '#f0c040';
+      c.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(50 + Math.cos(a) * r, 21 + Math.sin(a) * r); } c.closePath(); c.fill();
+      // стенгазета
+      rr(c, 8, 14, 22, 28, 1); fillInk(c, '#e8dcc0'); strokeInk(c, 1.2);
+      c.fillStyle = 'rgba(0,0,0,.35)'; for (let i = 0; i < 6; i++) c.fillRect(11, 18 + i * 4, 16 - (i % 2) * 5, 1.5);
+      // книжная полка
+      c.fillStyle = '#6a4a2a'; c.fillRect(70, 30, 24, 3);
+      ['#2d6fb5', '#c0392b', '#3f6a4a', '#d4a017', '#6b5b95'].forEach((col, i) => { c.fillStyle = col; c.fillRect(71 + i * 4.5, 18 + (i % 2) * 2, 4, 12 - (i % 2) * 2); });
+      // стол с шахматами и чайником
+      rr(c, 22, 60, 56, 6, 2); fillInk(c, '#8a6038'); c.fillStyle = '#5a3a1a'; c.fillRect(28, 66, 4, 18); c.fillRect(68, 66, 4, 18);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? '#e8dcc0' : '#2a2018'; c.fillRect(30 + i * 4, 54 + j * 3, 4, 3); }
+      rr(c, 56, 50, 12, 10, 4); fillInk(c, '#9aa4ac'); strokeInk(c, 1.2);
+    },
+    bath(c) {
+      bldBase(c, ['#6a4a2a', '#3e2a16'], ['#5a4030', '#3a2a1e']);
+      // бревенчатая стена
+      for (let i = 0; i < 6; i++) { rr(c, 0, 4 + i * 11, 100, 9, 4.5); fillInk(c, i % 2 ? '#8a6038' : '#7a5230'); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.stroke(); }
+      // полок и печь-каменка
+      rr(c, 52, 56, 42, 7, 2); fillInk(c, '#c89a60'); strokeInk(c, 1.2);
+      c.fillStyle = '#7a5230'; c.fillRect(56, 63, 4, 18); c.fillRect(86, 63, 4, 18);
+      rr(c, 10, 50, 30, 32, 3); fillInk(c, '#4a4440'); strokeInk(c, 1.5);
+      for (let i = 0; i < 7; i++) { circle(c, 14 + (i % 4) * 7 + (i > 3 ? 3 : 0), 48 - (i > 3 ? 5 : 0), 4); fillInk(c, ['#8a8478', '#6a645c', '#9a948a'][i % 3]); }
+      rr(c, 18, 62, 14, 10, 2); fillInk(c, '#ff7a2a'); c.fillStyle = 'rgba(255,220,120,.7)'; c.fillRect(21, 66, 8, 4);
+      // ушат и веник
+      rr(c, 44, 74, 14, 12, 3); fillInk(c, '#a8804a'); strokeInk(c, 1.2);
+      c.beginPath(); c.moveTo(74, 46); c.lineTo(80, 30); strokeInk(c, 2, '#6a4a2a');
+      for (let i = 0; i < 7; i++) { c.beginPath(); c.ellipse(76 + (i - 3) * 2.5, 42 + hash(i) * 6, 2.5, 5, (i - 3) * 0.3, 0, 7); fillInk(c, i % 2 ? '#5a8a3a' : '#4a7a2e'); }
+      // пар
+      for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(20 + i * 6, 34 - i * 7, 7 + i * 2, 5 + i, 0, 0, 7); c.fillStyle = 'rgba(240,240,240,' + (0.35 - i * 0.06) + ')'; c.fill(); }
+    },
+  };
+  Object.keys(BLD).forEach((k) => Art.define('bld_' + k, (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
+    c.save();
+    c.beginPath(); c.rect(0, 0, 100, 100); c.clip();
+    BLD[k](c);
+    c.restore();
+    if (o && o.off) { c.fillStyle = 'rgba(12,9,7,.62)'; c.fillRect(0, 0, 100, 100); }
+  })));
+
   Art.define('skull', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.beginPath(); c.arc(50, 42, 34, Math.PI, 0); c.lineTo(84, 58); c.quadraticCurveTo(76, 66, 70, 66); c.lineTo(70, 84); c.lineTo(30, 84); c.lineTo(30, 66); c.quadraticCurveTo(24, 66, 16, 58); c.closePath();
     c.fillStyle = o.color || '#e8dcc0'; c.fill(); strokeInk(c, 4);
