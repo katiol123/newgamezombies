@@ -21,10 +21,11 @@
     const rules = g.tileRules || {};
     const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : r));
     const skip = (rules.exclude || []).concat(req.map((r) => r.id));
-    const pool = Rng.shuffle(g, level.tiles.filter((id) => !skip.includes(id)));
+    let pool = Rng.shuffle(g, level.tiles.filter((id) => !skip.includes(id)));
+    if (!pool.length) pool = Rng.shuffle(g, level.tiles.slice()); // исключили всё — берём базовый пул
     const grid = {};
     const key = (tx, ty) => tx + ',' + ty;
-    req.filter((r) => r.tx != null).forEach((r) => { grid[key(r.tx, r.ty || 0)] = r.id; });
+    req.filter((r) => r.tx != null).forEach((r) => { if (!grid[key(r.tx, r.ty || 0)]) grid[key(r.tx, r.ty || 0)] = r.id; else r.tx = null; }); // место занято — ставим как без позиции
     const free = (mid) => { const out = []; for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) if (!grid[key(tx, ty)] && (!mid || (tx > 0 && tx < tw - 1))) out.push(key(tx, ty)); return out; };
     req.filter((r) => r.tx == null).forEach((r) => {
       const opts = free(true).length ? free(true) : free(false);

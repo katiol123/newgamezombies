@@ -114,5 +114,50 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ZGc.chain[0] = keep;
 }
 
+// 10) уровень на последнем действии миссии: талант не теряется
+{
+  const c = C.create({ heroes: [{ id: 'boris' }], seed: 't10' });
+  let opts = C.startMission(c); opts.quiet = true;
+  let g = E.create(opts);
+  const h = g.heroes[0];
+  h.xp = 3; g.result = { win: true, stars: 1, reason: 'тест' };
+  E.gainXp(g, h, 1);
+  C.finishMission(c, g);
+  const b = C.hero(c, 'boris');
+  ok(b.level === 2 && b.talentQueue.length === 1, 'невыбранный талант сохранён в кампании');
+  opts = C.startMission(c); opts.quiet = true;
+  g = E.create(opts);
+  ok(g.pending && g.pending.type === 'talent' && g.pending.hero === 0, 'и предлагается в начале следующей миссии');
+  ok(C.finishMission(c, Object.assign(g, { result: { win: true, stars: 1 } })) && C.finishMission(c, g) === c.report && c.missionNo === 2, 'итоги не вносятся дважды');
+}
+
+// 11) уникальные карты в хламе не пропадают при выходе; стартовая карта новичка — не событие
+{
+  const c = C.create({ heroes: [{ id: 'boris' }], seed: 't11' });
+  const b = C.hero(c, 'boris');
+  b.junk.push({ key: 'kg', id: 'gift_map', worn: false }, { key: 'kc', id: 'crowbar', worn: false });
+  C.startMission(c);
+  ok(b.junk.length === 1 && b.junk[0].id === 'gift_map' && b.talons === 2, 'уникальная карта осталась в хламе, обычная продана');
+  let bad = 0;
+  for (let k = 0; k < 40; k++) {
+    const c2 = C.create({ heroes: [{ id: 'boris' }], seed: 't11h' + k });
+    C.hero(c2, 'boris').talons = 99;
+    C.hire(c2, 'boris', 'lisa');
+    if (ZG.Cards.get(C.hero(c2, 'lisa').equip[0].id).event) bad++;
+  }
+  ok(!bad, 'стартовая карта новичка никогда не событие');
+}
+
+// 12) босс-блуждающий появляется, даже если жетоны его типа кончились
+{
+  const g = E.create({ heroes: [{ id: 'boris' }], seed: 't12', quiet: true, fog: true, wanderers: ['brute'] });
+  const open = g.board.cells.find((cl) => !E.hidden(g, cl.i) && cl.type === 'street').i;
+  E.spawnZombie(g, 'brute', open, null, true, true); E.spawnZombie(g, 'brute', open, null, true, true);
+  const hidden = g.revealed.map((r, i) => (r ? -1 : i)).filter((i) => i >= 0);
+  hidden.slice(0, -1).forEach((ti) => { g.revealed[ti] = true; });
+  E.reveal(g, hidden[hidden.length - 1], 'тест');
+  ok(g.zombies.filter((z) => z.type === 'brute').length === 3, 'босс появился сверх лимита жетонов');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

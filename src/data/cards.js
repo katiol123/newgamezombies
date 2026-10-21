@@ -361,7 +361,7 @@
     },
     {
       id: 'army_medkit', name: 'Армейская аптечка', suit: 'mind', cost: 1, shield: 0, type: 'Расходник', tags: ['heal'], loot: true, rarity: 'unique', consumable: true, cures: true,
-      text: 'Герой в твоей зоне убирает 3 Раны или Заражения и получает 1 Блок. Уходит из игры.', chainText: 'следующий ход (другого героя или твой в соло) — с +1 ⚡.', art: 'medkit', value: 13,
+      text: 'Герой в твоей зоне убирает 3 Раны или Заражения (сначала Заражения) и получает 1 Блок. Уходит из игры.', chainText: 'следующий ход (другого героя или твой в соло) — с +1 ⚡.', art: 'medkit', value: 13,
       target: { kind: 'hero', range: 0, self: true, wounded: true },
       play(c) { c.heal(c.target, 3, true); c.block(1, c.target); if (c.chain) c.relayEnergy(1); },
     },

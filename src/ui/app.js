@@ -47,6 +47,7 @@
         sh.classList.remove('opening');
         return;
       }
+      if (name === 'menu') $('#btn-continue').style.display = store.get('save', null) ? '' : 'none';
       if (prev) { prev.classList.add('leaving'); await sleep(380); prev.classList.remove('active', 'leaving'); }
       next.classList.add('active', 'entering');
       this.screen = name;
@@ -331,6 +332,7 @@
         await Banner.show('РАУНД 1', ZG.PHASES[0].name.toUpperCase(), 'round');
       }
       this.refresh();
+      if (this.g.pending) await this.handlePending();
       this.maybeAutoBegin();
     },
 
@@ -799,9 +801,10 @@
           pips.push(`<span class="slot"><i class="tok ${st}${anim}"${anim ? dl : ''}></i></span>`);
         }
         if (an && an.hit && el0 < 600 && h.onBoard) { c.classList.add('shake'); c.style.animationDelay = -Math.round(el0) + 'ms'; }
-        const XPMAX = E.XP_LEVELS[E.XP_LEVELS.length - 1], xpTo = Math.min(XPMAX, h.xp);
+        const LV = g.xpLevels || E.XP_LEVELS;
+        const XPMAX = LV[LV.length - 1], xpTo = Math.min(XPMAX, h.xp);
         const xpFrom = prev ? Math.min(XPMAX, prev.xp) + (xpTo - Math.min(XPMAX, prev.xp)) * Math.min(1, el0 / 1000) : xpTo;
-        const LV = E.XP_LEVELS, xpNext = LV.find((v) => h.xp < v) || null;
+        const xpNext = LV.find((v) => h.xp < v) || null;
         const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
@@ -1028,7 +1031,7 @@
     async gameOver() {
       const g = this.g;
       ZG.Sound.stopMusic(2500);
-      store.set('save', null);
+      if (!this.camp) store.set('save', null);
       await sleep(600);
       clearTimeout(toast._t); $('#toast').classList.remove('show'); // старые подсказки не висят поверх итогов
       const r = g.result;
@@ -1525,7 +1528,7 @@
       if (!c) return toast('Слот пуст.');
       App.campaign = { c, slot };
       if (c.status === 'mission' && c.game) { const g = c.game; c.game = null; Game.resume({ g, players: c.players }, App.campaign); }
-      else if (c.status === 'mission') { c.status = 'ready'; Shelter.show(); } // миссия без сохранения — назад в убежище
+      else if (c.status === 'mission' && c.current) { const sq = c.current.squad; c.status = 'ready'; Game.startCampaignMission(sq); } // миссия без сохранения — заново тем же отрядом (та же карта)
       else Shelter.show();
     },
   };

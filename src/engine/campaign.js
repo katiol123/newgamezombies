@@ -45,7 +45,8 @@
   C.equipCap = (h) => CFG().slots.equip + (C.has(h, 'sh_packer') ? 1 : 0);
   C.chestCap = (h) => (C.built(h, 'storage') ? CFG().slots.chestBig : CFG().slots.chest) + (C.has(h, 'sh_hoarder') ? 2 : 0);
   C.baseHp = (h) => ZG.Heroes.get(h.id).hp;
-  C.hp = (h) => Math.max(1, C.baseHp(h) - h.injury);
+  C.hpTalents = (h) => h.talents.reduce((s, t) => { const m = ZG.Talents.get(t).mods; return s + (m && typeof m.hp === 'number' ? m.hp : 0); }, 0);
+  C.hp = (h) => Math.max(1, C.baseHp(h) + C.hpTalents(h) - h.injury);
   C.price = (id) => {
     const d = ZG.Cards.get(id);
     if (d.campaignOnly) return null; // уникальные карты кампании не продаются
@@ -64,7 +65,7 @@
     if (ids.length !== c.squad) return { error: `Нужно выбрать ровно ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
     if (ids.some((id) => !C.hero(c, id))) return { error: 'Этого героя нет в убежище.' };
     // хлам при выходе продаётся автоматически
-    c.roster.forEach((h) => { h.junk.forEach((it) => { h.talons += C.price(it.id) || 0; }); h.junk = []; });
+    c.roster.forEach((h) => { h.junk.forEach((it) => { h.talons += C.price(it.id) || 0; }); h.junk = h.junk.filter((it) => C.price(it.id) == null); }); // уникальные карты кампании не продаются — остаются
     c.current = { squad: ids.slice(), seed: `${c.seed}-m${c.missionNo + 1}` };
     c.lastSquad = ids.slice();
     c.status = 'mission';
@@ -81,7 +82,7 @@
         const temp = h.morale <= 0 ? ['despair', 'despair'] : h.morale <= M.low ? ['despair'] : h.morale >= M.max ? ['courage'] : [];
         return {
           id, player: h.player, ai: h.ai,
-          carry: { level: h.level, xp: h.xp, talents: h.talents, perks: h.perks, missionsDone: h.missionsDone, injury: h.injury, cards: h.equip.map((it) => ({ key: it.key, id: it.id })), temp },
+          carry: { level: h.level, xp: h.xp, talents: h.talents, talentQueue: h.talentQueue || [], perks: h.perks, missionsDone: h.missionsDone, injury: h.injury, cards: h.equip.map((it) => ({ key: it.key, id: it.id })), temp },
         };
       }),
     };
@@ -89,6 +90,7 @@
 
   // Итоги миссии. Возвращает отчёт для экрана убежища (и кладёт его в c.report).
   C.finishMission = function (c, g) {
+    if (c.status !== 'mission') return c.report; // итоги уже внесены
     const P = CFG().prices, M = CFG().morale;
     const rng = c; // Rng работает с объектом, у которого есть поле rng
     const res = g.result || { win: false, stars: 0, reason: 'Миссия прервана.' };
@@ -116,11 +118,11 @@
         return;
       }
       h.missions++;
-      h.level = gh.level; h.xp = gh.xp; h.talents = gh.talents.slice(); h.perks = gh.perks.slice();
+      h.level = gh.level; h.xp = gh.xp; h.talents = gh.talents.slice(); h.perks = gh.perks.slice(); h.talentQueue = (gh.talentQueue || []).slice();
       h.missionsDone = (gh.missionsDone || h.missionsDone).slice();
       // здоровье: карты Ран и Заражений уничтожаются, но потерянная Стойкость остаётся травмой
-      const wounds = gh.deck.concat(gh.hand, gh.discard).filter((u) => g.cards[u] === 'wound').length;
-      h.injury = Math.min(C.baseHp(h) - 1, h.injury + wounds);
+      const wounds = gh.deck.concat(gh.hand, gh.discard).filter((u) => g.cards[u] === 'wound' && !String(u).startsWith('sw')).length; // раны сложности — не травмы
+      h.injury = Math.min(C.baseHp(h) + C.hpTalents(h) - 1, h.injury + wounds);
       if (wounds) line(h.id, `${wounds} ${ZG.util.plural(wounds, 'рана', 'раны', 'ран')} → травмы`);
       // добыча: карты добычи из всего, что у героя (принесённые — со своим износом, новые — целые)
       const found = [];
@@ -178,11 +180,9 @@
       let heal = 0;
       if (h.talons >= P.ration) { h.talons -= P.ration; line(h.id, `−${P.ration} 🎫 паёк`); heal++; }
       else moraleAdd(h, -1, 'не хватило на паёк');
-      if (heal) {
-        if (!went) heal++;
-        if (C.built(h, 'infirmary')) heal++;
-        if (C.has(h, 'sh_tough')) heal++;
-      }
+      if (!went) heal++; // отдых
+      if (C.built(h, 'infirmary')) heal++;
+      if (C.has(h, 'sh_tough')) heal++;
       heal = Math.min(heal, h.injury);
       if (heal) { h.injury -= heal; line(h.id, `+${heal} Стойкость`); }
       if (h.morale < 3 && C.built(h, 'bath') && Rng.next(rng) < 0.5) moraleAdd(h, 1, 'баня');
@@ -222,13 +222,13 @@
   };
   C.give = function (c, fromId, from, idx, toId) {
     const a = C.hero(c, fromId), b = C.hero(c, toId);
-    if (!a || !b || a === b || !a[from] || !a[from][idx]) return 'Нельзя передать.';
+    if (!a || !b || a === b || !LISTS.includes(from) || !a[from][idx]) return 'Нельзя передать.';
     if (b.chest.length >= C.chestCap(b)) return `Сундук ${ZG.Heroes.get(b.id).name} заполнен.`;
     b.chest.push(a[from].splice(idx, 1)[0]);
     return null;
   };
   C.sell = function (c, heroId, from, idx) {
-    const h = C.hero(c, heroId), it = h && h[from] && h[from][idx];
+    const h = C.hero(c, heroId), it = h && LISTS.includes(from) && h[from][idx];
     if (!it) return 'Нет такой карты.';
     const p = C.price(it.id);
     if (p == null) return 'Эту карту нельзя продать.';
@@ -244,7 +244,7 @@
     return null;
   };
   C.repair = function (c, heroId, from, idx) {
-    const h = C.hero(c, heroId), it = h && h[from] && h[from][idx];
+    const h = C.hero(c, heroId), it = h && LISTS.includes(from) && h[from][idx];
     if (!it || !it.worn) return 'Карта не нуждается в ремонте.';
     const p = C.repairPrice(it.id);
     if (!C.built(h, 'workshop')) return 'Нужна Мастерская.';
@@ -272,7 +272,7 @@
     const h = newHero(c, newId, payer.player, payer.ai);
     // стартовый паёк: 1 обычная карта добычи в экипировке
     const lvl = ZG.Levels.get('outskirts');
-    const commons = Object.keys(lvl.loot).filter((id) => (ZG.Cards.get(id).rarity || 'common') === 'common');
+    const commons = Object.keys(lvl.loot).filter((id) => { const d = ZG.Cards.get(id); return !d.event && (d.rarity || 'common') === 'common'; });
     if (commons.length) h.equip.push(item(c, Rng.pick(c, commons)));
     const gift = ZG.Heroes.get(newId).gift;
     if (gift && ZG.Cards.has(gift)) (payer.chest.length < C.chestCap(payer) ? payer.chest : payer.junk).push(item(c, gift));

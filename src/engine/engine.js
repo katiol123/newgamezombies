@@ -232,8 +232,9 @@
       const dists = g.heroes.filter((h) => h.onBoard).map((h) => E.dist(g, h.pos));
       const far = (c) => Math.min(...dists.map((d) => (d[c] == null ? 99 : d[c])), 99);
       const cell = cells.sort((a, b) => far(b) - far(a) || a - b)[0];
-      const z = E.spawnZombie(g, w.type, cell, null, true, true);
-      if (z && g.stealth && !zd.relentless) { z.awake = false; z.trail = null; }
+      const z = E.spawnZombie(g, w.type, cell, null, true, true, true);
+      if (!z) { w.out = false; return; }
+      if (g.stealth && !zd.relentless) { z.awake = false; z.trail = null; }
       E.log(g, `${last ? 'Последний тайл' : 'На кубике «6»'}: здесь бродит ${zd.name}!`, 'bad');
       E.fx(g, { t: 'wanderer', ztype: w.type, pos: cell, zombie: z && z.uid });
     });
@@ -332,7 +333,7 @@
       const cv = hs.carry;
       if (cv) {
         h.level = cv.level || 1; h.xp = cv.xp || 0; h.talents = (cv.talents || []).slice(); h.perks = (cv.perks || []).slice();
-        h.injury = cv.injury || 0; h.missionsDone = (cv.missionsDone || []).slice();
+        h.injury = cv.injury || 0; h.missionsDone = (cv.missionsDone || []).slice(); h.talentQueue = (cv.talentQueue || []).slice();
         (cv.cards || []).forEach((it) => { const u = E.newUid(g, 'c'); g.cards[u] = it.id; h.deck.push(u); (g.carried = g.carried || {})[u] = it.key; });
         (cv.temp || []).forEach((id) => { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.push(u); });
       }
@@ -357,7 +358,7 @@
     E.scenario(g).setup(g, E);
     placeSearch(g);
     const diff = ZG.Difficulties.get(g.difficultyId);
-    if (diff.startWounds) g.heroes.forEach((h) => { for (let i = 0; i < diff.startWounds; i++) { const u = E.newUid(g, 'w'); g.cards[u] = 'wound'; h.deck.push(u); } Rng.shuffle(g, h.deck); });
+    if (diff.startWounds) g.heroes.forEach((h) => { for (let i = 0; i < diff.startWounds; i++) { const u = E.newUid(g, 'sw'); g.cards[u] = 'wound'; h.deck.push(u); } Rng.shuffle(g, h.deck); });
     if (diff.startLoot) g.heroes.forEach((h) => { for (let i = 0; i < diff.startLoot; i++) E.giveLoot(g, h); });
     const cond = ZG.Conditions.get(g.conditionId);
     if (cond.setup) cond.setup(g, E);
@@ -379,6 +380,7 @@
     // стартовая рука: каждый герой сразу набирает полную руку
     g.heroes.forEach((h) => drawCards(g, h, Math.max(0, E.handSize(g, h) - h.hand.length) + Mods.value(g, h, 'startDraw', 0)));
     g.fx = [];
+    queueTalent(g); // кампания: невыбранный в прошлой миссии талант предлагается сразу
     // начальное появление
     g.spawnPoints.forEach((p) => drawSpawn(g, p));
     E.log(g, `Уровень ${level.num}: ${level.name}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
@@ -408,8 +410,11 @@
     const b = g.board;
     // старт: случайный тайл левого столбца, зона у левого края поля; выход — так же справа
     const maxTx = Math.max.apply(null, b.tiles.map((t) => t.tx));
+    const reqIds = ((g.tileRules && g.tileRules.required) || []).map((r) => (typeof r === 'string' ? r : r.id));
     const edgeZone = (tx, x) => {
-      const tiles = b.tiles.map((t, i) => ({ t, i })).filter((o) => o.t.tx === tx).map((o) => o.i);
+      const col = b.tiles.map((t, i) => ({ t, i })).filter((o) => o.t.tx === tx);
+      const free = col.filter((o) => !reqIds.includes(o.t.id)); // уникальные тайлы миссии не открываются заранее
+      const tiles = (free.length ? free : col).map((o) => o.i);
       const ti = Rng.pick(g, tiles);
       const on = b.cells.filter((c) => c.tile === ti && c.x === x && c.type !== 'blocked');
       const st = on.filter((c) => c.type === 'street');
@@ -696,7 +701,7 @@
   E.decoysOn = (g, ti) => (g.decoys || []).filter((d) => g.board.cells[d.pos].tile === ti);
   // сколько жетонов лежит стопкой на закрытом тайле (зомби + пустышки)
   E.fogTokens = (g, ti, mobileOnly) => g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && (!mobileOnly || !ZG.Zombies.get(z.type).immobile)).length + E.decoysOn(g, ti).length;
-  E.spawnZombie = function (g, type, pos, why, silent, real) {
+  E.spawnZombie = function (g, type, pos, why, silent, real, force) {
     const zd0 = ZG.Zombies.get(type);
     if (!real && ZG.Levels.get(g.levelId).decoys && g.revealed && E.hidden(g, pos) && !zd0.immobile && !zd0.relentless && !zd0.turned) {
       let first = null;
@@ -708,7 +713,7 @@
       return first;
     }
     const pool = (ZG.Levels.get(g.levelId).pool || {})[type];
-    if (pool && g.zombies.filter((x) => x.type === type).length >= pool) {
+    if (pool && !force && g.zombies.filter((x) => x.type === type).length >= pool) {
       // жетоны кончились: вместо появления все такие зомби делают лишний шаг (раз за карту появления)
       g.poolMoved = g.poolMoved || {};
       if (g.poolMoved[type]) return null;
@@ -758,7 +763,7 @@
     if (heroIdx != null && kind !== 'trap' && kind !== 'silent' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     if (g.stealth && heroIdx != null && g.heroes[heroIdx] && kind !== 'silent') wake(g, z, g.heroes[heroIdx].pos, false, heroIdx); // на него напали
     const def = ZG.Zombies.get(z.type);
-    if (g.turn && g.turn.courage && heroIdx === g.active && (kind === 'melee' || kind === 'ranged')) n += 1;
+    if (g.turn && g.turn.courage && heroIdx === g.active && (kind === 'melee' || kind === 'ranged' || kind === 'fire')) n += 1;
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
     z.dmg += eff;
@@ -1410,7 +1415,7 @@
     if (!g.turn.gave) {
       E.heroesAt(g, h.pos).forEach((o) => {
         if (o === h) return;
-        h.hand.forEach((u) => { if (g.cards[u] !== 'wound' && g.cards[u] !== 'infection') out.push({ t: 'give', card: u, hero: o.idx }); });
+        h.hand.forEach((u) => { if (g.cards[u] !== 'wound' && g.cards[u] !== 'infection' && ZG.Cards.get(g.cards[u]).kind !== 'temp') out.push({ t: 'give', card: u, hero: o.idx }); });
       });
     }
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
@@ -1600,7 +1605,7 @@
       case 'give': {
         const o = g.heroes[a.hero];
         const i = h.hand.indexOf(a.card);
-        if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || ['wound', 'infection'].includes(g.cards[a.card])) return fail(g, 'Передать нельзя.');
+        if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || ['wound', 'infection'].includes(g.cards[a.card]) || ZG.Cards.get(g.cards[a.card]).kind === 'temp') return fail(g, 'Передать нельзя.');
         h.hand.splice(i, 1); o.hand.push(a.card);
         g.turn.gave = true;
         // помощь передачей: находку/груз — любому, любую карту — раненому; раз за ход и не одной и той же картой
@@ -1802,7 +1807,8 @@
       moveTo(cell) { moveHero(g, h, cell); },
       heal(heroIdx, n, cures) {
         const o = g.heroes[heroIdx];
-        const healed = healWounds(g, o, n + Mods.value(g, h, 'healBonus', 0), cures);
+        // «Стерильность» и т. п.: бонус к лечению убирает только Раны (Заражения — лишь по тексту самой карты)
+        const healed = healWounds(g, o, n, cures) + healWounds(g, o, Mods.value(g, h, 'healBonus', 0));
         if (o !== h && healed) ms(h, 'helps');
         E.log(g, `${E.heroName(o)}: −${healed} ${ZG.util.plural(healed, 'Рана', 'Раны', 'Ран')}.`, 'good');
       },
