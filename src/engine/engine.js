@@ -56,7 +56,7 @@
     return parts;
   };
   E.activeHero = (g) => (g.active == null ? null : g.heroes[g.active]);
-  E.maxRounds = (g) => Mods.value(g, null, 'maxRounds', ZG.Levels.get(g.levelId).rounds);
+  E.maxRounds = (g) => { const l = ZG.Levels.get(g.levelId); return Mods.value(g, null, 'maxRounds', l.rounds + ((l.roundsBonus || {})[Math.min(4, g.heroes.length)] || 0)); };
   E.alarmThreshold = (g) => {
     // порог Волны: число или таблица по размеру отряда { 1: 6, 4: 5 }
     const t = ZG.Levels.get(g.levelId).alarmThreshold;
@@ -554,7 +554,7 @@
 
   function damageZombie(g, z, n, heroIdx, kind) {
     // любая атака героя выдаёт его укрытие до конца раунда (даже бесшумная)
-    if (heroIdx != null && (kind === 'melee' || kind === 'ranged') && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
+    if (heroIdx != null && kind !== 'trap' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     const def = ZG.Zombies.get(z.type);
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
@@ -636,6 +636,8 @@
 
   function moveZombieStep(g, z) {
     if (E.hidden(g, z.pos)) return false; // в тумане зомби копятся у люка
+    // пришёл на пустой шум — «проверил, никого»: жетон снят, зомби ищет новую цель
+    if (g.noise[z.pos] && !E.heroesAt(g, z.pos).length && !g.lures.some((l) => l.pos === z.pos)) delete g.noise[z.pos];
     const targets = zombieTargets(g, z);
     if (!targets.length) return false;
     if (targets.some((t) => t.pos === z.pos)) return false;
@@ -1283,10 +1285,12 @@
     const from = h.pos;
     if (g.doors) {
       // двери по пути (карта может провести через несколько зон)
-      const d = Board.bfs(g.board, to, (a, b) => !E.hidden(g, b) && (b === from || !E.zombiesAt(g, b).length));
+      // путь без тумана и без зомби; если его нет (например, «По крышам») — просто без тумана
+      let d = Board.bfs(g.board, to, (a, b) => !E.hidden(g, b) && (b === from || !E.zombiesAt(g, b).length));
+      if (!isFinite(d[from])) d = Board.bfs(g.board, to, (a, b) => !E.hidden(g, b));
       let cur = from;
-      if (d[from] === Infinity && g.board.adj[from].includes(to)) openDoor(g, from, to, h);
-      for (let k = 0; k < 12 && cur !== to; k++) {
+      if (!isFinite(d[from]) && g.board.adj[from].includes(to)) openDoor(g, from, to, h);
+      for (let k = 0; k < 12 && cur !== to && isFinite(d[cur]); k++) {
         const nx = g.board.adj[cur].find((n) => d[n] === d[cur] - 1);
         if (nx == null) break;
         openDoor(g, cur, nx, h);

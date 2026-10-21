@@ -47,7 +47,7 @@
     },
     {
       id: 'viktor', name: 'Виктор', nick: 'Гром', role: 'Стрелок', color: '#2d6fb5',
-      hp: 5, hand: 5, energy: 3,
+      hp: 6, hand: 5, energy: 3,
       bio: 'Участковый. Патронов мало, выдержки много.',
       ability: 'Выучка', abilityText: '+1 к дальности его дальних атак. Первый выстрел за ход — на 1 Шум тише.',
       deck: STARTER.concat(['sawnoff', 'pm', 'suppress', 'buttstroke']),

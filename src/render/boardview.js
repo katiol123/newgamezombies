@@ -733,6 +733,26 @@
         const c = this.cellXY(l.pos);
         Art.draw(ctx, 'tok_lure', c.x - C * 0.3, c.y - C * 0.3, C * 0.6, C * 0.6, { t });
       });
+      // помещения-укрытия с героями: зелёный контур и подпись
+      if (g.doors) {
+        const done = new Set();
+        g.heroes.forEach((hh) => {
+          if (!ZG.Engine.sheltered(g, hh)) return;
+          const bld = g.board.cells[hh.pos].bld;
+          if (done.has(bld)) return; done.add(bld);
+          const cells = g.board.cells.filter((c) => c.bld === bld);
+          ctx.save();
+          ctx.strokeStyle = `rgba(111,224,138,${0.55 + Math.sin(t * 2) * 0.2})`; ctx.lineWidth = 3; ctx.setLineDash([8, 5]);
+          cells.forEach((c) => { const p = this.cellXY(c.i); ctx.strokeRect(p.x - C / 2 + 4, p.y - C / 2 + 4, C - 8, C - 8); });
+          ctx.setLineDash([]);
+          const p0 = this.cellXY(cells[0].i);
+          ctx.font = `bold ${Math.max(10, Math.round(C * 0.13))}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+          const tw = ctx.measureText('УКРЫТИЕ').width + 10;
+          ctx.fillStyle = 'rgba(10,30,15,.85)'; Art.rr(ctx, p0.x - tw / 2, p0.y - C / 2 + 6, tw, C * 0.17, 4); ctx.fill();
+          ctx.fillStyle = '#8ff0a6'; ctx.fillText('УКРЫТИЕ', p0.x, p0.y - C / 2 + 8);
+          ctx.restore();
+        });
+      }
       // двери на входах в помещения: закрытая — створка поперёк прохода, открытая — распахнута
       if (g.doors) {
         if (!this.entranceList || this.entranceBoard !== g.board) {

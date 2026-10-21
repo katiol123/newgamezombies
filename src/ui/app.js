@@ -714,7 +714,7 @@
         const pips = [];
         for (let i = 0; i < hp; i++) pips.push(`<i class="${i < hp - w - inf ? 'ok' : i < hp - w ? 'inf' : 'hurt'}"></i>`);
         const xpNext = h.xp < 4 ? 4 : h.xp < 10 ? 10 : null;
-        const status = h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
+        const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
           <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>

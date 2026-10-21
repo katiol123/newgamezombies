@@ -87,9 +87,9 @@
   ZG.Cards.addAll([
     {
       id: 'scalpel', name: 'Скальпель', suit: 'agility', cost: 0, shield: 0, type: 'Атака', tags: ['melee'], hero: 'marina',
-      text: 'Ближний бой: 1 урон.', chainText: '+2 урона.', art: 'scalpel', value: 8,
+      text: 'Ближний бой: 2 урона (точно в висок).', chainText: '+1 урон.', art: 'scalpel', value: 9,
       target: MELEE,
-      play(c) { c.melee(c.target, 1 + (c.chain ? 2 : 0)); },
+      play(c) { c.melee(c.target, 2 + (c.chain ? 1 : 0)); },
     },
     {
       id: 'bandage', name: 'Перевязка', suit: 'mind', cost: 1, shield: 1, type: 'Лечение', tags: ['heal'], hero: 'marina',
