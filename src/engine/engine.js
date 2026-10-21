@@ -516,7 +516,7 @@
       if (g.poolMoved[type]) return null;
       g.poolMoved[type] = true;
       E.log(g, `Жетоны «${ZG.Zombies.get(type).name}» кончились — все они делают лишний шаг!`, 'bad');
-      g.zombies.filter((x) => x.type === type).forEach((x) => moveZombieStep(g, x));
+      g.zombies.filter((x) => x.type === type).forEach((x) => moveZombieStep(g, x, g.zs && g.zs.goals));
       return null;
     }
     const z = { uid: E.newUid(g, 'z'), type, pos, dmg: 0, suppressed: false };
@@ -634,15 +634,11 @@
     return t;
   }
 
-  function moveZombieStep(g, z) {
-    if (E.hidden(g, z.pos)) return false; // в тумане зомби копятся у люка
-    // пришёл на пустой шум — «проверил, никого»: жетон снят, зомби ищет новую цель
-    if (g.noise[z.pos] && !E.heroesAt(g, z.pos).length && !g.lures.some((l) => l.pos === z.pos)) delete g.noise[z.pos];
+  // Цель зомби: ближайший видимый герой / приманка / пустой шум (null — стоять)
+  function pickGoal(g, z) {
     const targets = zombieTargets(g, z);
-    if (!targets.length) return false;
-    if (targets.some((t) => t.pos === z.pos)) return false;
-    const zdef = ZG.Zombies.get(z.type);
-    // Зомби идёт кратчайшим путём, не считаясь с баррикадами: упёршись — ломает
+    if (!targets.length) return null;
+    if (targets.some((t) => t.pos === z.pos)) return null;
     const dz = E.distV(g, z.pos);
     let best = null;
     targets.forEach((t) => {
@@ -654,12 +650,28 @@
       const a = key(t), b = key(best);
       for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) { if (a[i] < b[i]) best = t; break; } }
     });
-    if (!best) return false;
+    if (!best) return null;
     // Туман: зомби видит цель только на своём или соседнем (по стороне) тайле
     if (Mods.flag(g, null, 'fogTiles')) {
       const a = g.board.tiles[tileOf(g, z.pos)], b = g.board.tiles[tileOf(g, best.pos)];
-      if (Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) > 1) return false;
+      if (Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) > 1) return null;
     }
+    return best.pos;
+  }
+
+  // Шаг зомби к цели, выбранной в начале фазы (goals: uid → клетка). Цель не меняется посреди фазы,
+  // кроме случая, когда зомби дошёл до пустого шума: тогда он ищет новую.
+  function moveZombieStep(g, z, goals) {
+    if (E.hidden(g, z.pos)) return false; // в тумане зомби копятся у люка
+    goals = goals || {};
+    // пришёл на пустой шум — «проверил, никого»: жетон снят, зомби ищет новую цель
+    if (g.noise[z.pos] && !E.heroesAt(g, z.pos).length && !g.lures.some((l) => l.pos === z.pos)) { delete g.noise[z.pos]; delete goals[z.uid]; }
+    if (!(z.uid in goals)) goals[z.uid] = pickGoal(g, z);
+    const goal = goals[z.uid];
+    if (goal == null || goal === z.pos) return false;
+    if (E.heroesAt(g, z.pos).some((h) => !h.hidden) || g.lures.some((l) => l.pos === z.pos)) return false; // по пути наткнулся на героя или приманку — остаётся
+    const zdef = ZG.Zombies.get(z.type);
+    const best = { pos: goal };
     const dt = E.distV(g, best.pos);
     // из равных шагов — тот, где нет баррикады
     const steps = g.board.adj[z.pos].filter((n) => dt[n] === dt[z.pos] - 1);
@@ -716,11 +728,12 @@
       if (zs.step === 'move') {
         // волнами: все зомби делают по шагу одновременно, затем следующий шаг — и так до макс. скорости
         const left = new Map();
+        const goals = g.zs.goals = {}; // цель каждого зомби выбирается один раз за фазу
         g.zombies.forEach((z) => { const sp = E.zombieSpeed(g, z); if (!ZG.Zombies.get(z.type).immobile && !z.suppressed && sp > 0) left.set(z, sp); });
         for (let wave = 0; left.size; wave++) {
           if (wave) E.fx(g, { t: 'zwave' });
           [...left.keys()].forEach((z) => {
-            if (!g.zombies.includes(z) || !moveZombieStep(g, z) || left.get(z) <= 1) left.delete(z);
+            if (!g.zombies.includes(z) || !moveZombieStep(g, z, goals) || left.get(z) <= 1) left.delete(z);
             else left.set(z, left.get(z) - 1);
           });
         }

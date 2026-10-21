@@ -301,6 +301,10 @@
     // последовательное проигрывание событий движка: часть — на поле, часть — баннеры интерфейса
     async playFx() {
       const g = this.g;
+      this.view.hold = true;
+      try { await this._playFx(g); } finally { this.view.hold = false; this.view._sync(true); }
+    },
+    async _playFx(g) {
       while (g.fx.length) {
         const evs = g.fx.splice(0);
         let batch = [];

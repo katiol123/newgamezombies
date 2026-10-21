@@ -223,9 +223,12 @@
     _wait(ms) { return new Promise((r) => setTimeout(r, ms / this.speed)); }
 
     // привести отображение в соответствие с моделью
-    _sync() {
+    _sync(force) {
       const g = this.g;
       if (!g) return;
+      // пока интерфейс проигрывает очередь событий, модель уже «впереди» — не прыгаем к её итогу,
+      // иначе ещё не показанные шаги зомби выглядят как телепорт (полная сверка — в конце очереди)
+      if (this.hold && !force) return;
       if (g.revealed) this.shown = g.revealed.slice();
       const alive = new Set(g.zombies.map((z) => z.uid));
       this.zombies.forEach((e, uid) => { if (!alive.has(uid) && !e.dying) this.zombies.delete(uid); });
