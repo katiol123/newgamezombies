@@ -63,6 +63,7 @@
     // хлам при выходе продаётся автоматически
     c.roster.forEach((h) => { h.junk.forEach((it) => { h.talons += C.price(it.id) || 0; }); h.junk = []; });
     c.current = { squad: ids.slice(), seed: `${c.seed}-m${c.missionNo + 1}` };
+    c.lastSquad = ids.slice();
     c.status = 'mission';
     c.updated = Date.now();
     const M = CFG().morale;
@@ -163,7 +164,7 @@
     rep.wanderers = c.wanderers.slice();
 
     // 4) между миссиями: отдых, паёк, восстановление, баня
-    c.roster.forEach((h) => {
+    if (rep.win) c.roster.forEach((h) => {
       const went = squad.includes(h.id);
       if (!went) {
         if (C.built(h, 'redcorner') && Rng.next(rng) < 0.5) line(h.id, 'Красный уголок: мораль не упала');

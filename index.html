@@ -20,11 +20,38 @@
       </div>
       <div class="menu-buttons">
         <button class="btn primary" id="btn-new">Новая партия</button>
+        <button class="btn primary" id="btn-campaign">Кампания</button>
         <button class="btn" id="btn-continue">Продолжить</button>
         <button class="btn" id="btn-rules">Правила</button>
         <button class="btn ghost" id="btn-print">Печать (Print &amp; Play)</button>
       </div>
       <div class="menu-foot">1–4 героя · соло или вдвоём за одним экраном · 40–60 минут</div>
+    </div>
+  </section>
+
+  <!-- ============================================ КАМПАНИЯ: СЛОТЫ -->
+  <section id="screen-slots" class="screen">
+    <div class="slots">
+      <header class="setup-head">
+        <button class="btn ghost" id="btn-slots-back">← Меню</button>
+        <h2>Кампания</h2>
+      </header>
+      <p class="slots-intro">Цепочка миссий: герои переносят уровень, таланты, раны и добычу. Провал миссии или невозможность собрать отряд — конец кампании; павший герой выбывает навсегда.</p>
+      <div id="slot-list" class="slot-list"></div>
+    </div>
+  </section>
+
+  <!-- ============================================ КАМПАНИЯ: УБЕЖИЩЕ -->
+  <section id="screen-shelter" class="screen">
+    <div class="shelter">
+      <header class="shelter-head">
+        <button class="btn ghost" id="btn-shelter-menu">← Меню</button>
+        <div class="shelter-title"><h2>Убежище</h2><div id="shelter-sub"></div></div>
+        <button class="btn primary big" id="btn-shelter-go">В поход ▶</button>
+      </header>
+      <div id="shelter-report" class="shelter-report"></div>
+      <div id="shelter-heroes" class="shelter-heroes"></div>
+      <div id="shelter-hire" class="shelter-hire"></div>
     </div>
   </section>
 

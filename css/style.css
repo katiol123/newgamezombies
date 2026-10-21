@@ -689,3 +689,89 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @keyframes trFlash { 0%, 36% { opacity: 0; } 44% { opacity: 1; } 70%, 100% { opacity: 0; } }
 @keyframes trTitle { 0%, 44% { opacity: 0; transform: translateY(10px) scale(1.3); } 54% { opacity: 1; transform: none; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .turn-reveal.go .tr-card { animation: none; } }
+
+/* ================================================================ КАМПАНИЯ */
+#screen-setup.camp .setup-modes, #screen-setup.camp .setup-grid > div:nth-child(1), #screen-setup.camp .setup-grid > div:nth-child(2) { display: none; }
+.btn.small { font-size: 13px; padding: 6px 12px; }
+.muted { color: var(--paper2); opacity: .7; }
+.bad { color: #ff7a6a; }
+
+.slots, .shelter { max-width: 1240px; margin: 0 auto; padding: 22px 24px 60px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+.slots-intro { color: var(--paper2); max-width: 760px; }
+.slot-list { display: grid; gap: 12px; margin-top: 14px; }
+.slot { display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; align-items: center; padding: 14px 18px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--panel2), var(--panel)); border: 1px solid rgba(232,220,192,.12); }
+.slot.empty { opacity: .75; border-style: dashed; }
+.slot.over { border-color: rgba(192,57,43,.5); }
+.slot.won { border-color: rgba(240,192,64,.6); }
+.slot-n { font: 16px var(--font-d, 'Russo One'), sans-serif; color: var(--gold); }
+.slot-heroes { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 4px 0; }
+.slot-heroes .dead { color: #c96a5a; text-decoration: line-through; }
+.slot-btns { display: flex; gap: 8px; }
+
+.shelter-head { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; }
+.shelter-title { flex: 1; }
+.shelter-title h2 { margin: 0; font-family: var(--font-d, 'Russo One'), sans-serif; letter-spacing: .04em; }
+#shelter-sub { color: var(--paper2); font-size: 14px; }
+#shelter-sub .won { color: var(--gold); }
+#shelter-sub .over { color: #ff7a6a; }
+.shelter-report { padding: 12px 16px; border-radius: 6px; background: rgba(0,0,0,.25); border-left: 4px solid var(--gold); margin-bottom: 16px; font-size: 14px; }
+.rep-head.win { color: #b6e07a; }
+.rep-head.lose { color: #ff8a7a; }
+.rep-head .stars { color: var(--gold); letter-spacing: 2px; }
+.rep-lost { color: #ff9a8a; margin-top: 4px; }
+.rep-heroes { margin-top: 6px; display: grid; gap: 3px; color: var(--paper2); }
+.rep-heroes b { color: var(--paper); }
+
+.shelter-heroes { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+.sh-hero { position: relative; padding: 14px; border-radius: 8px; background: linear-gradient(160deg, #2a2119, #1a1410 70%); border: 1px solid rgba(232,220,192,.12);
+  box-shadow: inset 4px 0 0 var(--hero), 0 6px 18px rgba(0,0,0,.4); }
+.sh-hero.in-squad { border-color: rgba(240,192,64,.6); box-shadow: inset 4px 0 0 var(--hero), 0 0 0 1px rgba(240,192,64,.4), 0 6px 18px rgba(0,0,0,.4); }
+.sh-top { display: flex; align-items: center; gap: 12px; }
+.sh-face { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #15110e, 0 0 0 5px var(--hero); }
+.sh-name { flex: 1; font-size: 18px; }
+.sh-name small { color: var(--paper2); font-size: 13px; }
+.sh-lvl { font-size: 13px; color: var(--paper2); }
+.sh-talons { font: 20px var(--font-d, 'Russo One'), sans-serif; color: var(--gold); }
+.sh-stats { display: flex; gap: 16px; align-items: center; margin: 10px 0 6px; font-size: 14px; flex-wrap: wrap; }
+.sh-morale .pips { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; }
+.sh-morale .pips i { width: 10px; height: 10px; border-radius: 50%; background: rgba(232,220,192,.15); box-shadow: inset 0 0 0 1px rgba(232,220,192,.3); }
+.sh-morale .pips i.on { background: #e0c070; }
+.sh-morale.mlow .pips i.on { background: #c0392b; }
+.sh-morale.mmax .pips i.on { background: #f0c040; box-shadow: 0 0 6px #f0c040; }
+.sh-morale small { color: #ff9a8a; }
+.sh-morale.mmax small { color: var(--gold); }
+.sh-build, .sh-tal { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; margin-bottom: 4px; }
+.sh-build span { padding: 2px 8px; border-radius: 10px; background: rgba(240,192,64,.12); color: var(--gold); }
+.sh-tal { color: var(--paper2); }
+.sh-debt { font-size: 12px; color: #e0a070; margin-bottom: 4px; }
+.sh-row { margin-top: 8px; }
+.sh-row-h { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--paper2); margin-bottom: 4px; }
+.sh-row.junk .sh-row-h { color: #a08870; }
+.sh-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
+.sh-card { font: 13px var(--font-b), sans-serif; padding: 5px 10px; border-radius: 4px; cursor: pointer; color: var(--ink);
+  background: linear-gradient(#efe4c8, #d8c9a4); border: 1px solid #8a7a58; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.sh-card:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.sh-card.r-rare { background: linear-gradient(#cfe0f4, #a6c0de); border-color: #4a6f9a; }
+.sh-card.r-unique { background: linear-gradient(#f4e0a8, #e0b860); border-color: #a07818; }
+.sh-card.worn { box-shadow: 0 0 0 2px #c0392b, 0 2px 0 rgba(0,0,0,.4); }
+.sh-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.warn { color: #ff9a8a; }
+.bld-list { display: grid; gap: 8px; text-align: left; }
+.bld-row { padding: 8px 12px; border-radius: 5px; background: rgba(255,255,255,.04); }
+.bld-row.have { border-left: 3px solid var(--gold); }
+.bld-row.have b::after { content: ' ✓ построено'; color: var(--gold); font-weight: normal; font-size: 12px; }
+.shelter-hire { margin-top: 22px; }
+.hire-h small { display: block; color: var(--paper2); margin-top: 4px; }
+.hire-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.hire-card { display: grid; justify-items: center; gap: 2px; padding: 10px 12px; width: 130px; border-radius: 6px; cursor: pointer; color: var(--paper);
+  background: var(--panel2); border: 1px solid rgba(232,220,192,.15); box-shadow: inset 0 3px 0 var(--hero); }
+.hire-card img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.hire-card small { color: var(--paper2); font-size: 11px; text-align: center; }
+.hire-card .gift { color: var(--gold); }
+.hire-card:disabled { opacity: .45; cursor: default; }
+@media (max-width: 700px) {
+  .shelter-heroes { grid-template-columns: 1fr; }
+  .shelter-head { flex-wrap: wrap; }
+  .slot { grid-template-columns: 1fr; }
+}

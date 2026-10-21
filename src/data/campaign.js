@@ -49,6 +49,53 @@
     { id: 'sh_scavenger', shelter: true, name: 'Мародёр', text: '+3 талона за миссию, в которой ты сделал 2+ Обыска.' },
   ]);
 
+  // Подарки новичка: уникальная карта героя (только в кампании, не продаётся) — нанимателю при найме
+  const GIFT = { kind: 'gift', campaignOnly: true, rarity: 'unique', type: 'Подарок', value: 11 };
+  ZG.Cards.addAll([
+    Object.assign({}, GIFT, {
+      id: 'gift_helmet', name: 'Каска бригадира', from: 'boris', suit: 'mind', cost: 1, shield: 2, tags: ['block'],
+      text: 'Получи 3 Блока.', chainText: '+1 Блок и возьми 1 карту.', art: 'shield', target: null,
+      play(c) { c.block(3 + (c.chain ? 1 : 0)); if (c.chain) c.draw(1); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_kit', name: 'Полевой набор', from: 'marina', suit: 'mind', cost: 1, shield: 1, tags: ['heal'],
+      text: 'Герой в твоей зоне (можно себя) убирает 1 Рану или Заражение. Возьми 1 карту.', chainText: 'убирает ещё 1.', art: 'medkit',
+      target: { kind: 'hero', range: 0, self: true, wounded: true },
+      play(c) { c.heal(c.target, 1 + (c.chain ? 1 : 0), true); c.draw(1); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_map', name: 'Карта крыш', from: 'lisa', suit: 'agility', cost: 1, shield: 1, tags: ['move'],
+      text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует. Возьми 1 карту.', chainText: '+1 ⚡.', art: 'roof',
+      target: { kind: 'move', steps: 3, through: true },
+      play(c) { c.moveTo(c.target); c.draw(1); if (c.chain) c.energy(1); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_rifle', name: 'Трофейная винтовка', from: 'viktor', suit: 'mind', cost: 1, shield: 0, noise: 1, tags: ['ranged', 'gun'],
+      text: 'Дальний бой, дальность 0–3. 3 урона. Шум 1.', chainText: '+1 урон.', art: 'pistol',
+      target: { kind: 'zombie', range: 3, ranged: true },
+      play(c) { c.shot(1); c.rangedHit(c.target, 3 + (c.chain ? 1 : 0)); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_toolbox', name: 'Ящик инструментов', from: 'kira', suit: 'mind', cost: 1, shield: 1, tags: ['barricade'],
+      text: 'Поставь Баррикаду (прочность 5) на проход из твоей зоны. Возьми 1 карту.', chainText: '+1 ⚡.', art: 'weld',
+      target: { kind: 'edge' },
+      play(c) { c.barricade(c.target, 5); c.draw(1); if (c.chain) c.energy(1); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_lure', name: 'Манок', from: 'sava', suit: 'mind', cost: 0, shield: 1, tags: ['lure'],
+      text: 'Шум в зоне в 3 зонах от тебя (без Тревоги). Зомби в 3 зонах от неё идут проверить. Возьми 1 карту.', chainText: 'слышно на 1 зону дальше.', art: 'whistle',
+      target: { kind: 'cell', range: 3 },
+      play(c) { c.pebble(c.target, 3 + (c.chain ? 1 : 0)); c.draw(1); },
+    }),
+    Object.assign({}, GIFT, {
+      id: 'gift_flare', name: 'Фальшфейер', from: 'gosha', suit: 'rage', cost: 1, shield: 0, tags: ['lure'],
+      text: 'Положи Приманку в зону в 3 зонах от тебя: до конца раунда зомби считают её героем. Тревога не растёт.', chainText: 'возьми 1 карту.', art: 'firecracker',
+      target: { kind: 'cell', range: 3 },
+      play(c) { c.lure(c.target, 0); if (c.chain) c.draw(1); },
+    }),
+  ]);
+  ZG.Cards.all().filter((d) => d.kind === 'gift').forEach((d) => { ZG.Heroes.get(d.from).gift = d.id; });
+
   // Временные карты морали: замешиваются в колоду только на ближайшую миссию
   ZG.Cards.addAll([
     {

@@ -7,6 +7,7 @@
   const ZG = G.ZG;
   const E = ZG.Engine;
   const CV = ZG.CardView;
+  const CMP = ZG.Campaign;
   const el = CV.el, esc = CV.esc;
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -68,7 +69,9 @@
         requestAnimationFrame(loop);
       };
       requestAnimationFrame(loop);
-      $('#btn-new').onclick = () => this.show('setup');
+      $('#btn-new').onclick = () => { this.setupMode = 'single'; this.renderSetup(); this.show('setup'); };
+      $('#btn-campaign').onclick = () => Slots.show();
+      $('#btn-slots-back').onclick = () => this.show('menu');
       $('#btn-rules').onclick = () => Rules.open();
       $('#btn-print').onclick = () => window.open('print.html', '_blank');
       const saved = store.get('save', null);
@@ -142,11 +145,19 @@
       $('#setup-stealth').checked = s.stealth !== false;
       $('#setup-stealth').onchange = (ev) => { s.stealth = ev.target.checked; };
       $('#setup-seed').oninput = (ev) => { s.seed = ev.target.value.trim(); };
-      $('#btn-setup-back').onclick = () => this.show('menu');
+      $('#btn-setup-back').onclick = () => (this.setupMode === 'camp' ? Slots.show() : this.show('menu'));
       $('#btn-start').onclick = () => {
         if (!s.heroes.length) return toast('Выберите хотя бы одного героя.');
         if (s.players === 2 && (!s.heroes.some((h) => h.player === 1 && !h.ai) || !s.heroes.some((h) => h.player === 2 && !h.ai))) return toast('У каждого игрока должен быть хотя бы один герой не под ИИ.');
         store.set('setup', s);
+        if (this.setupMode === 'camp') {
+          // новая кампания: отряд = выбранные герои (размер отряда фиксирован до конца)
+          const c = CMP.create({ heroes: s.heroes.map((h) => ({ id: h.id, player: h.player, ai: !!h.ai })), difficultyId: s.difficulty, players: s.players, seed: s.seed || undefined, name: 'Кампания' });
+          this.campaign = { c, slot: this.campSlot };
+          CMP.save(c, this.campSlot);
+          Game.startCampaignMission(c.roster.map((h) => h.id));
+          return;
+        }
         Game.start({
           seed: s.seed || String(Math.floor(Math.random() * 1e9)),
           heroes: s.heroes.map((h) => ({ id: h.id, player: h.player, ai: !!h.ai })),
@@ -162,8 +173,20 @@
       this.renderSetup();
     },
 
+    newCampaign(slot) {
+      this.campSlot = slot;
+      this.setupMode = 'camp';
+      this.renderSetup();
+      this.show('setup');
+    },
+
     renderSetup() {
       const s = this.setup;
+      const camp = this.setupMode === 'camp';
+      $('#screen-setup').classList.toggle('camp', camp);
+      $('#screen-setup .setup-head h2').textContent = camp ? 'Новая кампания' : 'Подготовка к вылазке';
+      $$('#screen-setup .setup-grid .step-num').forEach((n, i) => { n.textContent = camp ? (i === 2 ? '2' : '') : String(i + 2); });
+      $('#btn-start').textContent = camp ? 'Начать кампанию' : 'Начать вылазку';
       $$('#setup-players button').forEach((b) => b.classList.toggle('on', +b.dataset.p === s.players));
       $$('#setup-heroes .hero-card').forEach((c) => {
         const h = s.heroes.find((x) => x.id === c.dataset.hero);
@@ -179,6 +202,7 @@
         : `Отряд: <b>${s.heroes.map((h) => ZG.Heroes.get(h.id).name + (s.players === 2 ? ` (И${h.player})` : '')).join(', ')}</b>. ` +
           (n === 1 ? 'Соло: один люк и «Одиночка» (+1 к руке).' : n >= 3 ? 'Больше героев — больше точек появления.' : 'Отличный размер отряда.') +
           (s.players === 2 ? ' <i>Клик по герою переключает игрока.</i>' : '') +
+        (camp ? ` <b>Размер отряда (${n}) фиксирован до конца кампании</b>: столько героев идёт на каждую миссию.` : '') +
         ` <i>Кнопка «🎮/🤖» на карточке — отдать героя ИИ${s.heroes.length && s.heroes.every((x) => x.ai) ? ' (все герои под ИИ — режим наблюдения)' : ''}.</i>`;
       const scen = s.scenario === 'random' ? null : ZG.Scenarios.get(s.scenario);
       $('#setup-scen-desc').textContent = scen ? scen.brief : 'Задание выпадет случайно: 4 варианта целей.';
@@ -233,6 +257,7 @@
     },
 
     start(opts) {
+      this.camp = opts.campaign ? App.campaign : null;
       this.players = opts.players || 1;
       const g = E.create(opts);
       this.g = g;
@@ -246,7 +271,19 @@
       App.show('game', 'shutter').then(() => this.afterShow(true));
     },
 
-    resume(save) {
+    // кампания: следующая миссия выбранным отрядом
+    startCampaignMission(squad) {
+      const camp = App.campaign;
+      const opts = CMP.startMission(camp.c, squad);
+      if (opts.error) { toast(opts.error); return false; }
+      opts.players = camp.c.players;
+      CMP.save(camp.c, camp.slot);
+      this.start(opts);
+      return true;
+    },
+
+    resume(save, camp) {
+      this.camp = camp || null;
       try {
         const g = save.g;
         if (g.v !== 2) throw new Error('старая версия сохранения (поле стало больше)');
@@ -264,6 +301,16 @@
     },
 
     save() {
+      if (this.camp) {
+        // кампания: незаконченная миссия хранится в слоте кампании
+        const c = this.camp.c;
+        if (!this.g || this.g.result) return;
+        const b = this.g.board; this.g.board = null;
+        const fx = this.g.fx; this.g.fx = [];
+        c.game = this.g; CMP.save(c, this.camp.slot); c.game = null;
+        this.g.board = b; this.g.fx = fx;
+        return;
+      }
       if (!this.g || this.g.result) { store.set('save', null); return; }
       const b = this.g.board; this.g.board = null;
       const fx = this.g.fx; this.g.fx = [];
@@ -1017,6 +1064,17 @@
       $('#btn-again').onclick = () => Game.start({ seed: String(Math.floor(Math.random() * 1e9)), heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, missions: g.missions, players: this.players });
       $('#btn-replay').onclick = () => Game.start({ seed: g.seed, heroes: g.heroes.map((h) => ({ id: h.id, player: h.player, ai: h.ai })), scenarioId: g.scenarioId, conditionId: g.conditionId, bonusId: g.bonusId, difficultyId: g.difficultyId, fog: g.fog, stealth: g.stealth, missions: g.missions, players: this.players });
       $('#btn-end-menu').onclick = () => App.show('menu');
+      $('#btn-replay').style.display = this.camp ? 'none' : '';
+      $('#btn-again').textContent = this.camp ? 'В убежище ▶' : 'Новая карта';
+      if (this.camp) {
+        // итоги сразу вносятся в кампанию (даже если игрок уйдёт в меню)
+        const camp = this.camp;
+        CMP.finishMission(camp.c, g);
+        camp.c.game = null;
+        CMP.save(camp.c, camp.slot);
+        this.camp = null;
+        $('#btn-again').onclick = () => Shelter.show();
+      }
       App.show('end');
     },
   };
@@ -1085,6 +1143,10 @@
       if (!ev.rewarded) { toast(`${E.heroName(h)} выполнил миссию «${m.name}», но не первым — без награды.`, 4000); return; }
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
+    },
+    async wanderer(ev) {
+      this.view.play([ev]);
+      await Banner.show('ОН ЗДЕСЬ!', `${ZG.Zombies.get(ev.ztype).name} бродит в этом квартале`, 'wave');
     },
     async infectTick(ev) { this.view.play([ev]); this.refreshHeroes(); await sleep(300); },
     async turn_hero(ev) {
@@ -1421,6 +1483,205 @@
       const c = CV.heroCard(id, { bio: true, talents: true });
       c.classList.add('big');
       this.show('', [{ label: 'Закрыть' }], c, 'wide');
+    },
+  };
+
+  // ======================================================= кампания: слоты
+  const Slots = {
+    show() { this.render(); App.show('slots'); },
+    render() {
+      const box = $('#slot-list');
+      box.innerHTML = '';
+      CMP.list().forEach(({ slot, c }) => {
+        const d = el('div', 'slot' + (c ? ' ' + c.status : ' empty'));
+        d.appendChild(el('div', 'slot-n', 'Слот ' + slot));
+        const body = el('div', 'slot-body');
+        if (!c) body.innerHTML = '<span class="muted">пусто</span>';
+        else {
+          const st = { ready: 'в убежище', mission: 'идёт миссия', over: 'окончена', won: 'пройдена!' }[c.status];
+          body.innerHTML = `<b>Миссия ${Math.min(c.chainLength, c.missionNo + 1)} из ${c.chainLength}</b> · ${st} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}
+            <div class="slot-heroes">${c.roster.map((h) => `<span>${esc(ZG.Heroes.get(h.id).name)} <small>ур.${h.level}</small></span>`).join('')}${c.fallen.map((id) => `<span class="dead">✝ ${esc(ZG.Heroes.get(id).name)}</span>`).join('')}</div>
+            <small class="muted">${new Date(c.updated).toLocaleString('ru-RU')}</small>`;
+        }
+        d.appendChild(body);
+        const btns = el('div', 'slot-btns');
+        const add = (label, cls, fn) => { const b = el('button', 'btn ' + cls, label); b.onclick = fn; btns.appendChild(b); };
+        if (!c) add('Новая кампания', 'primary', () => App.newCampaign(slot));
+        else {
+          add(c.status === 'over' || c.status === 'won' ? 'Итоги' : 'Продолжить', 'primary', () => Slots.open(slot));
+          add('Удалить', 'ghost', async () => {
+            const v = await Modal.show('<h2>Удалить кампанию?</h2><p>Прогресс в этом слоте пропадёт безвозвратно.</p>', [{ label: 'Удалить', value: 'del' }, { label: 'Отмена', cls: 'primary' }]);
+            if (v === 'del') { CMP.remove(slot); this.render(); }
+          });
+        }
+        d.appendChild(btns);
+        box.appendChild(d);
+      });
+    },
+    open(slot) {
+      const c = CMP.load(slot);
+      if (!c) return toast('Слот пуст.');
+      App.campaign = { c, slot };
+      if (c.status === 'mission' && c.game) { const g = c.game; c.game = null; Game.resume({ g, players: c.players }, App.campaign); }
+      else if (c.status === 'mission') { c.status = 'ready'; Shelter.show(); } // миссия без сохранения — назад в убежище
+      else Shelter.show();
+    },
+  };
+
+  // ======================================================= кампания: убежище
+  const LIST_NAME = { equip: 'Экипировка', chest: 'Сундук', junk: 'Хлам' };
+  const Shelter = {
+    squad: [],
+    show() {
+      const c = App.campaign.c;
+      const prev = (c.lastSquad || []).filter((id) => CMP.hero(c, id));
+      this.squad = prev.concat(c.roster.map((h) => h.id).filter((id) => !prev.includes(id))).slice(0, c.squad);
+      $('#btn-shelter-menu').onclick = () => App.show('menu');
+      $('#btn-shelter-go').onclick = () => this.go();
+      this.render();
+      App.show('shelter');
+    },
+    save() { CMP.save(App.campaign.c, App.campaign.slot); },
+    act(fn) { const err = fn(); if (err) toast(err); else this.save(); this.render(); },
+    go() {
+      const c = App.campaign.c;
+      if (this.squad.length !== c.squad) return toast(`В поход идут ровно ${c.squad} ${ZG.util.plural(c.squad, 'герой', 'героя', 'героев')}.`);
+      if (c.players === 2) {
+        const sq = this.squad.map((id) => CMP.hero(c, id));
+        if (!sq.some((h) => h.player === 1 && !h.ai) || !sq.some((h) => h.player === 2 && !h.ai)) return toast('У каждого игрока в отряде должен быть герой не под ИИ.');
+      }
+      Game.startCampaignMission(this.squad.slice());
+    },
+    render() {
+      const c = App.campaign.c;
+      const done = c.status === 'over' || c.status === 'won';
+      $('#shelter-sub').innerHTML = done
+        ? `<b class="${c.status}">${c.status === 'won' ? 'КАМПАНИЯ ПРОЙДЕНА' : 'КАМПАНИЯ ОКОНЧЕНА'}</b> — ${esc(c.endReason || '')}`
+        : `Впереди миссия ${c.missionNo + 1} из ${c.chainLength} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
+      $('#btn-shelter-go').style.display = done ? 'none' : '';
+      $('#btn-shelter-go').textContent = `В поход: миссия ${c.missionNo + 1} ▶`;
+      this.renderReport(c);
+      const box = $('#shelter-heroes');
+      box.innerHTML = '';
+      c.roster.forEach((h) => box.appendChild(this.heroCard(c, h, done)));
+      this.renderHire(c, done);
+    },
+    renderReport(c) {
+      const r = c.report, box = $('#shelter-report');
+      if (!r) { box.innerHTML = '<div class="rep-head">Отряд собран. Перед первым походом можно распределить экипировку и выбрать, кто управляет героями.</div>'; return; }
+      const name = (id) => esc(ZG.Heroes.get(id).name);
+      box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
+        ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
+        <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'}</div>`).join('')}</div>`;
+    },
+    heroCard(c, h, done) {
+      const def = ZG.Heroes.get(h.id), CFG = ZG.CAMPAIGN;
+      const next = CFG.xpLevels.find((v) => h.xp < v);
+      const card = el('div', 'sh-hero' + (this.squad.includes(h.id) ? ' in-squad' : ''));
+      card.style.setProperty('--hero', def.color);
+      const m = h.morale, M = CFG.morale;
+      const pips = Array.from({ length: M.max }, (_, i) => `<i class="${i < m ? 'on' : ''}"></i>`).join('');
+      const temp = m <= 0 ? '2× «Уныние»' : m <= M.low ? '«Уныние»' : m >= M.max ? '«Кураж»' : '';
+      card.innerHTML = `
+        <div class="sh-top"><img class="sh-face" src="${def.face || CV.artURL(def.art, 96, 96, {})}">
+          <div class="sh-name"><b>${esc(def.name)}</b> <small>«${esc(def.nick)}»</small><div class="sh-lvl">Уровень ${h.level} · 🎖 ${h.xp}${next ? ' / ' + next : ''}</div></div>
+          <div class="sh-talons" title="Личные талоны">🎫 ${h.talons}</div></div>
+        <div class="sh-stats"><span title="Стойкость на следующую миссию (травмы снижают)">♥ ${CMP.hp(h)} / ${CMP.baseHp(h)}</span>
+          <span class="sh-morale m${m <= M.low ? 'low' : m >= M.max ? 'max' : ''}" title="Мораль ${m} из ${M.max}">Мораль <span class="pips">${pips}</span>${temp ? ` <small>${temp}</small>` : ''}</span></div>
+        ${h.buildings.length ? `<div class="sh-build">${h.buildings.map((b) => `<span>${esc(ZG.Buildings.get(b).name)}</span>`).join('')}</div>` : ''}
+        ${h.talents.length ? `<div class="sh-tal">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
+        ${h.debt ? `<div class="sh-debt">Долг ${esc(ZG.Heroes.get(h.debt.to).name)}: половина талонов за звёзды ещё ${h.debt.left} ${ZG.util.plural(h.debt.left, 'миссию', 'миссии', 'миссий')}</div>` : ''}`;
+      ['equip', 'chest', 'junk'].forEach((list) => {
+        const capN = list === 'equip' ? CMP.equipCap(h) : list === 'chest' ? CMP.chestCap(h) : null;
+        const row = el('div', 'sh-row ' + list);
+        row.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : h[list].length ? ' — продастся при выходе' : ''}`));
+        const cards = el('div', 'sh-cards');
+        h[list].forEach((it, i) => {
+          const d = ZG.Cards.get(it.id);
+          const b = el('button', `sh-card r-${d.rarity || 'common'}${it.worn ? ' worn' : ''}`, `${it.worn ? '⚠ ' : ''}${esc(d.name)}`);
+          b.title = (it.worn ? 'На грани поломки! ' : '') + d.text;
+          b.onclick = () => this.cardMenu(c, h, list, i);
+          cards.appendChild(b);
+        });
+        if (!h[list].length) cards.appendChild(el('span', 'muted', '—'));
+        row.appendChild(cards);
+        card.appendChild(row);
+      });
+      if (!done) {
+        const acts = el('div', 'sh-actions');
+        const add = (label, fn, cls) => { const b = el('button', 'btn small ' + (cls || ''), label); b.onclick = fn; acts.appendChild(b); return b; };
+        const inSq = this.squad.includes(h.id);
+        add(inSq ? '✓ В отряде' : 'В отряд', () => {
+          if (inSq) this.squad = this.squad.filter((x) => x !== h.id);
+          else if (this.squad.length >= c.squad) return toast(`В поход идут ровно ${c.squad}. Сначала уберите кого-то из отряда.`);
+          else this.squad.push(h.id);
+          this.render();
+        }, inSq ? 'primary' : '');
+        const ctl = h.ai ? '🤖 ИИ' : c.players === 2 ? `🎮 Игрок ${h.player}` : '🎮 Игрок';
+        add(ctl, () => this.act(() => {
+          if (c.players === 2) return h.ai ? CMP.setControl(c, h.id, 1, false) : h.player === 1 ? CMP.setControl(c, h.id, 2, false) : CMP.setControl(c, h.id, null, true);
+          return CMP.setControl(c, h.id, null, !h.ai);
+        }));
+        if (h.injury > 0) add(`Лечить +1 ♥ (${CFG.prices.heal} 🎫)`, () => this.act(() => CMP.heal(c, h.id)));
+        add('Постройки…', () => this.buildMenu(c, h));
+        card.appendChild(acts);
+      }
+      return card;
+    },
+    async cardMenu(c, h, list, i) {
+      const it = h[list][i], d = ZG.Cards.get(it.id), CFG = ZG.CAMPAIGN;
+      const btns = [];
+      ['equip', 'chest', 'junk'].filter((l) => l !== list).forEach((l) => btns.push({ label: { equip: 'В экипировку', chest: 'В сундук', junk: 'В хлам' }[l], value: 'mv:' + l }));
+      const p = CMP.price(it.id);
+      if (p != null) btns.push({ label: `Продать (+${p} 🎫)`, value: 'sell' });
+      if (it.worn) btns.push({ label: `Починить (${CFG.prices.repair} 🎫)${CMP.built(h, 'workshop') ? '' : ' — нужна Мастерская'}`, value: 'repair' });
+      if (c.roster.length > 1) btns.push({ label: 'Передать…', value: 'give' });
+      btns.push({ label: 'Закрыть', cls: 'primary' });
+      const cel = CV.card(d);
+      const note = it.worn ? '<p class="warn">⚠ На грани поломки: если снова взять её в поход, после миссии она сломается с шансом 50%.</p>'
+        : list === 'equip' ? '<p class="muted">Экипированная карта замешивается в колоду на миссию. После похода она станет «на грани поломки».</p>' : '';
+      const v = await Modal.show(`<div class="kicker">${esc(ZG.Heroes.get(h.id).name)} · ${LIST_NAME[list]}</div>${note}${p == null ? '<p class="muted">Уникальная карта кампании — не продаётся.</p>' : ''}`, btns, cel, 'wide');
+      if (!v) return;
+      if (v.startsWith('mv:')) return this.act(() => CMP.move(c, h.id, list, i, v.slice(3)));
+      if (v === 'sell') return this.act(() => CMP.sell(c, h.id, list, i));
+      if (v === 'repair') return this.act(() => CMP.repair(c, h.id, list, i));
+      if (v === 'give') {
+        const others = c.roster.filter((o) => o !== h);
+        const to = await Modal.show(`<h2>Кому передать «${esc(d.name)}»?</h2><p class="muted">Карта ляжет в сундук получателя.</p>`, others.map((o) => ({ label: `${ZG.Heroes.get(o.id).name} (${o.chest.length}/${CMP.chestCap(o)})`, value: o.id })).concat([{ label: 'Отмена' }]));
+        if (to) this.act(() => CMP.give(c, h.id, list, i, to));
+      }
+    },
+    async buildMenu(c, h) {
+      const rows = ZG.Buildings.all().map((b) => `<div class="bld-row${CMP.built(h, b.id) ? ' have' : ''}"><b>${esc(b.name)}</b> <small>${b.cost} 🎫</small><div>${esc(b.text)}</div></div>`).join('');
+      const btns = ZG.Buildings.all().filter((b) => !CMP.built(h, b.id)).map((b) => ({ label: `${b.name} (${b.cost} 🎫)`, value: b.id }));
+      btns.push({ label: 'Закрыть', cls: 'primary' });
+      const v = await Modal.show(`<div class="kicker">Личное убежище — ${esc(ZG.Heroes.get(h.id).name)} · 🎫 ${h.talons}</div><h2>Постройки</h2><div class="bld-list">${rows}</div>`, btns, null, 'wide');
+      if (v) this.act(() => CMP.build(c, h.id, v));
+    },
+    renderHire(c, done) {
+      const box = $('#shelter-hire');
+      const list = CMP.hireable(c);
+      const P = ZG.CAMPAIGN.prices;
+      if (done || !list.length) { box.innerHTML = ''; return; }
+      const full = c.roster.length >= c.squad + 2;
+      box.innerHTML = `<div class="hire-h"><b>Нанять героя — ${P.hire} 🎫</b> <small>Платит один герой: ему — уникальная карта-подарок новичка и долг (половина талонов новичка за звёзды в его первых 3 миссиях). Новичок приходит на 1-м уровне с обычной картой добычи. В убежище — не больше ${c.squad + 2} героев${full ? ' (сейчас полно)' : ''}.</small></div>`;
+      const row = el('div', 'hire-list');
+      list.forEach((id) => {
+        const def = ZG.Heroes.get(id);
+        const gift = def.gift ? ZG.Cards.get(def.gift) : null;
+        const b = el('button', 'hire-card');
+        b.style.setProperty('--hero', def.color);
+        b.innerHTML = `<img src="${def.face || CV.artURL(def.art, 96, 96, {})}"><b>${esc(def.name)}</b><small>${esc(def.role)}</small>${gift ? `<small class="gift">🎁 ${esc(gift.name)}</small>` : ''}`;
+        b.disabled = full;
+        b.onclick = async () => {
+          const payers = c.roster.filter((h) => h.talons >= P.hire);
+          if (!payers.length) return toast(`Ни у кого нет ${P.hire} 🎫.`);
+          const v = await Modal.show(`<h2>Нанять: ${esc(def.name)}</h2>${gift ? `<p>Подарок нанимателю: <b>${esc(gift.name)}</b> — ${esc(gift.text)}</p>` : ''}<p>Кто платит ${P.hire} 🎫?</p>`, payers.map((h) => ({ label: `${ZG.Heroes.get(h.id).name} (🎫 ${h.talons})`, value: h.id })).concat([{ label: 'Отмена' }]));
+          if (v) this.act(() => CMP.hire(c, v, id));
+        };
+        row.appendChild(b);
+      });
+      box.appendChild(row);
     },
   };
 
