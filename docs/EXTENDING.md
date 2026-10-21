@@ -97,6 +97,7 @@ ZG.Art.useImage('hero_boris', 'img/heroes/boris.png');
 | `zombies` | `audio/braam.mp3` | баннеры «Фаза зомби», «Волна!», «Прорыв!» |
 | `growl` | `audio/growl.mp3` | атака зомби на героя, «Засада!» |
 | `reveal` | `audio/psychedelic.mp3` | переворот тайла в тумане, «Наступает Ночь» |
+| `mission` | `audio/missions.mp3` («Время перемен») | секретная миссия: показ своей карты и выполнение первым (музыка, ~10–15 с с затуханием, `ZG.Sound.music`) |
 
 Мелкие звуки (шаги, удары, выстрелы, карты, блок, лечение, баррикада, взрыв…) синтезируются Web Audio — `ZG.Sound.sfx('shot')`. Любой из них заменяется файлом: `ZG.Sound.define('sfx_shot', 'audio/shot.mp3')`. Ключи: `step, hstep, card, punch, hit, shot, blast, kill, block, chain, heal, infect, search, wood, bash, pickup, energy, click`; соответствие событиям поля — `SFX_MAP` в `src/render/boardview.js`.
 

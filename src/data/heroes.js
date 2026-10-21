@@ -145,7 +145,7 @@
     },
     // Сава
     { id: 'sharp', name: 'Заточка', text: '«Нож в спину» наносит охотникам на 1 урон больше.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'shiv' ? 1 : 0) } },
-    { id: 'softfoot', name: 'Тихоход', text: 'Первый «Ход» за ход — бесплатно.', mods: { freeFirstMove: 1 } },
+    { id: 'softfoot', name: 'Тихоход', text: 'Первое «Движение» за ход — бесплатно.', mods: { freeFirstMove: 1 } },
     { id: 'decoy', name: 'Мастер отвлечения', text: '«Камешек» слышен на 2 зоны дальше и даёт 1 карту.', mods: { pebblePlus: 1 } },
     {
       id: 'assassin', name: 'Убийца из тени', text: 'Убив бродячего зомби «Ножом в спину», получи +1 ⚡ (раз за ход).',

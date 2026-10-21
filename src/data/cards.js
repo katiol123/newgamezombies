@@ -325,7 +325,7 @@
     },
     {
       id: 'sneakers', name: 'Кроссовки', suit: 'agility', cost: 1, shield: 1, type: 'Снаряжение', tags: ['equip'], loot: true, rarity: 'rare', equip: true,
-      text: 'Снаряжение. Первое базовое действие «Ход» за ход стоит 0 ⚡.', art: 'sneaker', value: 9,
+      text: 'Снаряжение. Первое базовое «Движение» за ход стоит 0 ⚡.', art: 'sneaker', value: 9,
       target: null,
       mods: { freeFirstMove: 1 },
       play(c) { c.equip(); },

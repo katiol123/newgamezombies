@@ -24,8 +24,8 @@
     },
     {
       id: 'm_scout', name: 'Первопроходец', rarity: 'common', stat: 'reveals', goal: 2, needsFog: true,
-      text: 'Разведай 2 закрытых тайла (шагни в туман). Нужен туман войны.', rewardText: 'Пассивка «Следопыт»: первый «Ход» за ход бесплатно.',
-      perk: { name: 'Следопыт', text: 'Первый «Ход» за ход бесплатно.', mods: { freeFirstMove: 1 } },
+      text: 'Разведай 2 закрытых тайла (шагни в туман). Нужен туман войны.', rewardText: 'Пассивка «Следопыт»: первое «Движение» за ход бесплатно.',
+      perk: { name: 'Следопыт', text: 'Первое «Движение» за ход бесплатно.', mods: { freeFirstMove: 1 } },
     },
     {
       id: 'm_angel', name: 'Ангел-хранитель', rarity: 'common', stat: 'helps', goal: 3, needsAlly: true,

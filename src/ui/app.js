@@ -991,7 +991,9 @@
       if (this.g.missions && h.mission && !h.ai && !h.missionDone && !(this.seenMission || {})[h.idx] && this.canSeeMission(h)) {
         (this.seenMission = this.seenMission || {})[h.idx] = true;
         const m = ZG.Missions.get(h.mission);
+        ZG.Sound.music('mission', 15000);
         await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше.</p>`, [{ label: 'Понятно', cls: 'primary' }]);
+        ZG.Sound.stopMusic(1200);
       }
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
@@ -1030,6 +1032,7 @@
       const h = this.g.heroes[ev.hero], m = ZG.Missions.get(ev.id);
       this.refreshHeroes();
       if (!ev.rewarded) { toast(`${E.heroName(h)} выполнил миссию «${m.name}», но не первым — без награды.`, 4000); return; }
+      ZG.Sound.music('mission', 10000);
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
     },
@@ -1101,7 +1104,7 @@
       const cr = g.crates.filter((x) => !x.opened && b.cells[x.pos].tile === ti).length;
       if (cr) known.push(cr + ' ' + ZG.util.plural(cr, 'ящик', 'ящика', 'ящиков'));
       const lim = ZG.Levels.get(g.levelId).fogBreak || 4;
-      return `<div class="tt-head">Не разведано</div><div>Где стены и что внутри — неизвестно. Войдите базовым «Ходом» из соседней зоны.</div>` +
+      return `<div class="tt-head">Не разведано</div><div>Где стены и что внутри — неизвестно. Войдите базовым «Движением» из соседней зоны.</div>` +
         (known.length ? `<div class="tt-gold">На рубашке: ${known.join(', ')}</div>` : '') +
         (n ? `<div class="tt-red">Стопка: ${n} зомби (состав неизвестен). При ${lim}+ — прорыв: тайл откроется сам.</div>` : '');
     }
