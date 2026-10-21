@@ -140,7 +140,7 @@
       const b = document.createElement('div'); b.className = 'hero-board';
       b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
       const tr = document.createElement('div'); tr.className = 'hb-tracks';
-      let xp = '<div><b>Опыт ★</b></div><div class="tr">';
+      let xp = '<div><b>Опыт 🎖</b></div><div class="tr">';
       for (let k = 0; k <= 12; k++) xp += `<span class="${k === 4 || k === 10 ? 'lv' : ''}">${k}</span>`;
       xp += '</div><div><b>Раны (Стойкость ' + h.hp + ')</b></div><div class="tr">';
       for (let k = 1; k <= h.hp + (h.talents.flat().includes('thick_skin') ? 2 : 0); k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
@@ -238,7 +238,7 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
     d.innerHTML = `<b style="font:13pt var(--font-d)">РАУНД</b><br>1. Ходы героев (порядок любой)<br>2. Фаза зомби: движение → атака → свойства (Орда: +1 Тревога за 8 зомби) → появление (+Волна)<br>3. Конец раунда: убрать урон, шум, приманки; сдвинуть раунд<br><br>
       <b style="font:13pt var(--font-d)">ХОД ГЕРОЯ</b><br>Добери до лимита (макс. 3) → 3 ⚡ → действуй. Карты в руке — щиты.<br>Связка: та же масть подряд. Эстафета: первая карта продолжает масть прошлого героя.<br>Хватка: выход из зоны с зомби +1 ⚡.<br><br>
       <b style="font:13pt var(--font-d)">БАЗОВЫЕ ДЕЙСТВИЯ</b><br>Ход 1 · Обыск 1 (2 добычи, 1 оставь) · Кулак 1 · Баррикада 2 · Подобрать 1 · Передать 0 · Отдышаться 3<br><br>
-      <b style="font:13pt var(--font-d)">ЗОМБИ</b><br>Идут к ближайшей цели: приманка → шум → меньше Ран. Атака: блок → снаряжение → щиты → Раны в сброс.<br>Глухая ночь: +1 к скорости. Опыт: 4 ★ и 10 ★ — талант.`;
+      <b style="font:13pt var(--font-d)">ЗОМБИ</b><br>Идут к ближайшей цели: приманка → шум → меньше Ран. Атака: блок → снаряжение → щиты → Раны в сброс.<br>Глухая ночь: +1 к скорости. Опыт: 4 🎖 и 10 🎖 — талант.`;
     ref.appendChild(d);
   }
 

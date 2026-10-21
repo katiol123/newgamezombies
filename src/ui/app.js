@@ -760,7 +760,7 @@
         info.innerHTML = `
           <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
           <div class="trk trk-hp" title="Стойкость: ${okN} из ${hp}${inf ? ` · ☣ Заражений: ${inf}` : ''}"><b class="trk-l">♥</b><span class="slots">${pips.join('')}</span>${infHand && h.onBoard ? '<b class="inf-warn" title="Заражение в руке: в конце хода герой обратится! Нужна аптечка или Марина.">☣ В РУКЕ!</b>' : inf ? `<b class="inf-mark">☣${inf}</b>` : ''}</div>
-          <div class="trk trk-xp" title="Опыт ${h.xp}${xpNext ? ' — следующий уровень на ' + xpNext : ''}"><b class="trk-l">★</b><span class="xp-line">${Array.from({ length: XPMAX + 1 }, (_, i) => `<i class="tick${LV.includes(i) ? ' gate' : ''}${i <= xpTo ? ' on' : ''}" style="left:${(i / XPMAX) * 100}%"></i>`).join('')}<i class="xp-tok" data-to="${(xpTo / XPMAX) * 100}" style="left:${(xpFrom / XPMAX) * 100}%"></i></span><b class="xp-n">${h.xp}</b></div>
+          <div class="trk trk-xp" title="Опыт ${h.xp}${xpNext ? ' — следующий уровень на ' + xpNext : ''}"><b class="trk-l">🎖</b><span class="xp-line">${Array.from({ length: XPMAX + 1 }, (_, i) => `<i class="tick${LV.includes(i) ? ' gate' : ''}${i <= xpTo ? ' on' : ''}" style="left:${(i / XPMAX) * 100}%"></i>`).join('')}<i class="xp-tok" data-to="${(xpTo / XPMAX) * 100}" style="left:${(xpFrom / XPMAX) * 100}%"></i></span><b class="xp-n">${h.xp}</b></div>
           <div class="hp-meta">
             <span title="Размер руки: до стольких карт герой добирает в начале хода (не больше 3 за раз)">✋ ${E.handSize(g, h)}</span>
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>

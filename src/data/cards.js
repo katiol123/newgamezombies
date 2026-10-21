@@ -93,7 +93,7 @@
     },
     {
       id: 'bandage', name: 'Перевязка', suit: 'mind', cost: 1, shield: 1, type: 'Лечение', tags: ['heal'], hero: 'marina',
-      text: 'Герой в твоей зоне (можно себя) убирает 2 Раны.', chainText: 'и получает 1 Блок; тебе +1 ★ опыта.', art: 'bandage', value: 10,
+      text: 'Герой в твоей зоне (можно себя) убирает 2 Раны.', chainText: 'и получает 1 Блок; тебе +1 🎖 опыта.', art: 'bandage', value: 10,
       target: { kind: 'hero', range: 0, self: true, wounded: true },
       play(c) { c.chainXp(); c.heal(c.target, 2); if (c.chain) c.block(1, c.target); },
     },
@@ -116,7 +116,7 @@
     // --- Сава ---
     {
       id: 'silent_step', name: 'Тихий шаг', suit: 'agility', cost: 1, shield: 1, type: 'Движение', tags: ['move'], hero: 'sava',
-      text: 'Пройди 1–2 зоны, можно сквозь зомби, без Хватки. В конце этого хода бродячие тебя не замечают.', chainText: 'возьми 1 карту и +1 ★ опыта.', art: 'silentstep', value: 8,
+      text: 'Пройди 1–2 зоны, можно сквозь зомби, без Хватки. В конце этого хода бродячие тебя не замечают.', chainText: 'возьми 1 карту и +1 🎖 опыта.', art: 'silentstep', value: 8,
       target: { kind: 'move', steps: 2, through: true, free: true },
       play(c) { c.chainXp(); if (c.g.turn) c.g.turn.quiet = true; c.moveTo(c.target); if (c.chain) c.draw(1); },
     },
@@ -156,7 +156,7 @@
     },
     {
       id: 'rooftops', name: 'По крышам', suit: 'agility', cost: 2, shield: 0, type: 'Движение', tags: ['move'], hero: 'lisa',
-      text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует.', chainText: '+1 ⚡ и +1 ★ опыта.', art: 'roof', value: 9,
+      text: 'Переместись на 1–3 зоны, можно сквозь зоны с зомби. Хватка не действует.', chainText: '+1 ⚡ и +1 🎖 опыта.', art: 'roof', value: 9,
       target: { kind: 'move', steps: 3, through: true },
       play(c) { c.chainXp(); c.moveTo(c.target); if (c.chain) c.energy(1); },
     },

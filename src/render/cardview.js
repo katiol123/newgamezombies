@@ -185,7 +185,7 @@
     c.appendChild(img);
     const info = el('div', 'zinfo');
     info.innerHTML = `<div class="zname">${esc(def.name)}</div>
-      <div class="zstats"><span title="Здоровье">♥ ${def.hp}</span><span title="Урон">✊ ${def.dmg}</span><span title="Скорость">👣 ${def.speed}</span><span title="Опыт за убийство">★ ${def.xp}</span></div>
+      <div class="zstats"><span title="Здоровье">♥ ${def.hp}</span><span title="Урон">✊ ${def.dmg}</span><span title="Скорость">👣 ${def.speed}</span><span title="Опыт за убийство">🎖 ${def.xp}</span></div>
       <div class="ztext">${esc(def.text)}</div>`;
     c.appendChild(info);
     return c;
