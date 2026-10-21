@@ -649,7 +649,7 @@
     const saver = g.heroes.find((o) => o.onBoard && o.pos === h.pos && !o.secondWindUsed && Mods.flag(g, o, 'secondWind'));
     if (saver) {
       saver.secondWindUsed = true;
-      healWounds(g, h, 2, true);
+      healWounds(g, h, 2); // строго по тексту таланта: только Раны (Заражения остаются)
       E.log(g, `${E.heroName(saver)}: «Второе дыхание»! ${E.heroName(h)} остаётся в строю.`, 'good');
       checkFall(g, h); // если двух не хватило — всё же падает
       return;
