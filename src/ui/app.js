@@ -47,7 +47,7 @@
         sh.classList.remove('opening');
         return;
       }
-      if (name === 'menu') $('#btn-continue').style.display = store.get('save', null) ? '' : 'none';
+      if (name === 'menu') { $('#btn-continue').style.display = store.get('save', null) ? '' : 'none'; if (ZG.Sound._musicKey === 'shelter') ZG.Sound.stopMusic(800); }
       if (prev) { prev.classList.add('leaving'); await sleep(380); prev.classList.remove('active', 'leaving'); }
       next.classList.add('active', 'entering');
       this.screen = name;
@@ -1559,6 +1559,7 @@
       const prev = (c.lastSquad || []).filter((id) => CMP.hero(c, id));
       this.squad = prev.concat(c.roster.map((h) => h.id).filter((id) => !prev.includes(id))).slice(0, c.squad);
       $('#btn-shelter-menu').onclick = () => App.show('menu');
+      if (ZG.Sound._musicKey !== 'shelter') ZG.Sound.music('shelter'); // атмосфера убежища
       this.render();
       App.show('shelter');
     },

@@ -137,4 +137,5 @@
   Sound.define('growl', 'audio/growl.mp3', { volume: 0.7, gap: 700 });        // атака зомби, засада
   Sound.define('reveal', 'audio/psychedelic.mp3', { volume: 0.6, gap: 1500 }); // туман: открытие тайла, смена суток
   Sound.define('music', 'audio/missions.mp3', { volume: 0.32 });                // «Время перемен» — фон всей вылазки
+  Sound.define('shelter', 'audio/shelter.mp3', { volume: 0.35 });               // «Beyond the Horizon» — убежище между миссиями кампании
 })(window);
