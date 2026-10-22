@@ -58,6 +58,8 @@
     spawnPerCard: 1,
     rounds: base.rounds + 2, // +2 раунда: учебная миссия должна проходиться почти всегда
     events: base.events.filter((id) => id !== 'ev_hound'),
+    scenarios: ['meds'], // сюжет: медикаменты для «скорой» (без вертолёта и гнёзд — они ломают историю)
+    bonuses: base.bonuses.filter((id) => id !== 'biggame'), // Толстяков и Громил здесь нет
   }));
 
   // Кампания, миссия 3 «Лес»: 6 особых тайлов (кордон, бор ×3, просека ×2), один люк — колодец на кордоне,
@@ -67,6 +69,7 @@
     text: 'Лес за городом: кордон лесника, сосновый бор, просека ЛЭП.',
     layout: { tw: 3, th: 2 },
     scenarios: ['forest'],
+    bonuses: base.bonuses.filter((id) => id !== 'biggame'),
     conditions: ['calm'],
     spawnPoints: { 1: 1, 2: 1, 3: 1, 4: 1 },
     spawnDeck: { sp_forest: 1 },
@@ -83,6 +86,7 @@
     id: 'camp_m4', campaignOnly: true, num: 4, name: 'Трасса',
     text: 'Заправка у трассы: бандиты, стаи и люки, из которых ночью лезут мертвецы.',
     scenarios: ['highway'],
+    bonuses: base.bonuses.filter((id) => id !== 'biggame'),
     conditions: ['calm'],
     spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 },
     spawnDeck: { sp_chaos: 1 },
@@ -100,6 +104,7 @@
     id: 'camp_m5', campaignOnly: true, num: 5, name: 'Мост',
     text: 'Блокпост у моста и лесопилка: банда Лесника.',
     scenarios: ['bridge'],
+    bonuses: base.bonuses.filter((id) => id !== 'biggame' && id !== 'quiet'), // зомби нет: Волна ничего не приводит
     conditions: ['calm'],
     spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 },
     loot: Object.assign({}, base.loot, { ambush: 0 }), // засад нет: зомби в этой миссии не появляются

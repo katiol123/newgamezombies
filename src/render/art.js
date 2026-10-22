@@ -1063,17 +1063,39 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, banditHead); ctx.restore();
   });
-  Art.define('z_bandit', (ctx, w, h) => {
+  // перевёрнутый горящий бензовоз (миссия «Трасса»), пламя анимируется по o.t
+  Art.define('tanker_fire', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
+    const t = (o && o.t) || 0;
+    c.save(); c.translate(50, 54); c.rotate(-0.35);
+    c.fillStyle = 'rgba(0,0,0,.4)'; rr(c, -40, -12, 84, 30, 10); c.fill();
+    rr(c, -38, -16, 58, 28, 12); c.fillStyle = '#8a8e92'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke(); // цистерна
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(-30, -6, 44, 4);
+    rr(c, 20, -14, 20, 24, 4); c.fillStyle = '#b03a2e'; c.fill(); c.stroke(); // кабина
+    c.fillStyle = '#1a2230'; c.fillRect(30, -10, 8, 8);
+    c.restore();
+    for (let i = 0; i < 7; i++) {
+      const x = 20 + i * 9 + Math.sin(t * 6 + i) * 2, hgt = 22 + Math.sin(t * 9 + i * 1.7) * 7 + (i % 3) * 4;
+      c.beginPath(); c.moveTo(x - 6, 52); c.quadraticCurveTo(x - 4, 52 - hgt * 0.6, x, 52 - hgt); c.quadraticCurveTo(x + 4, 52 - hgt * 0.6, x + 6, 52); c.closePath();
+      c.fillStyle = i % 2 ? 'rgba(255,170,40,.9)' : 'rgba(255,90,30,.9)'; c.fill();
+      c.beginPath(); c.moveTo(x - 3, 52); c.quadraticCurveTo(x, 52 - hgt * 0.45, x + 3, 52); c.closePath(); c.fillStyle = 'rgba(255,240,160,.9)'; c.fill();
+    }
+    c.fillStyle = 'rgba(40,30,30,.45)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(40 + i * 12 + Math.sin(t + i) * 3, 14 - ((t * 10 + i * 9) % 14), 7 + i * 2, 0, 7); c.fill(); } // дым
+  }));
+  // фишка бандитов — квадратная (не путать с круглыми зомби), красная кайма; у главаря — золотая
+  function banditToken(ctx, w, h, bg, ring, head) {
     const r = Math.min(w, h) / 2;
     ctx.save(); ctx.translate(w / 2, h / 2);
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
-    const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, '#5a6a7a'); gr.addColorStop(1, '#0d0a08');
+    rr(ctx, -r * 0.9, -r * 0.9, r * 1.8, r * 1.8, r * 0.28);
+    const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r * 1.2); gr.addColorStop(0, bg); gr.addColorStop(1, '#0d0a08');
     ctx.fillStyle = gr; ctx.fill();
-    ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, banditHead); ctx.restore();
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.16; ctx.strokeStyle = '#4a7ab0'; ctx.stroke(); // синее кольцо — третья сторона
-    ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+    ctx.save(); rr(ctx, -r * 0.8, -r * 0.8, r * 1.6, r * 1.6, r * 0.22); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, head); ctx.restore();
+    rr(ctx, -r * 0.86, -r * 0.86, r * 1.72, r * 1.72, r * 0.26); ctx.lineWidth = r * 0.14; ctx.strokeStyle = ring; ctx.stroke();
+    rr(ctx, -r * 0.94, -r * 0.94, r * 1.88, r * 1.88, r * 0.3); ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.stroke();
     ctx.restore();
-  });
+  }
+  Art.banditToken = banditToken;
+  Art.define('z_bandit', (ctx, w, h) => banditToken(ctx, w, h, '#5a6a7a', '#c0392b', banditHead));
+
   // Снайпер — бандит в капюшоне с оптикой; Лесник — главарь в медвежьей шкуре
   function sniperHead(c) {
     c.fillStyle = '#3a4030'; c.beginPath(); c.moveTo(16, 100); c.quadraticCurveTo(20, 74, 50, 72); c.quadraticCurveTo(80, 74, 84, 100); c.fill(); strokeInk(c, 2.5);
@@ -1096,23 +1118,13 @@
     c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(35, 41); c.lineTo(47, 44); c.moveTo(65, 41); c.lineTo(53, 44); c.stroke();
     c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(56, 40); c.lineTo(64, 58); c.stroke(); // шрам
   }
-  [['sniper', sniperHead, '#3a4a30', '#4a7ab0'], ['forester', foresterHead, '#6a4a2a', '#d4a017']].forEach(([id, head, bg, ring]) => {
+  [['sniper', sniperHead, '#3a4a30', '#c0392b'], ['forester', foresterHead, '#6a4a2a', '#d4a017']].forEach(([id, head, bg, ring]) => {
     Art.define('zp_' + id, (ctx, w, h) => {
       const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, bg); g.addColorStop(1, '#0d0a08');
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, head); ctx.restore();
     });
-    Art.define('z_' + id, (ctx, w, h) => {
-      const r = Math.min(w, h) / 2;
-      ctx.save(); ctx.translate(w / 2, h / 2);
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
-      const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, bg); gr.addColorStop(1, '#0d0a08');
-      ctx.fillStyle = gr; ctx.fill();
-      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, head); ctx.restore();
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * (id === 'forester' ? 0.18 : 0.16); ctx.strokeStyle = ring; ctx.stroke(); // синее — бандиты, золотое — главарь
-      ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
-      ctx.restore();
-    });
+    Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, id === 'forester' ? '#d4a017' : '#c0392b', head)); // квадратная фишка банды
   });
   // Медведь-шатун — мини-босс леса (отдельный рисунок)
   function bearHead(c) {

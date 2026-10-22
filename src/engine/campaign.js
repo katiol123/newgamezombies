@@ -75,7 +75,7 @@
     return {
       seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
-      scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null,
+      scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
       wanderers: md.noWanderers ? (md.bosses || []) : c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);
@@ -97,6 +97,13 @@
     const squad = c.current ? c.current.squad : g.heroes.map((h) => h.id);
     const rep = { missionNo: c.missionNo + 1, win: !!res.win, stars: res.stars || 0, reason: res.reason, heroes: {}, lost: [], wanderers: [] };
     const line = (id, text) => (rep.heroes[id] = rep.heroes[id] || { lines: [], talons: 0, morale: 0 }).lines.push(text);
+    // памятные события кампании (для эпилога)
+    c.flags = c.flags || {};
+    const kb = (g.stats && g.stats.killsBy) || {};
+    if (kb.bear) c.flags.bear = true;
+    if (kb.forester) c.flags.forester = true;
+    if (g.scenarioId === 'bridge' && res.win) c.flags.bridge = kb.forester ? 'force' : 'quiet';
+    if (g.scenarioId === 'forest' && g.obj && g.obj.attempted) c.flags.signal = true;
     const moraleAdd = (h, n, why) => { if (!n) return; h.morale += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].morale += n; line(h.id, `${n > 0 ? '+' : ''}${n} мораль — ${why}`); };
     const talonsAdd = (h, n, why) => { if (!n) return; h.talons += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].talons += n; line(h.id, `+${n} 🎫 — ${why}`); };
 

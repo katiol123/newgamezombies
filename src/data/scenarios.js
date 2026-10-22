@@ -166,7 +166,7 @@
       id: 'forest', campaignOnly: true, name: 'Сигнал из леса',
       short: 'Найди в бору аккумулятор, отнеси на пожарную вышку и подай сигнал.',
       brief: 'Колонна встала за лесом. Вертолёт заберёт тех, кто подаст сигнал. На просеке — пожарная вышка с рацией, но её батарея давно села.',
-      setupText: 'Поле 3×2 из лесных тайлов: Кордон лесника (старт; колодец — точка появления; «буханка» во дворе), Сосновый бор ×3, Просека ЛЭП ×2. Пожарная вышка — на одной из просек (этот тайл открыт сразу). В центре каждого бора — ящик; в одном из них аккумулятор. В одном из боров притаился Медведь-шатун. На 4 закрытых тайла — карты «Стая/Пусто» (1 «Стая»).',
+      setupText: 'Поле 3×2 из лесных тайлов: Кордон лесника (старт; колодец — точка появления; «буханка» во дворе), Сосновый бор ×3, Просека ЛЭП ×2. Пожарная вышка — на просеке в дальнем столбце (этот тайл открыт сразу). Когда сигнал подан, из колодца вылезает стая (Шатун ×2 + Бегун; при 3–4 героях — Шатун ×3 + Бегун) и охотится. В центре каждого бора — ящик; в одном из них аккумулятор. В одном из боров притаился Медведь-шатун. На 4 закрытых тайла — карты «Стая/Пусто» (1 «Стая»).',
       exitLabel: 'Буханка', exitArt: 'exit_van',
       packs: { 1: ['walker', 'walker', 'runner'], 2: ['walker', 'walker', 'runner'], 3: ['walker', 'walker', 'walker', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'runner', 'runner', 'runner'] },
       failTitle: 'Сигнал не прошёл',
@@ -181,7 +181,8 @@
         g.exit = at(kt, kdef.van[0], kdef.van[1]).i; // «буханка» во дворе
         const bors = b.tiles.map((t, i) => (t.id === 'bor' ? i : -1)).filter((i) => i >= 0);
         const pros = b.tiles.map((t, i) => (t.id === 'proseka' ? i : -1)).filter((i) => i >= 0);
-        const tt = Rng.pick(g, pros);
+        const far = Math.max.apply(null, pros.map((i) => b.tiles[i].tx));
+        const tt = Rng.pick(g, pros.filter((i) => b.tiles[i].tx === far)); // вышка — на дальней просеке
         g.tower = [at(tt, 0, 0), at(tt, 0, 2)].sort((a, b) => a.y - b.y || b.x - a.x)[0].i; // угол повыше — подальше от подписи тайла
         g.towerLabel = 'ВЫШКА';
         // ящики: по одному в центре каждого бора, в одном — аккумулятор
@@ -225,6 +226,12 @@
         E.hear(g, g.tower, 2, hero.idx); // треск рации разносится по лесу
         E.log(g, `${E.heroName(hero)} подключает аккумулятор… ${this.failTitle}! Антенна перегрызена, лесник оставил записку: колонна ждёт у моста. Новая задача — вернуться к «буханке» и уехать.`, 'bad');
         E.fx(g, { t: 'twist', title: this.failTitle, text: this.failText, task: this.newTask, pos: hero.pos, art: g.stories && g.stories.twist });
+        // треск рации разбудил колодец: у «буханки» из сруба лезет стая — обратный путь будет нелёгким
+        const well = g.spawnPoints[0];
+        if (well != null) {
+          (g.heroes.length >= 3 ? ['walker', 'walker', 'walker', 'runner'] : ['walker', 'walker', 'runner']).forEach((type) => { const z = E.spawnZombie(g, type, well, null, true, true, true); if (z) { z.awake = true; z.trail = g.exit; } });
+          E.log(g, 'Из колодца на кордоне, скребясь о сруб, лезут мертвецы — прямо у «буханки»!', 'bad');
+        }
       },
       botGoal(g, hero, E) {
         if (g.obj.attempted) return null;
@@ -252,8 +259,10 @@
         E.placeCrates(g, 4 + big * 2, 3 + big * 2, this.cargo); // большому отряду — ещё запасная канистра (бандиты уносят)
         const st = b.cells[g.start].tile, et = b.cells[g.exit].tile;
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== et);
-        // тумана нет: горящий бензовоз освещает всю трассу
+        // тумана нет: горящий бензовоз освещает всю трассу (он лежит на одном из тайлов — декор и источник зарева)
         if (g.revealed) g.revealed = b.tiles.map(() => true);
+        const fireCells = b.cells.filter((c) => c.type === 'street' && c.tile !== st && c.tile !== et && !g.crates.some((x) => x.pos === c.i) && !g.search.some((x) => x.pos === c.i) && !g.spawnPoints.includes(c.i));
+        if (fireCells.length) g.fire = Rng.pick(g, fireCells).i;
         // 6 карт «Стая/Пусто» рубашкой вверх на тайлах (2 «Стаи»): стая выскакивает, когда на тайл впервые зайдёт герой или бандит
         g.stackTiles = cand.slice();
         g.obj.packTiles = Rng.shuffle(g, cand.slice()).slice(0, 2);
@@ -270,7 +279,7 @@
       },
       // карта «Стая/Пусто» переворачивается, как только на тайл зашёл герой или бандит
       watch(g, E) {
-        if (!g.stackTiles || !g.stackTiles.length) return;
+        if (g.sim || !g.stackTiles || !g.stackTiles.length) return; // просчёт бота не подглядывает под карты
         const b = g.board;
         const inside = g.heroes.filter((h) => h.onBoard).map((h) => ({ pos: h.pos, who: E.heroName(h) }))
           .concat(g.zombies.filter((z) => E.isBandit(z)).map((z) => ({ pos: z.pos, who: 'бандит' })));

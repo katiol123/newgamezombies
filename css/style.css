@@ -884,3 +884,10 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .tt-behav .hl > b { color: #ff7a6a; }
 .tt-die { margin-left: 6px; padding: 0 6px; border-radius: 4px; background: rgba(240,192,64,.18); color: var(--gold); letter-spacing: 0; }
 .tt-st { padding: 0 6px; border-radius: 8px; font-size: 12px; } .tt-st-calm { background: #4a5560; color: #fff; } .tt-st-hot { background: #c0392b; color: #fff; }
+.epi-facts { margin: 12px 0 0; padding-left: 18px; text-align: left; color: #e8dcc0; font-size: 14px; line-height: 1.5; } .epi-facts li { margin: 3px 0; }
+
+/* убежище: свёрнутый отчёт, липкие вкладки героев */
+.shelter-report.collapsed > :not(:first-child) { display: none; }
+.rep-toggle { margin-left: 10px; padding: 2px 10px; border-radius: 12px; border: 1px solid rgba(240,192,64,.5); background: rgba(240,192,64,.12); color: var(--gold); font: 12px var(--font-t); cursor: pointer; }
+.rep-toggle:hover { background: rgba(240,192,64,.25); }
+.sh-tabs { position: sticky; top: -22px; z-index: 5; padding: 8px 0; background: linear-gradient(180deg, #15100c 80%, rgba(21,16,12,0)); }

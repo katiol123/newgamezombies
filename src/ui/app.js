@@ -1061,6 +1061,8 @@
 
     async gameOver() {
       const g = this.g;
+      if (this._overFor === g) return; // уже завершается (например, конец хода ИИ и кнопка меню одновременно)
+      this._overFor = g;
       ZG.Sound.stopMusic(2500);
       if (!this.camp) store.set('save', null);
       await sleep(600);
@@ -1345,7 +1347,7 @@
       zs.forEach((z) => { const d = ZG.Zombies.get(z.type); (by[z.type] = by[z.type] || []).push(z); });
       parts.push('<div class="tt-z">' + Object.entries(by).map(([t, list]) => {
         const d = ZG.Zombies.get(t);
-        const st = g.stealth && !d.immobile ? (list.every((z) => z.awake) ? ' <span class="tt-red">охотится</span>' : list.some((z) => z.awake) ? ' <span class="tt-red">часть охотится</span>' : ' <span>бродит</span>') : '';
+        const st = ''; // статус — в блоке «Поведение» ниже (один источник правды)
         const bag = list.reduce((a, z) => a.concat(z.bag || []), []);
         const bagTxt = bag.length ? `<br><span class="tt-gold">В мешке: ${bag.some((id) => ZG.Cards.get(id).kind === 'cargo') ? bag.filter((id) => ZG.Cards.get(id).kind === 'cargo').map((id) => '«' + ZG.Cards.get(id).name + '»').join(', ') + (bag.some((id) => ZG.Cards.get(id).kind !== 'cargo') ? ' и добыча' : '') : bag.length + ' ' + ZG.util.plural(bag.length, 'находка', 'находки', 'находок')} — выпадет, если его убить</span>` : '';
         return `<div class="${list.some((z) => z.uid === zuid) ? 'hl' : ''}"><b>${d.name}</b> ×${list.length}${st} <span>♥${d.hp}${list.some((z) => z.dmg) ? ' (ранен)' : ''} ✊${d.dmg} 👣${E.zombieSpeed(g, list[0])}</span>${bagTxt}<br><small>${esc(d.text)}</small></div>`;
@@ -1686,6 +1688,19 @@
       }
       Game.startCampaignMission(this.squad.slice());
     },
+    // эпилог кампании: финальная вставка и итоги пути
+    epilogue(c) {
+      const st = ZG.STORIES && ZG.STORIES.epilogue;
+      if (!st) return;
+      const f = c.flags || {};
+      const facts = [];
+      facts.push(`Выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ') || 'никто'}`);
+      if (c.fallen.length) facts.push(`Не дошли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}`);
+      facts.push(f.bear ? 'Медведь-шатун из бора убит — его жир спас не одну жизнь.' : 'Медведь-шатун так и бродит по бору.');
+      if (f.bridge) facts.push(f.bridge === 'quiet' ? 'Мост пройден тихо: Лесник проснулся, когда ключ уже был у вас.' : 'Мост взят силой: Лесник мёртв, его топор теперь служит вам.');
+      if (c.wanderers.length) facts.push(`Где-то позади бродят обращённые: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}.`);
+      Modal.show(`${storyArt('epilogue')}<div class="story-kicker">${esc(st.kicker)}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(st.text)}</div><ul class="epi-facts">${facts.map((t) => `<li>${t}</li>`).join('')}</ul>`, [{ label: 'Конец пути', cls: 'primary' }], null, 'story');
+    },
     render() {
       const c = App.campaign.c;
       const done = c.status === 'over' || c.status === 'won';
@@ -1697,9 +1712,18 @@
       $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
       if (done) $('#shelter-sub').insertAdjacentHTML('beforeend', `<div class="camp-sum">Пройдено миссий: <b>${c.missionNo - (c.status === 'over' ? 1 : 0)} из ${c.chainLength}</b>${c.fallen.length ? ` · выбыли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}` : ''}${c.roster.length ? ` · выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ')}` : ''}</div>`);
       this.renderReport(c);
+      if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       if (!done && md.special && md.special.length) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${md.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`);
+      // отчёт и брифинг свёрнуты в одну строку (раскрываются по клику) — герои и карты видны сразу
+      const rp = $('#shelter-report');
+      rp.classList.toggle('collapsed', !this.reportOpen && rp.children.length > 1);
+      if (rp.children.length > 1) {
+        const tg = el('button', 'rep-toggle', this.reportOpen ? 'Свернуть ▴' : 'Отчёт и брифинг ▾');
+        tg.onclick = () => { this.reportOpen = !this.reportOpen; this.render(); };
+        rp.firstElementChild.appendChild(tg);
+      }
       const box = $('#shelter-heroes');
       box.innerHTML = '';
       if (!c.roster.length) { this.renderHire(c, done); return; }
@@ -1836,6 +1860,9 @@
               w.classList.add('dragging');
             }
             if (!ghost) return;
+            // у края экрана страница убежища прокручивается сама (чтобы дотянуть карту до вкладки героя или сундука)
+            const sc = $('.shelter');
+            if (e.clientY < 80) sc.scrollTop -= 16; else if (e.clientY > window.innerHeight - 80) sc.scrollTop += 16;
             ghost.style.left = (e.clientX - r.width / 2) + 'px';
             ghost.style.top = (e.clientY - r.height / 2) + 'px';
             const t = target(e);

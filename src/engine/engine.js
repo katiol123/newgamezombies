@@ -431,7 +431,7 @@
     g.board = null; g.log = []; g.fx = [];
     const c = structuredClone(g);
     g.board = b; g.log = log; g.fx = fx;
-    c.board = b; c.quiet = true;
+    c.board = b; c.quiet = true; c.sim = true; // копия для просчёта бота: скрытые ловушки задания в ней не срабатывают
     return c;
   };
 
@@ -449,7 +449,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {},
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null,
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -520,7 +520,7 @@
     queueTalent(g); // кампания: невыбранный в прошлой миссии талант предлагается сразу
     // начальное появление
     g.spawnPoints.forEach((p) => drawSpawn(g, p));
-    E.log(g, `${level.campaignOnly ? 'Миссия' : 'Уровень'} ${level.num}: ${level.name}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
+    E.log(g, `${g.missionTitle || `${level.campaignOnly ? 'Миссия' : 'Уровень'} ${level.num}: ${level.name}`}. Задание — «${E.scenario(g).name}». Условие — «${cond.name}».`, 'title');
     E.log(g, E.scenario(g).short, 'info');
     return g;
   };

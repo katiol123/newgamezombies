@@ -778,6 +778,12 @@
       Art.draw(ctx, sc.exitArt || 'exit_car', ex.x - C * 0.32, ex.y - C * 0.42, C * 0.64, C * 0.84, { arrived: open, t });
       ctx.restore();
       this._label(ctx, ex.x, ex.y - C * 0.44, (sc.exitLabel || 'Выход').toUpperCase(), open ? '#7dffa0' : '#e8dcc0');
+      // горящий бензовоз (миссия «Трасса»): источник зарева
+      if (g.fire != null) {
+        const fc = this.cellXY(g.fire);
+        Art.draw(ctx, 'tanker_fire', fc.x - C * 0.48, fc.y - C * 0.48, C * 0.96, C * 0.96, { t });
+        this._label(ctx, fc.x, fc.y + C * 0.44, 'БЕНЗОВОЗ', '#ffb070');
+      }
       // вышка
       if (g.tower != null) {
         const c = this.cellXY(g.tower);
@@ -1460,7 +1466,19 @@
       this.effects.forEach((f) => { if (f.type === 'fire' || f.type === 'boom') light(f.x, f.y, this.cell * 1.4, 0.9); });
       if (ZG.Engine.isComplete(this.g)) { const ex = this.cellXY(this.g.exit); light(ex.x, ex.y, this.cell * 1.1, 0.8); }
       this.g.lures.forEach((lu) => { const c = this.cellXY(lu.pos); light(c.x, c.y, this.cell * 0.8, 0.6); });
+      const fire = this.g.fire != null ? this.cellXY(this.g.fire) : null;
+      if (fire) light(fire.x, fire.y, this.cell * 4.5 * flick, 0.85);
       ctx.drawImage(lc, 0, 0, this.W, this.H);
+      if (fire) {
+        // зарево: тёплый мерцающий свет по всему полю
+        const fl = 0.8 + Math.sin(this.time * 9) * 0.1 + Math.sin(this.time * 23) * 0.06;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const gl = ctx.createRadialGradient(fire.x, fire.y, this.cell * 0.3, fire.x, fire.y, this.cell * 7);
+        gl.addColorStop(0, `rgba(255,140,50,${0.32 * fl})`); gl.addColorStop(0.4, `rgba(220,90,30,${0.12 * fl})`); gl.addColorStop(1, 'rgba(160,50,10,0)');
+        ctx.fillStyle = gl; ctx.fillRect(0, 0, this.W, this.H);
+        ctx.restore();
+        ctx.fillStyle = `rgba(255,110,30,${0.05 * fl})`; ctx.fillRect(0, 0, this.W, this.H);
+      }
       // виньетка
       const vg = ctx.createRadialGradient(this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.35, this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.75);
       vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${0.25 + this.darkness * 0.5})`);
