@@ -51,7 +51,7 @@
   // 3+ карты в стопке — герой «Обессилен»: рука −1, недоступны базовые действия не с карт, включая движение (кроме «Отдышаться»)
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
-  E.TIRED_LOCK = ['move', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot', 'mredraw'];
+  E.TIRED_LOCK = ['move', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
@@ -966,9 +966,9 @@
   E.ms = ms;
   // подходит ли миссия к этой партии (союзник, скрытность, туман)
   E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog));
-  // смена миссии: раз за партию, в свой ход, пока миссия не выполнена; прогресс начинается заново
+  // смена миссии: только сразу при получении — в начале первого хода героя, до любого его действия
   E.redrawMission = function (g, h) {
-    if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || !g.missionDeck.length) return false;
+    if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || h.missionKept || !g.missionDeck.length) return false;
     const old = h.mission;
     const i = g.missionDeck.findIndex((id) => id !== old && E.missionFits(g, ZG.Missions.get(id)));
     if (i < 0) return false; // подходящих карт нет — смена не тратится
@@ -1619,7 +1619,7 @@
     if (h.energy >= 3 && (h.exhaust || []).length && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
     // «Выстрел из ТТ»: базовое действие надетого «Ствола бандита», раз за ход
     if (Mods.flag(g, h, 'ttShot') && !g.turn.ttShot && h.energy >= 1) E.targetsFor(g, h, ZG.Cards.get('tt_shot')).forEach((t) => out.push({ t: 'ttshot', zombie: t }));
-    if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
+    if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && !h.missionKept && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
     if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
@@ -1680,6 +1680,7 @@
     if (!h) return fail(g, 'Выберите героя.');
     const ok = applyHeroAction(g, h, a);
     if (ok === false) return false;
+    if (a.t !== 'mredraw') h.missionKept = true; // первое действие — миссия принята, сменить уже нельзя
     E.checkMissions(g);
     queueTalent(g);
     return true;

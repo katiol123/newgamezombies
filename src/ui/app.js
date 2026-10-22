@@ -913,10 +913,7 @@
         if (ml) ml.onclick = (ev) => {
           ev.stopPropagation();
           const m = ZG.Missions.get(h.mission);
-          const can = g.active === h.idx && !h.missionRedrawn && !h.missionDone && g.phase === 'heroes' && !E.exhausted(g, h);
-          Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>${h.missionRedrawn ? '<p class="muted">Смена уже использована.</p>' : E.exhausted(g, h) && g.active === h.idx ? '<p class="muted">Герой обессилен — сменить миссию нельзя, сначала «Отдышаться».</p>' : can ? '<p class="muted">Можно сменить один раз за партию; прогресс начнётся заново.</p>' : '<p class="muted">Сменить можно в свой ход (раз за партию).</p>'}`,
-            can ? [{ label: 'Сменить', value: 'redraw' }, { label: 'Закрыть', cls: 'primary' }] : [{ label: 'Закрыть', cls: 'primary' }])
-            .then(async (v) => { if (v === 'redraw') { await this.act({ t: 'mredraw' }); this.showMission(h); } });
+          Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>`, [{ label: 'Закрыть', cls: 'primary' }]);
         };
         c.onclick = () => {
           if (g.phase === 'heroes' && g.active == null && h.onBoard && !h.acted) { if (h.ai) this.runAI(h.idx); else this.act({ t: 'begin', hero: h.idx }); }
@@ -1193,7 +1190,7 @@
       if (this.g.missions && h.mission && !h.ai && !h.missionDone && !(this.seenMission || {})[h.idx] && this.canSeeMission(h)) {
         (this.seenMission = this.seenMission || {})[h.idx] = true;
         const m = ZG.Missions.get(h.mission);
-        const v = await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше. Раз за партию миссию можно сменить (в свой ход — по клику на строку миссии).</p>`, [{ label: 'Сменить (1 раз)', value: 'redraw' }, { label: 'Понятно', cls: 'primary', value: 'ok' }]);
+        const v = await Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}${m.rarity === 'rare' ? ' <small>(редкая)</small>' : ''}</h2><p>${esc(m.text)}</p><p><b>Награда — только если выполните ПЕРВЫМ:</b> ${esc(m.rewardText)}</p><p class="muted">Держите миссию в секрете: союзники могут успеть раньше. <b>Сменить миссию можно только сейчас</b>, один раз — потом она останется с вами до конца.</p>`, [{ label: 'Сменить (только сейчас)', value: 'redraw' }, { label: 'Понятно', cls: 'primary', value: 'ok' }]);
         // окно показывается посреди проигрывания событий (интерфейс занят) — меняем миссию прямо в движке
         if (v === 'redraw') { if (E.redrawMission(this.g, h)) { this.save(); return this.showMission(h); } toast('Подходящих миссий для смены нет.'); }
       }
