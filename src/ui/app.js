@@ -1079,6 +1079,15 @@
         }, ' gold');
       }
       if (g.board.cells[h.pos].bld) icon('door', 'Закрыть двери', 1, has('shut'), E.sheltered(g, h) ? 'вы уже в укрытии' : h.energy < 1 ? lack(1) : 'все двери уже закрыты', () => this.act({ t: 'shut' }));
+      if (ZG.Mods.flag(g, h, 'shoutAction')) icon('shout', 'Луженая глотка', 0, has('shout'), 'уже кричали в этот ход', () => this.act({ t: 'shout' }), ' gold');
+      if (ZG.Mods.flag(g, h, 'foremanAction')) {
+        const fl = legal.filter((a) => a.t === 'foreman');
+        icon('foreman', 'Прораб', 1, fl.length > 0, g.turn.foreman ? 'уже командовали в этот ход' : h.energy < 1 ? lack(1) : 'рядом нет другого героя', async () => {
+          const opts = fl.map((a) => a.hero);
+          const i = opts.length === 1 ? opts[0] : await Modal.pickHero(g, opts);
+          if (i != null) this.act({ t: 'foreman', hero: i });
+        }, ' gold');
+      }
       if (ZG.Mods.flag(g, h, 'plugAction')) icon('plug', 'Заглушка', E.plugCost(g, h), has('plug'), !g.spawnPoints.includes(h.pos) ? 'встаньте в зону с люком' : E.plugged(g, h.pos) ? 'люк уже заглушен' : lack(E.plugCost(g, h)), () => this.act({ t: 'plug' }), ' gold');
       const burns = legal.filter((a) => a.t === 'burn');
       const bitten = E.heroesAt(g, h.pos).some((o) => o.hand.some((u) => g.cards[u] === 'infection'));
@@ -1325,6 +1334,8 @@
       case 'burn': return 'прижечь укус (Заражения в руке → Раны)';
       case 'cleanse': return 'обеззаразить укус (Заражения в руке → Раны)';
       case 'rest': return 'отдышаться';
+      case 'shout': return 'крикнуть: бродячие в 2 зонах идут к Гоше';
+      case 'foreman': return `прораб: ${E.heroName(g.heroes[a.hero])} получит +1 ⚡ в свой ход`;
       case 'give': return `передать «${E.cardDef(g, a.card).name}» → ${E.heroName(g.heroes[a.hero])}`;
       case 'scenario': return a.label;
       case 'evac': return 'эвакуироваться!';

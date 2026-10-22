@@ -153,8 +153,9 @@
     },
     // Гоша
     { id: 'weld_seam', name: 'Сварной шов', text: 'Заглушка держит на 1 раунд дольше и стоит 0 ⚡.', mods: { plugRounds: 1, plugCost: -1 } },
-    { id: 'workwear', name: 'Спецовка', text: '+1 Стойкость.', mods: { hp: 1 } },
+    // id прежние (workwear, overtime) — чтобы не ломать сохранённые кампании
+    { id: 'workwear', name: 'Луженая глотка', text: 'Раз за ход, 0 ⚡: крикни — все бродячие в 2 зонах от тебя идут к тебе. Тревога не растёт.', mods: { shoutAction: 1 } },
     { id: 'foreman', name: 'Бригадир', text: 'После Заглушки возьми 1 карту и получи 1 Блок.', mods: { plugBonus: 1 } },
-    { id: 'overtime', name: 'Сверхурочные', text: '«Отбойный молоток» бьёт на 1 сильнее.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'jackhammer' ? 1 : 0) } },
+    { id: 'overtime', name: 'Прораб', text: 'Раз за ход, 1 ⚡: другой герой в твоей зоне получит +1 ⚡ в начале своего следующего хода.', mods: { foremanAction: 1 } },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

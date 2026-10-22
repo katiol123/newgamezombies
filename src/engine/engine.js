@@ -51,7 +51,7 @@
   // 3+ карты в стопке — герой «Обессилен»: рука −1, недоступны базовые действия не с карт, включая движение (кроме «Отдышаться»)
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
-  E.TIRED_LOCK = ['move', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
+  E.TIRED_LOCK = ['move', 'shout', 'foreman', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
@@ -1625,6 +1625,9 @@
     // «Выстрел из ТТ»: базовое действие надетого «Ствола бандита», раз за ход
     if (Mods.flag(g, h, 'ttShot') && !g.turn.ttShot && h.energy >= 1) E.targetsFor(g, h, ZG.Cards.get('tt_shot')).forEach((t) => out.push({ t: 'ttshot', zombie: t }));
     if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && !h.missionKept && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
+    // Гоша: «Луженая глотка» и «Прораб» — раз за ход
+    if (Mods.flag(g, h, 'shoutAction') && !g.turn.shouted) out.push({ t: 'shout' });
+    if (Mods.flag(g, h, 'foremanAction') && !g.turn.foreman && h.energy >= 1) E.heroesAt(g, h.pos).forEach((o) => { if (o !== h) out.push({ t: 'foreman', hero: o.idx }); });
     if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
     if (g.doors && bld && h.energy >= 1 && E.entrances(g, bld).some(([a, b]) => g.doors[doorKey(a, b)])) out.push({ t: 'shut' });
@@ -1848,6 +1851,25 @@
         if (!sa || sa.cost > h.energy) return fail(g, 'Нельзя.');
         spend(g, h, sa.cost);
         E.scenario(g).doAction(g, h, a.key, E);
+        return true;
+      }
+      case 'shout': {
+        if (!Mods.flag(g, h, 'shoutAction') || g.turn.shouted) return fail(g, 'Крикнуть уже нельзя.');
+        g.turn.shouted = true;
+        g.noise[h.pos] = (g.noise[h.pos] || 0) + 1; // жетон шума без Тревоги — тянет зомби и без скрытности
+        E.fx(g, { t: 'noise', pos: h.pos, n: 1 });
+        E.hear(g, h.pos, 2, h.idx);
+        E.log(g, `${E.heroName(h)} орёт на весь квартал: «Сюда, уроды!»`, 'warn');
+        return true;
+      }
+      case 'foreman': {
+        const o = g.heroes[a.hero];
+        if (!Mods.flag(g, h, 'foremanAction') || g.turn.foreman || h.energy < 1 || !o || o === h || !o.onBoard || o.pos !== h.pos) return fail(g, 'Командовать некем.');
+        spend(g, h, 1);
+        g.turn.foreman = true;
+        o.adrenaline += 1;
+        E.fx(g, { t: 'adrenaline', hero: o.idx, pos: o.pos, n: 1 });
+        E.log(g, `${E.heroName(h)} раздаёт указания: ${E.heroName(o)} получит +1 ⚡ в начале своего хода.`, 'good');
         return true;
       }
       case 'ttshot': {
