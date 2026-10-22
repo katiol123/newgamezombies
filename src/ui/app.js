@@ -629,7 +629,7 @@
         else if (p.cell != null) {
           const h = g.heroes[g.active];
           const near = g.board.adj[h.pos].includes(p.cell) || E.fogNeighbors(g, h.pos).includes(p.cell);
-          if (near) toast(`Не хватает ⚡: шаг стоит ${E.moveCost(g, h, p.cell)}, осталось ${h.energy}.`);
+          if (near) toast(E.exhausted(g, h) ? 'Герой обессилен: ходить нельзя — отдышитесь или сыграйте карту перемещения.' : `Не хватает ⚡: шаг стоит ${E.moveCost(g, h, p.cell)}, осталось ${h.energy}.`);
         }
         return;
       }
@@ -780,6 +780,8 @@
         html = ready.length ? 'Выберите героя, который ходит следующим: клик по портрету справа или фишке на поле.' : '';
       } else if (g.active != null && g.heroes[g.active].ai) {
         html = `🤖 Ходит ИИ: ${esc(E.heroName(g.heroes[g.active]))}. Скорость — кнопка ×1/×2/×3, пауза — ⏸.`;
+      } else if (g.active != null && E.exhausted(g, g.heroes[g.active])) {
+        html = '😮‍💨 Герой обессилен: рука −1, ходить и действовать без карт нельзя. «Отдышаться» (3 ⚡, в зоне без зомби) вернёт карты из Изнеможения.';
       } else if (g.active != null) {
         html = 'Сыграйте карты или кликните по соседней зоне, чтобы пойти. Карты со щитом, оставшиеся в руке, защитят в фазу зомби.';
       } else if (g.phase === 'zombies') html = 'Ход зомби…';
