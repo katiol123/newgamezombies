@@ -44,7 +44,7 @@
       play(c) { c.draw(1); if (c.chain) c.energy(1); },
     },
     {
-      id: 'cover', name: 'Укрытие', suit: 'mind', cost: 0, shield: 1, type: 'Защита', tags: ['block'],
+      id: 'cover', name: 'Укрытие', suit: 'mind', cost: 1, shield: 1, type: 'Защита', tags: ['block'],
       text: 'Получи 1 Блок до своего следующего хода.', chainText: '+2 Блока.', art: 'shield', value: 6,
       target: null,
       play(c) { c.block(1 + (c.chain ? 2 : 0)); },
