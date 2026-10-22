@@ -1365,6 +1365,7 @@
     }
     if (cell === g.exit) parts.push(`<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} ${E.isComplete(g) ? '— ОТКРЫТА' : '— закрыта, пока не выполнена цель'}</div>`);
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
+    if (cell === g.fire) parts.push('<div class="tt-gold">Горящий бензовоз — его зарево освещает всю трассу</div>');
     if (g.spawnPoints.includes(cell)) parts.push(E.plugged(g, cell) ? `<div class="tt-gold">Люк заглушен: молчит ещё ${g.plugs[cell] - g.round + 1} р.</div>` : '<div class="tt-red">Точка появления зомби</div>');
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
@@ -1712,6 +1713,7 @@
       $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
       if (done) $('#shelter-sub').insertAdjacentHTML('beforeend', `<div class="camp-sum">Пройдено миссий: <b>${c.missionNo - (c.status === 'over' ? 1 : 0)} из ${c.chainLength}</b>${c.fallen.length ? ` · выбыли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}` : ''}${c.roster.length ? ` · выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ')}` : ''}</div>`);
       this.renderReport(c);
+      if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);

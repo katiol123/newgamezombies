@@ -781,8 +781,7 @@
       // горящий бензовоз (миссия «Трасса»): источник зарева
       if (g.fire != null) {
         const fc = this.cellXY(g.fire);
-        Art.draw(ctx, 'tanker_fire', fc.x - C * 0.48, fc.y - C * 0.48, C * 0.96, C * 0.96, { t });
-        this._label(ctx, fc.x, fc.y + C * 0.44, 'БЕНЗОВОЗ', '#ffb070');
+        Art.draw(ctx, 'tanker_fire', fc.x - C * 0.48, fc.y - C * 0.48, C * 0.96, C * 0.96, { t }); // подпись — в подсказке зоны
       }
       // вышка
       if (g.tower != null) {

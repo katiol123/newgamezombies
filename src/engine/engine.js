@@ -227,7 +227,7 @@
   };
   function wake(g, z, trail, sound, by) {
     if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: !!sound }); if (ZG.Zombies.get(z.type).boss) E.storyEvent(g, 'bossWake'); }
-    if (ZG.Zombies.get(z.type).tracker && z.lurk) { z.lurk = false; z.relentless = true; } // разбуженный охотник (Лесник) больше не спит и не теряет след
+    if (z.lurk && !z.post) { if (ZG.Zombies.get(z.type).tracker) z.relentless = true; z.lurk = false; } // проснувшийся больше не таится (Лесник ещё и не теряет след); часовой остаётся на посту
     if (by != null) z.wokenBy = by; // кто натравил (для миссии «Предатель»)
     if (trail != null) z.trail = trail;
   }

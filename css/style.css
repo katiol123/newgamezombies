@@ -894,3 +894,4 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 /* подготовка кампании: сложности в ряд (столбец один — не уходят под кнопку «Начать») */
 #screen-setup.camp .chips.diff { flex-direction: row; flex-wrap: wrap; }
 #screen-setup.camp .setup-grid { grid-template-columns: 1fr; }
+#screen-setup.camp .chips.diff > * { flex: 1 1 0; min-width: 0; }
