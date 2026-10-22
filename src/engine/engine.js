@@ -164,6 +164,8 @@
   };
   E.storyEvent = (g, key) => E.story(g, g.stories && g.stories[key]);
   // задание может запретить эвакуацию (например, пока у шлагбаума стоит часовой)
+  // передать в бою можно только найденное: находки, грузы задания и карты кампании (подарки, трофеи); базовые карты героя — нет
+  E.canGive = (g, uid) => { const d = ZG.Cards.get(g.cards[uid]); return !!(d && (d.loot || d.kind === 'cargo' || d.campaignOnly)); };
   E.canEvac = (g, h) => { const sc = E.scenario(g); return !sc.canEvac || sc.canEvac(g, h, E); };
   E.isBandit = (z) => !!z && ZG.Zombies.get(z.type).faction === 'bandit';
   // видит ли существо другое существо (зомби ↔ бандит): своя зона, соседняя или прямая линия
@@ -1615,7 +1617,7 @@
     if (!g.turn.gave) {
       E.heroesAt(g, h.pos).forEach((o) => {
         if (o === h) return;
-        h.hand.forEach((u) => { if (g.cards[u] !== 'wound' && g.cards[u] !== 'infection' && ZG.Cards.get(g.cards[u]).kind !== 'temp') out.push({ t: 'give', card: u, hero: o.idx }); });
+        h.hand.forEach((u) => { if (E.canGive(g, u)) out.push({ t: 'give', card: u, hero: o.idx }); });
       });
     }
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
@@ -1808,7 +1810,7 @@
       case 'give': {
         const o = g.heroes[a.hero];
         const i = h.hand.indexOf(a.card);
-        if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || ['wound', 'infection'].includes(g.cards[a.card]) || ZG.Cards.get(g.cards[a.card]).kind === 'temp') return fail(g, 'Передать нельзя.');
+        if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || !E.canGive(g, a.card)) return fail(g, 'Передать нельзя.');
         h.hand.splice(i, 1); o.hand.push(a.card);
         if (g.carriedHolders && g.carriedHolders[a.card]) g.carriedHolders[a.card].push(o.id); // кампания: износ учитывает всех, кто держал карту
         g.turn.gave = true;

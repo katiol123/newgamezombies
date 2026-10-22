@@ -1007,7 +1007,7 @@
       const bc = E.barricadeCost(g, h);
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
-      icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : 'рядом нет другого героя', () => this.giveDialog());
+      icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : !g.heroes.some((o) => o !== h && o.onBoard && o.pos === h.pos) ? 'рядом нет другого героя' : 'в руке нет находок, груза или карт кампании (базовые карты не передаются)', () => this.giveDialog());
       const wHand = h.hand.some((u) => g.cards[u] === 'wound');
       icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
       if (ZG.Mods.flag(g, h, 'healAction')) {
