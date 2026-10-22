@@ -126,7 +126,9 @@
       // здоровье: карты Ран и Заражений уничтожаются, но потерянная Стойкость остаётся травмой
       // в убежище переносится столько Стойкости, сколько было на момент окончания миссии
       // (карты Ран и Заражений уничтожаются, а потерянная от них Стойкость остаётся травмой)
-      const wounds = ZG.Engine.hurtCount(g, gh);
+      // стартовые Раны сложности («Кошмар») — не травмы: их не считаем
+      const startW = gh.deck.concat(gh.hand, gh.discard).filter((u) => g.cards[u] === 'wound' && String(u).startsWith('sw')).length;
+      const wounds = Math.max(0, ZG.Engine.hurtCount(g, gh) - startW);
       h.injury = Math.min(C.baseHp(h) + C.hpTalents(h) - 1, h.injury + wounds);
       if (wounds) line(h.id, `−${wounds} Стойкость (раны и заражения)`);
       // добыча: карты добычи из всего, что у героя (принесённые — со своим износом, новые — целые)
@@ -171,7 +173,9 @@
 
     // 3) блуждающие: обращённые союзники, чей монстр остался на поле (или так и не появился)
     const turnedNow = g.heroes.filter((gh) => gh.turned).map((gh) => gh.id);
-    const alive = (id) => g.zombies.some((z) => z.type === 'turned_' + id) || (g.wanderers || []).some((w) => w.type === 'turned_' + id && !w.out);
+    // в миссию без блуждающих (noWanderers) обращённые не выпускались — они никуда не делись
+    const released = (id) => (g.wanderers || []).some((w) => w.type === 'turned_' + id);
+    const alive = (id) => g.zombies.some((z) => z.type === 'turned_' + id) || (g.wanderers || []).some((w) => w.type === 'turned_' + id && !w.out) || (c.wanderers.includes(id) && !released(id) && !turnedNow.includes(id));
     c.wanderers = c.wanderers.concat(turnedNow).filter((id, i, a) => a.indexOf(id) === i && alive(id));
     rep.wanderers = c.wanderers.slice();
 

@@ -227,6 +227,7 @@
   };
   function wake(g, z, trail, sound, by) {
     if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: !!sound }); if (ZG.Zombies.get(z.type).boss) E.storyEvent(g, 'bossWake'); }
+    if (ZG.Zombies.get(z.type).tracker && z.lurk) { z.lurk = false; z.relentless = true; } // разбуженный охотник (Лесник) больше не спит и не теряет след
     if (by != null) z.wokenBy = by; // кто натравил (для миссии «Предатель»)
     if (trail != null) z.trail = trail;
   }
@@ -292,9 +293,9 @@
   // Мародёрство: бандит на закрытом ящике или жетоне Обыска забирает добычу в мешок (выпадет, когда его убьют)
   E.banditLoot = function (g, z) {
     const zd = ZG.Zombies.get(z.type);
-    if (z.lurk || zd.static || zd.hunter) return; // часовой на посту, снайпер и главарь лут не трогают — мародёрствуют бродяги
+    if (z.lurk || z.hunt || z.post || zd.static || zd.hunter) return; // часовой, загонщик, снайпер и главарь лут не трогают — мародёрствуют бродяги
     if (E.hidden(g, z.pos)) {
-      // в тумане: на «1–2» кубика бродяг бандит обчищает ближайший ящик/тайник своего тайла (фишка остаётся на рубашке)
+      // в тумане: на «1–4» кубика бродяг бандит обчищает ближайший ящик/тайник своего тайла (фишка остаётся на рубашке)
       if (!g.zs || g.zs.wander > 4) return;
       const ti = g.board.cells[z.pos].tile;
       const spots = E.lootSpots(g).filter((p) => g.board.cells[p].tile === ti);
@@ -564,7 +565,8 @@
       g.start = Rng.pick(g, edge.length ? edge : on.filter((c) => c.type === 'street').length ? on.filter((c) => c.type === 'street') : on).i;
     } else g.start = edgeZone(0, 0);
     g.exit = edgeZone(maxTx, b.w - 1);
-    const n = level.spawnPoints[Math.min(4, g.heroes.length)] + Mods.value(g, null, 'spawnPointsBonus', 0);
+    const base = level.spawnPoints[Math.min(4, g.heroes.length)];
+    const n = base ? Math.max(0, base + Mods.value(g, null, 'spawnPointsBonus', 0)) : 0; // уровень без люков — сложность их не добавляет
     const startTile = tileOf(g, g.start);
     g.spawnPoints = [];
     tilesByColumn(g, [startTile, tileOf(g, g.exit)]).slice(0, n).forEach((ti) => {
@@ -1035,7 +1037,7 @@
     openDoor(g, from, cell, null);
     z.pos = cell;
     E.fx(g, { t: 'zmove', zombie: z.uid, from, to: cell });
-    if (E.isBandit(z)) E.banditLoot(g, z); // пассивка бандита: оказался у лута — сразу забирает себе
+    if (E.isBandit(z)) { E.banditLoot(g, z); if (E.scenario(g).watch) E.scenario(g).watch(g, E); } // пассивка бандита: оказался у лута — сразу забирает себе
     const trap = g.traps.find((t) => t.pos === cell);
     if (trap) {
       g.traps.splice(g.traps.indexOf(trap), 1);
@@ -1729,6 +1731,7 @@
         const u = E.newUid(g, 'c'); g.cards[u] = d.card; h.hand.push(u);
         if (d.carried) { g.carried[u] = d.carried; g.carriedHolders[u] = (d.holders || []).concat(h.id); } // принесённая карта сохраняет износ
         E.log(g, `${E.heroName(h)} подбирает: «${ZG.Cards.get(d.card).name}».`, 'good');
+        if (ZG.Cards.get(d.card).kind === 'cargo') E.storyEvent(g, 'cargo');
         return true;
       }
       case 'barricade': {
@@ -1881,6 +1884,7 @@
     if (g.turn && E.zombiesAt(g, from).length) g.turn.escaped = true;
     h.pos = to;
     E.fx(g, { t: 'hmove', hero: h.idx, from, to });
+    if (E.scenario(g).watch) E.scenario(g).watch(g, E); // ловушки задания срабатывают сразу при входе
   }
 
   function placeBarricade(g, h, to, baseHp) {
@@ -2069,7 +2073,7 @@
       },
       push(uid) {
         const z = E.zombie(g, uid);
-        if (!z || ZG.Zombies.get(z.type).immobile) return;
+        if (!z || ZG.Zombies.get(z.type).immobile || ZG.Zombies.get(z.type).static || z.post) return; // снайпера и часового с позиции не сдвинуть
         const opts = g.board.adj[z.pos].filter((n) => !E.barricadeAt(g, z.pos, n) && !E.heroesAt(g, n).length);
         if (opts.length) enterCell(g, z, opts[0]);
       },
@@ -2077,7 +2081,7 @@
         const open = (a, b) => !E.barricadeAt(g, a, b);
         const d = E.distV(g, h.pos, open);
         g.zombies.slice().forEach((z) => {
-          if (!g.zombies.includes(z) || d[z.pos] === 0 || d[z.pos] > radius || ZG.Zombies.get(z.type).immobile) return;
+          if (!g.zombies.includes(z) || d[z.pos] === 0 || d[z.pos] > radius || ZG.Zombies.get(z.type).immobile || ZG.Zombies.get(z.type).static || z.post) return;
           const next = g.board.adj[z.pos].find((n) => d[n] === d[z.pos] - 1 && open(z.pos, n));
           if (next != null) enterCell(g, z, next);
         });
