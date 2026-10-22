@@ -51,7 +51,7 @@
   // 3+ карты в стопке — герой «Обессилен»: рука −1, недоступны базовые действия не с карт, включая движение (кроме «Отдышаться»)
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
-  E.TIRED_LOCK = ['move', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
+  E.TIRED_LOCK = ['move', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot', 'mredraw'];
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {

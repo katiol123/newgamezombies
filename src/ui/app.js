@@ -913,8 +913,8 @@
         if (ml) ml.onclick = (ev) => {
           ev.stopPropagation();
           const m = ZG.Missions.get(h.mission);
-          const can = g.active === h.idx && !h.missionRedrawn && !h.missionDone && g.phase === 'heroes';
-          Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>${h.missionRedrawn ? '<p class="muted">Смена уже использована.</p>' : can ? '<p class="muted">Можно сменить один раз за партию; прогресс начнётся заново.</p>' : '<p class="muted">Сменить можно в свой ход (раз за партию).</p>'}`,
+          const can = g.active === h.idx && !h.missionRedrawn && !h.missionDone && g.phase === 'heroes' && !E.exhausted(g, h);
+          Modal.show(`<div class="kicker">Секретная миссия — ${esc(E.heroName(h))}</div><h2>${esc(m.name)}: ${E.missionProgress(g, h)}/${m.goal}</h2><p>${esc(m.text)}</p><p><b>Награда — только первому:</b> ${esc(m.rewardText)}</p>${h.missionRedrawn ? '<p class="muted">Смена уже использована.</p>' : E.exhausted(g, h) && g.active === h.idx ? '<p class="muted">Герой обессилен — сменить миссию нельзя, сначала «Отдышаться».</p>' : can ? '<p class="muted">Можно сменить один раз за партию; прогресс начнётся заново.</p>' : '<p class="muted">Сменить можно в свой ход (раз за партию).</p>'}`,
             can ? [{ label: 'Сменить', value: 'redraw' }, { label: 'Закрыть', cls: 'primary' }] : [{ label: 'Закрыть', cls: 'primary' }])
             .then(async (v) => { if (v === 'redraw') { await this.act({ t: 'mredraw' }); this.showMission(h); } });
         };
