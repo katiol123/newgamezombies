@@ -261,7 +261,7 @@
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== et);
         // тумана нет: горящий бензовоз освещает всю трассу (он лежит на одном из тайлов — декор и источник зарева)
         if (g.revealed) g.revealed = b.tiles.map(() => true);
-        const fireCells = b.cells.filter((c) => c.type === 'street' && c.tile !== st && c.tile !== et && !g.crates.some((x) => x.pos === c.i) && !g.search.some((x) => x.pos === c.i) && !g.spawnPoints.includes(c.i));
+        const fireCells = b.cells.filter((c) => c.type === 'street' && c.tile !== st && c.tile !== et && !(c.x % 3 === 2 && c.y % 3 === 0) /* угол под картой «Стая/Пусто» */ && !g.crates.some((x) => x.pos === c.i) && !g.search.some((x) => x.pos === c.i) && !g.spawnPoints.includes(c.i));
         if (fireCells.length) g.fire = Rng.pick(g, fireCells).i;
         // 6 карт «Стая/Пусто» рубашкой вверх на тайлах (2 «Стаи»): стая выскакивает, когда на тайл впервые зайдёт герой или бандит
         g.stackTiles = cand.slice();
@@ -370,8 +370,8 @@
       goals(g) {
         const left = this.left(g), key = g.obj.open || this.hasKey(g);
         return [
-          { text: 'Тихо: снять ключ от шлагбаума с пояса спящего Лесника', done: key, note: left && !key ? 'войти к нему незамеченным может только тихий герой — или' : null },
-          { text: `Силой: перебить банду Лесника — осталось ${left}`, done: left === 0 },
+          { text: 'Путь А, тихо: снять ключ с пояса спящего Лесника', done: key, note: left && !key ? 'войти к нему незамеченным может только тихий герой' : null },
+          { text: `ИЛИ путь Б, силой: убить Лесника (ключ выпадет) или перебить банду — осталось ${left}`, done: left === 0 },
           { text: 'Всем уйти по мосту через шлагбаум', done: false, note: E0().zombiesAt(g, g.exit).some((z) => E0().isBandit(z)) ? 'У шлагбаума часовой — уберите его' : null },
         ];
       },

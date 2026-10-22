@@ -891,3 +891,6 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .rep-toggle { margin-left: 10px; padding: 2px 10px; border-radius: 12px; border: 1px solid rgba(240,192,64,.5); background: rgba(240,192,64,.12); color: var(--gold); font: 12px var(--font-t); cursor: pointer; }
 .rep-toggle:hover { background: rgba(240,192,64,.25); }
 .sh-tabs { position: sticky; top: -22px; z-index: 5; padding: 8px 0; background: linear-gradient(180deg, #15100c 80%, rgba(21,16,12,0)); }
+/* подготовка кампании: сложности в ряд (столбец один — не уходят под кнопку «Начать») */
+#screen-setup.camp .chips.diff { flex-direction: row; flex-wrap: wrap; }
+#screen-setup.camp .setup-grid { grid-template-columns: 1fr; }

@@ -1491,7 +1491,7 @@
       wrap.appendChild(CV.scenarioCard(sc.id));
       wrap.appendChild(CV.conditionCard(g.conditionId));
       const steps = sc.goals(g).map((x) => `<li>${esc(x.text)}</li>`).join('');
-      await this.show(`<div class="kicker">Брифинг</div><h2>${esc(sc.name)}</h2><p>${esc(sc.brief)}</p><ol class="brief-steps">${steps}</ol>
+      await this.show(`<div class="kicker">Брифинг</div><h2>${esc(sc.name)}</h2><ol class="brief-steps">${steps}</ol>
         ${g.special && g.special.length ? `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${g.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${g.bonusId ? `<p>★ Бонусная цель (3-я звезда): <b>${esc(ZG.Bonuses.get(g.bonusId).name)}</b> — ${esc(ZG.Bonuses.get(g.bonusId).text)}</p>` : ''}
         <p class="muted">На поле: <b>жёлтые «?»</b> — жетоны обыска, <b>ящики</b> — возможные грузы, <b>люки</b> — точки появления. Наводите курсор на зоны, чтобы узнать подробности.</p>`, [{ label: 'В бой', cls: 'primary', modal: true }], wrap, 'wide');
