@@ -74,6 +74,7 @@
       $('#btn-campaign').onclick = () => Slots.show();
       $('#btn-slots-back').onclick = () => this.show('menu');
       $('#btn-rules').onclick = () => Rules.open();
+      $('#btn-gallery').onclick = () => Gallery.show();
       $('#btn-print').onclick = () => window.open('print.html', '_blank');
       const saved = store.get('save', null);
       $('#btn-continue').style.display = saved ? '' : 'none';
@@ -1316,9 +1317,60 @@
     return `<div class="tt-behav"><div class="tt-behav-head">Поведение${die}</div>` + list.map((r) =>
       `<div class="${r.hl ? 'hl' : ''}"><b>${r.name}${r.n > 1 ? ' ×' + r.n : ''}</b> — <span class="tt-st tt-st-${['бродит', 'притаился', 'настороже', 'спит', 'дремлет'].includes(r.st) ? 'calm' : 'hot'}">${r.st}</span><br><small>${r.txt}</small></div>`).join('') + '</div>';
   }
+  // ------------------------------------------------------------ галерея сюжетных вставок
+  const GALLERY = [
+    ['Миссия 1 · Первая вылазка', ['m1_start', 'm1_first_kill', 'm1_night']],
+    ['Миссия 2 · Автобаза №3', ['m2_start', 'm2_pack', 'm2_rouse', 'm2_keys']],
+    ['Миссия 3 · Лес', ['m3_start', 'm3_battery', 'm3_bear', 'm3_twist', 'm3_bear_dead']],
+    ['Миссия 4 · Трасса', ['m4_start', 'm4_bandit', 'm4_bitten', 'm4_fuel', 'm4_night']],
+    ['Миссия 5 · Мост', ['m5_start', 'm5_sniper', 'm5_forester', 'm5_key', 'm5_saw', 'm5_forester_dead']],
+    ['Миссия 6 и финал', ['m6_start', 'epilogue']],
+  ];
+  const Gallery = {
+    show() {
+      const box = $('#gallery-list');
+      if (!box.children.length) {
+        GALLERY.forEach(([title, ids]) => {
+          const sec = el('section', 'gal-mission'); sec.appendChild(el('h3', '', title));
+          const grid = el('div', 'gal-grid');
+          ids.forEach((id, i) => {
+            const st = ZG.STORIES[id] || {};
+            const card = el('button', 'gal-card');
+            // «Сигнал не прошёл» — текст в задании (окно поворота), здесь показываем его
+            const text = id === 'm3_twist' ? ZG.Scenarios.get('forest').failText : st.text;
+            card.innerHTML = `<canvas class="story-scene" data-scene="${id}" data-offset="${i * 1.7}" width="640" height="360"></canvas><span class="gal-cap"><small>${esc(st.kicker || '')}</small><b>${esc(st.title || id)}</b></span>`;
+            card.onclick = () => this.open(id, st, text);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid); box.appendChild(sec);
+        });
+        $('#btn-gallery-back').onclick = () => { this.close(); App.show('menu'); };
+        $('#gallery-close').onclick = () => this.close();
+        $('#gallery-view').onclick = (e) => { if (e.target.id === 'gallery-view') this.close(); };
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#gallery-view').classList.contains('on')) this.close(); });
+      }
+      App.show('gallery').then(() => ZG.StoryScenes.animate());
+      setTimeout(() => ZG.StoryScenes.animate(), 60);
+    },
+    open(id, st, text) {
+      const big = $('#gallery-big'); big.dataset.scene = id;
+      $('#gallery-text').innerHTML = `<div class="story-kicker">${esc(st.kicker || '')}</div><h2 class="story-title">${esc(st.title || '')}</h2><div class="story-text">${esc(text || '')}</div>`;
+      $('#gallery-view').classList.add('on');
+      $$('#gallery-list canvas').forEach((c) => { c.dataset.paused = '1'; }); // пока смотрим одну — остальные стоят
+      ZG.StoryScenes.animate();
+      $('#gallery-close').focus();
+    },
+    close() {
+      $('#gallery-view').classList.remove('on');
+      $$('#gallery-list canvas').forEach((c) => { delete c.dataset.paused; });
+      ZG.StoryScenes.animate();
+    },
+  };
   // место под иллюстрацию вставки: картинка, пока её нет — тёмная заставка с дымкой
   function storyArt(id) {
-    return `<div class="story-art"><img src="art/story/${id}.jpg" alt="" onerror="this.remove()"></div>`;
+    // анимированная сцена (код) + картинка поверх, если она есть в art/story/
+    setTimeout(() => ZG.StoryScenes && ZG.StoryScenes.animate(), 0);
+    return `<div class="story-art"><canvas class="story-scene" data-scene="${id}" width="960" height="540"></canvas><img src="art/story/${id}.jpg" alt="" onerror="this.remove()"></div>`;
   }
   function zoneInfo(g, cell, zuid) {
     const c = g.board.cells[cell];

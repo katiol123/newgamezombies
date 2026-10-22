@@ -23,6 +23,7 @@
         <button class="btn primary" id="btn-campaign">Кампания</button>
         <button class="btn" id="btn-continue">Продолжить</button>
         <button class="btn" id="btn-rules">Правила</button>
+        <button class="btn" id="btn-gallery">Галерея</button>
         <button class="btn ghost" id="btn-print">Печать (Print &amp; Play)</button>
       </div>
       <div class="menu-foot">1–4 героя · соло или вдвоём за одним экраном · 40–60 минут</div>
@@ -30,6 +31,22 @@
   </section>
 
   <!-- ============================================ КАМПАНИЯ: СЛОТЫ -->
+  <!-- ============================================ ГАЛЕРЕЯ СЮЖЕТНЫХ ВСТАВОК -->
+  <section id="screen-gallery" class="screen">
+    <div class="gallery">
+      <header class="setup-head">
+        <button class="btn ghost" id="btn-gallery-back">← Меню</button>
+        <h2>Галерея</h2>
+      </header>
+      <p class="slots-intro">Сюжетные вставки кампании. Нажмите на сцену, чтобы посмотреть её во весь экран вместе с текстом.</p>
+      <div id="gallery-list"></div>
+    </div>
+    <div id="gallery-view" class="gallery-view" role="dialog" aria-modal="true" aria-label="Сцена">
+      <button class="btn ghost" id="gallery-close">Закрыть ✕</button>
+      <div class="gv-inner"><canvas class="story-scene" id="gallery-big" width="1600" height="900"></canvas><div id="gallery-text" class="gv-text"></div></div>
+    </div>
+  </section>
+
   <section id="screen-slots" class="screen">
     <div class="camp-slots">
       <header class="setup-head">
@@ -188,6 +205,7 @@
   <script src="src/render/tilerender.js"></script>
   <script src="src/render/boardview.js"></script>
   <script src="src/render/cardview.js"></script>
+  <script src="src/render/storyscenes.js"></script>
   <script src="src/ui/sound.js"></script>
   <script src="src/ui/app.js"></script>
 </body>

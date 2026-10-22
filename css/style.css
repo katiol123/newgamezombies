@@ -895,3 +895,22 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 #screen-setup.camp .chips.diff { flex-direction: row; flex-wrap: wrap; }
 #screen-setup.camp .setup-grid { grid-template-columns: 1fr; }
 #screen-setup.camp .chips.diff > * { flex: 1 1 0; min-width: 0; }
+
+/* --- сюжетная сцена в окне вставки: анимация (canvas) и картинка поверх, если есть --- */
+.story-art canvas, .story-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.story-art::after { z-index: 1; }
+/* --- галерея сюжетных вставок --- */
+.gallery { max-width: 1240px; margin: 0 auto; padding: 22px 24px 60px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+.gal-mission { margin-top: 18px; }
+.gal-mission h3 { margin: 0 0 10px; font: 12px var(--font-d); letter-spacing: .2em; text-transform: uppercase; color: #c0392b; }
+.gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.gal-card { padding: 0; border: 1px solid #3a2e24; border-radius: 8px; overflow: hidden; background: #1a1512; color: var(--paper, #e8dcc0); cursor: pointer; text-align: left; transition: transform .2s, border-color .2s; }
+.gal-card:hover, .gal-card:focus-visible { transform: translateY(-2px); border-color: var(--gold); outline: none; }
+.gal-card canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.gal-cap { display: block; padding: 8px 10px 10px; } .gal-cap small { display: block; font: 10px var(--font-d); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); } .gal-cap b { font: 16px var(--font-t); }
+.gallery-view { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.92); }
+.gallery-view.on { display: flex; }
+.gallery-view #gallery-close { position: absolute; top: 12px; right: 16px; }
+.gv-inner { width: min(100%, 1100px); max-height: 100%; overflow-y: auto; }
+.gv-inner canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; background: #000; }
+.gv-text { padding: 12px 4px 0; }
