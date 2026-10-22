@@ -336,7 +336,7 @@
           g.exit = at(cp, CP.barrier).i;
           g.cover = CP.cover.map((p) => at(cp, p).i);
           // часовой у шлагбаума: пока в зоне шлагбаума есть враг — его не поднять
-          const guard = E.lurker(g, 'bandit', g.exit);
+          const guard = E.lurker(g, 'guard', g.exit);
           if (guard) { guard.post = true; const i = g.lootDeck.findIndex((id) => id !== 'ambush'); guard.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : []; }
           const s1 = E.spawnZombie(g, 'sniper', at(cp, CP.perch).i, null, true, true, true); if (s1) { s1.awake = true; s1.trail = null; } // снайпер начеку с самого начала
         }

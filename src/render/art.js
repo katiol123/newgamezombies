@@ -1095,6 +1095,8 @@
   }
   Art.banditToken = banditToken;
   Art.define('z_bandit', (ctx, w, h) => banditToken(ctx, w, h, '#5a6a7a', '#c0392b', banditHead));
+  Art.define('z_guard', (ctx, w, h) => banditToken(ctx, w, h, '#6a5a3a', '#c0392b', banditHead)); // часовой — та же балаклава, другой фон
+  Art.define('zp_guard', (ctx, w, h) => { const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#6a5a3a'); g.addColorStop(1, '#0d0a08'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, banditHead); ctx.restore(); });
 
   // Снайпер — бандит в капюшоне с оптикой; Лесник — главарь в медвежьей шкуре
   function sniperHead(c) {
