@@ -78,6 +78,23 @@
     roundsBonus: { 1: 3 }, // соло — 15 раундов
   }));
 
+  // Кампания, миссия 4 «Трасса»: 8 обычных тайлов, 2 люка (с Ночи по 2 Шатуна), 2 притаившиеся стаи, бродячие бандиты
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m4', campaignOnly: true, num: 4, name: 'Трасса',
+    text: 'Заправка у трассы: бандиты, стаи и люки, из которых ночью лезут мертвецы.',
+    scenarios: ['highway'],
+    conditions: ['calm'],
+    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 },
+    spawnDeck: { sp_chaos: 1 },
+    loot: Object.assign({}, base.loot, { rig: 1, bandit_tt: 1 }), // сюрприз: 2 редких снаряжения, только здесь
+    zombieTypes: ['walker', 'runner'],
+    events: [],
+    decoys: false,
+    fogBreak: 0,
+    rounds: 13,
+    roundsBonus: { 1: -1 }, // соло — 12
+  }));
+
   // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием
   ZG.Levels.add(Object.assign({}, base, {
     id: 'camp_m2', campaignOnly: true, num: 2, name: 'Автобаза',

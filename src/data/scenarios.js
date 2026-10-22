@@ -169,7 +169,7 @@
       exitLabel: 'Буханка', exitArt: 'exit_van',
       packs: { 1: ['walker', 'walker', 'runner'], 2: ['walker', 'walker', 'runner'], 3: ['walker', 'walker', 'walker', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'runner', 'runner', 'runner'] },
       failTitle: 'Сигнал не прошёл',
-      failText: 'Аккумулятор встал на место, рация на вышке ожила — и захрипела пустым эфиром. Антенный кабель перегрызен до меди, на столбе — клочья бурой шерсти. А к рации приколота записка углём: «Связи нет. Колонна заночует у моста на трассе и уйдёт с рассветом. Догоняйте. — Лесник».',
+      failText: 'Аккумулятор встал на место, лампы рации налились мутным светом — и динамик зашипел пустым, мёртвым эфиром. Антенный кабель перегрызен до меди. На столбе — клочья бурой шерсти и глубокие борозды от когтей, будто зверь знал, что здесь будут звать на помощь. К рации приколота записка, нацарапанная углём дрожащей рукой: «Связи нет. Колонна заночует у моста на трассе и уйдёт с рассветом. Догоняйте. В бор не ходите. — Лесник». Ниже, другим почерком, размашисто и криво: «ОН УЖЕ НЕ ЛЕСНИК».',
       newTask: 'Вернуться к «буханке» на кордоне и всем уехать к мосту',
       setup(g, E) {
         const b = g.board, Rng = ZG.Rng;
@@ -223,7 +223,7 @@
         g.obj.attempted = true;
         E.hear(g, g.tower, 2, hero.idx); // треск рации разносится по лесу
         E.log(g, `${E.heroName(hero)} подключает аккумулятор… ${this.failTitle}! Антенна перегрызена, лесник оставил записку: колонна ждёт у моста. Новая задача — вернуться к «буханке» и уехать.`, 'bad');
-        E.fx(g, { t: 'twist', title: this.failTitle, text: this.failText, task: this.newTask, pos: hero.pos });
+        E.fx(g, { t: 'twist', title: this.failTitle, text: this.failText, task: this.newTask, pos: hero.pos, art: g.stories && g.stories.twist });
       },
       botGoal(g, hero, E) {
         if (g.obj.attempted) return null;
@@ -235,6 +235,77 @@
         return opts.length ? E.nearest(g, hero.pos, opts) : null;
       },
       progress(g) { return g.obj.attempted ? 9 : (this.hasBattery(g) ? 2 : 0); }, // сигнал весит много: после него всем далеко до «буханки»
+    },
+    // --- Кампания, миссия 4: канистры на трассе, бандиты — третья сторона ---
+    {
+      id: 'highway', campaignOnly: true, name: 'Бензин и порох',
+      short: 'Найди канистры в ящиках, заправь «буханку» и уезжай. Бандиты тоже ищут бензин и стреляют во всё живое — и мёртвое.',
+      brief: '«Буханка» обсохла у трассы. Бензин — в ящиках по округе. Вокруг бродят бандиты: стреляют и в живых, и в мёртвых, а пальба тянет мертвецов из люков.',
+      setupText: 'Поле 4×2 (8 обычных тайлов), все тайлы открыты: горит бензовоз, зарево освещает всю трассу. Ящиков: 4 (3–4 героя: 6), канистр: 3 (3–4 героя: 5), нужно: 2 (3–4 героя: 3). Выход — «буханка» у правого края. На 6 тайлах (кроме стартового и тайла выхода) — карты «Стая/Пусто» рубашкой вверх (2 «Стаи»): когда на тайл впервые заходит герой или бандит, карта переворачивается, стая выставляется в центр тайла и сразу охотится. Бандиты (соло 2, пара и трое 3, четверо 4) бродят по разным тайлам без стай; у каждого в мешке 1 карта добычи. Люков 2: в Сумерки тихо, с Ночи — по 2 Шатуна из каждого.',
+      exitLabel: 'Буханка', exitArt: 'exit_van', cargo: 'cargo_fuel',
+      packs: { 1: ['walker', 'walker', 'runner'], 2: ['walker', 'walker', 'runner', 'runner'], 3: ['walker', 'walker', 'walker', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'runner', 'runner', 'runner'] },
+      bandits: { 1: 2, 2: 3, 3: 3, 4: 4 },
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng, big = g.heroes.length >= 3 ? 1 : 0;
+        g.obj = { delivered: 0, need: 2 + big };
+        E.placeCrates(g, 4 + big * 2, 3 + big * 2, this.cargo); // большому отряду — ещё запасная канистра (бандиты уносят)
+        const st = b.cells[g.start].tile, et = b.cells[g.exit].tile;
+        const cand = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== et);
+        // тумана нет: горящий бензовоз освещает всю трассу
+        if (g.revealed) g.revealed = b.tiles.map(() => true);
+        // 6 карт «Стая/Пусто» рубашкой вверх на тайлах (2 «Стаи»): стая выскакивает, когда на тайл впервые зайдёт герой или бандит
+        g.stackTiles = cand.slice();
+        g.obj.packTiles = Rng.shuffle(g, cand.slice()).slice(0, 2);
+        // бандиты бродят по тайлам без стай; в мешке у каждого — карта добычи
+        const n = this.bandits[Math.min(4, g.heroes.length)];
+        Rng.shuffle(g, cand.filter((i) => !g.obj.packTiles.includes(i))).concat(g.obj.packTiles).slice(0, n).forEach((ti) => {
+          const cells = b.cells.filter((c) => c.tile === ti && c.type === 'street' && !(c.lx === 1 && c.ly === 1));
+          const z = E.spawnZombie(g, 'bandit', Rng.pick(g, cells.length ? cells : b.cells.filter((c) => c.tile === ti && c.type !== 'blocked')).i, null, true, true, true);
+          if (!z) return;
+          z.awake = false; z.trail = null;
+          const i = g.lootDeck.findIndex((id) => id !== 'ambush');
+          z.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : [];
+        });
+      },
+      // карта «Стая/Пусто» переворачивается, как только на тайл зашёл герой или бандит
+      watch(g, E) {
+        if (!g.stackTiles || !g.stackTiles.length) return;
+        const b = g.board;
+        const inside = g.heroes.filter((h) => h.onBoard).map((h) => ({ pos: h.pos, who: E.heroName(h) }))
+          .concat(g.zombies.filter((z) => E.isBandit(z)).map((z) => ({ pos: z.pos, who: 'бандит' })));
+        g.stackTiles.slice().forEach((ti) => {
+          const by = inside.find((o) => b.cells[o.pos].tile === ti);
+          if (!by) return;
+          g.stackTiles.splice(g.stackTiles.indexOf(ti), 1);
+          if (!g.obj.packTiles.includes(ti)) { E.log(g, `Карта «Стая/Пусто»: здесь пусто (${by.who}).`, 'dim'); E.fx(g, { t: 'packcard', tile: ti, pack: false }); return; }
+          const mid = b.cells.find((c) => c.tile === ti && c.lx === 1 && c.ly === 1);
+          const cell = mid && mid.type !== 'blocked' ? mid : b.cells.find((c) => c.tile === ti && c.type !== 'blocked');
+          this.packs[Math.min(4, g.heroes.length)].forEach((type) => { const z = E.spawnZombie(g, type, cell.i, null, true, true, true); if (z) { z.awake = true; z.trail = by.pos; } });
+          E.log(g, `Карта «Стая/Пусто»: СТАЯ! Мертвецы выскакивают из-за фур — их потревожил ${by.who}.`, 'bad');
+          E.fx(g, { t: 'packcard', tile: ti, pack: true, pos: cell.i, who: by.who });
+          E.storyEvent(g, 'packReveal');
+        });
+      },
+      inBags(g) { return g.zombies.reduce((n, z) => n + (z.bag || []).filter((c) => c === this.cargo).length, 0); },
+      goals(g) {
+        const bag = this.inBags(g);
+        return [
+          { text: `Заправить «буханку»: ${g.obj.delivered}/${g.obj.need} канистры`, done: g.obj.delivered >= g.obj.need, note: bag ? `У бандитов в мешках: ${bag} — отберите` : null },
+          { text: 'Все выжившие уезжают', done: false },
+        ];
+      },
+      isComplete(g) { return g.obj.delivered >= g.obj.need; },
+      actions(g, hero) { return deliverAction(g, hero, this.cargo, g.exit, 'Заправить «буханку»'); },
+      doAction(g, hero, key, E) { if (key === 'deliver') doDeliver(g, hero, E, this.cargo, 'канистра'); },
+      botGoal(g, hero, E) {
+        const goal = fetchBotGoal(g, hero, E, this.cargo, g.exit);
+        if (goal != null) return goal;
+        // канистры у бандитов: охота на мешок
+        const need = g.obj.need - g.obj.delivered - cargoInHands(g, this.cargo);
+        const thieves = g.zombies.filter((z) => (z.bag || []).includes(this.cargo)).map((z) => z.pos); // и в тумане: ящик пропал с рубашки — ясно, кто его унёс
+        return need > 0 && thieves.length ? E.nearest(g, hero.pos, thieves) : null;
+      },
+      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
     },
     // --- Кампания, миссия 2 (особые правила): только через цепочку кампании ---
     {
@@ -271,12 +342,15 @@
       rouse(g, z, E) {
         if (g.obj.roused || !g.obj.bosses.includes(z.uid)) return;
         g.obj.roused = true;
+        if (g.stories && g.stories.packReveal) (g.storySeen = g.storySeen || {})[g.stories.packReveal] = true; // своя вставка у драки — стаю не показываем отдельно
         (g.stackTiles || []).forEach((ti) => {
           if (g.revealed && !g.revealed[ti] && g.zombies.some((q) => g.board.cells[q.pos].tile === ti)) E.reveal(g, ti, 'Стая вырвалась из двора');
         });
         g.stackTiles = [];
         E.wakeAll(g, z.pos, 'Драка в боксе');
+        E.storyEvent(g, 'rouse');
       },
+      onKill(g, z, heroIdx, E) { if (g.obj.bosses.includes(z.uid) && this.bossesLeft(g) === 0) E.storyEvent(g, 'bossesDown'); },
       onZombieHit(g, z, heroIdx, E) { this.rouse(g, z, E); },
       onZombieAttack(g, z, h, E) { this.rouse(g, z, E); },
       bossesLeft(g) { return g.zombies.filter((z) => g.obj.bosses.includes(z.uid)).length; },

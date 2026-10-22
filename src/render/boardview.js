@@ -1002,7 +1002,21 @@
       const g = this.g, b = g.board, C = this.cell, T = 3 * C, t = this.time;
       b.tiles.forEach((tile, ti) => {
         const flip = this.flips[ti];
-        if (this.shown[ti] && (flip == null || t - flip > 0.75)) return;
+        if (this.shown[ti] && (flip == null || t - flip > 0.75)) {
+          // открытый тайл с картой «Стая/Пусто» (миссия без тумана): карта лежит рубашкой вверх в углу тайла
+          if (g.stackTiles && g.stackTiles.includes(ti)) {
+            const x = this.pad + tile.tx * T + T - C * 0.42, y = this.pad + tile.ty * T + C * 0.5;
+            const bob = Math.sin(t * 2 + ti) * 1.5;
+            ctx.save(); ctx.translate(x, y + bob); ctx.rotate(0.12);
+            ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+            Art.rr(ctx, -C * 0.22, -C * 0.3, C * 0.44, C * 0.6, 5); ctx.fillStyle = '#5a1f18'; ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 2; ctx.strokeStyle = '#e0a83a'; ctx.stroke();
+            ctx.fillStyle = '#e0a83a'; ctx.font = `${Math.round(C * 0.32)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, C * 0.02);
+            ctx.restore();
+          }
+          return;
+        }
         let sx = 1, lift = 0;
         if (flip != null) {
           const k = Math.min(1, (t - flip) / 0.75);
@@ -1152,6 +1166,16 @@
         // бродит: светлый пунктирный ободок (без ctx.filter — он не везде работает)
         ctx.save(); ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(200,215,230,.85)';
         ctx.beginPath(); ctx.arc(x, y - hop, s * 0.52, 0, TAU); ctx.stroke(); ctx.restore();
+      }
+      const zz = def.faction && g.zombies.find((q) => q.uid === e.uid);
+      if (zz && zz.bag && zz.bag.length && !e.dying) {
+        // мешок бандита: сколько добычи внутри (золотой — там груз задания)
+        const cargo = zz.bag.some((id) => ZG.Cards.get(id).kind === 'cargo');
+        const bx = x - s * 0.36, by = y + s * 0.32 - hop, br = Math.max(5, s * 0.17);
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU);
+        ctx.fillStyle = cargo ? '#e0a83a' : '#8a6a3a'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
+        ctx.fillStyle = cargo ? '#1a1208' : '#fff'; ctx.font = `bold ${Math.round(br * 1.25)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(zz.bag.length), bx, by + 1);
       }
       if (g.stealth && !def.immobile && !e.dying && (e.crowd || 0) >= 5) {
         // толпа: один общий значок на зону — «!×N» охотников (или «z», если все бродят)

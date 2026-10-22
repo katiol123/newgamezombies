@@ -342,6 +342,7 @@
         const lv = ZG.Levels.get(this.g.levelId), ac = this.g.campaign && ZG.App.campaign, cm = ac && ZG.Campaign.missionDef(ac.c);
         if (cm && cm.name) await Banner.show(`МИССИЯ ${ac.c.missionNo + 1}`, cm.name.toUpperCase(), 'level');
         else await Banner.show(`УРОВЕНЬ ${lv.num}`, lv.name.toUpperCase(), 'level');
+        if (cm && cm.stories && cm.stories.start && !(this.g.storySeen || {})[cm.stories.start]) { (this.g.storySeen = this.g.storySeen || {})[cm.stories.start] = true; await UI_FX.story.call(this, { id: cm.stories.start }); }
         await Modal.briefing(this.g);
         await Banner.show('РАУНД 1', ZG.PHASES[0].name.toUpperCase(), 'round');
       }
@@ -1169,15 +1170,29 @@
       await Banner.show(m.traitor ? 'ПРЕДАТЕЛЬ!' : 'СЕКРЕТНАЯ МИССИЯ', `${E.heroName(h)}: «${m.name}» — ${m.rewardText}`, m.traitor ? 'wave' : 'night');
       toast(`${E.heroName(h)} — «${m.name}»: ${m.text} Награда: ${m.rewardText}`, 6000);
     },
+    // сюжетная вставка кампании: иллюстрация (art/story/<id>.jpg) и художественный текст
+    async story(ev) {
+      const st = ZG.STORIES && ZG.STORIES[ev.id];
+      if (!st) return;
+      if (ev.pos != null) this.view.play([ev]);
+      ZG.Sound.play('reveal');
+      this.refresh();
+      await Modal.show(`${storyArt(ev.id)}<div class="story-kicker">${esc(st.kicker || '')}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(st.text)}</div>`, [{ label: 'Дальше', cls: 'primary' }], null, 'story');
+    },
     // поворот сюжета: старая задача провалена — записка с причиной и новая задача
     async twist(ev) {
       this.view.play([ev]);
       ZG.Sound.play('reveal');
       this.refresh();
-      await Modal.show(`<div class="twist-stamp">${esc(ev.title)}</div>
+      await Modal.show(`${ev.art ? storyArt(ev.art) : ''}<div class="twist-stamp">${esc(ev.title)}</div>
         <div class="twist-note">${esc(ev.text)}</div>
         <div class="twist-arrow">▼</div>
         <div class="twist-task"><span>Новая задача</span>${esc(ev.task)}</div>`, [{ label: 'В путь', cls: 'primary' }], null, 'twist');
+    },
+    async packcard(ev) {
+      this.view.play([ev]);
+      if (ev.pack) { ZG.Sound.play('zombies'); await Banner.show('СТАЯ!', `мертвецы выскакивают из-за фур — их потревожил ${ev.who}`, 'wave'); }
+      else { toast('Карта «Стая/Пусто»: пусто.', 2200); await sleep(200); }
     },
     async trophy(ev) {
       this.view.play([ev]);
@@ -1251,6 +1266,42 @@
     }
   }
 
+  // Поведение врагов в зоне: текущий статус и что принесёт кубик бродяг (раз за фазу зомби)
+  function behaviorInfo(g, zs, zuid) {
+    const die = g.phase === 'zombies' && g.zs && g.zs.wander ? ` <span class="tt-die">кубик этой фазы: ${g.zs.wander}</span>` : '';
+    const rows = {};
+    zs.forEach((z) => {
+      const d = ZG.Zombies.get(z.type);
+      if (d.immobile) return;
+      const bandit = E.isBandit(z);
+      let st, txt;
+      const sp = E.zombieSpeed(g, z);
+      if (!g.stealth) { st = 'идёт на врага'; txt = `Каждую фазу — до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} к ближайшему ${bandit ? 'врагу (герой или зомби)' : 'герою, бандиту или приманке'}. Кубик не бросается.`; }
+      else if (z.lurk) { st = 'притаился'; txt = 'Стоит на месте и не бросает кубик. Проснётся, если увидит героя' + (bandit ? ' или зомби' : ' или бандита') + ', услышит шум или его ударят.'; }
+      else if (bandit) {
+        const t = E.banditTarget(g, z);
+        if (z.awake && t) { st = 'стреляет'; txt = `Враг ${t.shot ? 'на линии выстрела' : 'в его зоне'}: стоит и ${t.shot ? 'стреляет' : 'бьёт'} — по герою 1 Рана, по зомби 2 урона, Шум на 2 зоны. Кубик не бросается.`; }
+        else { st = z.awake ? 'настороже' : 'бродит'; txt = `Кубик бродяг, 1 шаг: <b>1–4</b> — к ближайшему луту (ящик или жетон Обыска; оказавшись у лута, сразу забирает его в мешок); <b>5–6</b> — стоит. Увидит врага на линии до 2 зон — начнёт стрелять. За врагами не гоняется.`; }
+      } else if (z.awake) {
+        st = 'охотится';
+        txt = `Кубик не бросается: до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} за фазу к ближайшему видимому врагу (герой, бандит, приманка), иначе — к последнему следу. Дойдя до следа и никого не увидев, снова бродит.`;
+      } else {
+        st = 'бродит';
+        txt = 'Кубик бродяг, 1 шаг: <b>1–2</b> — к ближайшему люку; <b>3–4</b> — к центру поля; <b>5–6</b> — стоит. Увидит героя' + ' или бандита — начнёт охотиться.';
+      }
+      const key = z.type + '|' + st;
+      (rows[key] = rows[key] || { name: d.name, st, txt, n: 0, hl: false }).n++;
+      if (z.uid === zuid) rows[key].hl = true;
+    });
+    const list = Object.values(rows);
+    if (!list.length) return '';
+    return `<div class="tt-behav"><div class="tt-behav-head">Поведение${die}</div>` + list.map((r) =>
+      `<div class="${r.hl ? 'hl' : ''}"><b>${r.name}${r.n > 1 ? ' ×' + r.n : ''}</b> — <span class="tt-st tt-st-${r.st === 'бродит' || r.st === 'притаился' || r.st === 'настороже' ? 'calm' : 'hot'}">${r.st}</span><br><small>${r.txt}</small></div>`).join('') + '</div>';
+  }
+  // место под иллюстрацию вставки: картинка, пока её нет — тёмная заставка с дымкой
+  function storyArt(id) {
+    return `<div class="story-art"><img src="art/story/${id}.jpg" alt="" onerror="this.remove()"></div>`;
+  }
   function zoneInfo(g, cell, zuid) {
     const c = g.board.cells[cell];
     if (E.hidden(g, cell)) {
@@ -1279,7 +1330,9 @@
       parts.push('<div class="tt-z">' + Object.entries(by).map(([t, list]) => {
         const d = ZG.Zombies.get(t);
         const st = g.stealth && !d.immobile ? (list.every((z) => z.awake) ? ' <span class="tt-red">охотится</span>' : list.some((z) => z.awake) ? ' <span class="tt-red">часть охотится</span>' : ' <span>бродит</span>') : '';
-        return `<div class="${list.some((z) => z.uid === zuid) ? 'hl' : ''}"><b>${d.name}</b> ×${list.length}${st} <span>♥${d.hp}${list.some((z) => z.dmg) ? ' (ранен)' : ''} ✊${d.dmg} 👣${E.zombieSpeed(g, list[0])}</span><br><small>${esc(d.text)}</small></div>`;
+        const bag = list.reduce((a, z) => a.concat(z.bag || []), []);
+        const bagTxt = bag.length ? `<br><span class="tt-gold">В мешке: ${bag.some((id) => ZG.Cards.get(id).kind === 'cargo') ? bag.filter((id) => ZG.Cards.get(id).kind === 'cargo').map((id) => '«' + ZG.Cards.get(id).name + '»').join(', ') + (bag.some((id) => ZG.Cards.get(id).kind !== 'cargo') ? ' и добыча' : '') : bag.length + ' ' + ZG.util.plural(bag.length, 'находка', 'находки', 'находок')} — выпадет, если его убить</span>` : '';
+        return `<div class="${list.some((z) => z.uid === zuid) ? 'hl' : ''}"><b>${d.name}</b> ×${list.length}${st} <span>♥${d.hp}${list.some((z) => z.dmg) ? ' (ранен)' : ''} ✊${d.dmg} 👣${E.zombieSpeed(g, list[0])}</span>${bagTxt}<br><small>${esc(d.text)}</small></div>`;
       }).join('') + '</div>');
     }
     const hs = E.heroesAt(g, cell);
@@ -1306,6 +1359,7 @@
     if (g.hazard && g.hazard.pos === cell) parts.push('<div class="tt-red">Утечка газа: взрыв в конце раунда (3 урона зомби, 1 Рана героям)</div>');
     if (cr && !cr.opened && cr.known) parts.push('<div class="tt-gold">Радиоперехват: здесь груз!</div>');
     if (g.noise[cell]) parts.push(`<div>Шум: ${g.noise[cell]}</div>`);
+    if (zs.length) parts.push(behaviorInfo(g, zs, zuid)); // поведение врагов — отдельным блоком в самом низу
     return parts.length > 1 || c.type !== 'street' ? parts.join('') : '';
   }
 

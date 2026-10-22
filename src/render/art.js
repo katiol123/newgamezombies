@@ -477,6 +477,25 @@
         c.fillStyle = '#f0c040'; poly(c, [52, 40, 40, 60, 50, 60, 46, 76, 60, 52, 50, 52]); c.fill();
       }
     },
+    rig(c, o) {
+      // тактическая разгрузка: жилет с подсумками
+      c.beginPath(); c.moveTo(28, 12); c.lineTo(40, 12); c.lineTo(46, 30); c.lineTo(54, 30); c.lineTo(60, 12); c.lineTo(72, 12); c.lineTo(80, 36); c.lineTo(78, 90); c.lineTo(22, 90); c.lineTo(20, 36); c.closePath(); fillInk(c, o.shadow ? o.ink : '#5a6a3a');
+      if (!o.shadow) {
+        c.fillStyle = '#3e4a28'; [[24, 46], [40, 46], [56, 46], [24, 66], [62, 66]].forEach(([x, y]) => { rr(c, x, y, 14, 16, 2); c.fill(); });
+        c.fillStyle = 'rgba(255,255,255,.25)'; [[24, 46], [40, 46], [56, 46], [24, 66], [62, 66]].forEach(([x, y]) => c.fillRect(x + 2, y + 2, 10, 3));
+        c.fillStyle = '#c8a24a'; c.fillRect(42, 66, 16, 18); // фонарь/рация в центре
+      }
+    },
+    bandit_tt(c, o) {
+      // ТТ в потёртой кобуре
+      rr(c, 18, 40, 46, 46, 8); fillInk(c, o.shadow ? o.ink : '#6a4226'); // кобура
+      c.save(); c.translate(50, 44); c.rotate(-0.25); c.translate(-50, -44);
+      rr(c, 30, 22, 58, 16, 3); fillInk(c, o.shadow ? o.ink : '#3a3e44'); // затвор
+      poly(c, [34, 36, 52, 36, 48, 62, 34, 62]); fillInk(c, o.shadow ? o.ink : '#2a2c30'); // рукоять
+      if (!o.shadow) { c.fillStyle = '#7a1a10'; c.beginPath(); c.arc(41, 48, 3.5, 0, 7); c.fill(); /* звёздочка на щёчке */ c.fillStyle = 'rgba(255,255,255,.3)'; c.fillRect(34, 25, 50, 3); }
+      c.restore();
+      if (!o.shadow) { c.strokeStyle = '#3a2412'; c.lineWidth = 2; c.setLineDash([3, 3]); rr(c, 22, 44, 38, 38, 6); c.stroke(); c.setLineDash([]); }
+    },
     bearfat(c, o) {
       // банка с жиром и отпечатком лапы
       rr(c, 26, 26, 48, 60, 8); fillInk(c, o.shadow ? o.ink : '#e8d8a0');
@@ -997,6 +1016,34 @@
     ctx.fillStyle = gr; ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, houndHead); ctx.restore();
     ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.16; ctx.strokeStyle = '#c0392b'; ctx.stroke();
+    ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+    ctx.restore();
+  });
+  // Бандит — человек в балаклаве (третья сторона)
+  function banditHead(c) {
+    c.fillStyle = '#3a3a3a'; c.beginPath(); c.moveTo(18, 100); c.quadraticCurveTo(22, 76, 50, 74); c.quadraticCurveTo(78, 76, 82, 100); c.fill(); strokeInk(c, 2.5); // куртка
+    c.fillStyle = '#5a4a2a'; poly(c, [40, 78, 50, 92, 60, 78]); c.fill(); // ворот
+    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 46, 24, 29, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // балаклава
+    c.fillStyle = '#c8956a'; rr(c, 30, 38, 40, 13, 5); c.fill(); // прорезь для глаз
+    c.fillStyle = '#f4f0e0'; circle(c, 40, 44.5, 3.6); c.fill(); circle(c, 60, 44.5, 3.6); c.fill();
+    c.fillStyle = INK; circle(c, 41, 44.5, 1.8); c.fill(); circle(c, 59, 44.5, 1.8); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(33, 37); c.lineTo(46, 40); c.moveTo(67, 37); c.lineTo(54, 40); c.stroke(); // злые брови
+    c.fillStyle = '#c8956a'; c.beginPath(); c.ellipse(50, 62, 7, 3, 0, 0, 7); c.fill(); // прорезь рта
+    c.fillStyle = '#7a1a10'; c.fillRect(24, 22, 52, 5); // красная полоса
+  }
+  Art.define('zp_bandit', (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3a4a5a'); g.addColorStop(1, '#0d0a08');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, banditHead); ctx.restore();
+  });
+  Art.define('z_bandit', (ctx, w, h) => {
+    const r = Math.min(w, h) / 2;
+    ctx.save(); ctx.translate(w / 2, h / 2);
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
+    const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, '#5a6a7a'); gr.addColorStop(1, '#0d0a08');
+    ctx.fillStyle = gr; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, banditHead); ctx.restore();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.16; ctx.strokeStyle = '#4a7ab0'; ctx.stroke(); // синее кольцо — третья сторона
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
   });
