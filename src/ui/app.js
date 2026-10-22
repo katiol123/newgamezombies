@@ -523,6 +523,11 @@
         const t = E.zombiesAt(g, h.pos).map((z) => z.uid);
         this.sel = { mode, targets: t };
         this.setHelp('Выберите зомби в своей зоне.');
+      } else if (mode === 'ttshot') {
+        const t = E.legal(g).filter((a) => a.t === 'ttshot').map((a) => a.zombie);
+        if (!t.length) return toast('Некуда стрелять.');
+        this.sel = { mode, targets: t };
+        this.setHelp('Выстрел из ТТ: выберите врага в 0–2 зонах по прямой (2 урона, Шум 1).');
       }
       this.applyHighlights();
     },
@@ -555,7 +560,7 @@
         else if (k === 'hero') this.view.setHighlights({ cells: [...new Set(s.targets.map((i) => g.heroes[i].pos))], color: 'rgba(110,224,138,.18)', stroke: '#6fe08a' });
         else if (k === 'zone') this.view.setHighlights({ cells: s.targets, color: 'rgba(255,80,64,.18)', stroke: '#ff5040' });
         else this.view.setHighlights({ cells: s.targets });
-      } else if (s.mode === 'punch') this.view.setHighlights({ zombies: s.targets });
+      } else if (s.mode === 'punch' || s.mode === 'ttshot') this.view.setHighlights({ zombies: s.targets });
       else this.view.setHighlights({ cells: s.targets });
     },
 
@@ -595,6 +600,10 @@
         let z = p.zombie && s.targets.includes(p.zombie) ? p.zombie : null;
         if (!z && p.cell === g.heroes[g.active].pos) z = pickBest(g, s.targets);
         if (z) this.act({ t: 'punch', zombie: z });
+      } else if (s.mode === 'ttshot') {
+        let z = p.zombie && s.targets.includes(p.zombie) ? p.zombie : null;
+        if (!z && p.cell != null) { const zs = s.targets.filter((u) => (E.zombie(g, u) || {}).pos === p.cell); if (zs.length) z = pickBest(g, zs); }
+        if (z) this.act({ t: 'ttshot', zombie: z }); else toast('Это не подходящая цель.');
       } else if (s.mode === 'barricade') {
         if (s.targets.includes(p.cell)) this.act({ t: 'barricade', to: p.cell });
       }
@@ -993,6 +1002,7 @@
       const searchHere = E.searchableHere(g, h) || g.crates.some((c) => c.pos === h.pos && !c.opened) || g.search.some((s) => s.pos === h.pos);
       icon('search', 'Обыск', sc, has('search'), !searchHere ? 'в этой зоне нечего обыскивать' : zHere ? 'мешают зомби в зоне' : lack(sc), () => this.act({ t: 'search' }));
       icon('punch', 'Кулак', 1, has('punch'), !zHere ? 'в зоне нет зомби' : lack(1), () => this.selectMode('punch'), this.sel && this.sel.mode === 'punch' ? ' sel' : '');
+      if (ZG.Mods.flag(g, h, 'ttShot')) icon('ttshot', 'Выстрел из ТТ', 1, has('ttshot'), g.turn.ttShot ? 'уже стреляли в этот ход' : h.energy < 1 ? lack(1) : 'нет врага в 0–2 зонах по прямой', () => this.selectMode('ttshot'), (this.sel && this.sel.mode === 'ttshot' ? ' sel' : '') + ' gold');
       const bc = E.barricadeCost(g, h);
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
@@ -1250,6 +1260,7 @@
       case 'move': return 'перейти в подсвеченную зону';
       case 'search': return 'обыскать зону';
       case 'punch': return 'ударить кулаком';
+      case 'ttshot': return 'выстрелить из ТТ (2 урона, Шум 1)';
       case 'barricade': return 'поставить баррикаду';
       case 'heal': return 'обработать раны';
       case 'plug': return 'заглушить люк (2 раунда без зомби отсюда)';

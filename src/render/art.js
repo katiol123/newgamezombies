@@ -541,6 +541,7 @@
   const ACT = {
     search(c, o) { circle(c, 44, 42, 20); strokeInk(c, 9, o.ink); c.beginPath(); c.moveTo(58, 56); c.lineTo(78, 76); strokeInk(c, 13, o.ink); if (!o.shadow) { circle(c, 44, 42, 14); c.fillStyle = 'rgba(200,230,255,.35)'; c.fill(); } },
     punch: ICONS.fist,
+    ttshot: ICONS.pistol,
     barricade(c, o) { for (let i = 0; i < 3; i++) { c.save(); c.translate(50, 30 + i * 20); c.rotate((i - 1) * 0.12); rr(c, -38, -7, 76, 14, 3); fillInk(c, o.shadow ? o.ink : ['#a07a42', '#8a6a3a', '#a07a42'][i]); strokeInk(c, 3, o.ink); c.restore(); } c.fillStyle = o.ink; c.fillRect(26, 18, 6, 64); c.fillRect(68, 18, 6, 64); },
     give(c, o) { c.beginPath(); c.moveTo(12, 40); c.lineTo(62, 40); c.lineTo(62, 28); c.lineTo(86, 48); c.lineTo(62, 68); c.lineTo(62, 56); c.lineTo(12, 56); c.closePath(); fillInk(c, o.ink); if (!o.shadow) { rr(c, 18, 70, 26, 18, 3); c.fillStyle = '#e8dcc0'; c.fill(); strokeInk(c, 2.5); } },
     rest(c, o) { c.beginPath(); c.moveTo(50, 84); c.bezierCurveTo(10, 56, 14, 22, 36, 22); c.bezierCurveTo(44, 22, 50, 30, 50, 34); c.bezierCurveTo(50, 30, 56, 22, 64, 22); c.bezierCurveTo(86, 22, 90, 56, 50, 84); fillInk(c, o.shadow ? o.ink : '#c0392b'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.moveTo(24, 50); c.lineTo(38, 50); c.lineTo(44, 40); c.lineTo(52, 62); c.lineTo(58, 50); c.lineTo(76, 50); c.stroke(); } },

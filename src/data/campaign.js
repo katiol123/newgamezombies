@@ -174,10 +174,17 @@
     },
     {
       id: 'bandit_tt', name: 'Ствол бандита', suit: 'mind', cost: 1, shield: 1, type: 'Снаряжение', tags: ['equip', 'gun'], loot: true, rarity: 'rare', equip: true,
-      text: 'Снаряжение. Пристрелянный ТТ в кобуре: +1 урон всем твоим дальним атакам. Первый выстрел за ход — Шум −1.', art: 'bandit_tt', value: 11,
+      text: 'Снаряжение. Пристрелянный ТТ в кобуре. Пока надет — базовое действие «Выстрел из ТТ» (раз за ход): 1 ⚡, 2 урона врагу в 0–2 зонах, Шум 1.', art: 'bandit_tt', value: 11,
       target: null,
-      mods: { rangedBonus: (g, h, ctx) => (ctx && ctx.kind === 'ranged' ? 1 : 0), firstShotQuiet: 1 },
+      mods: { ttShot: 1 },
       play(c) { c.equip(); },
+    },
+    // само действие «Выстрел из ТТ» (не карта колоды: разыгрывается базовым действием надетого «Ствола бандита»)
+    {
+      id: 'tt_shot', name: 'Выстрел из ТТ', suit: 'none', cost: 1, shield: 0, noise: 1, type: 'Действие', tags: ['ranged', 'gun'], internal: true,
+      text: 'Дальний бой, дальность 0–2. 2 урона. Шум 1.', art: 'bandit_tt', value: 0,
+      target: { kind: 'zombie', range: 2, ranged: true },
+      play(c) { c.shot(1); c.rangedHit(c.target, 2); },
     },
   ]);
 

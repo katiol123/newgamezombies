@@ -1581,6 +1581,8 @@
       });
     }
     if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    // «Выстрел из ТТ»: базовое действие надетого «Ствола бандита», раз за ход
+    if (Mods.flag(g, h, 'ttShot') && !g.turn.ttShot && h.energy >= 1) E.targetsFor(g, h, ZG.Cards.get('tt_shot')).forEach((t) => out.push({ t: 'ttshot', zombie: t }));
     if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
     if (Mods.flag(g, h, 'plugAction') && g.spawnPoints.includes(h.pos) && !E.plugged(g, h.pos) && h.energy >= E.plugCost(g, h)) out.push({ t: 'plug' });
     const bld = g.board.cells[h.pos].bld;
@@ -1801,6 +1803,15 @@
         if (!sa || sa.cost > h.energy) return fail(g, 'Нельзя.');
         spend(g, h, sa.cost);
         E.scenario(g).doAction(g, h, a.key, E);
+        return true;
+      }
+      case 'ttshot': {
+        const def = ZG.Cards.get('tt_shot');
+        if (!Mods.flag(g, h, 'ttShot') || g.turn.ttShot || h.energy < 1 || !E.targetsFor(g, h, def).includes(a.zombie)) return fail(g, 'Нельзя.');
+        spend(g, h, 1);
+        g.turn.ttShot = true;
+        E.log(g, `${E.heroName(h)} стреляет из ТТ.`, 'info');
+        def.play(makeCtx(g, h, def, a.zombie, false, () => {}));
         return true;
       }
       case 'rescue': {
