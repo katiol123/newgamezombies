@@ -364,6 +364,7 @@
         }
       },
       evacBlockedText: 'У шлагбаума враг — сначала уберите его.',
+      timeoutText: 'Рассвет не наступил: банда Лесника перекрыла мост.',
       canEvac(g, h, E) { return !E.zombiesAt(g, g.exit).some((z) => E.isBandit(z)); },
       hasKey(g) { return g.heroes.some((h) => h.hand.some((u) => g.cards[u] === 'cargo_key')); },
       left(g) { return g.zombies.filter((z) => ZG.Engine.isBandit(z)).length; },
@@ -388,7 +389,7 @@
           }
           if (holder) {
             // «Подъём!» — Лесник поднимает всю банду: снайперы и бродяги просыпаются и знают, куда смотреть
-            g.zombies.forEach((z) => { if (!E.isBandit(z) || z === f) return; z.lurk = false; if (!z.post) { z.hunt = true; z.relentless = true; } if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: true }); } z.trail = holder.pos; });
+            g.zombies.forEach((z) => { if (!E.isBandit(z) || z === f) return; z.lurk = false; if (!z.post && !ZG.Zombies.get(z.type).static) { z.hunt = true; z.relentless = true; } if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: true }); } z.trail = holder.pos; });
             E.log(g, 'Жетоны-«пошлины» звякнули на шнурке… Лесник ревёт «ПОДЪЁМ!» — вся банда на ногах: бродяги бросают мародёрство и идут загоном на вора.', 'bad');
             E.fx(g, { t: 'wakeall', pos: holder.pos, title: 'ПОДЪЁМ!', text: 'Лесник поднял банду: снайперы начеку, бродяги идут загоном' });
           }

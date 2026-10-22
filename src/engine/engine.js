@@ -193,8 +193,8 @@
     if (!range) return null; // только ближний бой
     const line = E.line(g, z.pos, range).filter((c) => c.dist >= 1).sort((a, b) => a.dist - b.dist);
     for (const c of line) {
-      // укрытие (мешки с песком): по героям в этой зоне не стреляют
-      const list = at(c.cell).filter((t) => (t.hero ? E.sees(g, z, t.hero) && !(g.cover || []).includes(c.cell) : true));
+      // укрытие (мешки с песком): по героям в этой зоне не стреляют; выстрел — только по прямой видимости (закрытая дверь защищает всегда)
+      const list = at(c.cell).filter((t) => (t.hero ? E.sees(g, z, t.hero) && !(g.cover || []).includes(c.cell) && lineSight(g, z.pos, c.cell, range) && !E.sheltered(g, t.hero) : lineSight(g, z.pos, c.cell, range)));
       if (list.length) return Object.assign(pick && list.length > 1 ? Rng.pick(g, list) : list[0], { shot: true });
     }
     return null;
@@ -1382,7 +1382,7 @@
     g.relaySuit = null;
     g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big) z.dmg = 0; });
     if (g.round >= E.maxRounds(g)) {
-      finish(g, false, 'Рассвет не наступил: Орда поглотила квартал.');
+      finish(g, false, E.scenario(g).timeoutText || 'Рассвет не наступил: Орда поглотила квартал.');
       return;
     }
     g.round++;
