@@ -228,11 +228,19 @@
       this.view.onHover = (h, changed) => this.onBoardHover(h, changed);
       $('#btn-end').onclick = () => this.endTurn();
       $('#btn-menu').onclick = async () => {
-        if (!this.camp) return Modal.confirm('Выйти в меню? Партия сохранится.', () => { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); });
+        // пока открыто меню, ИИ-герои ждут (иначе партия продолжается под окном)
+        this.menuHold = true;
+        if (!this.camp) {
+          const yes = await Modal.show('<p class="confirm">Выйти в меню? Партия сохранится.</p>', [{ label: 'Отмена', value: false }, { label: 'Да', value: true, cls: 'primary' }]);
+          this.menuHold = false;
+          if (yes) this.leave();
+          return;
+        }
         // кампания: выход и отладочное завершение миссии (для проверки убежища без прохождения)
         const v = await Modal.show('<h2>Меню</h2><p>Миссия кампании сохранится в слоте.</p><p class="muted">🛠 Отладка: завершить миссию сразу — чтобы проверить переходы, покупки, износ и мораль.</p>',
           [{ label: 'Выйти в меню', value: 'exit' }, { label: '🛠 Победа ★', value: 'w1' }, { label: '🛠 Победа ★★', value: 'w2' }, { label: '🛠 Победа ★★★', value: 'w3' }, { label: '🛠 Провал', value: 'lose' }, { label: 'Отмена', cls: 'primary' }]);
-        if (v === 'exit') { this.save(); ZG.Sound.stopMusic(800); App.show('menu'); return; }
+        this.menuHold = false;
+        if (v === 'exit') { this.leave(); return; }
         if (v && this.g && !this.g.result) {
           const g = this.g, win = v !== 'lose';
           g.result = { win, stars: win ? +v.slice(1) : 0, reason: win ? 'Отладка: миссия засчитана' : 'Отладка: миссия провалена', round: g.round };
@@ -270,7 +278,28 @@
       document.addEventListener('contextmenu', (ev) => { if (this.sel && App.screen === 'game') { ev.preventDefault(); this.cancelSel(); } });
     },
 
+    // выход в меню посреди партии: сохраняем и «обрываем» все асинхронные цепочки этой партии
+    // (ход ИИ, анимации, звуки, всплывающие окна) — они сверяют this.run и тихо завершаются
+    leave() {
+      this.save();
+      this.run = (this.run || 0) + 1;
+      this.busy = false; this.aiRunning = false; this.menuHold = false;
+      document.body.classList.remove('busy');
+      Modal.waiters.length = 0; // окна событий, ждавшие очереди, не всплывут в меню
+      this.view.abort();
+      $('#banner').className = 'banner';
+      ZG.Sound.stopMusic(800);
+      App.show('menu');
+    },
+    live(run) { return run === this.run && App.screen !== 'menu'; },
+    newRun() {
+      this.run = (this.run || 0) + 1;
+      this.busy = false; this.aiRunning = false; this.menuHold = false;
+      document.body.classList.remove('busy');
+    },
+
     start(opts) {
+      this.newRun();
       this.camp = opts.campaign ? App.campaign : null;
       this.players = opts.players || 1;
       const g = E.create(opts);
@@ -297,6 +326,7 @@
     },
 
     resume(save, camp) {
+      this.newRun();
       this.camp = camp || null;
       try {
         const g = save.g;
@@ -338,18 +368,26 @@
       ZG.Sound.music('music'); // «Время перемен» — с первого показа поля до конца вылазки
       this.g.fx = [];
       this.refresh();
+      const run = this.run;
       if (intro) {
         await sleep(2700);
+        if (!this.live(run)) return;
         const lv = ZG.Levels.get(this.g.levelId), ac = this.g.campaign && ZG.App.campaign, cm = ac && ZG.Campaign.missionDef(ac.c);
         if (cm && cm.name) await Banner.show(`МИССИЯ ${ac.c.missionNo + 1}`, cm.name.toUpperCase(), 'level');
         else await Banner.show(`УРОВЕНЬ ${lv.num}`, lv.name.toUpperCase(), 'level');
         if (cm && cm.stories && cm.stories.start && !(this.g.storySeen || {})[cm.stories.start]) { (this.g.storySeen = this.g.storySeen || {})[cm.stories.start] = true; await UI_FX.story.call(this, { id: cm.stories.start }); }
+        if (!this.live(run)) return;
         await Modal.briefing(this.g);
+        if (!this.live(run)) return;
         await Banner.show('РАУНД 1', ZG.PHASES[0].name.toUpperCase(), 'round');
       }
+      if (!this.live(run)) return;
       this.refresh();
       if (this.g.pending) await this.handlePending();
       this.maybeAutoBegin();
+      // сохранение сделано посреди хода ИИ-героя (выход в меню) — он доигрывает свой ход
+      const g = this.g;
+      if (this.live(run) && !g.result && !g.pending && g.phase === 'heroes' && g.active != null && g.heroes[g.active].ai) this.runAI();
     },
 
     resize() { if (this.g && App.screen === 'game') { this.view.resize(); } },
@@ -357,7 +395,7 @@
     // ---------------------------------------------------- действия
     async act(a, opts) {
       if (this.busy || !this.g) return false;
-      const g = this.g;
+      const g = this.g, run = this.run;
       const before = { active: g.active, phase: g.phase, round: g.round };
       if (a.t === 'play' && opts && opts.cardEl) Fly.card(opts.cardEl, this.view, g.heroes[g.active]);
       const ok = E.act(g, a);
@@ -368,6 +406,7 @@
       document.body.classList.add('busy');
       this.refreshLog();
       try { await this.playFx(); } catch (e) { console.error(e); }
+      if (!this.live(run)) return false;
       this.busy = false;
       document.body.classList.remove('busy');
       this.refresh();
@@ -385,11 +424,13 @@
       try { await this._playFx(g); } finally { this.view.hold = false; this.view._sync(true); }
     },
     async _playFx(g) {
-      while (g.fx.length) {
+      const run = this.run;
+      while (g.fx.length && this.live(run)) {
         const evs = g.fx.splice(0);
         let batch = [];
         const flush = async () => { if (batch.length) { const b = batch; batch = []; this.refreshTop(); await this.view.play(b); } };
         for (const ev of evs) {
+          if (!this.live(run)) return;
           if (UI_FX[ev.t]) { await flush(); await UI_FX[ev.t].call(this, ev); }
           else batch.push(ev);
         }
@@ -412,6 +453,7 @@
     async runAI(heroIdx) {
       const g = this.g;
       if (this.aiRunning || !g || g.result || this.busy) return;
+      const run = this.run;
       if (this.paused) { this.setHelp('⏸ Пауза — ИИ ждёт. Нажмите ▶ в верхней панели.'); return; }
       this.aiRunning = true;
       try {
@@ -424,10 +466,13 @@
           }
           if (!h) return;
           await sleep(350 / this.view.speed);
+          if (this.menuHold) await this.waitUnpause();
+          if (!this.live(run)) return;
           await this.act({ t: 'begin', hero: h.idx });
         }
-        if (g.active != null && g.heroes[g.active].ai) await this.autoTurn(true);
-      } finally { this.aiRunning = false; }
+        if (this.live(run) && g.active != null && g.heroes[g.active].ai) await this.autoTurn(true);
+      } finally { if (this.live(run)) this.aiRunning = false; }
+      if (!this.live(run)) return;
       if (g.phase === 'heroes' && g.active == null && !g.result) this.maybeAutoBegin();
     },
 
@@ -437,7 +482,10 @@
       if (!p) return;
       // решения ИИ-героя принимает бот
       if (g.heroes[p.hero] && g.heroes[p.hero].ai) {
+        const run = this.run;
         await sleep(300 / this.view.speed);
+        if (this.menuHold) await this.waitUnpause();
+        if (!this.live(run)) return;
         if (p.type === 'block') return this.act({ t: 'block', cards: ZG.Bot.chooseBlock(g, p) });
         if (p.type === 'loot') return this.act({ t: 'loot', id: ZG.Bot.chooseLoot(g, p) });
         if (p.type === 'talent') return this.act({ t: 'talent', id: ZG.Bot.chooseTalent(g, p) });
@@ -666,20 +714,22 @@
       if (!g || this.busy || g.phase !== 'heroes') return;
       if (!fromAI && this.aiRunning) return;
       if (g.active == null) return toast('Сначала выберите героя.');
-      const idx = g.active;
+      const idx = g.active, run = this.run;
       for (let i = 0; i < 25 && g.active === idx && !g.result && !g.pending; i++) {
         const a = ZG.Bot.bestAction(g);
         if (!a) break;
         const cardEl = a.t === 'play' ? $(`#hand .card[data-uid="${a.card}"]`) : null;
         await this.act(a, { cardEl });
         await sleep(fromAI ? 380 / this.view.speed : 150);
-        if (this.paused && fromAI) { await this.waitUnpause(); }
+        if ((this.paused && fromAI) || this.menuHold) { await this.waitUnpause(); }
+        if (!this.live(run)) return;
       }
-      if (g.active === idx && !g.pending) await this.act({ t: 'end' });
+      if (this.live(run) && g.active === idx && !g.pending) await this.act({ t: 'end' });
     },
 
     waitUnpause() {
-      return new Promise((res) => { const t = setInterval(() => { if (!this.paused) { clearInterval(t); res(); } }, 200); });
+      const run = this.run;
+      return new Promise((res) => { const t = setInterval(() => { if ((!this.paused && !this.menuHold) || !this.live(run)) { clearInterval(t); res(); } }, 200); });
     },
 
     showPile(which) {

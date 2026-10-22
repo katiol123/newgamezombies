@@ -58,6 +58,8 @@
 
     // ------------------------------------------------------------ setup
     setGame(g, intro) {
+      this.aborted = false;
+      this.hold = false;
       this.g = g;
       this.zombies.clear();
       this.heroes.clear();
@@ -218,12 +220,18 @@
       });
     }
     get busy() { return this.playing || this.queue.length > 0; }
+    // выход из партии: очередь анимаций обрывается, ожидающие получают resolve, звуки больше не запускаются
+    abort() {
+      this.aborted = true;
+      this.hold = false;
+      this.queue.splice(0).forEach((j) => j.resolve());
+    }
 
     async _next() {
       const job = this.queue.shift();
       if (!job) { this.playing = false; this._sync(); return; }
       this.playing = true;
-      for (let i = 0; i < job.events.length; i++) {
+      for (let i = 0; i < job.events.length && !this.aborted; i++) {
         const ev = job.events[i];
         const nextEv = job.events[i + 1];
         let wait = 0;
@@ -231,7 +239,7 @@
         if (wait > 0) await this._wait(wait);
       }
       this.batch.clear();
-      await this._wait(80);
+      if (!this.aborted) await this._wait(80);
       this._sync();
       job.resolve();
       this._next();

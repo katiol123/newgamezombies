@@ -228,6 +228,14 @@
     return c;
   }
 
+  // карта сюжетного события кампании (картонная версия): тянется по условию, заранее не читается
+  function plotCard(id) {
+    const def = ZG.Scenarios.get(id), pc = def.plotCard;
+    const c = el('div', 'scen-card plot-card');
+    c.innerHTML = `<div class="scen-kicker">СЮЖЕТНОЕ СОБЫТИЕ · ${esc(def.name)}</div><div class="scen-name">${esc(pc.name)}</div><div class="scen-setup"><b>Когда:</b> ${esc(pc.when)}</div><div class="scen-brief">${esc(def.failText || '')}</div><div class="scen-short">${esc(pc.effect)}</div>`;
+    return c;
+  }
+
   // Подгонка текста: если на конкретном шрифте/системе текст не влезает — уменьшаем кегль,
   // а затем и высоту иллюстрации, пока строка «Связка» не станет видна целиком.
   function fit(c) {
@@ -245,5 +253,5 @@
     if (c.isConnected) run(); else requestAnimationFrame(run);
   }
 
-  ZG.CardView = { missionCard, eventCard, fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, artURL, el, esc };
+  ZG.CardView = { missionCard, eventCard, fit, card, cardBack, heroCard, talentCard, spawnCard, zombieCard, conditionCard, scenarioCard, plotCard, artURL, el, esc };
 })(typeof globalThis !== 'undefined' ? globalThis : window);
