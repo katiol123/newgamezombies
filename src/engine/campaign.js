@@ -190,7 +190,7 @@
       if (C.has(h, 'sh_scavenger') && gh && (gh.ms.searches || 0) >= 2) talonsAdd(h, 3, 'Мародёр');
       if (rep.stars >= 3) moraleAdd(h, 1, 'миссия на 3 ★');
       if (gh && g.missionFirst === gh.idx) moraleAdd(h, 1, 'первым выполнил секретную миссию');
-      deaths.forEach((d) => { const r = relOf(h.id, d); if (r > -3) moraleAdd(h, r >= 3 ? -2 : -1, `потеря${r >= 3 ? ' друга' : ''}: ${ZG.Heroes.get(d).name}`); });
+      deaths.forEach((d) => { const r = relOf(h.id, d); if (r <= -3) moraleAdd(h, 2, `погиб враг: ${ZG.Heroes.get(d).name}`); else moraleAdd(h, r >= 3 ? -2 : -1, `потеря${r >= 3 ? ' друга' : ''}: ${ZG.Heroes.get(d).name}`); });
       // Враги в одном отряде: −1 мораль каждому
       squad.forEach((o) => { if (o !== id && relOf(id, o) <= -3 && !deaths.includes(o)) moraleAdd(h, -1, `в одном отряде с врагом (${ZG.Heroes.get(o).name})`); });
     });
