@@ -159,6 +159,11 @@
       }
     }
     s -= g.alarm * W.alarm;
+    // кампания: ход рядом с врагом (тот же тайл) раздражает его — −1 ⚡
+    if (g.campaign && g.relStart && g.active != null) {
+      const h = g.heroes[g.active];
+      if (h && h.onBoard) g.heroes.forEach((o) => { if (o !== h && o.onBoard && E.rel(g, h, o) <= -3 && g.board.cells[o.pos].tile === g.board.cells[h.pos].tile) s -= 8; });
+    }
     // событие «Утечка газа»: героям там стоять опасно, зомби там — хорошо
     if (g.hazard) {
       g.heroes.forEach((h) => { if (h.onBoard && h.pos === g.hazard.pos) s -= 60; });
@@ -226,7 +231,15 @@
     const cands = candidateActions(g);
     // эвакуация доступна — уходим сразу (иначе оценка «после фазы зомби» нечестно пугает ИИ)
     const evac = cands.find((a) => a.t === 'evac');
-    if (evac) return evac;
+    if (evac) {
+      // кампания: товарищ в 1–2 зонах от выхода — не бросать его, если самому ничто не грозит (иначе отношения −1)
+      const h = g.heroes[g.active];
+      const near = E.leftBehind(g, h);
+      const threat = g.board.adj[h.pos].concat(h.pos).some((n) => E.zombiesAt(g, n).length);
+      const last = E.maxRounds(g) - g.round <= 0;
+      if (near.length && !threat && !last && E.maxHp(g, h) - E.hurtCount(g, h) > 1) return { t: 'end' };
+      return evac;
+    }
     const base = evaluate(g);
     const scored = [];
     cands.forEach((a) => {

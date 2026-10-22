@@ -55,10 +55,12 @@
   C.repairPrice = (id) => { const r = CFG().prices.repair; return typeof r === 'number' ? r : r[ZG.Cards.get(id).rarity || 'common']; };
   C.sellValue = (h) => h.chest.concat(h.junk, h.equip).reduce((s, it) => s + (C.price(it.id) || 0), 0);
   C.mission = (c) => ({ no: c.missionNo + 1, total: c.chainLength });
-  // Узы: два героя, прошедшие вместе 2+ миссии
-  C.BOND_AT = 2;
+  // Отношения: шкала −3…+3 для каждой пары (Враги … Друзья); Друзья (+3) — Узы
   const pairKey = (a, b) => [a, b].sort().join('|');
-  C.bonds = (c) => Object.entries(c.together || {}).filter(([k, n]) => n >= C.BOND_AT).map(([k]) => k.split('|')).filter(([a, b]) => C.hero(c, a) && C.hero(c, b));
+  C.rel = (c, a, b) => (c.rel || {})[pairKey(a, b)] || 0;
+  C.relName = (n) => (n >= 3 ? 'Друзья' : n >= 1 ? 'Приятели' : n <= -3 ? 'Враги' : n <= -1 ? 'Неприязнь' : 'Нейтрально');
+  C.relSet = (c, a, b, n) => { c.rel = c.rel || {}; c.rel[pairKey(a, b)] = Math.max(-3, Math.min(3, n)); };
+  C.bonds = (c) => Object.entries(c.rel || {}).filter(([k, n]) => n >= 3).map(([k]) => k.split('|')).filter(([a, b]) => C.hero(c, a) && C.hero(c, b));
   C.bondsOf = (c, id) => C.bonds(c).filter((p) => p.includes(id)).map((p) => (p[0] === id ? p[1] : p[0]));
   C.STASH = ['medkit', 'bandage_roll', 'energy', 'chocolate', 'canned', 'grenade'];
   C.missionDef = (c) => CFG().chain[Math.min(c.missionNo, CFG().chain.length - 1)] || {};
@@ -67,6 +69,7 @@
   // Опции для ZG.Engine.create: отряд из ростера, перенос героев, блуждающие угрозы.
   C.startMission = function (c, squadIds) {
     if (c.status !== 'ready') return { error: 'Кампания не готова к миссии.' };
+    if (c.event) C.resolveEvent(c, C.aiEventChoice(c)); // нерешённое событие убежища решается «по-ИИ»
     const ids = squadIds || c.roster.slice(0, c.squad).map((h) => h.id);
     if (ids.length !== c.squad) return { error: `Нужно выбрать ровно ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
     if (ids.some((id) => !C.hero(c, id))) return { error: 'Этого героя нет в убежище.' };
@@ -83,6 +86,7 @@
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
       bonds: C.bonds(c).filter(([a, b]) => ids.includes(a) && ids.includes(b)),
+      rel: Object.fromEntries(Object.entries(c.rel || {}).filter(([k]) => k.split('|').every((id) => ids.includes(id)))),
       wanderers: md.noWanderers ? (md.bosses || []) : c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);
@@ -121,15 +125,10 @@
     const handy = (id) => { const gh = g.heroes.find((x) => x.id === id); return !!gh && gh.talents.includes('sh_handy'); };
     const breakChance = (ids) => Math.max(...ids.map((id) => (handy(id) ? 0.25 : CFG().breakChance)));
 
-    // узы до этой миссии (для морали при потере) и счёт совместных миссий
-    const bondedBefore = (a, b) => ((c.together || {})[pairKey(a, b)] || 0) >= C.BOND_AT;
-    c.together = c.together || {};
-    rep.bondsNew = [];
-    squad.forEach((a, i) => squad.slice(i + 1).forEach((b) => {
-      const k = pairKey(a, b);
-      c.together[k] = (c.together[k] || 0) + 1;
-      if (c.together[k] === C.BOND_AT) rep.bondsNew.push([a, b]);
-    }));
+    // отношения на начало миссии (мораль при потере, вражда в отряде)
+    const relBefore = {};
+    squad.forEach((a, i) => squad.slice(i + 1).forEach((b) => { relBefore[pairKey(a, b)] = C.rel(c, a, b); }));
+    const relOf = (a, b) => relBefore[pairKey(a, b)] || 0;
 
     // 1) судьба участников
     const deaths = [];
@@ -191,9 +190,24 @@
       if (C.has(h, 'sh_scavenger') && gh && (gh.ms.searches || 0) >= 2) talonsAdd(h, 3, 'Мародёр');
       if (rep.stars >= 3) moraleAdd(h, 1, 'миссия на 3 ★');
       if (gh && g.missionFirst === gh.idx) moraleAdd(h, 1, 'первым выполнил секретную миссию');
-      deaths.forEach((d) => moraleAdd(h, bondedBefore(h.id, d) ? -2 : -1, `потеря${bondedBefore(h.id, d) ? ' напарника по узам' : ''}: ${ZG.Heroes.get(d).name}`));
+      deaths.forEach((d) => { const r = relOf(h.id, d); if (r > -3) moraleAdd(h, r >= 3 ? -2 : -1, `потеря${r >= 3 ? ' друга' : ''}: ${ZG.Heroes.get(d).name}`); });
+      // Враги в одном отряде: −1 мораль каждому
+      squad.forEach((o) => { if (o !== id && relOf(id, o) <= -3 && !deaths.includes(o)) moraleAdd(h, -1, `в одном отряде с врагом (${ZG.Heroes.get(o).name})`); });
     });
     (g.putDown || []).forEach((p) => { const gh = g.heroes[p.hero]; const h = gh && C.hero(c, gh.id); if (h) moraleAdd(h, 2, `упокоил ${ZG.Heroes.get(p.turned).name}`); });
+
+    // 2б) отношения: события миссии + совместный поход на 3 ★ (оба выжили) — +1
+    rep.rel = [];
+    squad.forEach((a, i) => squad.slice(i + 1).forEach((b) => {
+      if (deaths.includes(a) || deaths.includes(b) || !C.hero(c, a) || !C.hero(c, b)) return;
+      const k = pairKey(a, b), from = C.rel(c, a, b);
+      const ev = ((g.relDelta || {})[k] || []).slice();
+      let n = from + ev.reduce((s2, x) => s2 + x.d, 0);
+      if (rep.stars >= 3) { ev.push({ d: 1, why: 'прошли миссию вместе на 3 ★' }); n++; }
+      C.relSet(c, a, b, n);
+      const to = C.rel(c, a, b);
+      if (to !== from) rep.rel.push({ a, b, from, to, why: ev.map((x) => `${x.d > 0 ? '+' : ''}${x.d} ${x.why}`) });
+    }));
 
     // 3) блуждающие: обращённые союзники, чей монстр остался на поле (или так и не появился)
     const turnedNow = g.heroes.filter((gh) => gh.turned).map((gh) => gh.id);
@@ -233,7 +247,17 @@
     c.updated = Date.now();
     if (!rep.win) { c.status = 'over'; c.endReason = 'Миссия провалена: ' + (rep.reason || ''); }
     else if (c.missionNo >= c.chainLength) { c.status = 'won'; c.endReason = 'Кампания пройдена!'; }
-    else { c.status = 'ready'; c.roster.forEach((h) => { if (h.ai) C.autoManage(c, h.id); }); C.checkSquad(c); }
+    else {
+      c.status = 'ready';
+      // событие убежища «Паёк в долг»: самый бедный просит 2 🎫 у самого богатого (через раз)
+      const byT = c.roster.slice().sort((x, y) => x.talons - y.talons);
+      if (byT.length >= 2 && Rng.next(rng) < 0.5 && byT[byT.length - 1].talons >= 2 && byT[0] !== byT[byT.length - 1] && byT[0].talons < byT[byT.length - 1].talons) {
+        c.event = { type: 'ration', poor: byT[0].id, rich: byT[byT.length - 1].id };
+        if (C.hero(c, c.event.rich).ai) C.resolveEvent(c, C.aiEventChoice(c));
+      }
+      c.roster.forEach((h) => { if (h.ai) C.autoManage(c, h.id); });
+      C.checkSquad(c);
+    }
     return rep;
   };
 
@@ -281,6 +305,23 @@
     h.talons -= p; h.injury--;
     return null;
   };
+  // События убежища. «Паёк в долг»: богатый отдаёт бедному 2 🎫 (отношения не меняются) или отказывает (−1).
+  C.EVENT_GIFT = 2;
+  C.aiEventChoice = function (c) {
+    const e = c.event; if (!e) return false;
+    const rich = C.hero(c, e.rich), P = CFG().prices;
+    return !!rich && rich.talons - C.EVENT_GIFT >= P.ration + Math.min(rich.injury, 2) * P.heal && C.rel(c, e.rich, e.poor) > -3;
+  };
+  C.resolveEvent = function (c, give) {
+    const e = c.event; if (!e) return 'Событий нет.';
+    const rich = C.hero(c, e.rich), poor = C.hero(c, e.poor);
+    c.event = null;
+    if (!rich || !poor) return null;
+    if (give && rich.talons >= C.EVENT_GIFT) { rich.talons -= C.EVENT_GIFT; poor.talons += C.EVENT_GIFT; c.eventLog = `Паёк в долг: ${ZG.Heroes.get(e.rich).name} → ${ZG.Heroes.get(e.poor).name}, ${C.EVENT_GIFT} 🎫.`; }
+    else { C.relSet(c, e.rich, e.poor, C.rel(c, e.rich, e.poor) - 1); c.eventLog = `Паёк в долг: ${ZG.Heroes.get(e.rich).name} — отказ (${ZG.Heroes.get(e.poor).name}), отношения −1.`; }
+    return null;
+  };
+
   // Тир: раз между миссиями, +1 опыт за талоны; новый уровень — талант предложат в начале миссии
   C.canTrain = (c, h) => C.built(h, 'range') && h.trainedNo !== c.missionNo && c.status === 'ready';
   C.train = function (c, heroId) {

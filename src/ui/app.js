@@ -899,6 +899,7 @@
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>
             ${(h.exhaust || []).length ? `<span class="${E.exhausted(g, h) ? 'tired' : ''}" title="Изнеможение: карты, сброшенные на блок (при ${E.EXHAUST_AT}+ — обессилен). Вернуть — «Отдышаться».">😮‍💨 ${h.exhaust.length}/${E.EXHAUST_AT}</span>` : ''}
             ${h.block ? `<span title="Блок до следующего хода">🛡 ${h.block}</span>` : ''}
+            ${g.heroes.some((o) => o !== h && o.onBoard && E.rel(g, h, o) <= -3) ? `<span class="enemy-rel" title="Враги: ${esc(g.heroes.filter((o) => o !== h && o.onBoard && E.rel(g, h, o) <= -3).map((o) => E.heroName(o)).join(', '))}. Закончил ход в тайле врага — у того −1 ⚡ в следующий ход.${h.irritated ? ' СЕЙЧАС: −1 ⚡ в следующий ход.' : ''}">⚔${h.irritated ? ' −1⚡' : ''}</span>` : ''}
             ${E.bondPartners(g, h).length ? `<span class="${h.bondReady || (h.idx === g.active && g.turn && g.turn.bond) ? 'bond-on' : ''}" title="Узы с: ${esc(E.bondPartners(g, h).map((o) => E.heroName(o)).join(', '))}. Если напарник заканчивает ход в твоём тайле, первая карта твоего следующего хода срабатывает со Связкой (если у неё есть эффект Связки).${h.bondReady ? ' СЕЙЧАС: готово!' : ''}">🤝${h.bondReady || (h.idx === g.active && g.turn && g.turn.bond) ? ' Узы!' : ''}</span>` : ''}
             ${h.adrenaline ? `<span title="Адреналин">+${h.adrenaline}⚡</span>` : ''}
             ${h.hidden ? '<span>👻</span>' : ''}
@@ -1063,7 +1064,8 @@
       const bc = E.barricadeCost(g, h);
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
-      icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : !g.heroes.some((o) => o !== h && o.onBoard && o.pos === h.pos) ? 'рядом нет другого героя' : 'в руке нет находок, груза или карт кампании (базовые карты не передаются)', () => this.giveDialog());
+      const nearO = g.heroes.filter((o) => o !== h && o.onBoard && o.pos === h.pos);
+      icon('give', 'Передать', 0, gives.length > 0, nearO.length && nearO.every((o) => E.rel(g, h, o) < 0) ? 'неприязнь: эти герои не передают друг другу карты' : g.turn.gave ? 'уже передавали в этот ход (Приятелям и Друзьям — без ограничений)' : !g.heroes.some((o) => o !== h && o.onBoard && o.pos === h.pos) ? 'рядом нет другого героя' : 'в руке нет находок, груза или карт кампании (базовые карты не передаются)', () => this.giveDialog());
       icon('rest', 'Отдышаться', 3, has('rest'), !(h.exhaust || []).length ? 'Изнеможение пусто (туда уходят карты, сброшенные на блок)' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }), tired ? ' gold' : '');
       if (ZG.Mods.flag(g, h, 'healAction')) {
         const hl = legal.filter((a) => a.t === 'heal');
@@ -1100,7 +1102,14 @@
       if (g.drops.length) icon('pickup', 'Подобрать', 1, has('pickup'), 'в зоне нет брошенного груза', () => this.act({ t: 'pickup' }));
       const sa = legal.filter((a) => a.t === 'scenario');
       sa.forEach((a) => icon('task', a.label, a.cost, true, '', () => this.act(a), ' gold'));
-      if (E.isComplete(g)) icon('evac', 'Эвакуация', 0, has('evac'), 'дойдите до зоны выхода', () => this.act({ t: 'evac' }), ' gold');
+      if (E.isComplete(g)) icon('evac', 'Эвакуация', 0, has('evac'), 'дойдите до зоны выхода', async () => {
+        const left = E.leftBehind(g, h);
+        if (left.length) {
+          const v = await Modal.show(`<h2>Уехать без товарища?</h2><p>${esc(left.map((o) => E.heroName(o)).join(', '))} совсем рядом с выходом (1–2 зоны). Если уехать сейчас, отношения с ${left.length > 1 ? 'ними' : 'ним'} упадут на 1.</p>`, [{ label: 'Уехать', value: 'go' }, { label: 'Подождать', cls: 'primary' }]);
+          if (v !== 'go') return;
+        }
+        this.act({ t: 'evac' });
+      }, ' gold');
       if (g.survivor) icon('heal', 'Спасти', 1, has('rescue'), 'дойдите до выжившего (SOS на поле)', () => this.act({ t: 'rescue' }), ' gold');
     },
 
@@ -1810,6 +1819,17 @@
       }
       Game.startCampaignMission(this.squad.slice());
     },
+    // событие убежища «Паёк в долг»: решает самый богатый
+    async showEvent(c) {
+      const e = c.event; if (!e || this._eventOpen) return;
+      this._eventOpen = true;
+      const nm = (id) => esc(ZG.Heroes.get(id).name);
+      const r = CMP.rel(c, e.rich, e.poor);
+      const v = await Modal.show(`<div class="kicker">Событие убежища</div><h2>Паёк в долг</h2><p>Карманы почти пусты: <b>${nm(e.poor)}</b> (🎫 ${CMP.hero(c, e.poor).talons}) просит ${CMP.EVENT_GIFT} талона на паёк. Решает самый запасливый — <b>${nm(e.rich)}</b> (🎫 ${CMP.hero(c, e.rich).talons}).</p><p class="muted">Отношения сейчас: ${CMP.relName(r)} (${r > 0 ? '+' : ''}${r}). Поделиться — отношения не меняются, отказать — −1.</p>`,
+        [{ label: `Отдать ${CMP.EVENT_GIFT} 🎫`, value: 'give', cls: 'primary', modal: true }, { label: 'Отказать', value: 'no', modal: true }]);
+      this._eventOpen = false;
+      this.act(() => CMP.resolveEvent(c, v === 'give'));
+    },
     // эпилог кампании: финальная вставка и итоги пути
     epilogue(c) {
       const st = ZG.STORIES && ZG.STORIES.epilogue;
@@ -1836,6 +1856,8 @@
       this.renderReport(c);
       if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
+      if (c.eventLog) { toast(c.eventLog, 4200); c.eventLog = null; this.save(); }
+      if (c.event && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       if (!done && md.special && md.special.length) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${md.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`);
@@ -1873,8 +1895,15 @@
       const name = (id) => esc(ZG.Heroes.get(id).name);
       box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
-        ${(r.bondsNew || []).filter(([a, b]) => CMP.hero(c, a) && CMP.hero(c, b)).map(([a, b]) => `<div class="rep-bond">🤝 ${name(a)} и ${name(b)} прошли вместе ${CMP.BOND_AT} миссии — теперь их связывают <b>Узы</b>.</div>`).join('')}
+        ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
+    },
+    // отношения героя с остальными героями убежища
+    relLine(c, h) {
+      const tips = { 'Друзья': 'Узы: если друг заканчивает ход в тайле героя, первая карта его следующего хода срабатывает со Связкой. Гибель друга — −2 морали.', 'Приятели': 'Передают друг другу карты без ограничения «раз за ход».', 'Неприязнь': 'Не передают друг другу карты.', 'Враги': 'Не передают карты; закончил ход в тайле врага — у того −1 ⚡. В одном отряде — −1 морали каждому после миссии.' };
+      const items = c.roster.filter((o) => o !== h).map((o) => { const n = CMP.rel(c, h.id, o.id); return { o, n, name: CMP.relName(n) }; }).filter((x) => x.n !== 0)
+        .map((x) => `<span class="rel r${x.n > 0 ? 'p' : 'n'}${Math.abs(x.n)}" title="${esc(tips[x.name] || '')}">${x.n >= 3 ? '🤝' : x.n <= -3 ? '⚔' : x.n > 0 ? '▲' : '▼'} ${esc(ZG.Heroes.get(x.o.id).name)}: ${x.name} (${x.n > 0 ? '+' : ''}${x.n})</span>`);
+      return items.length ? `<div class="sh-bond">${items.join(' ')}</div>` : '';
     },
     heroPanel(c, h, done) {
       const def = ZG.Heroes.get(h.id), CFG = ZG.CAMPAIGN;
@@ -1892,7 +1921,7 @@
           <div class="sh-lvl">Уровень ${h.level} · 🎖 ${h.xp}${next ? ' / ' + next : ''}</div>
           <div class="sh-stats"><span title="Стойкость на следующую миссию (травмы снижают)">♥ ${CMP.hp(h)} / ${CMP.baseHp(h) + CMP.hpTalents(h)}</span>
             <span class="sh-morale m${m <= M.low ? 'low' : m >= M.max ? 'max' : ''}" title="Мораль ${m} из ${M.max}">Мораль <span class="pips">${pips}</span>${temp ? ` <small>${temp}</small>` : ''}</span></div>
-          ${CMP.bondsOf(c, h.id).length ? `<div class="sh-bond" title="Если напарник заканчивает ход в тайле этого героя, первая карта его следующего хода срабатывает со Связкой. Гибель напарника — −2 морали.">🤝 Узы: ${CMP.bondsOf(c, h.id).map((id) => esc(ZG.Heroes.get(id).name)).join(', ')}</div>` : ''}
+          ${this.relLine(c, h)}
           ${h.talents.length ? `<div class="sh-tal">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
           ${h.debt ? `<div class="sh-debt">Долг ${esc(ZG.Heroes.get(h.debt.to).name)}: половина талонов за звёзды ещё ${h.debt.left} ${ZG.util.plural(h.debt.left, 'миссию', 'миссии', 'миссий')}</div>` : ''}
           <div class="sh-actions"></div>

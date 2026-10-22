@@ -280,6 +280,12 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .hp-meta .bond-on { color: #ffd36b; font-weight: bold; }
 .sh-bond { color: #ffd36b; font-size: 13px; margin-top: 2px; }
 .rep-bond { color: #ffd36b; margin: 4px 0; }
+.rep-bond.down { color: #e08a6a; }
+.sh-bond .rel { display: inline-block; margin-right: 8px; }
+.sh-bond .rel.rn1, .sh-bond .rel.rn2 { color: #e0a080; }
+.sh-bond .rel.rn3 { color: #ff6a5a; font-weight: bold; }
+.sh-bond .rel.rp1, .sh-bond .rel.rp2 { color: #b8d890; }
+.hp-meta .enemy-rel { color: #ff6a5a; font-weight: bold; }
 .pile span { position: relative; display: block; margin-top: 18px; font-size: 22px; text-shadow: 0 2px 4px #000; }
 .pile small { position: relative; font-family: var(--font-t); font-size: 11px; }
 .pile:hover .pile-card { transform: translateY(-3px); transition: transform .15s; }

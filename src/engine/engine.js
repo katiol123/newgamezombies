@@ -52,9 +52,27 @@
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
   E.TIRED_LOCK = ['move', 'shout', 'foreman', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
+  // Отношения (кампания): шкала −3…+3 для каждой пары. g.relStart — на начало миссии (эффекты), g.relDelta — изменения за миссию.
+  // Друзья (+3) — Узы; Приятели (+1…+2) — передача без ограничения «раз за ход»; Неприязнь (−1…−2) — передавать нельзя;
+  // Враги (−3) — закончил ход в тайле врага: у того −1 ⚡ в следующий ход.
+  E.relKey = (a, b) => [a, b].sort().join('|');
+  E.rel = (g, a, b) => ((g.relStart || {})[E.relKey(a.id || a, b.id || b)] || 0);
+  // изменение отношений за миссию: каждая причина — не больше раза на пару за миссию
+  E.relBump = function (g, a, b, d, why, text) {
+    if (!g.campaign || !a || !b || a === b) return;
+    const k = E.relKey(a.id, b.id);
+    g.relWhy = g.relWhy || {};
+    if (g.relWhy[k + '#' + why]) return;
+    g.relWhy[k + '#' + why] = 1;
+    g.relDelta = g.relDelta || {};
+    (g.relDelta[k] = g.relDelta[k] || []).push({ d, why: text });
+    E.log(g, `Отношения ${E.heroName(a)} и ${E.heroName(b)}: ${d > 0 ? '+' : ''}${d} — ${text}.`, d > 0 ? 'good' : 'warn');
+  };
   // Узы (кампания): напарник закончил ход в твоём тайле — первая карта твоего следующего хода срабатывает со Связкой
   E.bondPartners = (g, h) => (g.bonds || []).filter((p) => p.includes(h.id)).map((p) => g.heroes.find((o) => o.id === (p[0] === h.id ? p[1] : p[0]))).filter((o) => o && o.onBoard);
   E.chainsNow = (g, def) => !!g.turn && def.suit !== 'none' && (g.turn.lastSuit === def.suit || (!!g.turn.bond && !g.turn.played && !!def.chainText));
+  // передача: обычно раз за ход; Приятелям и Друзьям — без ограничения, при Неприязни и Вражде — нельзя
+  E.canGiveTo = (g, h, o) => { const r = E.rel(g, h, o); return r >= 0 && (!g.turn.gave || r >= 1); };
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
@@ -456,7 +474,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()),
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()), relStart: Object.assign({}, opts.rel || {}),
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -940,6 +958,8 @@
       if (heroIdx != null) { E.storyEvent(g, 'firstKill'); if (def.boss) E.storyEvent(g, 'bossKill'); }
       if (heroIdx != null) {
         const h = g.heroes[heroIdx];
+        // отношения: убил зомби, который кусал товарища в последнюю фазу зомби
+        if (z.bitPhase === g.zphase) (z.bitHeroes || []).forEach((i) => { if (i !== heroIdx && g.heroes[i] && g.heroes[i].onBoard) E.relBump(g, h, g.heroes[i], 1, 'saved', `спасение: ${E.heroName(h)} убивает зомби, кусавшего ${E.heroName(g.heroes[i])}`); });
         if (kind === 'melee' || kind === 'silent') ms(h, 'meleeKills');
         if (def.big) ms(h, 'bigKills');
         if (g.turn && g.active === heroIdx) { g.turn.kills = (g.turn.kills || 0) + 1; h.ms.bestTurnKills = Math.max(h.ms.bestTurnKills || 0, g.turn.kills); }
@@ -1178,6 +1198,7 @@
   function startZombiePhase(g) {
     g.phase = 'zombies';
     g.active = null; g.turn = null;
+    g.zphase = (g.zphase || 0) + 1; // номер фазы зомби: «спас товарища» — убил того, кто кусал его в последнюю фазу
     g.zs = { step: 'move', queue: null, wander: 1 + Rng.int(g, 6) };
     E.log(g, `— Фаза зомби (раунд ${g.round}) —`, 'phase');
     E.perceive(g);
@@ -1372,6 +1393,13 @@
       (entry.attackers || []).forEach((u) => { const z = E.zombie(g, u); if (z && z.wokenBy != null && z.wokenBy !== h.idx) by.add(z.wokenBy); });
       by.forEach((i) => { if (g.heroes[i]) ms(g.heroes[i], 'betrayals'); });
     }
+    if (taken > 0) (entry.attackers || []).forEach((u) => {
+      const z = E.zombie(g, u); if (!z) return;
+      if (z.bitPhase !== g.zphase) { z.bitPhase = g.zphase; z.bitHeroes = []; }
+      if (!z.bitHeroes.includes(h.idx)) z.bitHeroes.push(h.idx);
+      // отношения: укусил зомби, которого разбудил или привёл другой герой
+      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy]) E.relBump(g, g.heroes[z.wokenBy], h, -1, 'lured', `укус от зомби, которого разбудил(а) ${E.heroName(g.heroes[z.wokenBy])}`);
+    });
     bite(g, h, taken, entry.attackers);
     if (h.onBoard && h.thorns) {
       entry.attackers.forEach((u) => { const z = E.zombie(g, u); if (z) damageZombie(g, z, h.thorns, h.idx, 'melee'); });
@@ -1458,6 +1486,7 @@
     }
     h.adrenaline = 0;
     if (h.drainDue) { en = Math.max(0, en - h.drainDue); E.log(g, `${E.heroName(h)}: «Уныние» — −${h.drainDue} ⚡.`, 'warn'); h.drainDue = 0; }
+    if (h.irritated) { en = Math.max(0, en - 1); h.irritated = false; E.log(g, `${E.heroName(h)} на взводе из-за врага — −1 ⚡.`, 'warn'); }
     h.energy = en;
     if (g.relayBonus) { h.energy += g.relayBonus; E.log(g, `${E.heroName(h)}: +${g.relayBonus} ⚡ от товарища.`, 'good'); g.relayBonus = 0; }
     E.log(g, `Ход: ${E.heroName(h)} (${h.energy} ⚡).`, 'turn');
@@ -1480,6 +1509,12 @@
       const gone = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).discardEndTurn);
       if (gone.length) { h.hand = h.hand.filter((u) => !gone.includes(u)); h.discard.push(...gone); }
       tickInfection(g, h);
+      // Враги: закончил ход в тайле врага — у того −1 ⚡ в следующий ход
+      if (h.onBoard) g.heroes.forEach((o) => {
+        if (o === h || !o.onBoard || E.rel(g, h, o) > -3 || g.board.cells[o.pos].tile !== g.board.cells[h.pos].tile) return;
+        o.irritated = true;
+        E.log(g, `${E.heroName(h)} раздражает ${E.heroName(o)} — у того −1 ⚡ в следующий ход.`, 'warn');
+      });
       // Узы: закончил ход в тайле напарника — тот следующую первую карту сыграет со Связкой
       if (h.onBoard) E.bondPartners(g, h).forEach((o) => {
         if (g.board.cells[o.pos].tile !== g.board.cells[h.pos].tile || o.bondReady) return;
@@ -1644,9 +1679,9 @@
     // Прижечь укус: 2 ⚡, себе или товарищу в своей зоне, даже рядом с зомби
     // прижечь укус — только там, где нет зомби: рядом с ними на это нет времени
     if (h.energy >= 2 && !E.zombiesAt(g, h.pos).length) E.heroesAt(g, h.pos).forEach((o) => { if (o.hand.some((u) => g.cards[u] === 'infection')) out.push({ t: 'burn', hero: o.idx }); });
-    if (!g.turn.gave) {
+    {
       E.heroesAt(g, h.pos).forEach((o) => {
-        if (o === h) return;
+        if (o === h || !E.canGiveTo(g, h, o)) return;
         h.hand.forEach((u) => { if (E.canGive(g, u)) out.push({ t: 'give', card: u, hero: o.idx }); });
       });
     }
@@ -1779,7 +1814,7 @@
         spend(g, h, 1);
         g.turn.healUsed++;
         const n = healWounds(g, o, 1 + Mods.value(g, h, 'healBonus', 0));
-        if (o !== h) ms(h, 'helps');
+        if (o !== h) { ms(h, 'helps'); if (n) E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
         E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} −${n} Рана.`, 'good');
         return true;
       }
@@ -1791,7 +1826,7 @@
         spend(g, h, 1);
         g.turn.healUsed++;
         inf.forEach((u) => { g.cards[u] = 'wound'; });
-        if (o !== h) ms(h, 'helps');
+        if (o !== h) { ms(h, 'helps'); E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
         E.log(g, `${E.heroName(h)} вскрывает и прижигает укус: у ${E.heroName(o)} ${inf.length} Заражение → Рана.`, 'good');
         E.fx(g, { t: 'heal', hero: o.idx, n: inf.length, pos: o.pos });
         checkFall(g, o);
@@ -1804,7 +1839,7 @@
         if (h.energy < 2 || !bites.length || o.pos !== h.pos) return fail(g, 'Прижечь нельзя.');
         spend(g, h, 2);
         bites.forEach((u) => { g.cards[u] = 'wound'; });
-        if (o !== h) ms(h, 'helps');
+        if (o !== h) { ms(h, 'helps'); E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
         E.log(g, `${E.heroName(h)} прижигает укус${o === h ? '' : ` у ${E.heroName(o)}`}: Заражение → Рана.`, 'good');
         E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
         return true;
@@ -1843,7 +1878,7 @@
       case 'give': {
         const o = g.heroes[a.hero];
         const i = h.hand.indexOf(a.card);
-        if (g.turn.gave || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || !E.canGive(g, a.card)) return fail(g, 'Передать нельзя.');
+        if (!o || !E.canGiveTo(g, h, o) || i < 0 || !o.onBoard || o.pos !== h.pos || o === h || !E.canGive(g, a.card)) return fail(g, 'Передать нельзя.');
         h.hand.splice(i, 1); o.hand.push(a.card);
         if (g.carriedHolders && g.carriedHolders[a.card]) g.carriedHolders[a.card].push(o.id); // кампания: износ учитывает всех, кто держал карту
         g.turn.gave = true;
@@ -1904,6 +1939,7 @@
       case 'evac': {
         if (!E.isComplete(g) || h.pos !== g.exit) return fail(g, 'Эвакуация ещё не готова.');
         if (!E.canEvac(g, h)) return fail(g, E.scenario(g).evacBlockedText || 'Сейчас уйти нельзя.');
+        E.leftBehind(g, h).forEach((o) => E.relBump(g, h, o, -1, 'left', `эвакуация без товарища: ${E.heroName(o)} был(а) у самого выхода`));
         h.onBoard = false; h.evacuated = true;
         E.log(g, `${E.heroName(h)} эвакуируется!`, 'good');
         E.fx(g, { t: 'evac', hero: h.idx, pos: h.pos });
@@ -1914,6 +1950,13 @@
       default: return fail(g, 'Неизвестное действие.');
     }
   }
+
+  // товарищи в 1–2 зонах от выхода, которых бросит эвакуирующийся герой
+  E.leftBehind = function (g, h) {
+    if (!g.campaign || g.exit == null) return [];
+    const d = E.distV(g, g.exit);
+    return g.heroes.filter((o) => o !== h && o.onBoard && o.pos !== g.exit && d[o.pos] <= 2);
+  };
 
   function moveHero(g, h, to) {
     const from = h.pos;
@@ -2081,7 +2124,7 @@
         const o = g.heroes[heroIdx];
         // «Стерильность» и т. п.: бонус к лечению убирает только Раны (Заражения — лишь по тексту самой карты)
         const healed = healWounds(g, o, n, cures) + healWounds(g, o, Mods.value(g, h, 'healBonus', 0));
-        if (o !== h && healed) ms(h, 'helps');
+        if (o !== h && healed) { ms(h, 'helps'); E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
         E.log(g, `${E.heroName(o)}: −${healed} ${ZG.util.plural(healed, 'Рана', 'Раны', 'Ран')}.`, 'good');
       },
       adrenaline(heroIdx, n) {
