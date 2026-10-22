@@ -47,7 +47,12 @@
   // травмы (кампания): непролеченные раны прошлых миссий снижают Стойкость
   E.maxHp = (g, h) => Math.max(1, Mods.value(g, h, 'hp', ZG.Heroes.get(h.id).hp) - (h.injury || 0));
   // «Одиночка»: в соло герой держит на 1 карту больше
-  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0);
+  // Изнеможение: карты, сброшенные на блок, уходят в стопку изнеможения (не в сброс) и возвращаются только «Отдышаться».
+  // 3+ карты в стопке — герой «Обессилен»: рука −1, недоступны базовые действия-кнопки (кроме «Отдышаться»)
+  E.EXHAUST_AT = 3;
+  E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
+  E.TIRED_LOCK = ['search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
+  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
     const parts = [{ name: 'База героя', n: ZG.Heroes.get(h.id).hand }];
@@ -57,6 +62,7 @@
       if (n) parts.push({ name: src.name, n });
     });
     if (g.heroes.length === 1) parts.push({ name: 'Одиночка (соло)', n: 1 });
+    if (E.exhausted(g, h)) parts.push({ name: 'Обессилен', n: -1 });
     return parts;
   };
   E.activeHero = (g) => (g.active == null ? null : g.heroes[g.active]);
@@ -459,7 +465,7 @@
     opts.heroes.forEach((hs, idx) => {
       const def = ZG.Heroes.get(hs.id);
       const h = {
-        idx, id: def.id, player: hs.player || 1, pos: null, deck: [], hand: [], discard: [], equip: [],
+        idx, id: def.id, player: hs.player || 1, pos: null, deck: [], hand: [], discard: [], exhaust: [], equip: [],
         energy: 0, adrenaline: 0, block: 0, xp: 0, level: 1, talents: [], talentQueue: [],
         ai: !!hs.ai, infection: 0, ms: {}, mission: null, missionDone: false, perks: [], acted: false, onBoard: true, fallen: false, evacuated: false, hidden: false, secondWindUsed: false,
       };
@@ -727,7 +733,7 @@
   function dropBelongings(g, h) {
     const drop = (u) => g.drops.push({ pos: h.pos, card: g.cards[u], carried: g.carried && g.carried[u], holders: g.carriedHolders && g.carriedHolders[u] });
     h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach(drop);
-    const pool = h.deck.concat(h.hand, h.discard, h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return !d.kind || d.kind === 'action'; });
+    const pool = h.deck.concat(h.hand, h.discard, h.exhaust || [], h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return !d.kind || d.kind === 'action'; });
     Rng.shuffle(g, pool).slice(0, 2).forEach(drop);
     h.hand = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind !== 'cargo');
   }
@@ -1328,6 +1334,8 @@
     const entry = g.zs.queue.shift();
     const h = g.heroes[entry.hero];
     let blocked = 0;
+    const wasTired = E.exhausted(g, h);
+    h.exhaust = h.exhaust || [];
     uids.forEach((u) => {
       const i = h.hand.indexOf(u);
       if (i < 0) return;
@@ -1335,9 +1343,13 @@
       if (v <= 0) return;
       blocked += v;
       h.hand.splice(i, 1);
-      h.discard.push(u);
+      h.exhaust.push(u);
       E.fx(g, { t: 'blockcard', hero: h.idx, card: u });
     });
+    if (!wasTired && E.exhausted(g, h)) {
+      E.log(g, `${E.heroName(h)} обессилен (Изнеможение ${h.exhaust.length}): рука −1, базовые действия недоступны, пока не отдышится.`, 'bad');
+      E.fx(g, { t: 'tired', hero: h.idx, pos: h.pos });
+    }
     const taken = Math.max(0, entry.remaining - blocked);
     const totalBlocked = entry.incoming - taken;
     if (totalBlocked > 0) E.fx(g, { t: 'blocked', hero: h.idx, pos: h.pos, n: totalBlocked });
@@ -1604,7 +1616,7 @@
         if (E.infectCount(g, o)) out.push({ t: 'cleanse', hero: o.idx });
       });
     }
-    if (h.energy >= 3 && h.hand.some((u) => g.cards[u] === 'wound') && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
+    if (h.energy >= 3 && (h.exhaust || []).length && !E.zombiesAt(g, h.pos).length) out.push({ t: 'rest' });
     // «Выстрел из ТТ»: базовое действие надетого «Ствола бандита», раз за ход
     if (Mods.flag(g, h, 'ttShot') && !g.turn.ttShot && h.energy >= 1) E.targetsFor(g, h, ZG.Cards.get('tt_shot')).forEach((t) => out.push({ t: 'ttshot', zombie: t }));
     if (g.missions && h.mission && !h.missionDone && !h.missionRedrawn && g.missionDeck.some((id) => id !== h.mission && E.missionFits(g, ZG.Missions.get(id)))) out.push({ t: 'mredraw' });
@@ -1623,6 +1635,7 @@
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
     if (E.isComplete(g) && h.pos === g.exit && E.canEvac(g, h)) out.push({ t: 'evac' });
     if (g.survivor && g.survivor.pos === h.pos && h.energy >= 1) out.push({ t: 'rescue' });
+    if (E.exhausted(g, h)) return out.filter((a) => !E.TIRED_LOCK.includes(a.t));
     return out;
   };
 
@@ -1677,6 +1690,7 @@
   function spend(g, h, n) { h.energy -= n; }
 
   function applyHeroAction(g, h, a) {
+    if (E.exhausted(g, h) && E.TIRED_LOCK.includes(a.t)) return fail(g, 'Герой обессилен — сначала отдышаться.');
     switch (a.t) {
       case 'end': endTurn(g); return true;
       case 'play': return playCard(g, h, a.card, a.target);
@@ -1799,12 +1813,12 @@
         return true;
       }
       case 'rest': {
-        if (h.energy < 3 || !h.hand.some((u) => g.cards[u] === 'wound') || E.zombiesAt(g, h.pos).length) return fail(g, 'Отдышаться нельзя.');
+        if (h.energy < 3 || !(h.exhaust || []).length || E.zombiesAt(g, h.pos).length) return fail(g, 'Отдышаться нельзя.');
         spend(g, h, 3);
-        const i = h.hand.findIndex((u) => g.cards[u] === 'wound');
-        if (i >= 0) h.hand.splice(i, 1);
-        E.log(g, `${E.heroName(h)} переводит дух и перевязывает рану.`, 'good');
-        E.fx(g, { t: 'heal', hero: h.idx, n: 1, pos: h.pos });
+        const n = h.exhaust.length;
+        h.discard.push(...h.exhaust); h.exhaust = [];
+        E.log(g, `${E.heroName(h)} переводит дух: ${n} ${ZG.util.plural(n, 'карта', 'карты', 'карт')} из Изнеможения — в сброс.`, 'good');
+        E.fx(g, { t: 'rested', hero: h.idx, n, pos: h.pos });
         return true;
       }
       case 'give': {

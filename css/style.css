@@ -271,6 +271,12 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .pile { position: relative; width: 52px; height: 72px; cursor: pointer; text-align: center; font-family: var(--font-d); }
 .pile .pile-card { position: absolute; inset: 0; border-radius: 5px; background: repeating-linear-gradient(45deg, #3a1a14 0 6px, #2a120e 6px 12px); border: 2px solid #5a2a1a; box-shadow: 3px 3px 0 #1a0c08, 6px 6px 0 #120806; }
 .pile.discard .pile-card { background: repeating-linear-gradient(-45deg, #2a2a2a 0 6px, #1e1e1e 6px 12px); border-color: #444; box-shadow: 2px 2px 0 #111; }
+.pile.exhaust .pile-card { background: repeating-linear-gradient(90deg, #2a2236 0 5px, #1e1828 5px 10px); border-color: #4a3a60; box-shadow: 2px 2px 0 #110c18; }
+.pile.exhaust span { font-size: 16px; margin-top: 21px; }
+.pile.exhaust small { font-size: 9px; }
+.pile.exhaust.tired .pile-card { border-color: #b07aff; box-shadow: 0 0 10px #8a4dff; animation: tiredPulse 1.4s ease-in-out infinite; }
+@keyframes tiredPulse { 50% { box-shadow: 0 0 2px #8a4dff; } }
+.hp-meta .tired { color: #c8a0ff; font-weight: bold; }
 .pile span { position: relative; display: block; margin-top: 18px; font-size: 22px; text-shadow: 0 2px 4px #000; }
 .pile small { position: relative; font-family: var(--font-t); font-size: 11px; }
 .pile:hover .pile-card { transform: translateY(-3px); transition: transform .15s; }

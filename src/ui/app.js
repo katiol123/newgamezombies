@@ -274,6 +274,7 @@
       this.applyTable = applyTable;
       $('#deck-pile').onclick = () => this.showPile('deck');
       $('#discard-pile').onclick = () => this.showPile('discard');
+      $('#exhaust-pile').onclick = () => this.showPile('exhaust');
       document.addEventListener('keydown', (ev) => this.onKey(ev));
       document.addEventListener('contextmenu', (ev) => { if (this.sel && App.screen === 'game') { ev.preventDefault(); this.cancelSel(); } });
     },
@@ -737,7 +738,7 @@
       if (!g || g.active == null) return;
       const h = g.heroes[g.active];
       // карты группируются по виду с количеством; в колоде порядок скрыт (сортировка по масти и названию)
-      const pile = which === 'deck' ? h.deck : h.discard;
+      const pile = which === 'deck' ? h.deck : which === 'exhaust' ? (h.exhaust || []) : h.discard;
       const groups = new Map();
       pile.forEach((u) => { const id = g.cards[u]; groups.set(id, (groups.get(id) || 0) + 1); });
       const order = { rage: 0, agility: 1, mind: 2, none: 3 };
@@ -760,8 +761,8 @@
       });
       if (!ids.length) wrap.appendChild(el('p', 'muted', 'Пусто.'));
       const wounds = groups.get('wound') || 0;
-      const title = which === 'deck' ? `Колода: ${pile.length}` : `Сброс: ${pile.length}`;
-      const sub = which === 'deck' ? 'Порядок скрыт — показан состав.' : 'Перемешается в колоду, когда она закончится.';
+      const title = which === 'deck' ? `Колода: ${pile.length}` : which === 'exhaust' ? `Изнеможение: ${pile.length} / ${E.EXHAUST_AT}` : `Сброс: ${pile.length}`;
+      const sub = which === 'deck' ? 'Порядок скрыт — показан состав.' : which === 'exhaust' ? `Карты, сброшенные на блок. Возвращаются в сброс только действием «Отдышаться» (3 ⚡, в зоне без зомби). При ${E.EXHAUST_AT}+ картах герой обессилен: рука −1, базовые действия недоступны.` : 'Перемешается в колоду, когда она закончится.';
       Modal.show(`<h2>${title}</h2><p class="muted">${sub}${wounds ? ` Ран: <b>${wounds}</b>.` : ''} Клик по карте — увеличить.</p>`, [{ label: 'Закрыть' }], wrap, 'wide');
     },
 
@@ -885,7 +886,7 @@
         const XPMAX = LV[LV.length - 1], xpTo = Math.min(XPMAX, h.xp);
         const xpFrom = prev ? Math.min(XPMAX, prev.xp) + (xpTo - Math.min(XPMAX, prev.xp)) * Math.min(1, el0 / 1000) : xpTo;
         const xpNext = LV.find((v) => h.xp < v) || null;
-        const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
+        const status = E.sheltered(g, h) ? '🏠 В УКРЫТИИ' : h.onBoard && E.exhausted(g, h) ? '😮‍💨 ОБЕССИЛЕН' : h.turned ? 'ОБРАЩЁН' : h.fallen ? 'ПАЛ' : h.evacuated ? 'СПАСЁН' : h.idx === g.active ? 'ХОДИТ' : h.acted ? 'походил' : 'готов';
         const info = el('div', 'hp-info');
         info.innerHTML = `
           <div class="hp-name">${esc(def.name)} <small>${h.ai ? '🤖 ИИ' : this.players === 2 ? 'И' + h.player : ''}</small><span class="hp-status">${status}</span></div>
@@ -894,6 +895,7 @@
           <div class="hp-meta">
             <span title="Размер руки: до стольких карт герой добирает в начале хода (не больше 3 за раз)">✋ ${E.handSize(g, h)}</span>
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>
+            ${(h.exhaust || []).length ? `<span class="${E.exhausted(g, h) ? 'tired' : ''}" title="Изнеможение: карты, сброшенные на блок (при ${E.EXHAUST_AT}+ — обессилен). Вернуть — «Отдышаться».">😮‍💨 ${h.exhaust.length}/${E.EXHAUST_AT}</span>` : ''}
             ${h.block ? `<span title="Блок до следующего хода">🛡 ${h.block}</span>` : ''}
             ${h.adrenaline ? `<span title="Адреналин">+${h.adrenaline}⚡</span>` : ''}
             ${h.hidden ? '<span>👻</span>' : ''}
@@ -981,6 +983,8 @@
       }
       $('#deck-count').textContent = h ? h.deck.length : '–';
       $('#discard-count').textContent = h ? h.discard.length : '–';
+      $('#exhaust-count').textContent = h ? `${(h.exhaust || []).length}/${E.EXHAUST_AT}` : '–';
+      $('#exhaust-pile').classList.toggle('tired', !!(h && E.exhausted(g, h)));
       if (!h) return;
       const n = h.hand.length;
       const blockBonus = ZG.Mods.value(g, h, 'blockPerCard', 0);
@@ -1038,7 +1042,9 @@
       const has = (t) => legal.some((a) => a.t === t);
       const zHere = E.zombiesAt(g, h.pos).length;
       // крупный значок: подсвечен, если доступен; затемнён с объяснением, если нет
+      const tired = E.exhausted(g, h);
       const icon = (key, label, cost, ok, why, onclick, extra) => {
+        if (!ok && tired && key !== 'rest') why = 'герой обессилен — сначала «Отдышаться»';
         const b = el('button', 'act-icon' + (ok ? ' ok' : ' off') + (extra || ''));
         const im = el('img'); im.src = CV.artURL('act_' + key, 112, 112, {}); im.alt = '';
         b.appendChild(im);
@@ -1058,8 +1064,7 @@
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
       const gives = legal.filter((a) => a.t === 'give');
       icon('give', 'Передать', 0, gives.length > 0, g.turn.gave ? 'уже передавали в этот ход' : !g.heroes.some((o) => o !== h && o.onBoard && o.pos === h.pos) ? 'рядом нет другого героя' : 'в руке нет находок, груза или карт кампании (базовые карты не передаются)', () => this.giveDialog());
-      const wHand = h.hand.some((u) => g.cards[u] === 'wound');
-      icon('rest', 'Отдышаться', 3, has('rest'), !wHand ? 'в руке нет Ран' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }));
+      icon('rest', 'Отдышаться', 3, has('rest'), !(h.exhaust || []).length ? 'Изнеможение пусто (туда уходят карты, сброшенные на блок)' : zHere ? 'мешают зомби в зоне' : lack(3), () => this.act({ t: 'rest' }), tired ? ' gold' : '');
       if (ZG.Mods.flag(g, h, 'healAction')) {
         const hl = legal.filter((a) => a.t === 'heal');
         icon('heal', 'Лечить', 1, hl.length > 0, g.turn.healUsed >= ZG.Mods.value(g, h, 'healAction', 0) ? 'уже лечили в этот ход' : h.energy < 1 ? lack(1) : 'рядом нет раненых', async () => {
@@ -1610,7 +1615,9 @@
         let sum = 0; picked.forEach((u) => { sum += E.blockValue(g, h, u); });
         const taken = Math.max(0, p.remaining - sum);
         const left = E.maxHp(g, h) - E.woundCount(g, h) - E.infectCount(g, h) - taken;
-        info.innerHTML = `Отражено картами: <b>${sum}</b> / ${p.remaining} → получите <b class="${taken ? 'bad' : 'good'}">${taken} урона</b>` + (taken ? ` <small>(за каждый кубик: 1–2 ☣ Заражение, 3–6 Рана)</small>` : '') + (left <= 0 ? ' <b class="bad">— ГЕРОЙ ПАДЁТ!</b>' : '');
+        const ex = (h.exhaust || []).length + picked.size;
+        info.innerHTML = `Отражено картами: <b>${sum}</b> / ${p.remaining} → получите <b class="${taken ? 'bad' : 'good'}">${taken} урона</b>` + (taken ? ` <small>(за каждый кубик: 1–2 ☣ Заражение, 3–6 Рана)</small>` : '') + (left <= 0 ? ' <b class="bad">— ГЕРОЙ ПАДЁТ!</b>' : '')
+          + `<br>Изнеможение: <b class="${ex >= E.EXHAUST_AT ? 'bad' : ''}">${ex} / ${E.EXHAUST_AT}</b>` + (ex >= E.EXHAUST_AT ? ' — <b class="bad">ОБЕССИЛЕН</b>: рука −1, базовые действия недоступны до «Отдышаться»' : '');
       };
       cards.forEach((u) => {
         const def = E.cardDef(g, u);
@@ -1624,7 +1631,7 @@
       const holder = el('div');
       holder.appendChild(wrap); holder.appendChild(info);
       return this.show(`<div class="kicker red">Атака!</div><h2>${esc(E.heroName(h))}: ${p.incoming} урона</h2>
-        <p>Атакуют: ${esc(attackers.join(', '))}. ${p.auto ? `Блок и снаряжение уже отразили <b>${p.auto}</b>.` : ''}<br>Сбросьте карты со щитом, чтобы отразить урон. Каждый неотражённый урон — карта Раны в ваш сброс.</p>`,
+        <p>Атакуют: ${esc(attackers.join(', '))}. ${p.auto ? `Блок и снаряжение уже отразили <b>${p.auto}</b>.` : ''}<br>Сбросьте карты со щитом, чтобы отразить урон: они уйдут в <b>Изнеможение</b>, а не в сброс. Каждый неотражённый урон — карта Раны в ваш сброс.</p>`,
       [{ label: 'Авто', value: 'auto' }, { label: 'Подтвердить', value: 'ok', cls: 'primary' }], holder, 'wide').then((v) => {
         if (v === 'auto') return ZG.Bot.chooseBlock(g, p);
         return Array.from(picked);

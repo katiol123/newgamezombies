@@ -134,13 +134,13 @@
       // в убежище переносится столько Стойкости, сколько было на момент окончания миссии
       // (карты Ран и Заражений уничтожаются, а потерянная от них Стойкость остаётся травмой)
       // стартовые Раны сложности («Кошмар») — не травмы: их не считаем
-      const startW = gh.deck.concat(gh.hand, gh.discard).filter((u) => g.cards[u] === 'wound' && String(u).startsWith('sw')).length;
+      const startW = gh.deck.concat(gh.hand, gh.discard, gh.exhaust || []).filter((u) => g.cards[u] === 'wound' && String(u).startsWith('sw')).length;
       const wounds = Math.max(0, ZG.Engine.hurtCount(g, gh) - startW);
       h.injury = Math.min(C.baseHp(h) + C.hpTalents(h) - 1, h.injury + wounds);
       if (wounds) line(h.id, `−${wounds} Стойкость (раны и заражения)`);
       // добыча: карты добычи из всего, что у героя (принесённые — со своим износом, новые — целые)
       const found = [];
-      gh.deck.concat(gh.hand, gh.discard, gh.equip).forEach((u) => {
+      gh.deck.concat(gh.hand, gh.discard, gh.exhaust || [], gh.equip).forEach((u) => {
         const id = g.cards[u], d = ZG.Cards.get(id);
         if (!(d.loot || d.campaignOnly)) return;
         const key = g.carried && g.carried[u];

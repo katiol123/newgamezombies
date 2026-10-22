@@ -11,7 +11,7 @@
   'use strict';
   const TABLE_TILT = 34, TABLE_PERSP = 1500; // режим «стол»: наклон поля и перспектива (совпадает с css .board-wrap.table)
   // событие поля → мелкий звук (ZG.Sound.sfx)
-  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
+  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', rested: 'heal', tired: 'bash', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
   const ZG = G.ZG;
   const Art = ZG.Art;
   const hash = Art.hash;
@@ -418,6 +418,18 @@
           this.effects.push({ type: 'bubble', ent: h, x: p.x, y: p.y, t0: this.time, dur: 0.7, color: '#8fc3ff' });
           this._float(p.x, p.y - C * 0.42, 'блок ' + ev.n, '#9fd0ff', 1);
           return 320;
+        }
+        case 'tired': {
+          const h = this.heroes.get(ev.hero);
+          const p = h || this.cellXY(ev.pos);
+          this._float(p.x, p.y - C * 0.5, 'ОБЕССИЛЕН', '#c8a0ff', 1.3);
+          return 500;
+        }
+        case 'rested': {
+          const h = this.heroes.get(ev.hero);
+          const p = h || this.cellXY(ev.pos);
+          this._float(p.x, p.y - C * 0.35, 'отдышался', '#6fe08a', 1.1);
+          return 350;
         }
         case 'heal': {
           const h = this.heroes.get(ev.hero);

@@ -12,7 +12,7 @@
   const W = {
     progress: 450, complete: 500, evac: 600, fallen: 2200, dist: 22, wound: 40, nearDeath: 70,
     unblocked: 55, death: 900, incoming: 5, adjThreat: 5, xp: 6, cardValue: 0.7, chainReady: 3, chainDone: 6, reserve: 2.2, hand: 1.5,
-    zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, partDmg: 6, adrenaline: 9, trap: 14, block: 2,
+    zombieThreat: 4, alarm: 7, crate: 650, search: 6, bigDmg: 25, partDmg: 6, adrenaline: 9, trap: 14, block: 2, exhaust: 12, tired: 90,
   };
   ZG.BotWeights = W;
 
@@ -101,6 +101,8 @@
       const urg = (E.isComplete(g) ? 2.5 : 1) * (left <= 3 ? 1.8 : 1);
       if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist * urg;
       s += h.adrenaline * W.adrenaline + h.block * W.block;
+      // Изнеможение: карты блока ждут «Отдышаться»; обессиленный герой без базовых действий и с рукой −1
+      s -= (h.exhaust || []).length * W.exhaust + (E.exhausted(g, h) ? W.tired : 0);
       // заражение: каждая карта в руке в конце хода — шаг к обращению
       const at = E.infectTurnAt(g);
       const infHand = h.hand.filter((u) => g.cards[u] === 'infection').length;
@@ -199,7 +201,13 @@
       .sort((a, b) => (E.cardDef(g, a).value || 5) / E.blockValue(g, h, a) - (E.cardDef(g, b).value || 5) / E.blockValue(g, h, b));
     const out = [];
     let rem = p.remaining;
-    for (const u of cards) { if (rem <= 0) break; out.push(u); rem -= E.blockValue(g, h, u); }
+    const room = Math.max(0, E.EXHAUST_AT - 1 - (h.exhaust || []).length);
+    let capRem = rem;
+    cards.slice(0, room).forEach((u) => { capRem -= E.blockValue(g, h, u); });
+    // «Обессилен» дороже одной Раны: лишний 1 урон принимаем, если герой не на грани
+    const danger = E.hurtCount(g, h) + Math.max(0, capRem) >= E.maxHp(g, h) - 1 || capRem >= 2;
+    const limit = danger ? cards.length : room;
+    for (const u of cards) { if (rem <= 0 || out.length >= limit) break; out.push(u); rem -= E.blockValue(g, h, u); }
     return out;
   }
 

@@ -103,7 +103,7 @@
   ZG.Cards.addAll([
     {
       id: 'wound', name: 'Рана', suit: 'none', cost: null, shield: 0, kind: 'wound',
-      type: 'Рана', text: 'Нельзя сыграть или сбросить для защиты.\nУбирается лечением или действием «Отдышаться».',
+      type: 'Рана', text: 'Нельзя сыграть или сбросить для защиты.\nУбирается лечением.',
       art: 'wound', unplayable: true, value: -10,
     },
     {
