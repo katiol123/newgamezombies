@@ -379,6 +379,7 @@
       isComplete(g) {
         if (!g.obj.open && this.hasKey(g)) {
           g.obj.open = true; // ключ добыт — шлагбаум открыт до конца миссии
+          if (!g.obj.way) g.obj.way = 'force'; // ключ подобран с убитого Лесника
           // «звон пошлин»: жетоны на шнурке звякнули — Лесник просыпается и идёт по следу вора
           const E = ZG.Engine, holder = g.heroes.find((h) => h.hand.some((u) => g.cards[u] === 'cargo_key'));
           const f = g.zombies.find((z) => z.type === 'forester');
@@ -409,6 +410,7 @@
           const f = this.forester(g);
           if (!f || !(f.bag || []).includes('cargo_key')) return;
           f.bag.splice(f.bag.indexOf('cargo_key'), 1);
+          g.obj.way = 'quiet'; // ключ снят со спящего
           E.giveCard(g, hero, 'cargo_key');
           E.log(g, `${E.heroName(hero)} осторожно снимает ключ с пояса спящего Лесника…`, 'good');
           E.storyEvent(g, 'cargo');
