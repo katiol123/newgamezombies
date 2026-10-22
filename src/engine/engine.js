@@ -120,24 +120,32 @@
   // видит ли зомби героя: своя зона, соседняя (по проходу) или прямая линия через открытые проходы
   E.sees = function (g, z, h) {
     if (!h.onBoard || h.hidden || E.hidden(g, z.pos)) return false;
-    if (E.alerted(g) || ZG.Zombies.get(z.type).relentless) return true; // Волна / Безжалостный: знают, где все
+    const zd = ZG.Zombies.get(z.type);
+    if (zd.tracker && z.lurk) {
+      // спящий охотник (Лесник) ничего не чует; войти к нему незамеченным может только тихий герой
+      // (бесшумный, «Тихим шагом» в этот ход или затаившийся)
+      const sneaky = Mods.flag(g, h, 'stealthy') || h.lurk || (g.turn && g.active === h.idx && g.turn.quiet);
+      return z.pos === h.pos && !sneaky;
+    }
+    if (E.alerted(g) || zd.relentless || z.relentless) return true; // Волна / Безжалостный (или идущий по следу): знают, где все
     if (z.pos === h.pos) return true;
-    if (h.lurk) return false; // «Затаиться»: видят только в своей зоне
+    // «Чутьё охотника» (Лесник): замечает и затаившихся, и бесшумных, и идущих «Тихим шагом»
+    if (h.lurk && !zd.tracker) return false; // «Затаиться»: видят только в своей зоне
     // бродячие не замечают бесшумного героя (Тень) и того, кто идёт «Тихим шагом»
-    const quiet = !z.awake && g.turn && g.active === h.idx && g.turn.quiet;
+    const quiet = !z.awake && g.turn && g.active === h.idx && g.turn.quiet && !zd.tracker;
     if (quiet) return false;
     if (g.board.adj[z.pos].includes(h.pos)) return true;
-    if (!z.awake && Mods.flag(g, h, 'stealthy')) return false; // бесшумного издалека не замечают
+    if ((!z.awake || zd.watch) && Mods.flag(g, h, 'stealthy') && !zd.tracker) return false; // бесшумного издалека не замечают (снайпер на посту — тоже)
     if (Mods.flag(g, h, 'loud') && E.distV(g, z.pos)[h.pos] <= 2) return true; // шумного слышно за 2 зоны
     if (E.sheltered(g, h)) return false;
-    return lineSight(g, z.pos, h.pos);
+    return lineSight(g, z.pos, h.pos, zd.sight);
   };
   // прямая видимость: до SIGHT зон по прямой через открытые проходы (двери закрыты — не видно)
-  function lineSight(g, from, to) {
-    const b = g.board, c0 = b.cells[from];
+  function lineSight(g, from, to, range) {
+    const b = g.board, c0 = b.cells[from], R = range || SIGHT;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       let prev = from, x = c0.x, y = c0.y;
-      for (let d = 1; d <= SIGHT; d++) {
+      for (let d = 1; d <= R; d++) {
         x += dx; y += dy;
         if (x < 0 || y < 0 || x >= b.w || y >= b.h) break;
         const ni = y * b.w + x;
@@ -159,12 +167,14 @@
     E.fx(g, { t: 'story', id });
   };
   E.storyEvent = (g, key) => E.story(g, g.stories && g.stories[key]);
+  // задание может запретить эвакуацию (например, пока у шлагбаума стоит часовой)
+  E.canEvac = (g, h) => { const sc = E.scenario(g); return !sc.canEvac || sc.canEvac(g, h, E); };
   E.isBandit = (z) => !!z && ZG.Zombies.get(z.type).faction === 'bandit';
   // видит ли существо другое существо (зомби ↔ бандит): своя зона, соседняя или прямая линия
   E.seesFoe = function (g, z, o) {
     if (E.hidden(g, z.pos) || E.hidden(g, o.pos)) return false;
     if (z.pos === o.pos || g.board.adj[z.pos].includes(o.pos)) return true;
-    return lineSight(g, z.pos, o.pos);
+    return lineSight(g, z.pos, o.pos, ZG.Zombies.get(z.type).sight);
   };
   // существа-враги (не герои): для бандита — подвижные зомби, для зомби — бандиты
   E.foesOf = (g, z) => g.zombies.filter((o) => o !== z && E.isBandit(o) !== E.isBandit(z) && !ZG.Zombies.get(o.type).immobile);
@@ -175,13 +185,16 @@
   const BANDIT_RANGE = 2;
   E.banditTarget = function (g, z, pick) {
     if (E.hidden(g, z.pos) || (g.stealth && !z.awake)) return null;
+    const range = ZG.Zombies.get(z.type).range != null ? ZG.Zombies.get(z.type).range : BANDIT_RANGE;
     const at = (cell) => E.heroesAt(g, cell).filter((h) => !h.hidden).map((h) => ({ hero: h, pos: cell }))
       .concat(E.foesOf(g, z).filter((o) => o.pos === cell).map((o) => ({ foe: o, pos: cell })));
     const here = at(z.pos);
     if (here.length) return pick && here.length > 1 ? Rng.pick(g, here) : here[0];
-    const line = E.line(g, z.pos, BANDIT_RANGE).filter((c) => c.dist >= 1).sort((a, b) => a.dist - b.dist);
+    if (!range) return null; // только ближний бой
+    const line = E.line(g, z.pos, range).filter((c) => c.dist >= 1).sort((a, b) => a.dist - b.dist);
     for (const c of line) {
-      const list = at(c.cell).filter((t) => (t.hero ? E.sees(g, z, t.hero) : true));
+      // укрытие (мешки с песком): по героям в этой зоне не стреляют
+      const list = at(c.cell).filter((t) => (t.hero ? E.sees(g, z, t.hero) && !(g.cover || []).includes(c.cell) : true));
       if (list.length) return Object.assign(pick && list.length > 1 ? Rng.pick(g, list) : list[0], { shot: true });
     }
     return null;
@@ -245,7 +258,7 @@
   function loseTrack(g) {
     if (!g.stealth) return;
     g.zombies.forEach((z) => {
-      if (!z.awake || ZG.Zombies.get(z.type).relentless || ZG.Zombies.get(z.type).immobile) return;
+      if (!z.awake || z.relentless || ZG.Zombies.get(z.type).relentless || ZG.Zombies.get(z.type).immobile || ZG.Zombies.get(z.type).watch) return; // снайпер всегда на посту; идущий по следу не теряет его
       const seen = E.seenFoes(g, z);
       if (seen.length) { z.trail = seen[0].pos; return; }
       if (z.trail != null && z.trail !== z.pos && E.distV(g, z.pos)[z.trail] !== Infinity) return; // идёт по последнему следу (если до него можно дойти)
@@ -278,6 +291,8 @@
   }
   // Мародёрство: бандит на закрытом ящике или жетоне Обыска забирает добычу в мешок (выпадет, когда его убьют)
   E.banditLoot = function (g, z) {
+    const zd = ZG.Zombies.get(z.type);
+    if (z.lurk || zd.static || zd.hunter) return; // часовой на посту, снайпер и главарь лут не трогают — мародёрствуют бродяги
     if (E.hidden(g, z.pos)) {
       // в тумане: на «1–2» кубика бродяг бандит обчищает ближайший ящик/тайник своего тайла (фишка остаётся на рубашке)
       if (!g.zs || g.zs.wander > 4) return;
@@ -329,7 +344,8 @@
     const def = ZG.Tiles.get(g.board.tiles[ti].id);
     const n = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti).length;
     resolveDecoys(g, ti);
-    E.log(g, `${why || 'Разведка'}: открыт тайл «${def.name}»${n ? ` — там ${n} ${ZG.util.plural(n, 'зомби', 'зомби', 'зомби')}!` : '.'}`, n ? 'bad' : 'info');
+    const nb = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti && E.isBandit(z)).length, nz = n - nb;
+    E.log(g, `${why || 'Разведка'}: открыт тайл «${def.name}»${nz ? ` — там ${nz} ${ZG.util.plural(nz, 'зомби', 'зомби', 'зомби')}` : ''}${nb ? `${nz ? ' и' : ' — там'} ${nb} ${ZG.util.plural(nb, 'бандит', 'бандита', 'бандитов')}` : ''}${n ? '!' : '.'}`, n ? 'bad' : 'info');
     E.fx(g, { t: 'reveal', tile: ti, n, why });
     const here = g.zombies.filter((z) => g.board.cells[z.pos].tile === ti);
     if (g.stackTiles && g.stackTiles.includes(ti) && here.some((z) => z.lurk)) E.storyEvent(g, 'packReveal');
@@ -1050,7 +1066,7 @@
     if (g.stealth) {
       if (!z.awake) return z.lurk ? null : wanderGoal(g, z); // притаившийся ждёт на месте, пока не разбудят
       // бандит: враг в своей зоне или на линии выстрела — стоит и стреляет; иначе не преследует, а мародёрствует дальше
-      if (E.isBandit(z)) return E.banditTarget(g, z) ? null : wanderGoal(g, z);
+      if (E.isBandit(z) && !ZG.Zombies.get(z.type).hunter && !z.hunt) return E.banditTarget(g, z) ? null : wanderGoal(g, z); // z.hunt — поднятый по тревоге: загонщик
       // охотник: видимые враги (герои, а также бандиты/зомби — для другой стороны) и приманки; никого не видно — последний след
       const cand = E.seenFoes(g, z).map((t) => ({ pos: t.pos, k: 1 })).concat(E.isBandit(z) ? [] : g.lures.map((l) => ({ pos: l.pos, k: 0 })));
       if (!cand.length && z.trail != null) cand.push({ pos: z.trail, k: 2 });
@@ -1088,6 +1104,7 @@
   // кроме случая, когда зомби дошёл до пустого шума: тогда он ищет новую.
   function moveZombieStep(g, z, goals) {
     if (E.hidden(g, z.pos)) return false; // в тумане зомби копятся у люка
+    if (ZG.Zombies.get(z.type).static || z.post) return false; // на позиции (снайпер, часовой)
     goals = goals || {};
     // пришёл на пустой шум — «проверил, никого»: жетон снят, зомби ищет новую цель
     if (!g.stealth && g.noise[z.pos] && !E.heroesAt(g, z.pos).length && !g.lures.some((l) => l.pos === z.pos)) { delete g.noise[z.pos]; delete goals[z.uid]; }
@@ -1255,8 +1272,15 @@
         g.stats.banditShots = (g.stats.banditShots || 0) + 1;
         E.storyEvent(g, 'firstBandit'); // первая атака бандита (или первый бандит на открытом тайле)
         if (t.shot) E.fx(g, { t: 'shot', hero: null, from: z.pos, to: t.pos });
-        E.hear(g, z.pos, 2);
-        if (t.hero) { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : 'бьёт'} ${E.heroName(t.hero)}!`, 'bad'); toHero(z, t.hero, def); }
+        if (!def.quietAttack) E.hear(g, z.pos, 2);
+        if (def.id === 'sniper') E.storyEvent(g, 'firstSniper');
+        if (t.hero && t.shot && def.pierce) {
+          // винтовка: выстрел не блокируется картами (спасают только укрытия)
+          E.log(g, `${def.name} стреляет в ${E.heroName(t.hero)} — ${def.dmg} ${ZG.util.plural(def.dmg, 'Рана', 'Раны', 'Ран')}, блок не спасает!`, 'bad');
+          E.fx(g, { t: 'wound', hero: t.hero.idx, pos: t.hero.pos, n: def.dmg });
+          g.stats.incoming = (g.stats.incoming || 0) + def.dmg;
+          addWounds(g, t.hero, def.dmg);
+        } else if (t.hero) { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : def.verb || 'бьёт'} ${E.heroName(t.hero)}!`, 'bad'); toHero(z, t.hero, def); }
         else { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : 'бьёт'} зомби (${ZG.Zombies.get(t.foe.type).name}) — в голову!`, 'dim'); damageZombie(g, t.foe, def.foeDmg || def.dmg, null, 'shot'); }
         return;
       }
@@ -1597,7 +1621,7 @@
       });
     }
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
-    if (E.isComplete(g) && h.pos === g.exit) out.push({ t: 'evac' });
+    if (E.isComplete(g) && h.pos === g.exit && E.canEvac(g, h)) out.push({ t: 'evac' });
     if (g.survivor && g.survivor.pos === h.pos && h.energy >= 1) out.push({ t: 'rescue' });
     return out;
   };
@@ -1826,6 +1850,7 @@
       }
       case 'evac': {
         if (!E.isComplete(g) || h.pos !== g.exit) return fail(g, 'Эвакуация ещё не готова.');
+        if (!E.canEvac(g, h)) return fail(g, E.scenario(g).evacBlockedText || 'Сейчас уйти нельзя.');
         h.onBoard = false; h.evacuated = true;
         E.log(g, `${E.heroName(h)} эвакуируется!`, 'good');
         E.fx(g, { t: 'evac', hero: h.idx, pos: h.pos });

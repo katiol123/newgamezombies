@@ -39,6 +39,26 @@
       buildings: {},
       decor: [{ k: 'pylon', x: 1, y: 1 }, { k: 'stump', x: 2, y: 2 }, { k: 'pine', x: 2, y: 0 }],
     },
+    // --- Мост (кампания, миссия 5): логово банды Лесника ---
+    {
+      id: 'checkpoint', name: 'Блокпост у моста', num: 'М1', unique: true,
+      map: ['A.#', '...', '...'], doors: [[0, 0, 0, 1], [0, 0, 1, 0]], search: [[0, 0, 'armory']],
+      buildings: { A: { floor: 'wood', label: 'Будка' } },
+      decor: [{ k: 'blocks', x: 2, y: 0 }, { k: 'sandbags', x: 1, y: 1 }, { k: 'sniper_tower', x: 0, y: 2 }, { k: 'barrier', x: 2, y: 1 }, { k: 'table', x: 0, y: 0 }],
+      barrier: [2, 1], // шлагбаум на мост — выход
+      perch: [0, 2], // вышка снайпера
+      cover: [[1, 1]], // мешки с песком: укрытие от выстрелов
+    },
+    {
+      id: 'sawmill', name: 'Лесопилка', num: 'М2', unique: true, ground: 'dirt',
+      map: ['A..', 'A..', '...'], doors: [[0, 0, 1, 0], [0, 1, 1, 1]], search: [],
+      buildings: { A: { floor: 'wood', label: 'Изба Лесника' } },
+      decor: [{ k: 'bed', x: 0, y: 0 }, { k: 'bearskin', x: 0, y: 0 }, { k: 'table', x: 0, y: 1 }, { k: 'logstack', x: 2, y: 0 }, { k: 'saw', x: 1, y: 1 }, { k: 'console', x: 2, y: 1 }, { k: 'woodpile', x: 1, y: 2 }],
+      lair: [0, 0], // здесь спит Лесник
+      perch: [2, 0], // штабель брёвен — позиция второго снайпера
+      saw: [1, 1], // пилорама: зона ловушки
+      console: [2, 1], // пульт пилорамы
+    },
     // уникальный тайл кампании (миссия 2): в пул уровня не входит, ставится правилами миссии
     {
       id: 'autobase', name: 'Автобаза №3', num: 'А3', unique: true,

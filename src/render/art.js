@@ -496,6 +496,32 @@
       c.restore();
       if (!o.shadow) { c.strokeStyle = '#3a2412'; c.lineWidth = 2; c.setLineDash([3, 3]); rr(c, 22, 44, 38, 38, 6); c.stroke(); c.setLineDash([]); }
     },
+    forester_axe(c, o) {
+      c.save(); c.translate(50, 50); c.rotate(-0.6); c.translate(-50, -50);
+      rr(c, 46, 14, 9, 78, 3); fillInk(c, o.shadow ? o.ink : '#8a6034'); // топорище
+      c.beginPath(); c.moveTo(42, 14); c.lineTo(80, 8); c.quadraticCurveTo(88, 26, 80, 42); c.lineTo(42, 34); c.closePath(); fillInk(c, o.shadow ? o.ink : '#9aa0a6'); // лезвие
+      if (!o.shadow) { c.fillStyle = 'rgba(140,20,10,.7)'; c.beginPath(); c.ellipse(76, 26, 5, 12, 0.2, 0, 7); c.fill(); c.strokeStyle = '#4a3424'; c.lineWidth = 3; c.beginPath(); c.moveTo(47, 70); c.lineTo(54, 74); c.moveTo(47, 76); c.lineTo(54, 80); c.stroke(); }
+      c.restore();
+    },
+    cargo_key(c, o) {
+      circle(c, 32, 50, 18); fillInk(c, o.shadow ? o.ink : '#e0a83a');
+      if (!o.shadow) { c.fillStyle = '#1d1611'; circle(c, 32, 50, 8); c.fill(); }
+      rr(c, 46, 45, 42, 10, 2); fillInk(c, o.shadow ? o.ink : '#e0a83a');
+      c.fillRect(70, 55, 7, 12); c.fillRect(80, 55, 7, 9);
+      if (!o.shadow) { c.fillStyle = '#c0392b'; rr(c, 10, 22, 20, 12, 3); c.fill(); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('КПП', 11, 31); }
+    },
+    garrote(c, o) {
+      // струна с двумя деревянными ручками
+      c.beginPath(); c.moveTo(24, 30); c.bezierCurveTo(30, 86, 70, 86, 76, 30); strokeInk(c, o.shadow ? 5 : 3, o.shadow ? o.ink : '#c8ccd0');
+      [[24, 26], [76, 26]].forEach(([x, y]) => { rr(c, x - 7, y - 16, 14, 26, 4); fillInk(c, o.shadow ? o.ink : '#8a6034'); });
+    },
+    grenade(c, o) {
+      // жестяная банка тушёнки с фитилём
+      rr(c, 26, 34, 48, 52, 6); fillInk(c, o.shadow ? o.ink : '#9aa0a6');
+      if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(26, 50, 48, 16); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('ТУШЁНКА', 29, 61); c.strokeStyle = '#6a6e72'; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(26, 40 + i * 4); c.lineTo(74, 40 + i * 4); c.stroke(); } }
+      c.beginPath(); c.moveTo(50, 34); c.quadraticCurveTo(58, 16, 70, 18); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
+      if (!o.shadow) { c.fillStyle = '#ffb030'; circle(c, 72, 17, 5); c.fill(); c.fillStyle = '#fff3a0'; circle(c, 72, 17, 2.5); c.fill(); }
+    },
     bearfat(c, o) {
       // банка с жиром и отпечатком лапы
       rr(c, 26, 26, 48, 60, 8); fillInk(c, o.shadow ? o.ink : '#e8d8a0');
@@ -1047,6 +1073,46 @@
     ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.16; ctx.strokeStyle = '#4a7ab0'; ctx.stroke(); // синее кольцо — третья сторона
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
+  });
+  // Снайпер — бандит в капюшоне с оптикой; Лесник — главарь в медвежьей шкуре
+  function sniperHead(c) {
+    c.fillStyle = '#3a4030'; c.beginPath(); c.moveTo(16, 100); c.quadraticCurveTo(20, 74, 50, 72); c.quadraticCurveTo(80, 74, 84, 100); c.fill(); strokeInk(c, 2.5);
+    c.fillStyle = '#4a5238'; c.beginPath(); c.moveTo(20, 60); c.quadraticCurveTo(22, 14, 50, 14); c.quadraticCurveTo(78, 14, 80, 60); c.quadraticCurveTo(50, 72, 20, 60); c.fill(); strokeInk(c, 2.5); // капюшон
+    c.fillStyle = '#c8956a'; c.beginPath(); c.ellipse(50, 50, 18, 20, 0, 0, 7); c.fill(); strokeInk(c, 2);
+    c.fillStyle = '#2a2e24'; c.fillRect(32, 50, 36, 14); // шарф
+    c.fillStyle = '#1a1a1e'; rr(c, 24, 38, 30, 11, 4); c.fill(); // прицел у глаза
+    c.fillStyle = '#ff5a3c'; circle(c, 28, 43.5, 3.5); c.fill();
+    c.fillStyle = '#f4f0e0'; circle(c, 61, 44, 3); c.fill(); c.fillStyle = INK; circle(c, 61, 44, 1.6); c.fill();
+  }
+  function foresterHead(c) {
+    c.fillStyle = '#4a3424'; c.beginPath(); c.moveTo(8, 100); c.quadraticCurveTo(10, 66, 50, 64); c.quadraticCurveTo(90, 66, 92, 100); c.fill(); strokeInk(c, 2.5); // шкура на плечах
+    c.fillStyle = '#5a4030'; c.beginPath(); c.ellipse(50, 24, 30, 16, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // медвежья голова-капюшон
+    c.fillStyle = '#4a3424'; circle(c, 26, 14, 7); c.fill(); strokeInk(c, 2); circle(c, 74, 14, 7); c.fill(); strokeInk(c, 2);
+    c.fillStyle = '#e8dcc0'; poly(c, [34, 34, 37, 42, 40, 34]); c.fill(); poly(c, [60, 34, 63, 42, 66, 34]); c.fill(); // клыки шкуры
+    c.fillStyle = '#b07a52'; c.beginPath(); c.ellipse(50, 54, 19, 20, 0, 0, 7); c.fill(); strokeInk(c, 2);
+    c.fillStyle = '#8a8478'; c.beginPath(); c.moveTo(32, 56); c.quadraticCurveTo(50, 92, 68, 56); c.quadraticCurveTo(50, 66, 32, 56); c.fill(); strokeInk(c, 1.5); // седая борода
+    c.fillStyle = '#f4f0e0'; circle(c, 42, 48, 3.2); c.fill(); circle(c, 58, 48, 3.2); c.fill();
+    c.fillStyle = INK; circle(c, 42, 48, 1.7); c.fill(); circle(c, 58, 48, 1.7); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(35, 41); c.lineTo(47, 44); c.moveTo(65, 41); c.lineTo(53, 44); c.stroke();
+    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(56, 40); c.lineTo(64, 58); c.stroke(); // шрам
+  }
+  [['sniper', sniperHead, '#3a4a30', '#4a7ab0'], ['forester', foresterHead, '#6a4a2a', '#d4a017']].forEach(([id, head, bg, ring]) => {
+    Art.define('zp_' + id, (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, bg); g.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, head); ctx.restore();
+    });
+    Art.define('z_' + id, (ctx, w, h) => {
+      const r = Math.min(w, h) / 2;
+      ctx.save(); ctx.translate(w / 2, h / 2);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
+      const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, bg); gr.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, head); ctx.restore();
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * (id === 'forester' ? 0.18 : 0.16); ctx.strokeStyle = ring; ctx.stroke(); // синее — бандиты, золотое — главарь
+      ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+      ctx.restore();
+    });
   });
   // Медведь-шатун — мини-босс леса (отдельный рисунок)
   function bearHead(c) {

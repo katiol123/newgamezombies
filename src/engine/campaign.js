@@ -76,7 +76,7 @@
       seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null,
-      wanderers: c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
+      wanderers: md.noWanderers ? (md.bosses || []) : c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);
         const temp = h.morale <= 0 ? ['despair', 'despair'] : h.morale <= M.low ? ['despair'] : h.morale >= M.max ? ['courage'] : [];

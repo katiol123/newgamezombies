@@ -117,6 +117,59 @@
       ctx.fillStyle = '#0c0a08'; ctx.beginPath(); ctx.arc(0, 0, C * 0.17, 0, TAU); ctx.fill();
       ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-C * 0.3, -C * 0.05); ctx.lineTo(C * 0.3, -C * 0.05); ctx.stroke(); // ворот
     },
+    // --- Мост (миссия 5) ---
+    sandbags(ctx, C) {
+      for (let row = 0; row < 2; row++) for (let i = 0; i < 4 - row; i++) {
+        const x = -C * 0.27 + i * C * 0.18 + row * C * 0.09, y = C * 0.18 - row * C * 0.1;
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + 2, y + 3, C * 0.1, C * 0.055, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = row ? '#b8a478' : '#a8946a'; ctx.beginPath(); ctx.ellipse(x, y, C * 0.1, C * 0.055, 0, 0, TAU); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.stroke();
+      }
+    },
+    sniper_tower(ctx, C) {
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(-C * 0.26 + 5, -C * 0.26 + 6, C * 0.52, C * 0.52);
+      ctx.strokeStyle = '#5a4a36'; ctx.lineWidth = 3; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(a * C * 0.3, b * C * 0.3); ctx.lineTo(a * C * 0.18, b * C * 0.18); ctx.stroke(); });
+      Art.rr(ctx, -C * 0.2, -C * 0.2, C * 0.4, C * 0.4, 3); ctx.fillStyle = '#6a5038'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = '#3a2a1a'; ctx.beginPath(); ctx.moveTo(-C * 0.24, -C * 0.24); ctx.lineTo(0, -C * 0.34); ctx.lineTo(C * 0.24, -C * 0.24); ctx.closePath(); ctx.fill(); // навес
+      ctx.fillStyle = 'rgba(255,90,60,.8)'; ctx.beginPath(); ctx.arc(C * 0.06, -C * 0.02, C * 0.03, 0, TAU); ctx.fill(); // блик прицела
+    },
+    barrier(ctx, C) {
+      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(-C * 0.36, -C * 0.06, C * 0.08, C * 0.12);
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#e8e0d0' : '#c0392b'; ctx.fillRect(-C * 0.28 + i * C * 0.11, -C * 0.03, C * 0.11, C * 0.06); }
+      ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.strokeRect(-C * 0.28, -C * 0.03, C * 0.66, C * 0.06);
+      ctx.strokeStyle = 'rgba(200,200,210,.5)'; ctx.lineWidth = 2; [-0.38, 0.38].forEach((k) => { ctx.beginPath(); ctx.moveTo(C * 0.42, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // перила моста
+    },
+    blocks(ctx, C) {
+      [[-0.18, -0.12], [0.16, -0.14], [0, 0.16]].forEach(([x, y], i) => {
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x * C - C * 0.13 + 3, y * C - C * 0.09 + 4, C * 0.26, C * 0.18);
+        ctx.fillStyle = i % 2 ? '#9a9a94' : '#8a8a84'; ctx.fillRect(x * C - C * 0.13, y * C - C * 0.09, C * 0.26, C * 0.18); ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.strokeRect(x * C - C * 0.13, y * C - C * 0.09, C * 0.26, C * 0.18);
+      });
+    },
+    logstack(ctx, C) {
+      for (let row = 0; row < 3; row++) for (let i = 0; i < 4 - row; i++) {
+        const x = -C * 0.24 + i * C * 0.16 + row * C * 0.08, y = C * 0.2 - row * C * 0.14;
+        ctx.fillStyle = '#c8a070'; ctx.beginPath(); ctx.arc(x, y, C * 0.075, 0, TAU); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#5a3a1a'; ctx.stroke();
+        ctx.strokeStyle = 'rgba(90,58,26,.5)'; ctx.beginPath(); ctx.arc(x, y, C * 0.035, 0, TAU); ctx.stroke();
+      }
+    },
+    saw(ctx, C) {
+      Art.rr(ctx, -C * 0.4, -C * 0.12, C * 0.8, C * 0.24, 3); ctx.fillStyle = '#5a5048'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = '#c0c4c8'; ctx.beginPath();
+      for (let i = 0; i <= 24; i++) { const a = (i / 24) * TAU, r = i % 2 ? C * 0.17 : C * 0.2; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      ctx.closePath(); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#5a5048'; ctx.beginPath(); ctx.arc(0, 0, C * 0.05, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(120,20,10,.55)'; ctx.beginPath(); ctx.ellipse(C * 0.12, C * 0.08, C * 0.08, C * 0.04, 0.4, 0, TAU); ctx.fill(); // пятно
+    },
+    console(ctx, C) {
+      Art.rr(ctx, -C * 0.12, -C * 0.14, C * 0.24, C * 0.28, 3); ctx.fillStyle = '#4a5a3a'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.arc(0, -C * 0.04, C * 0.05, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e0a83a'; ctx.fillRect(-C * 0.07, C * 0.05, C * 0.14, C * 0.04);
+    },
+    bearskin(ctx, C) {
+      ctx.fillStyle = '#4a3424'; ctx.beginPath(); ctx.ellipse(0, 0, C * 0.26, C * 0.18, 0, 0, TAU); ctx.fill();
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { ctx.beginPath(); ctx.ellipse(a * C * 0.26, b * C * 0.16, C * 0.07, C * 0.05, a * b * 0.6, 0, TAU); ctx.fill(); });
+      ctx.beginPath(); ctx.arc(C * 0.3, 0, C * 0.09, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#d8ff4a'; ctx.beginPath(); ctx.arc(C * 0.33, -C * 0.03, C * 0.015, 0, TAU); ctx.arc(C * 0.33, C * 0.03, C * 0.015, 0, TAU); ctx.fill();
+    },
     pylon(ctx, C) {
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-C * 0.2 + 4, -C * 0.2 + 5, C * 0.4, C * 0.4);
       ctx.strokeStyle = '#8a9298'; ctx.lineWidth = 3; ctx.strokeRect(-C * 0.2, -C * 0.2, C * 0.4, C * 0.4);

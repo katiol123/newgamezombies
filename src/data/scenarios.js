@@ -14,6 +14,7 @@
   'use strict';
   const ZG = G.ZG;
 
+  const E0 = () => ZG.Engine;
   // Общая логика «найти груз в ящиках → доставить»
   function cargoInHands(g, cargoId) {
     let n = 0;
@@ -306,6 +307,127 @@
         return need > 0 && thieves.length ? E.nearest(g, hero.pos, thieves) : null;
       },
       progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
+    },
+    // --- Кампания, миссия 5: мост, банда Лесника; два пути — тихо (ключ) или силой (зачистка) ---
+    {
+      id: 'bridge', campaignOnly: true, name: 'Пошлина за мост',
+      short: 'Пройти на мост: тихо снять ключ от шлагбаума со спящего Лесника или перебить его банду — и всем уйти по мосту.',
+      brief: 'Мост держит банда Лесника: два снайпера и сам главарь. Шлагбаум откроет ключ из будки блокпоста — или пустая дорога.',
+      setupText: 'Поле 4×2: Блокпост у моста (правый столбец; открыт сразу) и Лесопилка (третий столбец) + 6 обычных тайлов. Выход — шлагбаум на Блокпосте. Блокпост: снайпер на вышке, у шлагбаума дремлет часовой — с поста не уходит (пока в зоне шлагбаума враг — уйти нельзя), мешки с песком (герой в этой зоне неуязвим для выстрелов), будка — оружейный тайник банды. Лесопилка: в избе спит Лесник — ключ от шлагбаума у него на поясе. Тихий герой (бесшумный, невидимый, «Тихим шагом» в этот ход или затаившийся) может войти к спящему незамеченным и действием «Снять ключ» (1 ⚡) забрать его — другим это действие недоступно; любого другого Лесник почует в своей зоне и проснётся. Убитый Лесник роняет ключ; второй снайпер на штабеле брёвен, пилорама (пульт: 1 ⚡, раз за миссию — 4 урона всем врагам в зоне пилы, Шум 3, Тревога +2). Когда ключ взят, звякают жетоны-«пошлины»: Лесник просыпается и идёт по следу, вся банда поднимается — бродяги становятся охотниками (преследуют отряд). Бандиты-бродяги: соло 3, пара 5, трое 6, четверо 8 — на обычных тайлах, кроме стартового. Раундов: соло 11, пара 10, трое 8, четверо 7. Зомби нет. Задание выполнено, если ключ у отряда ИЛИ банда перебита полностью.',
+      exitLabel: 'Мост', exitArt: 'exit_van',
+      bandits: { 1: 3, 2: 5, 3: 6, 4: 8 },
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng;
+        const at = (ti, p) => b.cells.find((c) => c.tile === ti && c.lx === p[0] && c.ly === p[1]);
+        const cp = b.tiles.findIndex((t) => t.id === 'checkpoint'), sm = b.tiles.findIndex((t) => t.id === 'sawmill');
+        const CP = ZG.Tiles.get('checkpoint'), SM = ZG.Tiles.get('sawmill');
+        const st = b.cells[g.start].tile;
+        g.obj = { open: false, saw: null, console: null, sawUsed: false };
+        if (cp >= 0) {
+          g.exit = at(cp, CP.barrier).i;
+          g.cover = CP.cover.map((p) => at(cp, p).i);
+          // часовой у шлагбаума: пока в зоне шлагбаума есть враг — его не поднять
+          const guard = E.lurker(g, 'bandit', g.exit);
+          if (guard) { guard.post = true; const i = g.lootDeck.findIndex((id) => id !== 'ambush'); guard.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : []; }
+          const s1 = E.spawnZombie(g, 'sniper', at(cp, CP.perch).i, null, true, true, true); if (s1) { s1.awake = true; s1.trail = null; } // снайпер начеку с самого начала
+        }
+        if (sm >= 0) {
+          const f = E.lurker(g, 'forester', at(sm, SM.lair).i);
+          if (f) f.bag = ['cargo_key']; // ключ от шлагбаума — у Лесника на поясе (выпадет, если его убить)
+          const s2 = E.spawnZombie(g, 'sniper', at(sm, SM.perch).i, null, true, true, true); if (s2) { s2.awake = true; s2.trail = null; }
+          g.obj.saw = at(sm, SM.saw).i; g.obj.console = at(sm, SM.console).i;
+        }
+        // туман: открыты старт и блокпост (мост видно издалека)
+        g.hideFogCounts = true; // где бродят бандиты — неизвестно
+        if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st || i === cp);
+        // бандиты-бродяги: по обычным тайлам (кроме стартового), у каждого в мешке карта добычи
+        const tiles = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== cp && i !== sm);
+        const n = this.bandits[Math.min(4, g.heroes.length)];
+        const order = Rng.shuffle(g, tiles.slice());
+        for (let k = 0; k < n; k++) {
+          const ti = order[k % order.length];
+          const cells = b.cells.filter((c) => c.tile === ti && c.type === 'street' && !g.zombies.some((z) => z.pos === c.i));
+          const z = E.spawnZombie(g, 'bandit', Rng.pick(g, cells.length ? cells : b.cells.filter((c) => c.tile === ti && c.type !== 'blocked')).i, null, true, true, true);
+          if (!z) continue;
+          z.awake = false; z.trail = null;
+          const i = g.lootDeck.findIndex((id) => id !== 'ambush');
+          z.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : [];
+        }
+      },
+      evacBlockedText: 'У шлагбаума враг — сначала уберите его.',
+      canEvac(g, h, E) { return !E.zombiesAt(g, g.exit).some((z) => E.isBandit(z)); },
+      hasKey(g) { return g.heroes.some((h) => h.hand.some((u) => g.cards[u] === 'cargo_key')); },
+      left(g) { return g.zombies.filter((z) => ZG.Engine.isBandit(z)).length; },
+      goals(g) {
+        const left = this.left(g), key = g.obj.open || this.hasKey(g);
+        return [
+          { text: 'Тихо: снять ключ от шлагбаума с пояса спящего Лесника', done: key, note: left && !key ? 'войти к нему незамеченным может только тихий герой — или' : null },
+          { text: `Силой: перебить банду Лесника — осталось ${left}`, done: left === 0 },
+          { text: 'Всем уйти по мосту через шлагбаум', done: false, note: E0().zombiesAt(g, g.exit).some((z) => E0().isBandit(z)) ? 'У шлагбаума часовой — уберите его' : null },
+        ];
+      },
+      isComplete(g) {
+        if (!g.obj.open && this.hasKey(g)) {
+          g.obj.open = true; // ключ добыт — шлагбаум открыт до конца миссии
+          // «звон пошлин»: жетоны на шнурке звякнули — Лесник просыпается и идёт по следу вора
+          const E = ZG.Engine, holder = g.heroes.find((h) => h.hand.some((u) => g.cards[u] === 'cargo_key'));
+          const f = g.zombies.find((z) => z.type === 'forester');
+          if (f && holder) {
+            f.lurk = false; f.relentless = true; // идёт по следу вора до конца миссии
+            if (!f.awake) { f.awake = true; E.fx(g, { t: 'zwake', zombie: f.uid, pos: f.pos, sound: true }); E.storyEvent(g, 'bossWake'); }
+            f.trail = holder.pos;
+          }
+          if (holder) {
+            // «Подъём!» — Лесник поднимает всю банду: снайперы и бродяги просыпаются и знают, куда смотреть
+            g.zombies.forEach((z) => { if (!E.isBandit(z) || z === f) return; z.lurk = false; if (!z.post) z.hunt = true; if (!z.awake) { z.awake = true; E.fx(g, { t: 'zwake', zombie: z.uid, pos: z.pos, sound: true }); } z.trail = holder.pos; });
+            E.log(g, 'Жетоны-«пошлины» звякнули на шнурке… Лесник ревёт «ПОДЪЁМ!» — вся банда на ногах: бродяги бросают мародёрство и идут загоном на вора.', 'bad');
+            E.fx(g, { t: 'wakeall', pos: holder.pos, title: 'ПОДЪЁМ!', text: 'Лесник поднял банду: снайперы начеку, бродяги идут загоном' });
+          }
+        }
+        return g.obj.open || this.left(g) === 0;
+      },
+      forester(g) { return g.zombies.find((z) => z.type === 'forester'); },
+      actions(g, hero) {
+        const out = [];
+        const f = this.forester(g);
+        const sneaky = ZG.Mods.flag(g, hero, 'stealthy') || hero.lurk || hero.hidden || (g.turn && g.active === hero.idx && g.turn.quiet);
+        if (f && f.lurk && sneaky && hero.pos === f.pos && (f.bag || []).includes('cargo_key')) out.push({ t: 'scenario', key: 'pickpocket', cost: 1, label: 'Снять ключ со спящего Лесника' });
+        if (!g.obj.sawUsed && g.obj.console != null && hero.pos === g.obj.console) out.push({ t: 'scenario', key: 'saw', cost: 1, label: 'Запустить пилораму' });
+        return out;
+      },
+      doAction(g, hero, key, E) {
+        if (key === 'pickpocket') {
+          const f = this.forester(g);
+          if (!f || !(f.bag || []).includes('cargo_key')) return;
+          f.bag.splice(f.bag.indexOf('cargo_key'), 1);
+          E.giveCard(g, hero, 'cargo_key');
+          E.log(g, `${E.heroName(hero)} осторожно снимает ключ с пояса спящего Лесника…`, 'good');
+          E.storyEvent(g, 'cargo');
+          this.isComplete(g); // звон «пошлин» — Лесник просыпается
+          return;
+        }
+        if (key !== 'saw') return;
+        g.obj.sawUsed = true;
+        const victims = E.zombiesAt(g, g.obj.saw);
+        E.log(g, `${E.heroName(hero)} запускает пилораму!${victims.length ? ' Диск ревёт и рвёт всех, кто у пилы.' : ' Диск ревёт вхолостую.'}`, victims.length ? 'good' : 'warn');
+        E.fx(g, { t: 'explode', pos: g.obj.saw });
+        victims.forEach((z) => E.damageZombie(g, z, 4, hero.idx, 'trap'));
+        E.hear(g, g.obj.saw, 3, hero.idx);
+        E.raiseAlarm(g, 2, 'Рёв пилорамы');
+        E.storyEvent(g, 'saw');
+      },
+      botGoal(g, hero, E) {
+        if (this.isComplete(g)) return null;
+        const drops = g.drops.filter((d) => d.card === 'cargo_key').map((d) => d.pos);
+        if (drops.length) return E.nearest(g, hero.pos, drops);
+        if (this.isComplete(g)) return null;
+        // ключ — у Лесника (или у того, кто его подобрал): тихий герой снимает его со спящего, остальные — отбирают силой
+        const thief = g.zombies.filter((z) => (z.bag || []).includes('cargo_key')).map((z) => z.pos);
+        if (thief.length) return E.nearest(g, hero.pos, thief);
+        const foes = g.zombies.filter((z) => E.isBandit(z)).map((z) => z.pos);
+        return foes.length ? E.nearest(g, hero.pos, foes) : null;
+      },
+      progress(g) { return (this.isComplete(g) ? 6 : 0) + (12 - Math.min(12, this.left(g))) * 0.25; },
     },
     // --- Кампания, миссия 2 (особые правила): только через цепочку кампании ---
     {

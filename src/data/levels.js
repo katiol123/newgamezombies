@@ -16,7 +16,7 @@
     tiles: ['crossroad', 'shop', 'house', 'gas', 'pharmacy', 'park', 'garages', 'police', 'construction', 'school', 'market'],
     // колода добычи по редкости: обычная ×4, редкая ×2, уникальная ×1 (+ Засады)
     loot: {
-      spear: 4, crowbar: 4, medkit: 4, energy: 4, chocolate: 4, brick: 4, bandage_roll: 4, whistle: 4, canned: 4,
+      spear: 4, crowbar: 4, medkit: 4, energy: 4, chocolate: 4, brick: 4, bandage_roll: 4, whistle: 4, canned: 4, garrote: 4, grenade: 4,
       bat: 2, machete: 2, pistol: 2, molotov: 2, firecracker: 2, sneakers: 2, backpack: 2, vest: 2, flashlight: 2, smoke: 2, nailgun: 2, rope: 2,
       shotgun: 1, katana: 1, army_medkit: 1,
       ambush: 6,
@@ -93,6 +93,21 @@
     fogBreak: 0,
     rounds: 13,
     roundsBonus: { 1: -1 }, // соло — 12
+  }));
+
+  // Кампания, миссия 5 «Мост»: только банда Лесника (бандиты, 2 снайпера, Лесник), зомби нет
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m5', campaignOnly: true, num: 5, name: 'Мост',
+    text: 'Блокпост у моста и лесопилка: банда Лесника.',
+    scenarios: ['bridge'],
+    conditions: ['calm'],
+    spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 },
+    loot: Object.assign({}, base.loot, { ambush: 0 }), // засад нет: зомби в этой миссии не появляются
+    events: [],
+    decoys: false,
+    fogBreak: 0,
+    rounds: 10,
+    roundsBonus: { 1: 1, 3: -2, 4: -3 }, // соло 11, пара 10, трое 8, четверо 7: большой отряд быстрее, но банда больше
   }));
 
   // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием

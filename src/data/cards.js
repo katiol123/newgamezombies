@@ -323,6 +323,24 @@
       target: null,
       play(c) { c.energy(1 + (c.chain ? 1 : 0)); c.draw(1); },
     },
+    // --- обычные находки «на два пути»: тихий (Удавка) и силовой (Граната) ---
+    {
+      id: 'garrote', name: 'Удавка', suit: 'agility', cost: 1, shield: 1, type: 'Оружие', tags: ['melee', 'stealth'], loot: true, rarity: 'common',
+      text: 'Бродящего или притаившегося врага (не крупного) в твоей зоне — убить беззвучно. Охотнику — 1 урон.', chainText: 'возьми 1 карту.', art: 'garrote', value: 8,
+      target: MELEE,
+      play(c) {
+        const z = c.zombie(c.target);
+        if (z && c.g.stealth && !z.awake && !ZG.Zombies.get(z.type).big) c.silentKill(c.target);
+        else c.melee(c.target, 1);
+        if (c.chain) c.draw(1);
+      },
+    },
+    {
+      id: 'grenade', name: 'Самопальная граната', suit: 'rage', cost: 1, shield: 0, noise: 3, type: 'Расходник', tags: ['ranged'], loot: true, rarity: 'common', consumable: true,
+      text: 'Дальность 1–2. 2 урона каждому врагу в зоне. Шум 3. Уходит из игры.', chainText: '+1 урон.', art: 'grenade', value: 8,
+      target: { kind: 'zone', range: 2, min: 1, ranged: true },
+      play(c) { c.shot(3, true); c.zoneDamage(c.target, 2 + (c.chain ? 1 : 0), { kind: 'ranged' }); },
+    },
     {
       id: 'sneakers', name: 'Кроссовки', suit: 'agility', cost: 1, shield: 1, type: 'Снаряжение', tags: ['equip'], loot: true, rarity: 'rare', equip: true,
       text: 'Снаряжение. Первое базовое «Движение» за ход стоит 0 ⚡.', art: 'sneaker', value: 9,

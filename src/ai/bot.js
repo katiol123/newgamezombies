@@ -72,6 +72,13 @@
       // идёт к ближайшей цели: если это приманка — героям не опасен
       seen.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
+    // стрелки третьей стороны (бандиты, снайперы): бьют издалека по линии — герою под прицелом грозит выстрел
+    g.zombies.forEach((z) => {
+      const d = ZG.Zombies.get(z.type);
+      if (!d.faction || !d.range || E.hidden(g, z.pos) || (g.stealth && !z.awake)) return;
+      const t = E.banditTarget(g, z);
+      if (t && t.hero && t.shot) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg;
+    });
     s += g.traps.length * W.trap;
     // секретная миссия героя, который сейчас ходит: прогресс ценен, пока никто не успел первым
     const fh = g.missions && g.turnHero != null ? g.heroes[g.turnHero] : null;

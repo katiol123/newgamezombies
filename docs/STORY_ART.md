@@ -24,3 +24,9 @@
 | m4_bitten | Бандит обратился | a young bandit rising as a zombie, balaclava slipped off revealing a boyish face with dead eyes, an empty pistol falling from his fingers, highway at night, fire glow |
 | m4_fuel | Найдена канистра | close-up of a full jerrycan with words scratched into the handle with a knife, survivor's hands, gas station at night, silence after gunfire, smoke |
 | m4_night | Ночь на трассе (миссия 4) | manhole covers on a night highway jumping like lids on boiling pots, pale hands crawling out, distant muzzle flashes of bandits, burning tanker glow on the horizon |
+| m5_start | Миссия 5, пролог | grey dawn over a river bridge, abandoned convoy trucks with doors open and slashed tarps, suitcases and children's shoes on the asphalt, a bandit checkpoint booth with a bear skin nailed to it and a charcoal sign, a striped barrier |
+| m5_sniper | Первый выстрел снайпера | view from the road toward a wooden watchtower, a glint of a scope at the top, a bullet chipping asphalt at the viewer's feet, sandbags by the booth, tense grey morning |
+| m5_forester | Лесник проснулся | a huge old man in a bear skin with the bear's head as a hood and claws sewn on mittens, holding a dark bloodied splitting axe, stepping out of a log cabin at a sawmill, sniffing the air |
+| m5_key | Ключ снят | close-up of a key on a string with dozens of tin tokens, watches, rings, small crosses and a beaded child's bracelet, a highway map on the wall with the forest cordon, gas station and bridge circled in red |
+| m5_saw | Пилорама | an old sawmill roaring to life, a huge spinning circular saw blade throwing wood chips and dark spray, bandit silhouettes recoiling, motion blur |
+| m5_forester_dead | Лесник убит | the dead forester lying in a puddle, the bear head hood slipped off revealing a tired old man with a grey beard, an old photo fallen from his pocket: young ranger and a girl with bows holding a bear drawing, axe beside him |
