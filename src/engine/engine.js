@@ -121,21 +121,17 @@
   E.sees = function (g, z, h) {
     if (!h.onBoard || h.hidden || E.hidden(g, z.pos)) return false;
     const zd = ZG.Zombies.get(z.type);
-    if (zd.tracker && z.lurk) {
-      // спящий охотник (Лесник) ничего не чует; войти к нему незамеченным может только тихий герой
-      // (бесшумный, «Тихим шагом» в этот ход или затаившийся)
-      const sneaky = Mods.flag(g, h, 'stealthy') || h.lurk || (g.turn && g.active === h.idx && g.turn.quiet);
-      return z.pos === h.pos && !sneaky;
-    }
+    // «Чутьё охотника» (Лесник) работает только у проснувшегося; спящий замечает героев по общим правилам притаившихся
+    const tracker = zd.tracker && !z.lurk;
     if (E.alerted(g) || zd.relentless || z.relentless) return true; // Волна / Безжалостный (или идущий по следу): знают, где все
     if (z.pos === h.pos) return true;
     // «Чутьё охотника» (Лесник): замечает и затаившихся, и бесшумных, и идущих «Тихим шагом»
-    if (h.lurk && !zd.tracker) return false; // «Затаиться»: видят только в своей зоне
+    if (h.lurk && !tracker) return false; // «Затаиться»: видят только в своей зоне
     // бродячие не замечают бесшумного героя (Тень) и того, кто идёт «Тихим шагом»
-    const quiet = !z.awake && g.turn && g.active === h.idx && g.turn.quiet && !zd.tracker;
+    const quiet = !z.awake && g.turn && g.active === h.idx && g.turn.quiet && !tracker;
     if (quiet) return false;
     if (g.board.adj[z.pos].includes(h.pos)) return true;
-    if ((!z.awake || zd.watch) && Mods.flag(g, h, 'stealthy') && !zd.tracker) return false; // бесшумного издалека не замечают (снайпер на посту — тоже)
+    if ((!z.awake || zd.watch) && Mods.flag(g, h, 'stealthy') && !tracker) return false; // бесшумного издалека не замечают (снайпер на посту — тоже)
     if (Mods.flag(g, h, 'loud') && E.distV(g, z.pos)[h.pos] <= 2) return true; // шумного слышно за 2 зоны
     if (E.sheltered(g, h)) return false;
     return lineSight(g, z.pos, h.pos, zd.sight);
