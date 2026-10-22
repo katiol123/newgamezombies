@@ -96,8 +96,8 @@
     { id: 'heavy_hand', name: 'Тяжёлая рука', text: '+1 урон всем твоим атакам ближнего боя.', mods: { meleeBonus: (g, h, ctx) => (isMeleeCtx(ctx) ? 1 : 0) } },
     { id: 'rock', name: 'Скала', text: '+1 к размеру руки.', mods: { handSize: 1 } },
     {
-      id: 'retaliate', name: 'Ответный удар', text: 'Если в фазу зомби ты отразил весь урон — 2 урона одному зомби в твоей зоне.',
-      hooks: { afterBlock(g, h, ctx) { if (ctx.taken === 0 && ctx.incoming > 0) ctx.E.retaliate(g, h, 2); } },
+      id: 'retaliate', name: 'Ответный удар', text: 'Если в фазу зомби ты отразил 2+ урона — 2 урона одному зомби в твоей зоне.',
+      hooks: { afterBlock(g, h, ctx) { if (ctx.incoming - ctx.taken >= 2) ctx.E.retaliate(g, h, 2); } },
     },
     // Марина
     { id: 'sterile', name: 'Стерильность', text: 'Любое твоё лечение убирает на 1 Рану больше.', mods: { healBonus: 1 } },
@@ -137,22 +137,22 @@
     },
     // Кира
     { id: 'reinforce', name: 'Армирование', text: 'Твои баррикады получают +2 прочности.', mods: { barricadeHp: 2 } },
-    { id: 'shrapnel', name: 'Шрапнель', text: 'Твои ловушки наносят +1 урон.', mods: { trapBonus: 1 } },
+    { id: 'shrapnel', name: 'Шрапнель', text: 'Твои ловушки наносят +1 урон, а осколки — 1 урон каждому врагу в соседних зонах.', mods: { trapBonus: 1, trapSplash: 1 } },
     { id: 'tinkerer', name: 'Сигнализация', text: 'Твои ловушки работают как Приманки: зомби идут к ним, как к героям.', mods: { trapLure: 1 } },
     {
       id: 'gadgets', name: 'Самоделки', text: 'Первая карта масти Расчёт за ход стоит на 1 ⚡ меньше.',
       mods: { costDelta: (g, h, ctx) => (ctx && ctx.def.suit === 'mind' && !g.turn.mindPlayed ? -1 : 0) },
     },
     // Сава
-    { id: 'sharp', name: 'Заточка', text: '«Нож в спину» наносит охотникам на 1 урон больше.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'shiv' ? 1 : 0) } },
+    { id: 'sharp', name: 'Заточка', text: '+1 урон всем твоим атакам ближнего боя по врагам-охотникам и притаившимся (зомби, бандиты и др.).', mods: { meleeVsAlert: 1 } },
     { id: 'softfoot', name: 'Тихоход', text: 'Первое «Движение» за ход — бесплатно.', mods: { freeFirstMove: 1 } },
-    { id: 'decoy', name: 'Мастер отвлечения', text: '«Камешек» слышен на 2 зоны дальше и даёт 1 карту.', mods: { pebblePlus: 1 } },
+    { id: 'decoy', name: 'Мастер отвлечения', text: '«Камешек» слышен на 2 зоны дальше и даёт 1 карту. Первый «Камешек» за ход даёт ещё +1 ⚡.', mods: { pebblePlus: 1 } },
     {
       id: 'assassin', name: 'Убийца из тени', text: 'Убив бродячего зомби «Ножом в спину», получи +1 ⚡ (раз за ход).',
       hooks: { kill(g, h, ctx) { if (ctx.kind === 'silent' && g.active === h.idx && g.turn && !g.turn.assassin) { g.turn.assassin = true; h.energy += 1; } } },
     },
     // Гоша
-    { id: 'weld_seam', name: 'Сварной шов', text: 'Заглушка держит на 1 раунд дольше.', mods: { plugRounds: 1 } },
+    { id: 'weld_seam', name: 'Сварной шов', text: 'Заглушка держит на 1 раунд дольше и стоит 0 ⚡.', mods: { plugRounds: 1, plugCost: -1 } },
     { id: 'workwear', name: 'Спецовка', text: '+1 Стойкость.', mods: { hp: 1 } },
     { id: 'foreman', name: 'Бригадир', text: 'После Заглушки возьми 1 карту и получи 1 Блок.', mods: { plugBonus: 1 } },
     { id: 'overtime', name: 'Сверхурочные', text: '«Отбойный молоток» бьёт на 1 сильнее.', mods: { meleeBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.id === 'jackhammer' ? 1 : 0) } },

@@ -134,7 +134,11 @@
       id: 'pebble', name: 'Камешек', suit: 'mind', cost: 0, shield: 1, type: 'Тактика', tags: ['lure'], hero: 'sava',
       text: 'Шум в зоне в 2 зонах от тебя (без Тревоги). Зомби в 2 зонах от неё идут проверить.', chainText: 'слышно на 1 зону дальше.', art: 'pebble', value: 8,
       target: { kind: 'cell', range: 2 },
-      play(c) { const plus = ZG.Mods.flag(c.g, c.hero, 'pebblePlus'); c.pebble(c.target, 2 + (c.chain ? 1 : 0) + (plus ? 2 : 0)); if (plus) c.draw(1); },
+      play(c) {
+        const plus = ZG.Mods.flag(c.g, c.hero, 'pebblePlus');
+        c.pebble(c.target, 2 + (c.chain ? 1 : 0) + (plus ? 2 : 0));
+        if (plus) { c.draw(1); if (c.g.turn && !c.g.turn.pebbleEnergy) { c.g.turn.pebbleEnergy = true; c.hero.energy += 1; } } // «Мастер отвлечения»
+      },
     },
     {
       id: 'lurk', name: 'Затаиться', suit: 'mind', cost: 1, shield: 2, type: 'Тактика', hero: 'sava',

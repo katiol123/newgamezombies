@@ -913,6 +913,8 @@
   }
 
   function damageZombie(g, z, n, heroIdx, kind) {
+    // «Заточка»: ближний бой по охотнику или притаившемуся (до того, как удар его разбудит); без скрытности все враги — охотники
+    if (kind === 'melee' && heroIdx != null && g.heroes[heroIdx] && Mods.flag(g, g.heroes[heroIdx], 'meleeVsAlert') && (!g.stealth || z.awake || z.lurk)) n += 1;
     // любая атака героя выдаёт его укрытие до конца раунда (даже бесшумная)
     if (heroIdx != null && kind !== 'trap' && kind !== 'silent' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
     if (g.stealth && heroIdx != null && g.heroes[heroIdx] && kind !== 'silent') wake(g, z, g.heroes[heroIdx].pos, false, heroIdx); // на него напали
@@ -1048,6 +1050,9 @@
       E.log(g, 'Растяжка срабатывает!', 'good');
       E.fx(g, { t: 'explode', pos: cell });
       killOrder(g, E.zombiesAt(g, cell), trap.dmg).forEach((zz) => damageZombie(g, zz, trap.dmg, trap.owner, 'trap'));
+      // «Шрапнель»: осколки — 1 урон каждому врагу в соседних зонах
+      const owner = trap.owner != null && g.heroes[trap.owner];
+      if (owner && Mods.flag(g, owner, 'trapSplash')) g.board.adj[cell].forEach((n) => E.zombiesAt(g, n).forEach((zz) => damageZombie(g, zz, 1, trap.owner, 'trap')));
       makeNoise(g, null, cell, 2);
     }
   }
