@@ -277,6 +277,9 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .pile.exhaust.tired .pile-card { border-color: #b07aff; box-shadow: 0 0 10px #8a4dff; animation: tiredPulse 1.4s ease-in-out infinite; }
 @keyframes tiredPulse { 50% { box-shadow: 0 0 2px #8a4dff; } }
 .hp-meta .tired { color: #c8a0ff; font-weight: bold; }
+.hp-meta .bond-on { color: #ffd36b; font-weight: bold; }
+.sh-bond { color: #ffd36b; font-size: 13px; margin-top: 2px; }
+.rep-bond { color: #ffd36b; margin: 4px 0; }
 .pile span { position: relative; display: block; margin-top: 18px; font-size: 22px; text-shadow: 0 2px 4px #000; }
 .pile small { position: relative; font-family: var(--font-t); font-size: 11px; }
 .pile:hover .pile-card { transform: translateY(-3px); transition: transform .15s; }

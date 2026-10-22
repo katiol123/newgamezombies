@@ -899,6 +899,7 @@
             <span title="Колода / сброс">🂠 ${h.deck.length}/${h.discard.length}</span>
             ${(h.exhaust || []).length ? `<span class="${E.exhausted(g, h) ? 'tired' : ''}" title="Изнеможение: карты, сброшенные на блок (при ${E.EXHAUST_AT}+ — обессилен). Вернуть — «Отдышаться».">😮‍💨 ${h.exhaust.length}/${E.EXHAUST_AT}</span>` : ''}
             ${h.block ? `<span title="Блок до следующего хода">🛡 ${h.block}</span>` : ''}
+            ${E.bondPartners(g, h).length ? `<span class="${h.bondReady || (h.idx === g.active && g.turn && g.turn.bond) ? 'bond-on' : ''}" title="Узы с: ${esc(E.bondPartners(g, h).map((o) => E.heroName(o)).join(', '))}. Если напарник заканчивает ход в твоём тайле, первая карта твоего следующего хода срабатывает со Связкой (если у неё есть эффект Связки).${h.bondReady ? ' СЕЙЧАС: готово!' : ''}">🤝${h.bondReady || (h.idx === g.active && g.turn && g.turn.bond) ? ' Узы!' : ''}</span>` : ''}
             ${h.adrenaline ? `<span title="Адреналин">+${h.adrenaline}⚡</span>` : ''}
             ${h.hidden ? '<span>👻</span>' : ''}
           </div>
@@ -995,9 +996,9 @@
         const playable = !def.unplayable && cost != null && cost <= h.energy && E.targetsFor(g, h, def).length > 0;
         c.classList.toggle('playable', playable);
         c.classList.toggle('dim', !playable);
-        if (playable && g.turn && g.turn.lastSuit === def.suit && def.suit !== 'none') {
+        if (playable && E.chainsNow(g, def)) {
           c.classList.add('chain-ready');
-          c.appendChild(el('div', 'chain-ribbon', 'СВЯЗКА'));
+          c.appendChild(el('div', 'chain-ribbon', g.turn.bond && !g.turn.played && g.turn.lastSuit !== def.suit ? 'УЗЫ' : 'СВЯЗКА'));
         }
         if (this.sel && this.sel.uid === uid) c.classList.add('selected');
         if (!prev.has(uid)) { c.classList.add('drawn'); c.style.animationDelay = (i * 0.06) + 's'; }
@@ -1203,6 +1204,7 @@
         // окно показывается посреди проигрывания событий (интерфейс занят) — меняем миссию прямо в движке
         if (v === 'redraw') { if (E.redrawMission(this.g, h)) { this.save(); return this.showMission(h); } toast('Подходящих миссий для смены нет.'); }
       }
+      if (this.g.turn && this.g.turn.bond && !h.ai) toast('🤝 Узы: первая карта этого хода сработает со Связкой (если у неё есть такой эффект).', 3400);
       if (this.g.turn && this.g.turn.relay) toast(`Эстафета: первая карта масти «${ZG.SUITS[this.g.turn.relay].name}» сработает со Связкой!`, 3200);
       if (this.players === 2 && !h.ai && this.lastPlayer !== h.player) {
         this.lastPlayer = h.player;
@@ -1320,7 +1322,7 @@
           else if (def.target.kind === 'hero') t = ' → ' + E.heroName(g.heroes[a.target]);
           else t = ' → подсвеченная зона';
         }
-        const chain = g.turn && g.turn.lastSuit === def.suit ? ' (Связка!)' : '';
+        const chain = E.chainsNow(g, def) ? ' (Связка!)' : '';
         return `сыграть «${def.name}»${t}${chain}`;
       }
       case 'move': return 'перейти в подсвеченную зону';
@@ -1871,6 +1873,7 @@
       const name = (id) => esc(ZG.Heroes.get(id).name);
       box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
+        ${(r.bondsNew || []).filter(([a, b]) => CMP.hero(c, a) && CMP.hero(c, b)).map(([a, b]) => `<div class="rep-bond">🤝 ${name(a)} и ${name(b)} прошли вместе ${CMP.BOND_AT} миссии — теперь их связывают <b>Узы</b>.</div>`).join('')}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },
     heroPanel(c, h, done) {
@@ -1889,6 +1892,7 @@
           <div class="sh-lvl">Уровень ${h.level} · 🎖 ${h.xp}${next ? ' / ' + next : ''}</div>
           <div class="sh-stats"><span title="Стойкость на следующую миссию (травмы снижают)">♥ ${CMP.hp(h)} / ${CMP.baseHp(h) + CMP.hpTalents(h)}</span>
             <span class="sh-morale m${m <= M.low ? 'low' : m >= M.max ? 'max' : ''}" title="Мораль ${m} из ${M.max}">Мораль <span class="pips">${pips}</span>${temp ? ` <small>${temp}</small>` : ''}</span></div>
+          ${CMP.bondsOf(c, h.id).length ? `<div class="sh-bond" title="Если напарник заканчивает ход в тайле этого героя, первая карта его следующего хода срабатывает со Связкой. Гибель напарника — −2 морали.">🤝 Узы: ${CMP.bondsOf(c, h.id).map((id) => esc(ZG.Heroes.get(id).name)).join(', ')}</div>` : ''}
           ${h.talents.length ? `<div class="sh-tal">${h.talents.map((t) => esc(ZG.Talents.get(t).name)).join(' · ')}</div>` : ''}
           ${h.debt ? `<div class="sh-debt">Долг ${esc(ZG.Heroes.get(h.debt.to).name)}: половина талонов за звёзды ещё ${h.debt.left} ${ZG.util.plural(h.debt.left, 'миссию', 'миссии', 'миссий')}</div>` : ''}
           <div class="sh-actions"></div>
@@ -1913,6 +1917,7 @@
           return err;
         }));
         if (h.injury > 0) add(`Лечить +1 ♥ (${CFG.prices.heal} 🎫)`, () => this.act(() => CMP.heal(c, h.id)));
+        if (CMP.canTrain(c, h)) add(`🎯 Тир: +1 🎖 (${CFG.prices.train} 🎫)`, () => this.act(() => CMP.train(c, h.id)));
         if (h.ai) add('🤖 Разложить карты', () => this.act(() => CMP.autoManage(c, h.id)));
       }
       // постройки личного убежища: возведённые — в цвете, остальные — силуэтом с ценой

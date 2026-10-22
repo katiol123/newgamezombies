@@ -725,6 +725,28 @@
       for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(20 + i * 6, 34 - i * 7, 7 + i * 2, 5 + i, 0, 0, 7); c.fillStyle = 'rgba(240,240,240,' + (0.35 - i * 0.06) + ')'; c.fill(); }
     },
   };
+  // Тир: мишени на стене, стойка с винтовкой
+  BLD.range = function (c) {
+    bldBase(c, ['#4a4a3a', '#2a2a20'], ['#5a4a36', '#3a2e22']);
+    [[26, 30], [58, 26], [84, 34]].forEach(([x, y], i) => {
+      [13, 9, 5].forEach((r, k) => { circle(c, x, y, r - (i === 2 ? 3 : 0)); fillInk(c, k % 2 ? '#e8dcc0' : '#c0392b'); });
+      c.strokeStyle = INK; c.lineWidth = 1.2; circle(c, x, y, 13 - (i === 2 ? 3 : 0)); c.stroke();
+    });
+    c.fillStyle = INK; [[24, 28], [29, 33], [57, 27]].forEach(([x, y]) => { circle(c, x, y, 1.6); c.fill(); });
+    rr(c, 8, 60, 84, 7, 2); fillInk(c, '#8a6038'); strokeInk(c, 1.5); // стойка
+    c.save(); c.translate(48, 56); c.rotate(-0.06); rr(c, -30, -3, 46, 5, 2); fillInk(c, '#3a3a3a'); rr(c, 10, -4, 22, 8, 3); fillInk(c, '#7a5230'); c.restore();
+    c.fillStyle = '#c8a040'; for (let i = 0; i < 5; i++) c.fillRect(14 + i * 5, 74 + (i % 2) * 3, 2, 5); // гильзы
+  };
+  // Схрон: ящики и банки под брезентом
+  BLD.stash = function (c) {
+    bldBase(c, ['#3a3328', '#221d16'], ['#4a4034', '#2c261e']);
+    rr(c, 10, 46, 40, 34, 2); fillInk(c, '#7a5a2a'); strokeInk(c, 1.5);
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(10, 63); c.lineTo(50, 63); c.stroke();
+    rr(c, 54, 56, 34, 24, 2); fillInk(c, '#4a5a3a'); strokeInk(c, 1.5);
+    c.fillStyle = '#e8dcc0'; c.fillRect(64, 64, 14, 8); c.fillStyle = '#c0392b'; c.fillRect(70, 65, 2, 6); c.fillRect(68, 67, 6, 2); // аптечка
+    [[18, 36], [30, 36], [42, 38]].forEach(([x, y]) => { rr(c, x - 5, y - 8, 10, 12, 2); fillInk(c, '#9aa4ac'); strokeInk(c, 1); c.fillStyle = '#c0392b'; c.fillRect(x - 5, y - 4, 10, 3); }); // тушёнка
+    c.fillStyle = 'rgba(90,110,70,.85)'; poly(c, [6, 44, 50, 30, 94, 48, 92, 54, 50, 40, 8, 52]); c.fill(); strokeInk(c, 1.2); // брезент
+  };
   Object.keys(BLD).forEach((k) => Art.define('bld_' + k, (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.save();
     c.beginPath(); c.rect(0, 0, 100, 100); c.clip();

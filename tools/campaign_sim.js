@@ -24,7 +24,7 @@ function args() {
 function shelterAI(c) {
   c.roster.forEach((h) => {
     while (h.injury > 0 && !C.heal(c, h.id)) { /* лечимся, пока хватает */ }
-    ['infirmary', 'storage', 'workshop', 'bath', 'redcorner'].forEach((b) => { if (h.talons >= ZG.Buildings.get(b).cost + 10) C.build(c, h.id, b); });
+    ['infirmary', 'storage', 'workshop', 'range', 'stash', 'bath', 'redcorner'].forEach((b) => { if (h.talons >= ZG.Buildings.get(b).cost + 10) C.build(c, h.id, b); });
     h.chest.forEach((it, i) => { if (it.worn && C.built(h, 'workshop')) C.repair(c, h.id, 'chest', i); });
     // экипировка: лучшие карты из сундука (по ценности)
     while (h.equip.length < C.equipCap(h) && h.chest.length) {

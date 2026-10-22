@@ -52,6 +52,9 @@
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
   E.TIRED_LOCK = ['move', 'shout', 'foreman', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
+  // Узы (кампания): напарник закончил ход в твоём тайле — первая карта твоего следующего хода срабатывает со Связкой
+  E.bondPartners = (g, h) => (g.bonds || []).filter((p) => p.includes(h.id)).map((p) => g.heroes.find((o) => o.id === (p[0] === h.id ? p[1] : p[0]))).filter((o) => o && o.onBoard);
+  E.chainsNow = (g, def) => !!g.turn && def.suit !== 'none' && (g.turn.lastSuit === def.suit || (!!g.turn.bond && !g.turn.played && !!def.chainText));
   E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
@@ -453,7 +456,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null,
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()),
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -1444,6 +1447,7 @@
     g.turn = { lastSuit: g.relaySuit || null, relay: g.relaySuit || null, played: 0, moves: 0, searched: 0, healUsed: 0, gave: false, meleeDone: false, rangedPlayed: false, mindPlayed: false, shots: 0 };
     const hs = E.handSize(g, h);
     const cap = ZG.Levels.get(g.levelId).drawMax || 99;
+    if (h.bondReady) { g.turn.bond = true; h.bondReady = false; }
     g.turn.starting = true;
     if (h.hand.length < hs) drawCards(g, h, Math.min(cap, hs - h.hand.length));
     g.turn.starting = false;
@@ -1476,6 +1480,12 @@
       const gone = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).discardEndTurn);
       if (gone.length) { h.hand = h.hand.filter((u) => !gone.includes(u)); h.discard.push(...gone); }
       tickInfection(g, h);
+      // Узы: закончил ход в тайле напарника — тот следующую первую карту сыграет со Связкой
+      if (h.onBoard) E.bondPartners(g, h).forEach((o) => {
+        if (g.board.cells[o.pos].tile !== g.board.cells[h.pos].tile || o.bondReady) return;
+        o.bondReady = true;
+        E.log(g, `Узы: ${E.heroName(o)} рядом с ${E.heroName(h)} — первая карта следующего хода сработает со Связкой.`, 'good');
+      });
     }
     if (g.result) return;
     // Эстафета: следующий герой может продолжить Связку мастью последней карты
@@ -1997,10 +2007,12 @@
     if (!targets.some((t) => t === target)) return fail(g, 'Неверная цель.');
     spend(g, h, cost);
     h.hand.splice(i, 1);
-    const chain = def.suit !== 'none' && g.turn.lastSuit === def.suit;
+    const byBond = g.turn.bond && !g.turn.played && !!def.chainText && !(def.suit !== 'none' && g.turn.lastSuit === def.suit);
+    const chain = E.chainsNow(g, def);
+    if (g.turn.bond && !g.turn.played) { g.turn.bondUsed = !!def.chainText; g.turn.bond = false; } // узы сгорают на первой карте
     g.stats.cardsPlayed++;
     if (chain) { g.stats.chains++; g.turn.chains = (g.turn.chains || 0) + 1; }
-    E.log(g, `${E.heroName(h)} играет «${def.name}»${chain ? ' — СВЯЗКА!' : ''}.`, chain ? 'chain' : 'info');
+    E.log(g, `${E.heroName(h)} играет «${def.name}»${byBond ? ' — УЗЫ: СВЯЗКА!' : chain ? ' — СВЯЗКА!' : ''}.`, chain ? 'chain' : 'info');
     E.fx(g, { t: 'play', hero: h.idx, card: uid, chain, target, pos: h.pos });
     let dest = def.consumable ? 'removed' : 'discard';
     const c = makeCtx(g, h, def, target, chain, () => { dest = 'equip'; });

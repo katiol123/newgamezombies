@@ -55,6 +55,12 @@
   C.repairPrice = (id) => { const r = CFG().prices.repair; return typeof r === 'number' ? r : r[ZG.Cards.get(id).rarity || 'common']; };
   C.sellValue = (h) => h.chest.concat(h.junk, h.equip).reduce((s, it) => s + (C.price(it.id) || 0), 0);
   C.mission = (c) => ({ no: c.missionNo + 1, total: c.chainLength });
+  // Узы: два героя, прошедшие вместе 2+ миссии
+  C.BOND_AT = 2;
+  const pairKey = (a, b) => [a, b].sort().join('|');
+  C.bonds = (c) => Object.entries(c.together || {}).filter(([k, n]) => n >= C.BOND_AT).map(([k]) => k.split('|')).filter(([a, b]) => C.hero(c, a) && C.hero(c, b));
+  C.bondsOf = (c, id) => C.bonds(c).filter((p) => p.includes(id)).map((p) => (p[0] === id ? p[1] : p[0]));
+  C.STASH = ['medkit', 'bandage_roll', 'energy', 'chocolate', 'canned', 'grenade'];
   C.missionDef = (c) => CFG().chain[Math.min(c.missionNo, CFG().chain.length - 1)] || {};
 
   // ------------------------------------------------------------ миссия
@@ -76,6 +82,7 @@
       seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
+      bonds: C.bonds(c).filter(([a, b]) => ids.includes(a) && ids.includes(b)),
       wanderers: md.noWanderers ? (md.bosses || []) : c.wanderers.map((id) => 'turned_' + id).filter((t) => ZG.Zombies.has(t)).concat(md.bosses || []),
       heroes: ids.map((id) => {
         const h = C.hero(c, id);
@@ -113,6 +120,16 @@
     // шанс поломки — худший среди всех героев, в чьих руках карта побывала за миссию (передачи не обходят износ)
     const handy = (id) => { const gh = g.heroes.find((x) => x.id === id); return !!gh && gh.talents.includes('sh_handy'); };
     const breakChance = (ids) => Math.max(...ids.map((id) => (handy(id) ? 0.25 : CFG().breakChance)));
+
+    // узы до этой миссии (для морали при потере) и счёт совместных миссий
+    const bondedBefore = (a, b) => ((c.together || {})[pairKey(a, b)] || 0) >= C.BOND_AT;
+    c.together = c.together || {};
+    rep.bondsNew = [];
+    squad.forEach((a, i) => squad.slice(i + 1).forEach((b) => {
+      const k = pairKey(a, b);
+      c.together[k] = (c.together[k] || 0) + 1;
+      if (c.together[k] === C.BOND_AT) rep.bondsNew.push([a, b]);
+    }));
 
     // 1) судьба участников
     const deaths = [];
@@ -174,7 +191,7 @@
       if (C.has(h, 'sh_scavenger') && gh && (gh.ms.searches || 0) >= 2) talonsAdd(h, 3, 'Мародёр');
       if (rep.stars >= 3) moraleAdd(h, 1, 'миссия на 3 ★');
       if (gh && g.missionFirst === gh.idx) moraleAdd(h, 1, 'первым выполнил секретную миссию');
-      deaths.forEach((d) => moraleAdd(h, -1, `потеря: ${ZG.Heroes.get(d).name}`));
+      deaths.forEach((d) => moraleAdd(h, bondedBefore(h.id, d) ? -2 : -1, `потеря${bondedBefore(h.id, d) ? ' напарника по узам' : ''}: ${ZG.Heroes.get(d).name}`));
     });
     (g.putDown || []).forEach((p) => { const gh = g.heroes[p.hero]; const h = gh && C.hero(c, gh.id); if (h) moraleAdd(h, 2, `упокоил ${ZG.Heroes.get(p.turned).name}`); });
 
@@ -202,6 +219,11 @@
       heal = Math.min(heal, h.injury);
       if (heal) { h.injury -= heal; line(h.id, `+${heal} Стойкость`); }
       if (h.morale < 3 && C.built(h, 'bath') && Rng.next(rng) < 0.5) moraleAdd(h, 1, 'баня');
+      if (C.built(h, 'stash')) {
+        const it = item(c, Rng.pick(c, C.STASH));
+        (h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(it);
+        line(h.id, `Схрон: «${ZG.Cards.get(it.id).name}»`);
+      }
       h.morale = Math.max(0, Math.min(M.max, h.morale));
     });
 
@@ -257,6 +279,18 @@
     if (!h || h.injury <= 0) return 'Лечить нечего.';
     if (h.talons < p) return 'Не хватает талонов.';
     h.talons -= p; h.injury--;
+    return null;
+  };
+  // Тир: раз между миссиями, +1 опыт за талоны; новый уровень — талант предложат в начале миссии
+  C.canTrain = (c, h) => C.built(h, 'range') && h.trainedNo !== c.missionNo && c.status === 'ready';
+  C.train = function (c, heroId) {
+    const h = C.hero(c, heroId), p = CFG().prices.train;
+    if (!h || !C.built(h, 'range')) return 'Нужен Тир.';
+    if (!C.canTrain(c, h)) return 'В тире уже тренировались.';
+    if (h.talons < p) return 'Не хватает талонов.';
+    h.talons -= p; h.trainedNo = c.missionNo;
+    const before = h.xp; h.xp++;
+    CFG().xpLevels.forEach((lv, i) => { if (before < lv && h.xp >= lv) { h.level = i + 2; (h.talentQueue = h.talentQueue || []).push(i); } });
     return null;
   };
   C.repair = function (c, heroId, from, idx) {
@@ -323,6 +357,8 @@
         if (h.talons - price >= reserve) { h.talons -= price; it.worn = false; }
       });
     }
+    // Тир: тренироваться, если после этого хватает на паёк и пару лечений
+    if (C.canTrain(c, h) && h.talons - CFG().prices.train >= CFG().prices.ration + Math.min(h.injury, 2) * CFG().prices.heal) C.train(c, h.id);
     const survival = (it) => { const t = ZG.Cards.get(it.id).tags || []; return t.includes('heal') || t.includes('block') ? 4 : 0; };
     const score = (it) => C.cardScore(it) + (desp ? survival(it) : 0);
     const all = h.equip.concat(h.chest, h.junk).sort((a, b) => score(b) - score(a));
