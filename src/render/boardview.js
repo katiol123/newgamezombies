@@ -1167,8 +1167,10 @@
       if (sleeping) ctx.globalAlpha = alpha * 0.82;
       Art.draw(ctx, 'z_' + e.type, x - s / 2, y - s / 2 - hop, s, s, { rot, t: this.time });
       ctx.globalAlpha = alpha;
+      const real = g.zombies.find((q) => q.uid === e.uid);
+      const lurking = sleeping && real && real.lurk; // притаился (спит): стоит, пока не разбудят
       if (sleeping && !e.dying) {
-        // бродит: светлый пунктирный ободок (без ctx.filter — он не везде работает)
+        // не охотится: светлый пунктирный ободок (без ctx.filter — он не везде работает)
         ctx.save(); ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(200,215,230,.85)';
         ctx.beginPath(); ctx.arc(x, y - hop, s * 0.52, 0, TAU); ctx.stroke(); ctx.restore();
       }
@@ -1183,25 +1185,26 @@
         ctx.fillText(String(zz.bag.length), bx, by + 1);
       }
       if (g.stealth && !def.immobile && !e.dying && (e.crowd || 0) >= 5) {
-        // толпа: один общий значок на зону — «!×N» охотников (или «z», если все бродят)
+        // толпа: один общий значок на зону — «!×N» охотников; если охотников нет — «z×N» притаившихся и «…×N» бродячих
         if (e.slot === 0) {
-          let hunt = 0, all = 0;
-          this.zombies.forEach((q) => { if (q.cell === e.cell && !q.dying && !ZG.Zombies.get(q.type).immobile) { all++; if (q.awake !== false) hunt++; } });
+          let hunt = 0, lurk = 0, wander = 0;
+          this.zombies.forEach((q) => { if (q.cell !== e.cell || q.dying || ZG.Zombies.get(q.type).immobile) return; const rz = g.zombies.find((x) => x.uid === q.uid); if (q.awake !== false) hunt++; else if (rz && rz.lurk) lurk++; else wander++; });
           const c = this.cellXY(e.cell), C = this.cell;
-          const label = hunt ? `!×${hunt}` : `z×${all}`;
+          const label = hunt ? `!×${hunt}` : [lurk ? `z×${lurk}` : '', wander ? `…×${wander}` : ''].filter(Boolean).join(' ');
           ctx.font = `bold ${Math.round(C * 0.17)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           const w = ctx.measureText(label).width + 12;
-          ctx.fillStyle = hunt ? '#c0392b' : '#4a5560'; Art.rr(ctx, c.x - w / 2, c.y - C * 0.47, w, C * 0.2, 6); ctx.fill();
+          ctx.fillStyle = hunt ? '#c0392b' : lurk && !wander ? '#2a4a7a' : '#4a5560'; Art.rr(ctx, c.x - w / 2, c.y - C * 0.47, w, C * 0.2, 6); ctx.fill();
           ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.fillText(label, c.x, c.y - C * 0.37);
         }
       } else if (g.stealth && !def.immobile && !e.dying) {
-        // значок состояния: «z» — бродит, «!» — охотится
+        // значок состояния: «…» — бродит, «z» — притаился (спит), «!» — охотится
         const bx = x + s * 0.36, by = y - s * 0.36 - hop, br = Math.max(5, s * 0.17);
         ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU);
-        ctx.fillStyle = sleeping ? '#4a5560' : '#c0392b'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(br * 1.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(sleeping ? 'z' : '!', bx, by + 1);
+        ctx.fillStyle = !sleeping ? '#c0392b' : lurking ? '#2a4a7a' : '#4a5560'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
+        ctx.fillStyle = '#fff';
+        if (sleeping && !lurking) { const d = br * 0.42; [-d, 0, d].forEach((dx) => { ctx.beginPath(); ctx.arc(bx + dx, by, Math.max(1.2, br * 0.16), 0, TAU); ctx.fill(); }); } // «…» — бродит
+        else { ctx.font = `bold ${Math.round(br * 1.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(sleeping ? 'z' : '!', bx, by + 1); }
       }
       if (e.flash > 0) {
         ctx.globalCompositeOperation = 'lighter';

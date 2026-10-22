@@ -1315,7 +1315,7 @@
     const list = Object.values(rows);
     if (!list.length) return '';
     return `<div class="tt-behav"><div class="tt-behav-head">Поведение${die}</div>` + list.map((r) =>
-      `<div class="${r.hl ? 'hl' : ''}"><b>${r.name}${r.n > 1 ? ' ×' + r.n : ''}</b> — <span class="tt-st tt-st-${['бродит', 'притаился', 'настороже', 'спит', 'дремлет'].includes(r.st) ? 'calm' : 'hot'}">${r.st}</span><br><small>${r.txt}</small></div>`).join('') + '</div>';
+      `<div class="${r.hl ? 'hl' : ''}"><span class="tt-st tt-st-${['бродит', 'притаился', 'настороже', 'спит', 'дремлет'].includes(r.st) ? 'calm' : 'hot'}">${r.st}</span><br><small>${r.txt}</small></div>`).join('') + '</div>';
   }
   // ------------------------------------------------------------ галерея сюжетных вставок
   const GALLERY = [
