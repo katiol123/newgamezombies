@@ -96,6 +96,16 @@
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
+    // ненавидит бандитов: на своём ходу живой бандит — заноза, его раны — радость; тянется к ближайшему видимому
+    if (fh && fh.onBoard && ZG.Persona.get(fh.id).hatesBandits) {
+      const bs = g.zombies.filter((z) => E.isBandit(z) && !E.hidden(g, z.pos));
+      bs.forEach((z) => { const d = ZG.Zombies.get(z.type); s -= 140; s += (z.dmg / d.hp) * 120; });
+      if (bs.length && E.maxRounds(g) - g.round >= 4 && E.hurtCount(g, fh) * 2 < E.maxHp(g, fh)) {
+        const dv = E.distV(g, fh.pos);
+        const near = Math.min.apply(null, bs.map((z) => dv[z.pos]));
+        if (near < Infinity) s -= Math.min(near, 8) * 25;
+      }
+    }
     // ассоциальный: на своём ходу держится подальше от других героев (кроме зоны выхода, когда пора уходить)
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).loner && !(E.isComplete(g) && fh.pos === g.exit)) {
       g.heroes.forEach((o) => {
