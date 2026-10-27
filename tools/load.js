@@ -16,6 +16,7 @@ const FILES = [
   'src/engine/board.js',
   'src/engine/engine.js',
   'src/engine/campaign.js',
+  'src/ai/persona.js',
   'src/ai/bot.js',
 ];
 FILES.forEach((f) => require(path.join(ROOT, f)));

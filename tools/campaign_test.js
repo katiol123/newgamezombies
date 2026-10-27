@@ -291,7 +291,7 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   m.talons = 30; b.talons = 30;
   C.autoManage(c, 'marina'); C.autoManage(c, 'boris');
   const owns = (h, id) => h.equip.concat(h.chest, h.junk).filter((it) => it.id === id).length;
-  ok(owns(m, 'tr_medbag') === 1 && owns(m, 'tr_gasmask') === 1 && owns(m, 'tr_binoculars') === 0, 'Марина (ИИ) берёт сумку санитара и противогаз, бинокль — нет');
+  ok(owns(m, 'tr_medbag') === 1 && owns(m, 'tr_gasmask') === 0 && owns(m, 'tr_binoculars') === 0, 'Марина (ИИ, бережливая) берёт только самое нужное — сумку санитара');
   ok(owns(b, 'tr_gasmask') === 0 && owns(b, 'tr_medbag') === 0, 'Борис (ИИ) противогаз не берёт — он и так почти не заражается');
   C.autoManage(c, 'marina');
   ok(owns(m, 'tr_medbag') === 1, 'повторная раскладка ИИ не скупает дубли');
@@ -345,6 +345,33 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(!C.sell(c, 'marina', 'junk', m.junk.findIndex((it) => it.id === 'valuable')) && m.talons - t0 >= 2 && m.talons - t0 <= 8, `продажа Ценности: +${m.talons - t0} 🎫 (2–8)`);
   const t1 = m.talons; C.startMission(c);
   ok(m.talons - t1 >= 2 && m.talons - t1 <= 8 && !m.junk.some((it) => it.id === 'valuable'), 'при выходе Ценность из хлама продана');
+}
+
+// 23) Скрытые характеры ИИ: честный меняет «Предателя» и не засчитывает его; транжира и копуша у торговца
+{
+  const g = E.create({ seed: 't23', heroes: [{ id: 'boris', ai: true }, { id: 'lisa', ai: true }], quiet: true });
+  const b = g.heroes[0];
+  b.mission = 'm_traitor'; b.ms = {}; b.missionRedrawn = false; b.missionKept = false;
+  g.active = null; ZG.Bot.playTurn(g, { depth2: false });
+  ok(b.mission !== 'm_traitor', `честный Борис сменил карту «Предатель» (теперь ${b.mission})`);
+  const g2 = E.create({ seed: 't23b', heroes: [{ id: 'viktor', ai: true }, { id: 'lisa', ai: true }], quiet: true });
+  const v = g2.heroes[0], l = g2.heroes[1];
+  v.mission = 'm_traitor'; v.ms = {};
+  g2.zombies.length = 0;
+  const z = E.spawnZombie(g2, 'walker', l.pos, null, true, true, true); z.awake = true; z.wokenBy = 0; z.trail = l.pos;
+  v.pos = g2.board.cells.find((cc) => cc.type === 'street' && E.distV(g2, l.pos)[cc.i] > 4).i;
+  E.act(g2, { t: 'begin', hero: 0 }); E.act(g2, { t: 'end' }); E.act(g2, { t: 'begin', hero: 1 }); E.act(g2, { t: 'end' });
+  ZG.Bot.autoPending(g2);
+  ok(!(v.ms.betrayals > 0), 'честному ИИ натравленный зомби предательство не засчитывает');
+  const c = C.create({ heroes: [{ id: 'lisa', ai: true }, { id: 'marina', ai: true }], seed: 't23c' });
+  c.missionNo = 6;
+  const li = C.hero(c, 'lisa'), ma = C.hero(c, 'marina');
+  li.talons = 40; ma.talons = 40;
+  C.autoManage(c, 'lisa'); C.autoManage(c, 'marina');
+  const buys = (id) => (c.traderLog || []).filter((x) => x.hero === id).length;
+  ok(buys('lisa') >= 2 && buys('marina') === 1, `транжира Лиза купила ${buys('lisa')}, копуша Марина — ${buys('marina')}`);
+  C.autoManage(c, 'lisa');
+  ok(buys('lisa') <= 3, 'транжира не скупает прилавок раз за разом (не больше 3 за заход)');
 }
 
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');

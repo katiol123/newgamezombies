@@ -58,7 +58,8 @@
     // смелость отряда: здоровые герои охотнее дерутся (убитый/раненый враг ценнее), израненные — осторожнее
     const alive = g.heroes.filter((h) => h.onBoard);
     const hurtAvg = alive.length ? alive.reduce((a, h) => a + E.hurtCount(g, h) / Math.max(1, E.maxHp(g, h)), 0) / alive.length : 0;
-    const bold = 1.6 - 1.2 * Math.min(1, hurtAvg * 1.5); // 1.6 — все целы … 0.4 — все изранены
+    const tp = g.turnHero != null && g.heroes[g.turnHero] ? ZG.Persona.get(g.heroes[g.turnHero].id) : null;
+    const bold = (1.6 - 1.2 * Math.min(1, hurtAvg * 1.5)) * (tp ? tp.bold : 1); // 1.6 — все целы … 0.4 — все изранены; характер ходящего
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat * bold;
@@ -90,7 +91,8 @@
       const m = ZG.Missions.get(fh.mission);
       if (g.missionFirst === fh.idx) s += 150;
       else if (g.missionFirst == null && !fh.missionDone) {
-        s += (E.missionProgress(g, fh) / m.goal) * 80;
+        const pf = ZG.Persona.get(fh.id);
+        if (!(m.traitor && pf.honor)) s += (E.missionProgress(g, fh) / m.goal) * 80 * pf.ambition; // честный предателем не станет
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
@@ -118,7 +120,7 @@
       const wounds = E.hurtCount(g, h);
       // осторожность героя: чем меньше осталось Стойкости, тем дороже риск (0.55 — цел … 2 — на грани)
       const hpLeft = hp - wounds;
-      const risk = hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp));
+      const risk = (hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp))) * (2 - ZG.Persona.get(h.id).bold); // смелый меньше бережётся
       s -= wounds * W.wound;
       if (hp - wounds <= 1) s -= W.nearDeath;
       // ожидаемая атака
@@ -231,6 +233,7 @@
   // «Предатель»: ценно, когда разбуженные или отвлечённые ИМ зомби оказываются рядом с союзником —
   // но только если риска нет: сам предатель цел, союзнику есть куда падать, миссия не горит
   function traitorLure(g, me) {
+    if (ZG.Persona.get(me.id).honor) return 0;
     const left = E.maxRounds(g) - g.round;
     if (left < 4 || g.alarm >= E.alarmThreshold(g) - 1) return 0; // время и Тревога — не до пакостей
     if (E.hurtCount(g, me) * 2 >= E.maxHp(g, me)) return 0; // сам ранен — не до этого
@@ -255,18 +258,19 @@
   function giveOk(g, h, a, angel) {
     const d = ZG.Cards.get(g.cards[a.card]);
     // Ценность ИИ не отдаёт (прибыль уйдёт другому) — разве что сам вот-вот падёт, а рядом приятель или друг
-    if (d.valuable) return E.maxHp(g, h) - E.hurtCount(g, h) <= 2 && E.rel(g, h, g.heroes[a.hero]) >= 1;
+    if (d.valuable) { const p = ZG.Persona.get(h.id); return p.greed < 2 && E.maxHp(g, h) - E.hurtCount(g, h) <= (p.generous ? 3 : 2) && E.rel(g, h, g.heroes[a.hero]) >= 1; } // жадный не отдаст, щедрый — раньше
     return angel || d.kind === 'cargo';
   }
   function safePull(g, h) {
     const sf = g.safes.find((x) => !x.jammed && x.deck.length >= 3);
     if (!sf) return 0;
     const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
-    if (!g.campaign && !fence) return 0;
+    const greed = ZG.Persona.get(h.id).greed;
+    if (!fence && (!g.campaign || greed === 0)) return 0;
     if (h.hand.filter((u) => ZG.Cards.get(g.cards[u]).valuable).length >= 2) return 0;
     if (E.maxRounds(g) - g.round < 6 || E.hurtCount(g, h) * 2 >= E.maxHp(g, h)) return 0;
     const d = E.distV(g, h.pos)[sf.pos];
-    return d === Infinity ? 0 : Math.min(d, 8) * (fence ? 60 : 20);
+    return d === Infinity ? 0 : Math.min(d, 8) * (fence ? 60 : greed >= 2 ? 35 : 20);
   }
   // Сейф: ломать ли ещё одну ячейку. Интерес — талоны (кампания) или «Скупщик»; риск — сирена (1 из оставшихся жетонов),
   // время, Тревога, свои раны, охотники рядом и засорённая рука
@@ -274,10 +278,11 @@
     const sf = E.safeAt(g, h.pos);
     if (!sf || sf.jammed || !sf.deck.length || h.energy < E.SAFE_COST) return false;
     const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
-    if (!g.campaign && !fence) return false;
+    const greed = ZG.Persona.get(h.id).greed;
+    if (!fence && (!g.campaign || greed === 0)) return false; // бессребреник ломает сейф только по заданию
     const vals = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).valuable).length;
-    if (vals >= 2 && !(fence && !(h.ms.safeLoot || 0))) return false; // рука и так засорена
-    if (sf.deck.length < (fence ? 2 : 3)) return false; // сирена — 1 из оставшихся: дальше слишком рискованно
+    if (vals >= (greed >= 2 ? 3 : 2) && !(fence && !(h.ms.safeLoot || 0))) return false; // рука и так засорена (жадный терпит больше)
+    if (sf.deck.length < (fence || greed >= 2 ? 2 : 3)) return false; // сирена — 1 из оставшихся: жадный рискует до последнего
     if (E.maxRounds(g) - g.round < 4) return false;
     if (E.hurtCount(g, h) * 2 >= E.maxHp(g, h)) return false;
     if (g.alarm + E.SAFE_NOISE + (E.jingles(g, h) ? 1 : 0) >= E.alarmThreshold(g)) return false; // шум не должен вызвать Волну
@@ -361,7 +366,7 @@
     const me = g.heroes[idx];
     if (me && me.mission && !me.missionRedrawn && !me.missionDone && g.missionFirst == null) {
       const m = ZG.Missions.get(me.mission);
-      if (m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) E.act(g, { t: 'mredraw' }); // «Предателя» ИИ оставляет и пакостит, когда это безопасно
+      if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || (m.traitor && ZG.Persona.get(me.id).honor)) E.act(g, { t: 'mredraw' }); // честный «Предателя» меняет; остальные оставляют и пакостят, когда это безопасно
     }
     for (let i = 0; i < 40; i++) {
       autoPending(g);

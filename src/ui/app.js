@@ -1519,7 +1519,7 @@
     if (cell === g.fire) parts.push('<div class="tt-gold">Горящий бензовоз — его зарево освещает всю трассу</div>');
     if (g.spawnPoints.includes(cell)) parts.push(E.plugged(g, cell) ? `<div class="tt-gold">Люк заглушен: молчит ещё ${g.plugs[cell] - g.round + 1} р.</div>` : '<div class="tt-red">Точка появления зомби</div>');
     const sf = E.safeAt(g, cell);
-    if (sf) parts.push(sf.jammed ? `<div class="tt-red">${esc(sf.label)}: заклинило — сирена</div>` : !sf.deck.length ? `<div>${esc(sf.label)}: пуст</div>` : `<div class="tt-gold">${esc(sf.label)}: жетонов ${sf.deck.length} (было 6: 4 Ценности, 1 Пусто, 1 Сирена). Взлом — ${E.SAFE_COST} ⚡ и Шум ${E.SAFE_NOISE}; Сирена — Тревога +2, сейф заклинит</div>`);
+    if (sf) parts.push(sf.jammed ? `<div class="tt-red">${esc(sf.label)}: заклинило — сирена</div>` : !sf.deck.length ? `<div>${esc(sf.label)}: пуст</div>` : `<div class="tt-gold">${esc(sf.label)}: жетонов ${sf.deck.length} (было 6: 4 Ценности, 1 Пусто, 1 Сирена). Взлом — ${E.SAFE_COST} ⚡ и Шум ${E.SAFE_NOISE}; Сирена — ещё Шум 3, сейф заклинит</div>`);
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
     const s = g.search.find((x) => x.pos === cell);

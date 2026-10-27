@@ -482,7 +482,8 @@
   const C = () => ZG.Campaign;
   const name = (id) => ZG.Heroes.get(id).name;
   const R = () => ZG.CAMPAIGN.prices;
-  const reserve = (h) => R().ration + Math.min(h.injury, 2) * R().heal; // запас ИИ: паёк и пара лечений
+  const reserve = (h) => (C().reserveAI ? C().reserveAI(h, 2) : R().ration + Math.min(h.injury, 2) * R().heal); // запас ИИ: паёк и пара лечений (с поправкой на характер)
+  const pers = (id) => (ZG.Persona ? ZG.Persona.get(id) : { spend: 'normal' }); // скрытый характер героя
   const richest = (c) => c.roster.slice().sort((a, b) => b.talons - a.talons)[0];
   const rareLoot = () => Object.keys(ZG.Levels.get('outskirts').loot).filter((id) => { const d = ZG.Cards.get(id); return !d.event && d.rarity === 'rare'; });
   ZG.SHELTER_EVENTS = [
@@ -493,7 +494,7 @@
       setup: (c) => { const s = c.roster.slice().sort((a, b) => a.talons - b.talons); return { decider: s[s.length - 1].id, other: s[0].id }; },
       story: (c, e) => `Карманы почти пусты: ${name(e.other)} (🎫 ${C().hero(c, e.other).talons}) просит 2 талона на паёк. Решает самый запасливый — ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
       options: () => [{ key: 'give', label: 'Отдать 2 🎫' }, { key: 'no', label: 'Отказать (отношения −1)' }],
-      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 2 >= reserve(h) && C().rel(c, e.decider, e.other) > -3 ? 'give' : 'no'; },
+      ai: (c, e) => { const h = C().hero(c, e.decider), p = pers(h.id); if (p.spend === 'thrifty' && !p.kind && C().rel(c, e.decider, e.other) < 1) return 'no'; return h.talons - 2 >= reserve(h) && C().rel(c, e.decider, e.other) > -3 ? 'give' : 'no'; },
       apply: (c, e, key) => {
         const a = C().hero(c, e.decider), b = C().hero(c, e.other);
         if (key === 'give' && a.talons >= 2) { a.talons -= 2; b.talons += 2; return `${name(e.decider)} отдаёт 2 🎫 — ${name(e.other)} не останется без пайка.`; }
@@ -507,7 +508,7 @@
       setup: (c) => ({ decider: richest(c).id }),
       story: (c, e) => `У ворот — женщина с двумя детьми. Дети молчат и смотрят на ваши консервы. Решает ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
       options: (c, e) => [{ key: 'feed', label: 'Накормить (3 🎫)', off: C().hero(c, e.decider).talons < 3 }, { key: 'no', label: 'Прогнать (−1 мораль)' }],
-      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 3 >= reserve(h) ? 'feed' : 'no'; },
+      ai: (c, e) => { const h = C().hero(c, e.decider), p = pers(h.id); return h.talons - 3 >= (p.kind ? R().ration : reserve(h)) && (p.kind || p.spend !== 'thrifty') ? 'feed' : 'no'; }, // сострадательный кормит последним
       apply: (c, e, key) => {
         const h = C().hero(c, e.decider);
         if (key === 'feed' && h.talons >= 3) { h.talons -= 3; c.roster.forEach((o) => C().moraleAdd(c, o, 1)); return 'Беженцев накормили. Впервые за долгое время в убежище кто-то улыбнулся: +1 мораль всем.'; }
@@ -521,7 +522,7 @@
       setup: (c) => ({ decider: ZG.Rng.pick(c, c.roster).id }),
       story: (c, e) => `Глубокой ночью — слабый стук в ворота. За ними мужчина, рукав в крови: «Это гвоздь… просто гвоздь». Решает ${name(e.decider)}.`,
       options: () => [{ key: 'open', label: 'Впустить (риск)' }, { key: 'no', label: 'Не открывать' }],
-      ai: (c) => (c.roster.every((h) => C().hp(h) >= 3) ? 'open' : 'no'),
+      ai: (c, e) => { const p = pers(e.decider); return (p.kind || p.brave) && c.roster.every((h) => C().hp(h) >= 3) ? 'open' : 'no'; }, // впустит только добрый или смелый
       apply: (c, e, key) => {
         if (key !== 'open') return 'Стук стихает к утру. Никто не выходит проверить.';
         const h = C().hero(c, e.decider);
@@ -541,7 +542,7 @@
       },
       story: (c, e) => `Из-за последней банки тушёнки ${name(e.decider)} и ${name(e.other)} сцепились всерьёз. Ещё слово — и дойдёт до кулаков. Решает ${name(e.decider)}.`,
       options: () => [{ key: 'yield', label: 'Уступить (отношения +1, мораль −1)' }, { key: 'stand', label: 'Стоять на своём (отношения −1)' }],
-      ai: (c, e) => (C().hero(c, e.decider).morale >= 3 ? 'yield' : 'stand'),
+      ai: (c, e) => (pers(e.decider).kind || C().hero(c, e.decider).morale >= 4 ? 'yield' : 'stand'),
       apply: (c, e, key) => {
         if (key === 'yield') { C().relAdd(c, e.decider, e.other, 1); C().moraleAdd(c, C().hero(c, e.decider), -1); return `${name(e.decider)} уступает. Обидно, но мир дороже: отношения +1, мораль −1.`; }
         C().relAdd(c, e.decider, e.other, -1); return `Ни один не уступил. Отношения ${name(e.decider)} и ${name(e.other)} −1.`;
@@ -554,7 +555,7 @@
       setup: (c) => ({ decider: richest(c).id, card: ZG.Rng.pick(c, rareLoot()) }),
       story: (c, e) => `К воротам подкатывает тележка, скрипучая на всю улицу. Торговец в противогазе молча показывает товар: «${ZG.Cards.get(e.card).name}». Цена — 6 🎫. Решает ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
       options: (c, e) => [{ key: 'buy', label: 'Купить (6 🎫)', off: C().hero(c, e.decider).talons < 6 }, { key: 'no', label: 'Отказаться' }],
-      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 6 >= reserve(h) ? 'buy' : 'no'; },
+      ai: (c, e) => { const h = C().hero(c, e.decider); return pers(h.id).spend !== 'thrifty' && h.talons - 6 >= reserve(h) ? 'buy' : 'no'; },
       apply: (c, e, key) => {
         const h = C().hero(c, e.decider);
         if (key === 'buy' && h.talons >= 6) { h.talons -= 6; C().putChest(c, h, e.card); return `${name(e.decider)} покупает «${ZG.Cards.get(e.card).name}».`; }
@@ -568,7 +569,7 @@
       setup: (c) => ({ decider: ZG.Rng.pick(c, c.roster).id }),
       story: (c, e) => `Разбирая завал, ${name(e.decider)} находит в полу железную дверь с ржавым замком. Из-под неё тянет холодом… и чем-то ещё.`,
       options: () => [{ key: 'open', label: 'Вскрыть (риск)' }, { key: 'no', label: 'Заколотить' }],
-      ai: (c, e) => (C().hp(C().hero(c, e.decider)) >= 3 ? 'open' : 'no'),
+      ai: (c, e) => (C().hp(C().hero(c, e.decider)) >= (pers(e.decider).brave ? 3 : 5) ? 'open' : 'no'),
       apply: (c, e, key) => {
         if (key !== 'open') return 'Дверь заколотили досками. Иногда по ночам оттуда что-то скребётся.';
         const h = C().hero(c, e.decider);
@@ -583,7 +584,7 @@
       setup: (c) => ({ decider: c.roster.slice().sort((a, b) => b.morale - a.morale)[0].id }),
       story: (c, e) => `Снаружи всю ночь что-то бродит вдоль стен. Кому-то придётся сидеть у окна до рассвета. Решает ${name(e.decider)}.`,
       options: () => [{ key: 'self', label: 'Вызваться самому' }, { key: 'lots', label: 'Тянуть жребий' }],
-      ai: (c, e) => (C().hero(c, e.decider).morale >= 4 ? 'self' : 'lots'),
+      ai: (c, e) => (pers(e.decider).brave || C().hero(c, e.decider).morale >= 5 ? 'self' : 'lots'),
       apply: (c, e, key) => {
         const h = C().hero(c, e.decider);
         if (key === 'self') { C().moraleAdd(c, h, -1); c.roster.forEach((o) => { if (o !== h) C().relAdd(c, h.id, o.id, 1); }); return `${name(e.decider)} всю ночь на вахте: мораль −1, но остальные это запомнили (отношения +1).`; }

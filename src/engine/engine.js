@@ -1360,7 +1360,7 @@
       byHero[h.idx].incoming += dmg;
       g.stats.incoming = (g.stats.incoming || 0) + dmg;
       byHero[h.idx].attackers.push(z.uid);
-      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy]) ms(g.heroes[z.wokenBy], 'betrayals', dmg); // «Предатель»: натравленный зомби атакует союзника (сила атаки, до блока)
+      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy] && !(g.heroes[z.wokenBy].ai && ZG.Persona && ZG.Persona.get(g.heroes[z.wokenBy].id).honor)) ms(g.heroes[z.wokenBy], 'betrayals', dmg); // честный ИИ от «Предателя» отказывается // «Предатель»: натравленный зомби атакует союзника (сила атаки, до блока)
       z.attackedPhase = g.zphase; // атаковал в эту фазу (Невеста: за фазу — одна способность)
       E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: dmg });
     };
@@ -2085,7 +2085,7 @@
   }
 
   // ---- Сейф: мини-игра «испытай удачу». Стопка жетонов лицом вниз: 4 «Ценность», 1 «Пусто», 1 «Сирена».
-  // Взлом — 2 ⚡ и Шум 2: открывается верхний жетон. «Сирена» — Тревога +2, сейф заклинило насовсем.
+  // Взлом — 2 ⚡ и Шум 2: открывается верхний жетон. «Сирена» — дополнительно Шум 3, сейф заклинило насовсем.
   E.SAFE_COST = 2;
   E.SAFE_NOISE = 2;
   E.SAFE_DECK = ['valuable', 'valuable', 'valuable', 'valuable', 'empty', 'siren'];
@@ -2111,8 +2111,7 @@
       sf.jammed = true;
       E.log(g, `${E.heroName(h)} задевает сигнализацию: «${sf.label}» воет сиреной и заклинивает намертво!`, 'bad');
       E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'siren' });
-      E.raiseAlarm(g, 2, 'Сирена сейфа');
-      E.hear(g, h.pos, 4, h.idx);
+      makeNoise(g, null, h.pos, 3); // сирена — дополнительно Шум 3 (не звон героя: +1 Ценности не добавляется)
     }
   }
 

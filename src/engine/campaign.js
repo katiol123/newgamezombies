@@ -394,12 +394,14 @@
   C.traderAI = function (c, h) {
     const t = C.trader(c);
     if (!t) return [];
-    const P = CFG().prices, reserve = P.ration + Math.min(h.injury, 2) * P.heal;
+    const reserve = C.reserveAI(h, 2), sp = C.persona(h).spend;
+    const minFit = sp === 'thrifty' ? 2 : 1, maxBuy = sp === 'thrifty' ? 1 : sp === 'spender' ? 3 : 2; // копуша берёт только самое нужное, транжира — всё подходящее
     const bought = [];
-    t.stock.map((w) => ({ w, fit: C.wareFit(c, h, w.id) })).filter((x) => x.fit > 0)
+    const before = (c.traderLog || []).filter((x) => x.no === c.missionNo && x.hero === h.id).length; // уже купил в этот заход
+    t.stock.map((w) => ({ w, fit: C.wareFit(c, h, w.id) + (sp === 'spender' ? 1 : 0) })).filter((x) => x.fit >= minFit)
       .sort((a, b) => b.fit - a.fit || a.w.price - b.w.price)
       .forEach(({ w }) => {
-        if (bought.length >= 2 || h.talons - w.price < reserve) return;
+        if (before + bought.length >= maxBuy || h.talons - w.price < reserve) return;
         if (!C.buy(c, h.id, w.id)) bought.push(w.id);
       });
     return bought;
@@ -465,16 +467,24 @@
   // Отчаяние: Стойкость на половине и ниже — герой берёт в поход даже мелочь (риск смерти велик),
   // а лечение и защиту ставит в приоритет; обычно мелочь не берёт и продаёт.
   C.desperate = (h) => C.hp(h) * 2 <= C.baseHp(h) + C.hpTalents(h);
+  // Скрытый характер (src/ai/persona.js): запас талонов, который ИИ не тратит. Копуша откладывает «на чёрный день»,
+  // транжира оставляет только на паёк
+  C.persona = (h) => (ZG.Persona ? ZG.Persona.get(h.id) : { spend: 'normal', greed: 1 });
+  C.reserveAI = (h, heals) => {
+    const P = CFG().prices, sp = C.persona(h).spend;
+    if (sp === 'spender') return P.ration;
+    return P.ration + Math.min(h.injury, heals) * P.heal + (sp === 'thrifty' ? 8 : 0);
+  };
   C.autoManage = function (c, heroId) {
     const h = C.hero(c, heroId);
     if (!h) return 'Нет такого героя.';
     const desp = C.desperate(h);
+    const sp = C.persona(h).spend;
     C.traderAI(c, h); // торговец бывает раз за кампанию — его товар важнее построек, которые подождут
     // ремонт (если есть Мастерская): чинить то, что пойдёт в поход или стоит хранить, — самое ценное первым;
     // оставить запас на паёк и лечение травм; мелочь, которая уйдёт в хлам, не чинить
     if (C.built(h, 'workshop')) {
-      const P = CFG().prices;
-      const reserve = P.ration + Math.min(h.injury, 2) * P.heal;
+      const reserve = C.reserveAI(h, 2);
       const pool = h.equip.concat(h.chest, h.junk).filter((it) => it.worn && C.isValuable(it))
         .sort((a, b) => (ZG.Cards.get(b.id).value || 0) - (ZG.Cards.get(a.id).value || 0));
       pool.forEach((it) => {
@@ -484,16 +494,17 @@
     }
     // постройки: ИИ строит активно — по приоритету, оставляя запас на паёк и лечение травм
     const BUILD_ORDER = ['stash', 'infirmary', 'range', 'storage', 'workshop', 'bath', 'redcorner'];
-    const keep = CFG().prices.ration + Math.min(h.injury, 1) * CFG().prices.heal;
-    BUILD_ORDER.forEach((bId) => {
+    const keep = C.reserveAI(h, 1);
+    BUILD_ORDER.forEach((bId, i) => {
       const b = ZG.Buildings.get(bId);
       if (!b || C.built(h, bId) || h.talons - b.cost < keep) return;
+      if (sp === 'thrifty' && i >= 3) return; // копуша строит только самое нужное
       if (bId === 'workshop' && !h.equip.concat(h.chest, h.junk).some((it) => it.worn)) return; // мастерская — когда есть что чинить
-      if (bId === 'bath' && h.morale > 2) return;
+      if (bId === 'bath' && h.morale > 2 && sp !== 'spender') return; // транжира строит баню и просто так
       C.build(c, h.id, bId);
     });
     // Тир: тренироваться, если после этого хватает на паёк и пару лечений
-    if (C.canTrain(c, h) && h.talons - CFG().prices.train >= CFG().prices.ration + Math.min(h.injury, 2) * CFG().prices.heal) C.train(c, h.id);
+    if (C.canTrain(c, h) && h.talons - CFG().prices.train >= C.reserveAI(h, 2)) C.train(c, h.id);
     const survival = (it) => { const t = ZG.Cards.get(it.id).tags || []; return t.includes('heal') || t.includes('block') ? 4 : 0; };
     const score = (it) => C.cardScore(it) + (desp ? survival(it) : 0);
     const all = h.equip.concat(h.chest, h.junk).sort((a, b) => score(b) - score(a));
