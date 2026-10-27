@@ -131,7 +131,7 @@
       const groups = new Map();
       const push = (cell, e) => { if (!groups.has(cell)) groups.set(cell, []); groups.get(cell).push(e); };
       this.heroes.forEach((e) => { if (!e.gone) push(e.cell, e); });
-      this.zombies.forEach((e) => { if (!e.dying) push(e.cell, e); });
+      this.zombies.forEach((e) => push(e.cell, e)); // умирающий держит место, пока не исчезнет, — соседи не наезжают на него
       const extras = new Set();
       this.g.crates.forEach((c) => { if (!c.opened) extras.add(c.pos); });
       this.g.search.forEach((s) => extras.add(s.pos));
@@ -363,9 +363,9 @@
           const e = this.zombies.get(ev.zombie);
           if (e) { e.dying = { t0: this.time }; this._splat(e.x, e.y, e.r * 1.4); this._blood({ x: e.x, y: e.y }, 14); }
           const p = e ? e : this.cellXY(ev.pos);
-          this._float(p.x, p.y - C * 0.35, '✝', '#e8dcc0', 1.3);
-          // душа уходит дымкой
-          for (let i = 0; i < 7; i++) this.particles.push({ x: p.x + (Math.random() - 0.5) * C * 0.2, y: p.y, vx: (Math.random() - 0.5) * 12, vy: -40 - Math.random() * 30, life: 1.3, t: 0, size: C * (0.05 + Math.random() * 0.05), color: 'rgba(190,200,190,.55)', shape: 'puff' });
+          this._float(p.x, p.y, '☠', '#b8d890', 1.2, 0.65); // череп — на самом зомби (не на лице героя рядом) и не «✝», как у павшего героя
+          // душа уходит лёгкой дымкой: коротко и прозрачно, чтобы не застилать фишки соседей
+          for (let i = 0; i < 5; i++) this.particles.push({ x: p.x + (Math.random() - 0.5) * C * 0.2, y: p.y, vx: (Math.random() - 0.5) * 10, vy: -22 - Math.random() * 14, life: 0.8, t: 0, size: C * (0.035 + Math.random() * 0.03), color: 'rgba(190,200,190,.28)', shape: 'puff' });
           return 220;
         }
         case 'shot': {
@@ -596,7 +596,7 @@
 
     // --------------------------------------------------------- частицы
     addShake(n) { if (ZG.reducedMotion) return; this.shake = Math.min(22, this.shake + n); }
-    _float(x, y, text, color, scale) { this.floats.push({ x, y, text, color, scale: scale || 1, t: 0, life: 1.3 }); }
+    _float(x, y, text, color, scale, life) { this.floats.push({ x, y, text, color, scale: scale || 1, t: 0, life: life || 1.3 }); }
     _ring(p, color, r, ms) { this.effects.push({ type: 'ring', x: p.x, y: p.y, color, r, t0: this.time, dur: ms / 1000 }); }
     _dust(p, n, color) {
       for (let i = 0; i < n; i++) {
@@ -687,7 +687,9 @@
       ents.sort((a, b) => (a.uid ? 0 : 1) - (b.uid ? 0 : 1) || a.y - b.y);
       ents.forEach((e) => (e.uid ? this._drawZombie(ctx, e) : this._drawHero(ctx, e)));
       // удалить умерших
-      this.zombies.forEach((e, uid) => { if (e.dying && this.time - e.dying.t0 > 0.6) this.zombies.delete(uid); });
+      let gone = false;
+      this.zombies.forEach((e, uid) => { if (e.dying && this.time - e.dying.t0 > 0.6) { this.zombies.delete(uid); gone = true; } });
+      if (gone) this._layout(false); // место освободилось — фишки плавно сдвигаются
 
       (this.overflow || new Map()).forEach((o, cell) => {
         if (this.hiddenCell(cell)) return;
@@ -1392,11 +1394,14 @@
             break;
           }
           case 'pillar': {
-            const w = this.cell * 0.5 * (1 - k * 0.5);
-            const gr = ctx.createLinearGradient(f.x, f.y - this.cell * 2, f.x, f.y);
+            // световой столб с мягкими краями: несколько полос, к краям прозрачнее (раньше — жёсткий прямоугольник)
+            const w = this.cell * 0.5 * (1 - k * 0.5), hgt = Math.min(this.cell * 2, f.y);
+            const gr = ctx.createLinearGradient(f.x, f.y - hgt, f.x, f.y);
             gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, f.color);
-            ctx.globalAlpha = Math.sin(k * Math.PI) * 0.7;
-            ctx.fillStyle = gr; ctx.fillRect(f.x - w / 2, f.y - this.cell * 2, w, this.cell * 2);
+            ctx.fillStyle = gr;
+            const base = Math.sin(k * Math.PI) * 0.7;
+            for (let i = 0; i < 4; i++) { const ww = w * (1 - i * 0.22); ctx.globalAlpha = base * 0.3; ctx.fillRect(f.x - ww / 2, f.y - hgt, ww, hgt); }
+            ctx.globalAlpha = base * 0.5; ctx.beginPath(); ctx.ellipse(f.x, f.y, w * 0.9, w * 0.3, 0, 0, TAU); ctx.fill(); // пятно света у основания
             break;
           }
           case 'beacon': {
@@ -1455,9 +1460,13 @@
         const pop = k < 0.15 ? ease.back(k / 0.15) : 1;
         ctx.save();
         ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
-        ctx.translate(f.x, f.y - k * this.cell * 0.45);
+        const fs = Math.round(this.cell * 0.2);
+        ctx.font = `bold ${fs}px 'Russo One', sans-serif`;
+        // надпись не уходит за край поля (герои в верхнем ряду, длинные надписи у края)
+        const half = (ctx.measureText(f.text).width / 2 + 4) * f.scale, top = fs * f.scale * 0.7 + 4;
+        const fx = Math.max(half, Math.min(this.W - half, f.x)), fy = Math.max(top, f.y - k * this.cell * 0.45);
+        ctx.translate(fx, fy);
         ctx.scale(pop * f.scale, pop * f.scale);
-        ctx.font = `bold ${Math.round(this.cell * 0.2)}px 'Russo One', sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(f.text, 0, 0);
         ctx.fillStyle = f.color; ctx.fillText(f.text, 0, 0);

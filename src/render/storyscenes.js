@@ -104,7 +104,7 @@
     c.restore();
     c.fillStyle = INK; c.fillRect(W / 2 - gap / 2 - 30, 80, 30, 740); c.fillRect(W / 2 + gap / 2, 80, 30, 740); // торцы створок
     glow(c, W / 2, 450, 380, 'rgba(255,230,180,A)', 0.12);
-    c.fillStyle = BLOOD; c.font = "italic 26px Georgia, serif"; c.textAlign = 'center'; c.globalAlpha = 0.85; c.fillText('…нас уже учуяли', W / 2, 870); c.globalAlpha = 1;
+    c.font = "italic 46px Georgia, serif"; c.textAlign = 'center'; c.lineWidth = 8; c.strokeStyle = 'rgba(0,0,0,.85)'; c.strokeText('…нас уже учуяли', W / 2, 872); c.fillStyle = '#e0503a'; c.fillText('…нас уже учуяли', W / 2, 872); // подпись крупнее и с обводкой — читается и в маленьком окне
     tex(c, '#000', 0.25); vignette(c, 0.7); grain(c, t); frame(c);
   };
   S.m1_first_kill = (c, t) => { // лужа: отражение окна, тапок, ключ на шнурке; круги по воде
@@ -151,7 +151,9 @@
     c.fillStyle = '#0b0c0d'; c.fillRect(0, 660, W, 240);
     for (let i = 0; i < 9; i++) {
       const x = 180 + i * 150, y = 700 + (i % 2) * 40, w = 140 + (i % 3) * 30, h = 110 + (i % 2) * 30;
-      c.fillStyle = '#050505'; c.beginPath(); c.moveTo(x - w / 2, y); c.quadraticCurveTo(x - w / 2, y - h, x - w * 0.1, y - h * 0.95); c.lineTo(x, y - h - 18); c.lineTo(x + w * 0.1, y - h * 0.95); c.quadraticCurveTo(x + w / 2, y - h, x + w / 2, y); c.closePath(); c.fill();
+      c.fillStyle = '#2e3236'; c.beginPath(); c.moveTo(x - w / 2, y); c.quadraticCurveTo(x - w / 2, y - h, x - w * 0.1, y - h * 0.95); c.lineTo(x, y - h - 18); c.lineTo(x + w * 0.1, y - h * 0.95); c.quadraticCurveTo(x + w / 2, y - h, x + w / 2, y); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(170,185,200,.35)'; c.lineWidth = 3; c.stroke(); // лунный контур мешка — силуэты читаются на тёмном фоне
+      c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 4; c.beginPath(); c.moveTo(x - w * 0.12, y - h * 0.9); c.lineTo(x + w * 0.12, y - h * 0.9); c.stroke(); // завязка
       const open = Math.max(0, Math.min(1, (t * 0.6 - i * 0.35) % 6)); eyesPair(c, x, y - h * 0.55, 0.9, open);
     }
     c.fillStyle = 'rgba(200,220,240,.06)'; for (let i = 0; i < 120; i++) { const x = (i * 137 + t * 30) % W, y = (i * 71 + t * 60) % H; c.fillRect(x, y, 2, 2); } // иней в воздухе
@@ -211,6 +213,8 @@
     pines(c, 900, '#0a120c', 3, 20, 500, 900);
     const rise = Math.min(1, t * 0.25 % 4), y = 900 - 120 * rise;
     c.fillStyle = '#060706'; c.beginPath(); c.moveTo(W / 2 - 360, 900); c.quadraticCurveTo(W / 2 - 380, y - 360, W / 2 - 160, y - 480); c.lineTo(W / 2 - 120, y - 560); c.lineTo(W / 2 - 60, y - 520); c.lineTo(W / 2 + 60, y - 520); c.lineTo(W / 2 + 120, y - 560); c.lineTo(W / 2 + 160, y - 480); c.quadraticCurveTo(W / 2 + 380, y - 360, W / 2 + 360, 900); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(160,200,140,.45)'; c.lineWidth = 6; c.stroke(); // холодный контурный свет — силуэт медведя виден на фоне леса
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, W / 2, y - 420, 420, 'rgba(120,160,110,A)', 0.12); c.restore();
     c.fillStyle = PAPER; for (let i = 0; i < 7; i++) { c.beginPath(); c.moveTo(W / 2 + 10 + i * 18, y - 330); c.lineTo(W / 2 + 18 + i * 18, y - 290 - (i % 2) * 10); c.lineTo(W / 2 + 26 + i * 18, y - 330); c.fill(); } // зубы сквозь щёку
     c.strokeStyle = PAPER; c.lineWidth = 3; c.beginPath(); c.arc(W / 2 + 70, y - 330, 70, 0.2, 2.6); c.stroke();
     eyesPair(c, W / 2 - 40, y - 420, 1.8, 1, '#d8ff4a');
@@ -219,7 +223,8 @@
     tex(c, '#000', 0.25); vignette(c, 0.7); grain(c, t); frame(c);
   };
   S.m3_twist = (c, t) => { // вышка, радиоволны рвутся, перегрызенный кабель искрит, борозды когтей
-    sky(c, [[0, '#2a2420'], [1, '#0e0b0a']]);
+    sky(c, [[0, '#4a3a30'], [0.55, '#2a2420'], [1, '#0e0b0a']]);
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 760, 300, 520, 'rgba(200,150,110,A)', 0.18); c.restore(); // зарево за вышкой — силуэт читается
     c.strokeStyle = INK; c.lineWidth = 10; c.beginPath(); c.moveTo(560, 900); c.lineTo(760, 160); c.lineTo(960, 900); c.stroke();
     c.lineWidth = 6; for (let i = 0; i < 7; i++) { const y = 260 + i * 95, k = (y - 160) / 740; c.beginPath(); c.moveTo(760 - 200 * k, y); c.lineTo(760 + 200 * k, y + 95); c.moveTo(760 + 200 * k, y); c.lineTo(760 - 200 * k, y + 95); c.stroke(); }
     c.fillStyle = INK; c.fillRect(690, 120, 140, 60);
@@ -309,8 +314,18 @@
     [[0.25, -1], [0.45, 1], [0.7, -1], [0.95, 1]].forEach(([d, side], i) => { const y = 380 + d * 520, x = 800 + side * d * 300, s = 0.3 + d; const jump = Math.max(0, Math.sin(t * 4 + i * 1.7)) * 30 * s;
       c.save(); c.globalCompositeOperation = 'lighter'; glow(c, x, y, 120 * s, 'rgba(140,200,90,A)', 0.3); c.restore();
       c.fillStyle = '#000'; c.beginPath(); c.ellipse(x, y, 70 * s, 18 * s, 0, 0, TAU); c.fill();
+      // из щели под крышкой — зеленоватый свет; рука с пальцами цепляется за край крышки (раньше — чёрный брусок, читался как полоса)
+      const lift = Math.min(1, jump / (30 * s));
+      if (lift > 0.2) { c.save(); c.globalCompositeOperation = 'lighter'; glow(c, x, y - 4 * s, 70 * s, 'rgba(150,220,100,A)', 0.4 * lift); c.restore(); }
       c.fillStyle = '#4a4a46'; c.beginPath(); c.ellipse(x + 10 * s, y - jump, 68 * s, 16 * s, 0.1, 0, TAU); c.fill();
-      if (jump > 10 * s) { c.fillStyle = INK; c.fillRect(x - 6 * s, y - 50 * s, 10 * s, 50 * s); } });
+      c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 2; c.stroke();
+      if (lift > 0.35) {
+        const k = s * 1.8, hx = x - 16 * s, top = y - jump + 10 * s; // край крышки; рука крупнее — читается и в маленьком окне
+        c.fillStyle = '#8a977a'; c.strokeStyle = INK; c.lineWidth = Math.max(1.5, 2.5 * k);
+        c.beginPath(); c.moveTo(hx - 10 * k, y + 2 * k); c.lineTo(hx - 9 * k, top); c.lineTo(hx + 10 * k, top); c.lineTo(hx + 11 * k, y + 2 * k); c.closePath(); c.fill(); c.stroke(); // предплечье из щели
+        for (let f = 0; f < 4; f++) { c.beginPath(); c.ellipse(hx - 7 * k + f * 5 * k, top - 6 * k, 2.6 * k, 8 * k, (f - 1.5) * 0.22, 0, TAU); c.fill(); c.stroke(); } // пальцы на краю крышки
+      }
+    });
     for (let i = 0; i < 3; i++) { const f = (t * 0.9 + i * 0.33) % 1; if (f < 0.1) { c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 300 + i * 500, 360 - i * 10, 60, 'rgba(255,220,140,A)', 1 - f * 10); c.restore(); } }
     tex(c, '#000', 0.25); vignette(c, 0.75); grain(c, t); frame(c);
   };
@@ -403,8 +418,8 @@
     c.strokeStyle = 'rgba(20,20,22,.6)'; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 400); c.lineTo(600, 360); c.stroke();
     c.fillStyle = '#2a2826'; c.fillRect(0, 500, W, 400);
     c.fillStyle = '#4a4440'; c.fillRect(900, 330, 620, 300); // забор
-    const k = Math.sin(t * 1.1) > 0; scrawl(c, 'ЗДЕСЬ ЖИВЫЕ', 1210, 430, 64, k ? PAPER : 'rgba(232,220,192,.15)', -0.04);
-    scrawl(c, 'НЕ ВХОДИТЬ', 1210, 560, 64, !k ? BLOOD : 'rgba(192,57,43,.15)', 0.03);
+    const k = Math.sin(t * 1.1) > 0; scrawl(c, 'ЗДЕСЬ ЖИВЫЕ', 1210, 430, 64, k ? PAPER : 'rgba(232,220,192,.45)', -0.04);
+    scrawl(c, 'НЕ ВХОДИТЬ', 1210, 560, 64, !k ? '#e04a38' : 'rgba(224,74,56,.5)', 0.03); // обе надписи всегда читаются, мигание — лишь акцент
     c.save(); c.translate(420, 760); c.rotate(-0.12); c.strokeStyle = INK; c.lineWidth = 9; c.beginPath(); c.arc(-90, 0, 60, 0, TAU); c.arc(90, 0, 60, 0, TAU); c.stroke(); // велосипед
     c.beginPath(); c.moveTo(-90, 0); c.lineTo(-20, -70); c.lineTo(60, -70); c.lineTo(90, 0); c.moveTo(-20, -70); c.lineTo(10, 0); c.lineTo(60, -70); c.moveTo(-20, -70); c.lineTo(-30, -100); c.moveTo(60, -70); c.lineTo(70, -110); c.lineTo(100, -110); c.stroke();
     c.save(); c.translate(90, 0); c.rotate(t * 0.8); c.lineWidth = 3; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(i) * 60, Math.sin(i) * 60); c.stroke(); } c.restore(); c.restore(); // колесо крутится
