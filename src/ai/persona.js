@@ -11,11 +11,12 @@
  *   generous — отдаст Ценность приятелю раньше, чем сам падёт (а не в последний момент)
  *   kind     — сострадание в событиях убежища (накормить беженцев, впустить незнакомца, уступить в ссоре)
  *   brave    — сам вызывается на вахту и вскрывает подвал
+ *   loner    — ассоциален: держится подальше от других героев на поле (на своём ходу избегает их зон и соседних)
  */
 (function (G) {
   'use strict';
   const ZG = G.ZG;
-  const BASE = { honor: false, greed: 1, spend: 'normal', bold: 1, ambition: 1, generous: false, kind: false, brave: false };
+  const BASE = { honor: false, greed: 1, spend: 'normal', bold: 1, ambition: 1, generous: false, kind: false, brave: false, loner: false };
   const P = {
     // прораб: упрямый и прямой — не подставит своих; строит основательно, в драку идёт первым
     boris: { honor: true, greed: 1, spend: 'normal', bold: 1.3, ambition: 0.8, brave: true },
@@ -27,8 +28,8 @@
     viktor: { honor: true, greed: 0, spend: 'thrifty', bold: 1, kind: true, brave: true },
     // механик: «ломает всё, что ходит» — смелая и азартная, своего не упустит
     kira: { greed: 1, spend: 'normal', bold: 1.3, ambition: 1.3, brave: true },
-    // охотник: тихий и терпеливый — осторожен, копит, чужого не берёт, но своих не бросит
-    sava: { honor: true, greed: 0, spend: 'thrifty', bold: 0.8, generous: true },
+    // охотник: тихий и терпеливый одиночка — держится в стороне от отряда, осторожен, копит, чужого не берёт, но своих не бросит
+    sava: { honor: true, greed: 0, spend: 'thrifty', bold: 0.8, generous: true, loner: true },
     // бригадир: шумный и жадный до наживы — тратит широко, в драку лезет, своих выручает
     gosha: { greed: 2, spend: 'spender', bold: 1.3, ambition: 0.8, generous: true, brave: true },
     // стрелок из плена: азартный одиночка — рискует ради выгоды, к своей цели идёт любой ценой

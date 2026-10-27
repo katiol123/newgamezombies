@@ -96,6 +96,13 @@
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
+    // ассоциальный: на своём ходу держится подальше от других героев (кроме зоны выхода, когда пора уходить)
+    if (fh && fh.onBoard && ZG.Persona.get(fh.id).loner && !(E.isComplete(g) && fh.pos === g.exit)) {
+      g.heroes.forEach((o) => {
+        if (o === fh || !o.onBoard) return;
+        if (o.pos === fh.pos) s -= 90; else if (g.board.adj[fh.pos].includes(o.pos)) s -= 30;
+      });
+    }
     // сейф манит, пока есть время и силы (кампания — талоны, «Скупщик» — задание): лёгкое притяжение к нему
     if (fh && fh.onBoard && (g.safes || []).length) s -= safePull(g, fh);
     // заглушенные люки: каждый раунд тишины — меньше зомби
