@@ -1896,6 +1896,7 @@
       if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
       if (c.eventDraw && !c.eventDraw.seen && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
+      else if (!done && CMP.trader(c) && c.traderSeen !== c.missionNo && !this._eventOpen) setTimeout(() => this.showTrader(c), 450); // торговец — после карты событий
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       if (!done && md.special && md.special.length) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${md.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`);
@@ -2032,8 +2033,43 @@
         z.appendChild(drop);
         zones.appendChild(z);
       });
+      const tr = !done && CMP.trader(c);
+      if (tr) wrap.appendChild(this.traderShelf(c, h, tr));
       wrap.appendChild(zones);
       return wrap;
+    },
+    // полка странствующего торговца: товар для выбранного героя (сколько угодно экземпляров)
+    traderShelf(c, h, tr) {
+      const box = el('div', 'sh-zone sh-trader');
+      const mine = (c.traderLog || []).filter((x) => x.no === c.missionNo && x.hero === h.id);
+      box.appendChild(el('div', 'sh-row-h', `🛒 ${esc(tr.name)} <small>— только сейчас, перед миссией; товар больше нигде не найти. Покупки кладутся в экипировку (если есть место) или в сундук.</small>`));
+      const row = el('div', 'sh-drop');
+      tr.stock.forEach((w) => {
+        const d = ZG.Cards.get(w.id), n = mine.filter((x) => x.id === w.id).length;
+        const cw = el('div', 'sh-ware');
+        cw.appendChild(CV.card(d));
+        const b = el('button', 'btn small ' + (h.talons >= w.price ? 'primary' : 'poor'), `Купить · ${w.price} 🎫`);
+        b.onclick = () => (h.talons < w.price ? toast(`Не хватает талонов: у ${ZG.Heroes.get(h.id).name} ${h.talons} 🎫.`) : this.act(() => CMP.buy(c, h.id, w.id)));
+        cw.appendChild(b);
+        if (n) cw.appendChild(el('div', 'sh-price', `куплено: ${n}`));
+        row.appendChild(cw);
+      });
+      box.appendChild(row);
+      return box;
+    },
+    // приход торговца — отдельное событие (не карта колоды событий убежища), раз перед миссией
+    async showTrader(c) {
+      const tr = CMP.trader(c);
+      if (!tr || c.traderSeen === c.missionNo || this._eventOpen) return;
+      this._eventOpen = true;
+      const ai = (c.traderLog || []).filter((x) => x.no === c.missionNo && x.ai);
+      const wares = tr.stock.map((w) => { const d = ZG.Cards.get(w.id); return `<li><b>${esc(d.name)}</b> — ${w.price} 🎫. ${esc(d.text.replace(/^Снаряжение\. /, ''))}</li>`; }).join('');
+      const bought = ai.length ? `<p class="muted">ИИ уже решил: ${ai.map((x) => `${esc(ZG.Heroes.get(x.hero).name)} — «${esc(ZG.Cards.get(x.id).name)}»`).join(', ')}.</p>` : '';
+      await Modal.show(`<div class="kicker">Особое событие · перед миссией</div><div class="ev-card"><div class="ev-back"></div><div class="ev-face"><div class="ev-title">${esc(tr.name)}</div><div class="ev-text"><p>${esc(tr.text)}</p><ul>${wares}</ul><p class="muted">Каждый герой покупает за свои талоны сколько угодно экземпляров. Полка торговца — в панели героя, до выхода в поход.</p>${bought}</div></div></div>`, [{ label: 'К прилавку', cls: 'primary' }], null, 'event');
+      c.traderSeen = c.missionNo;
+      this._eventOpen = false;
+      this.save();
+      this.render();
     },
     // перетаскивание карт мышью/пальцем: между зонами героя или на вкладку другого героя (передать в его сундук)
     bindDrag(c, h) {
@@ -2154,6 +2190,6 @@
     toast._t = setTimeout(() => t.classList.remove('show'), ms || 2200);
   }
 
-  ZG.App = App; ZG.Game = Game; ZG.Modal = Modal;
+  ZG.App = App; ZG.Game = Game; ZG.Modal = Modal; ZG.Shelter = Shelter;
   document.addEventListener('DOMContentLoaded', () => App.init());
 })(window);

@@ -349,6 +349,49 @@
     return null;
   };
 
+  // Странствующий торговец: отдельное событие убежища перед миссией, у которой в цепочке задан trader
+  // (не карта колоды событий). Товар фиксирован, каждой карты — сколько угодно экземпляров.
+  C.trader = (c) => (c.status === 'ready' ? C.missionDef(c).trader || null : null);
+  C.buy = function (c, heroId, cardId) {
+    const t = C.trader(c), h = C.hero(c, heroId);
+    const ware = t && t.stock.find((w) => w.id === cardId);
+    if (!ware) return 'Торговца здесь нет.';
+    if (!h) return 'Нет такого героя.';
+    if (h.talons < ware.price) return 'Не хватает талонов.';
+    const to = h.equip.length < C.equipCap(h) ? h.equip : h.chest.length < C.chestCap(h) ? h.chest : null;
+    if (!to) return 'Некуда положить: освободите место в экипировке или сундуке.';
+    h.talons -= ware.price;
+    to.push(item(c, cardId));
+    (c.traderLog = c.traderLog || []).push({ no: c.missionNo, hero: h.id, id: cardId, ai: !!h.ai });
+    return null;
+  };
+  // ИИ у торговца: покупает только то, что пригодится именно этому герою (по одному экземпляру),
+  // и только если после покупки остаётся запас на паёк и лечение травм
+  C.wareFit = function (c, h, id) {
+    const def = ZG.Heroes.get(h.id);
+    const own = h.equip.concat(h.chest, h.junk).map((it) => it.id);
+    const cards = def.deck.concat(own).map((x) => ZG.Cards.get(x)).filter(Boolean);
+    const tagged = (t) => cards.filter((d) => (d.tags || []).includes(t)).length;
+    if (own.includes(id)) return 0; // один экземпляр на героя
+    if (id === 'tr_gasmask') return (def.mods && def.mods.infectDie < 0) ? 0 : 2 + (C.desperate(h) ? 1 : 0); // Борис и так почти не заражается
+    if (id === 'tr_binoculars') { const n = tagged('ranged'); return n >= 2 ? 3 : n; }
+    if (id === 'tr_medbag') return def.mods && def.mods.healAction ? 3 : tagged('heal') >= 2 ? 1 : 0;
+    return 0;
+  };
+  C.traderAI = function (c, h) {
+    const t = C.trader(c);
+    if (!t) return [];
+    const P = CFG().prices, reserve = P.ration + Math.min(h.injury, 2) * P.heal;
+    const bought = [];
+    t.stock.map((w) => ({ w, fit: C.wareFit(c, h, w.id) })).filter((x) => x.fit > 0)
+      .sort((a, b) => b.fit - a.fit || a.w.price - b.w.price)
+      .forEach(({ w }) => {
+        if (bought.length >= 2 || h.talons - w.price < reserve) return;
+        if (!C.buy(c, h.id, w.id)) bought.push(w.id);
+      });
+    return bought;
+  };
+
   // Тир: раз между миссиями, +1 опыт за талоны; новый уровень — талант предложат в начале миссии
   C.canTrain = (c, h) => C.built(h, 'range') && h.trainedNo !== c.missionNo && c.status === 'ready';
   C.train = function (c, heroId) {
@@ -413,6 +456,7 @@
     const h = C.hero(c, heroId);
     if (!h) return 'Нет такого героя.';
     const desp = C.desperate(h);
+    C.traderAI(c, h); // торговец бывает раз за кампанию — его товар важнее построек, которые подождут
     // ремонт (если есть Мастерская): чинить то, что пойдёт в поход или стоит хранить, — самое ценное первым;
     // оставить запас на паёк и лечение травм; мелочь, которая уйдёт в хлам, не чинить
     if (C.built(h, 'workshop')) {

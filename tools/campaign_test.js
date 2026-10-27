@@ -278,5 +278,36 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(b2.equip[0].worn && b2.talons === 3, 'не тратит последние талоны, нужные на паёк');
 }
 
+// 21) Странствующий торговец: только перед миссией 7; товар без лимита; ИИ покупает то, что ему подходит, и оставляет запас
+{
+  const c = C.create({ heroes: [{ id: 'marina', ai: true }, { id: 'boris', ai: true }, { id: 'viktor' }], seed: 't21' });
+  c.missionNo = 5;
+  ok(!C.trader(c), 'перед миссией 6 торговца нет');
+  c.missionNo = 6;
+  const tr = C.trader(c);
+  ok(tr && tr.stock.length === 3 && tr.stock.every((w) => ZG.Cards.get(w.id).rarity === 'unique' && ZG.Cards.get(w.id).equip), 'перед миссией 7 — торговец с 3 уникальными картами снаряжения');
+  ok(tr.stock.every((w) => !Object.keys(ZG.Levels.get('camp_m7').loot).includes(w.id) && !Object.keys(ZG.Levels.get('outskirts').loot).includes(w.id)), 'товара нет в колодах добычи');
+  const m = C.hero(c, 'marina'), b = C.hero(c, 'boris'), v = C.hero(c, 'viktor');
+  m.talons = 30; b.talons = 30;
+  C.autoManage(c, 'marina'); C.autoManage(c, 'boris');
+  const owns = (h, id) => h.equip.concat(h.chest, h.junk).filter((it) => it.id === id).length;
+  ok(owns(m, 'tr_medbag') === 1 && owns(m, 'tr_gasmask') === 1 && owns(m, 'tr_binoculars') === 0, 'Марина (ИИ) берёт сумку санитара и противогаз, бинокль — нет');
+  ok(owns(b, 'tr_gasmask') === 0 && owns(b, 'tr_medbag') === 0, 'Борис (ИИ) противогаз не берёт — он и так почти не заражается');
+  C.autoManage(c, 'marina');
+  ok(owns(m, 'tr_medbag') === 1, 'повторная раскладка ИИ не скупает дубли');
+  v.talons = 25;
+  ok(!C.buy(c, 'viktor', 'tr_binoculars') && !C.buy(c, 'viktor', 'tr_binoculars') && owns(v, 'tr_binoculars') === 2 && v.talons === 3, 'игрок покупает сколько угодно экземпляров одной карты');
+  ok(C.buy(c, 'viktor', 'tr_gasmask') === 'Не хватает талонов.', 'без талонов — отказ');
+  ok(C.price('tr_binoculars') == null, 'товар торговца не продаётся');
+  const c2 = C.create({ heroes: [{ id: 'marina', ai: true }], seed: 't21b' }); c2.missionNo = 6;
+  const m2 = C.hero(c2, 'marina'); m2.talons = 11;
+  C.autoManage(c2, 'marina');
+  ok(m2.talons === 11, 'ИИ не тратит талоны, если после покупки не хватит на паёк');
+  c.status = 'mission';
+  ok(!C.trader(c), 'в походе торговца нет');
+  c.status = 'ready'; c.missionNo = 7;
+  ok(!C.trader(c), 'после миссии 7 торговец не возвращается');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

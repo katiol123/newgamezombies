@@ -59,6 +59,12 @@
       },
       {
         name: 'Белый лебедь', levelId: 'camp_m7', scenarioId: 'wedding', conditionId: 'calm',
+        // перед миссией в убежище заходит странствующий торговец (отдельное событие, не карта колоды событий)
+        trader: {
+          name: 'Странствующий торговец',
+          text: 'К убежищу подкатывает велосипед с прицепом из детской коляски, доверху набитым брезентовыми тюками. Хозяин — сухой старик в шинели без погон, с бельмом на глазу. «Мост открыли — значит, и мне дорога есть. Талоны беру, патроны беру, консервы не беру — своих полно». Товара у него немного, но такого больше нигде не найти. И дольше утра он не задержится.',
+          stock: [{ id: 'tr_gasmask', price: 10 }, { id: 'tr_binoculars', price: 11 }, { id: 'tr_medbag', price: 10 }],
+        },
         tiles: { required: [{ id: 'banquet', tx: 0 }, { id: 'wolfcamp', tx: -1 }] },
         stories: { start: 'm7_start', bossScream: 'm7_scream', prisoner: 'm7_prisoner', rescue: 'm7_rescue', executed: 'm7_executed', bossKill: 'm7_bride_dead' },
         brief: 'Пригород дал нам передышку и рацию с разбитым динамиком. В ней сквозь треск — голос колонны: «…северная дорога… у ресторана не останавливайтесь…». Северная дорога одна, и она идёт мимо ресторана «Белый лебедь». В тот день, когда всё началось, там играли свадьбу. Гости до сих пор не разошлись. А по ночам над пригородом разносится женский крик — такой, что мертвецы поднимают головы за километр. Пока она кричит, по дороге не пройти. На дальнем краю, у самой дороги, горит чей-то костёр: чужие машины, вышка, люди в балаклавах с черепами. Про банду «Волки» шептались ещё у моста.',
@@ -294,6 +300,29 @@
       target: { kind: 'zombie', range: 1 },
       play(c) { const z = c.zombie(c.target); if (z && z.pos !== c.hero.pos && !ZG.Zombies.get(z.type).static && !ZG.Zombies.get(z.type).immobile) { const from = z.pos; z.pos = c.hero.pos; c.E.fx(c.g, { t: 'zmove', zombie: z.uid, from, to: z.pos }); } c.melee(c.target, 3 + (c.chain ? 1 : 0)); },
     },
+  ]);
+  // Товар странствующего торговца (перед миссией 7): уникальное снаряжение, которое больше нигде не найти.
+  // Покупается за талоны в убежище, сколько угодно экземпляров; не продаётся.
+  const WARES = { type: 'Снаряжение', tags: ['equip'], loot: true, rarity: 'unique', campaignOnly: true, trader: true, equip: true, cost: 1 };
+  ZG.Cards.addAll([
+    Object.assign({}, WARES, {
+      id: 'tr_gasmask', name: 'Противогаз ГП-5', suit: 'mind', shield: 1, value: 12, art: 'gasmask',
+      text: 'Снаряжение. Укус заражает реже: кубик Заражения −1.', chainText: 'надевая, убери 1 Заражение или Рану.',
+      target: null, mods: { infectDie: -1 },
+      play(c) { c.equip(); if (c.chain) c.heal(c.hero.idx, 1, true); },
+    }),
+    Object.assign({}, WARES, {
+      id: 'tr_binoculars', name: 'Полевой бинокль', suit: 'agility', shield: 1, value: 12, art: 'binoculars',
+      text: 'Снаряжение. Дальность твоих дальних атак +1.', chainText: 'надевая, возьми 1 карту.',
+      target: null, mods: { rangeBonus: 1 },
+      play(c) { c.equip(); if (c.chain) c.draw(1); },
+    }),
+    Object.assign({}, WARES, {
+      id: 'tr_medbag', name: 'Сумка санитара', suit: 'mind', shield: 1, value: 12, art: 'medbag',
+      text: 'Снаряжение. Твоё лечение (карты и действия) убирает на 1 Рану больше.', chainText: 'надевая, убери себе 1 Рану.',
+      target: null, mods: { healBonus: 1 },
+      play(c) { c.equip(); if (c.chain) c.heal(c.hero.idx, 1); },
+    }),
   ]);
   ZG.Cards.addAll([
     {

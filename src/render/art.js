@@ -522,6 +522,25 @@
       c.beginPath(); c.moveTo(50, 34); c.quadraticCurveTo(58, 16, 70, 18); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
       if (!o.shadow) { c.fillStyle = '#ffb030'; circle(c, 72, 17, 5); c.fill(); c.fillStyle = '#fff3a0'; circle(c, 72, 17, 2.5); c.fill(); }
     },
+    gasmask(c, o) { // противогаз ГП-5: резиновая маска, два окуляра, фильтр-коробка
+      c.beginPath(); c.ellipse(50, 44, 30, 34, 0, 0, Math.PI * 2); fillInk(c, o.shadow ? o.ink : '#4a5a48');
+      rr(c, 38, 68, 24, 24, 5); fillInk(c, o.shadow ? o.ink : '#5a5e62');
+      if (!o.shadow) {
+        c.fillStyle = '#c8d8d0'; circle(c, 38, 40, 10); c.fill(); circle(c, 62, 40, 10); c.fill();
+        c.strokeStyle = '#2a2e2a'; c.lineWidth = 3; circle(c, 38, 40, 10); c.stroke(); circle(c, 62, 40, 10); c.stroke();
+        c.strokeStyle = 'rgba(0,0,0,.4)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(40, 74 + i * 6); c.lineTo(60, 74 + i * 6); c.stroke(); }
+      }
+    },
+    binoculars(c, o) { // полевой бинокль: два тубуса и перемычка
+      rr(c, 18, 34, 26, 46, 8); fillInk(c, o.ink); rr(c, 56, 34, 26, 46, 8); fillInk(c, o.ink);
+      rr(c, 40, 42, 20, 14, 3); fillInk(c, o.ink);
+      if (!o.shadow) { c.fillStyle = '#7ab8d8'; circle(c, 31, 76, 9); c.fill(); circle(c, 69, 76, 9); c.fill(); c.fillStyle = 'rgba(255,255,255,.6)'; circle(c, 28, 73, 3); c.fill(); circle(c, 66, 73, 3); c.fill(); }
+    },
+    medbag(c, o) { // сумка санитара: брезент, ремень, красный крест
+      c.strokeStyle = o.ink; c.lineWidth = 5; c.beginPath(); c.moveTo(24, 40); c.quadraticCurveTo(50, 2, 76, 40); c.stroke();
+      rr(c, 16, 36, 68, 50, 8); fillInk(c, o.shadow ? o.ink : '#6a6a48');
+      if (!o.shadow) { c.fillStyle = '#e8e4d8'; circle(c, 50, 61, 15); c.fill(); c.fillStyle = '#c0392b'; c.fillRect(46, 51, 8, 20); c.fillRect(40, 57, 20, 8); }
+    },
     butcher_hook(c, o) {
       c.strokeStyle = o.ink; c.lineWidth = 5; c.setLineDash([6, 4]); c.beginPath(); c.moveTo(50, 6); c.lineTo(50, 46); c.stroke(); c.setLineDash([]); // цепь
       c.beginPath(); c.moveTo(50, 46); c.lineTo(50, 60); c.arc(38, 62, 12, 0, Math.PI * 0.9); c.lineWidth = 9; c.strokeStyle = o.shadow ? o.ink : '#9aa0a6'; c.stroke();
