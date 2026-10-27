@@ -54,7 +54,7 @@
       setupText: 'Ящики: 4, с канистрами: 2 (при 3–4 героях: 5 ящиков, 3 канистры — нужны все). Выход — Машина.', id: 'fuel', name: 'Бензин на исходе', short: 'Найди 2 канистры и заправь машину.',
       brief: 'Машина на краю квартала заглохла. В округе спрятаны канистры — но не во всех ящиках бензин.',
       crates: 4, real: 2, cargo: 'cargo_fuel', exitLabel: 'Машина', exitArt: 'exit_car',
-      setup(g, E) { const big = g.heroes.length >= 3 ? 1 : 0; g.obj = { delivered: 0, need: 2 + big }; E.placeCrates(g, this.crates + big, this.real + big, this.cargo); },
+      setup(g, E) { const big = ZG.Engine.party(g) >= 3 ? 1 : 0; g.obj = { delivered: 0, need: 2 + big }; E.placeCrates(g, this.crates + big, this.real + big, this.cargo); },
       goals(g) {
         return [
           { text: `Заправить машину: ${g.obj.delivered}/${g.obj.need} канистры`, done: g.obj.delivered >= g.obj.need },
@@ -71,7 +71,7 @@
       setupText: 'Ящики: 7, с медикаментами: 6 (нужно 3, при 3–4 героях — 4). Выход — Скорая.', id: 'meds', name: 'Лекарство', short: 'Собери медикаменты для скорой (3, при 3–4 героях — 4).',
       brief: 'В скорой — раненые, которым нужны лекарства. Семь ящиков, в шести — медикаменты; нужно три (большому отряду — четыре).',
       crates: 7, real: 6, cargo: 'cargo_meds', exitLabel: 'Скорая', exitArt: 'exit_ambulance',
-      setup(g, E) { g.obj = { delivered: 0, need: g.heroes.length >= 3 ? 4 : 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
+      setup(g, E) { g.obj = { delivered: 0, need: ZG.Engine.party(g) >= 3 ? 4 : 3 }; E.placeCrates(g, this.crates, this.real, this.cargo); },
       goals(g) {
         return [
           { text: `Погрузить медикаменты: ${g.obj.delivered}/${g.obj.need}`, done: g.obj.delivered >= g.obj.need },
@@ -89,7 +89,7 @@
       brief: 'Спасатели ждут сигнала. Рация в одном из трёх ящиков. Передача с вышки шумит на весь квартал.',
       crates: 3, real: 1, cargo: 'cargo_radio', exitLabel: 'Вертолёт', exitArt: 'exit_heli',
       setup(g, E) {
-        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: g.heroes.length >= 3 ? 3 : 2, on: false };
+        g.obj = { delivered: 0, need: 1, transmit: 0, transmitNeed: ZG.Engine.party(g) >= 3 ? 3 : 2, on: false };
         g.tower = E.placeTower(g);
         E.placeExitNear(g, g.tower);
         // в тумане открыты стартовый тайл и тайл вышки (вертолёт садится на нём)
@@ -144,7 +144,7 @@
       setupText: 'Гнёзда: соло 1, двое 2, трое–четверо 3 (центры тайлов, начиная с правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь гнёзда (1–3 по числу героев) и уходи.',
       brief: 'Зараза разрастается из гнёзд. Пока они живы, квартал не очистить. Гнёзда сами порождают мертвецов.',
       exitLabel: 'Пикап', exitArt: 'exit_car',
-      setup(g, E) { const n = Math.min(3, g.heroes.length === 1 ? 1 : g.heroes.length >= 3 ? 3 : 2); g.obj = { nests: n }; E.placeNests(g, n); },
+      setup(g, E) { const n = Math.min(3, ZG.Engine.party(g) === 1 ? 1 : ZG.Engine.party(g) >= 3 ? 3 : 2); g.obj = { nests: n }; E.placeNests(g, n); },
       nestsLeft(g) { return g.zombies.filter((z) => z.type === 'nest').length; },
       goals(g) {
         const left = this.nestsLeft(g);
@@ -202,7 +202,7 @@
         if (g.revealed) g.revealed = b.tiles.map((t, i) => i === kt || i === tt);
         // одна стая под картами «Стая/Пусто» на закрытых тайлах
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== kt && i !== tt);
-        E.placePacks(g, cand, 1, this.packs[Math.min(4, g.heroes.length)]);
+        E.placePacks(g, cand, 1, this.packs[Math.min(4, ZG.Engine.party(g))]);
       },
       hasBattery(g) { return g.heroes.some((h) => h.hand.some((u) => g.cards[u] === 'cargo_battery')) || g.drops.some((d) => d.card === 'cargo_battery'); },
       goals(g) {
@@ -235,7 +235,7 @@
         // треск рации разбудил колодец: у «буханки» из сруба лезет стая — обратный путь будет нелёгким
         const well = g.spawnPoints[0];
         if (well != null) {
-          (g.heroes.length >= 3 ? ['walker', 'walker', 'walker', 'runner'] : ['walker', 'walker', 'runner']).forEach((type) => { const z = E.spawnZombie(g, type, well, null, true, true, true); if (z) { z.awake = true; z.trail = g.exit; } });
+          (ZG.Engine.party(g) >= 3 ? ['walker', 'walker', 'walker', 'runner'] : ['walker', 'walker', 'runner']).forEach((type) => { const z = E.spawnZombie(g, type, well, null, true, true, true); if (z) { z.awake = true; z.trail = g.exit; } });
           E.log(g, 'Из колодца на кордоне, скребясь о сруб, лезут мертвецы — прямо у «буханки»!', 'bad');
         }
       },
@@ -255,25 +255,29 @@
       id: 'highway', campaignOnly: true, name: 'Бензин и порох',
       short: 'Найди канистры в ящиках, заправь «буханку» и уезжай. Бандиты тоже ищут бензин и стреляют во всё живое — и мёртвое.',
       brief: '«Буханка» обсохла у трассы. Бензин — в ящиках по округе. Вокруг бродят бандиты: стреляют и в живых, и в мёртвых, а пальба тянет мертвецов из люков.',
-      setupText: 'Поле 4×2 (8 обычных тайлов), все тайлы открыты: горит бензовоз, зарево освещает всю трассу. Ящиков: 4 (3–4 героя: 6), канистр: 3 (3–4 героя: 5), нужно: 2 (3–4 героя: 3). Выход — «буханка» у правого края. На 6 тайлах (кроме стартового и тайла выхода) — карты «Стая/Пусто» рубашкой вверх (2 «Стаи»): когда на тайл впервые заходит герой или бандит, карта переворачивается, стая выставляется в центр тайла и сразу охотится. Бандиты (соло 2, пара и трое 3, четверо 4) бродят по разным тайлам без стай; у каждого в мешке 1 карта добычи. Люков 2: в Сумерки тихо, с Ночи — по 2 Шатуна из каждого.',
+      setupText: 'Поле 4×2 (8 обычных тайлов), все тайлы открыты: горит бензовоз, зарево освещает всю трассу. Ящиков: 4 (3–4 героя: 6), канистр: 3 (3–4 героя: 5), нужно: 2 (3–4 героя: 3). Выход — «буханка» у правого края. 2 стаи выставляются сразу в центры двух случайных тайлов (кроме стартового и тайла выхода) и с первого раунда бродят. Бандиты (соло 2, пара и трое 3, четверо 4) бродят по разным тайлам без стай; у каждого в мешке 1 карта добычи. Люков 2: в Сумерки тихо, с Ночи — по 2 Шатуна из каждого.',
       exitLabel: 'Буханка', exitArt: 'exit_van', cargo: 'cargo_fuel',
       packs: { 1: ['walker', 'walker', 'runner'], 2: ['walker', 'walker', 'runner', 'runner'], 3: ['walker', 'walker', 'walker', 'runner', 'runner'], 4: ['walker', 'walker', 'walker', 'runner', 'runner', 'runner'] },
       bandits: { 1: 2, 2: 3, 3: 3, 4: 4 },
       setup(g, E) {
-        const b = g.board, Rng = ZG.Rng, big = g.heroes.length >= 3 ? 1 : 0;
+        const b = g.board, Rng = ZG.Rng, big = ZG.Engine.party(g) >= 3 ? 1 : 0;
         g.obj = { delivered: 0, need: 2 + big };
         E.placeCrates(g, 4 + big * 2, 3 + big * 2, this.cargo); // большому отряду — ещё запасная канистра (бандиты уносят)
         const st = b.cells[g.start].tile, et = b.cells[g.exit].tile;
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== et);
         // тумана нет: горящий бензовоз освещает всю трассу (он лежит на одном из тайлов — декор и источник зарева)
         if (g.revealed) g.revealed = b.tiles.map(() => true);
-        const fireCells = b.cells.filter((c) => c.type === 'street' && c.tile !== st && c.tile !== et && !(c.x % 3 === 2 && c.y % 3 === 0) /* угол под картой «Стая/Пусто» */ && !g.crates.some((x) => x.pos === c.i) && !g.search.some((x) => x.pos === c.i) && !g.spawnPoints.includes(c.i));
+        const fireCells = b.cells.filter((c) => c.type === 'street' && c.tile !== st && c.tile !== et && !g.crates.some((x) => x.pos === c.i) && !g.search.some((x) => x.pos === c.i) && !g.spawnPoints.includes(c.i));
         if (fireCells.length) g.fire = Rng.pick(g, fireCells).i;
-        // 6 карт «Стая/Пусто» рубашкой вверх на тайлах (2 «Стаи»): стая выскакивает, когда на тайл впервые зайдёт герой или бандит
-        g.stackTiles = cand.slice();
+        // 2 стаи — сразу на поле, в центрах двух случайных тайлов, и с первого раунда бродят (хаос с самого начала)
         g.obj.packTiles = Rng.shuffle(g, cand.slice()).slice(0, 2);
+        g.obj.packTiles.forEach((ti) => {
+          const mid = b.cells.find((c) => c.tile === ti && c.lx === 1 && c.ly === 1);
+          const cell = mid && mid.type !== 'blocked' ? mid : b.cells.find((c) => c.tile === ti && c.type !== 'blocked');
+          this.packs[Math.min(4, ZG.Engine.party(g))].forEach((type) => { const z = E.spawnZombie(g, type, cell.i, null, true, true, true); if (z) { z.awake = false; z.trail = null; } });
+        });
         // бандиты бродят по тайлам без стай; в мешке у каждого — карта добычи
-        const n = this.bandits[Math.min(4, g.heroes.length)];
+        const n = this.bandits[Math.min(4, ZG.Engine.party(g))];
         Rng.shuffle(g, cand.filter((i) => !g.obj.packTiles.includes(i))).concat(g.obj.packTiles).slice(0, n).forEach((ti) => {
           const cells = b.cells.filter((c) => c.tile === ti && c.type === 'street' && !(c.lx === 1 && c.ly === 1));
           const z = E.spawnZombie(g, 'bandit', Rng.pick(g, cells.length ? cells : b.cells.filter((c) => c.tile === ti && c.type !== 'blocked')).i, null, true, true, true);
@@ -281,25 +285,6 @@
           z.awake = false; z.trail = null;
           const i = g.lootDeck.findIndex((id) => id !== 'ambush');
           z.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : [];
-        });
-      },
-      // карта «Стая/Пусто» переворачивается, как только на тайл зашёл герой или бандит
-      watch(g, E) {
-        if (g.sim || !g.stackTiles || !g.stackTiles.length) return; // просчёт бота не подглядывает под карты
-        const b = g.board;
-        const inside = g.heroes.filter((h) => h.onBoard).map((h) => ({ pos: h.pos, who: E.heroName(h) }))
-          .concat(g.zombies.filter((z) => E.isBandit(z)).map((z) => ({ pos: z.pos, who: 'бандит' })));
-        g.stackTiles.slice().forEach((ti) => {
-          const by = inside.find((o) => b.cells[o.pos].tile === ti);
-          if (!by) return;
-          g.stackTiles.splice(g.stackTiles.indexOf(ti), 1);
-          if (!g.obj.packTiles.includes(ti)) { E.log(g, `Карта «Стая/Пусто»: здесь пусто (${by.who}).`, 'dim'); E.fx(g, { t: 'packcard', tile: ti, pack: false }); return; }
-          const mid = b.cells.find((c) => c.tile === ti && c.lx === 1 && c.ly === 1);
-          const cell = mid && mid.type !== 'blocked' ? mid : b.cells.find((c) => c.tile === ti && c.type !== 'blocked');
-          this.packs[Math.min(4, g.heroes.length)].forEach((type) => { const z = E.spawnZombie(g, type, cell.i, null, true, true, true); if (z) { z.awake = true; z.trail = by.pos; } });
-          E.log(g, `Карта «Стая/Пусто»: СТАЯ! Мертвецы выскакивают из-за фур — их потревожил ${by.who}.`, 'bad');
-          E.fx(g, { t: 'packcard', tile: ti, pack: true, pos: cell.i, who: by.who });
-          E.storyEvent(g, 'packReveal');
         });
       },
       inBags(g) { return g.zombies.reduce((n, z) => n + (z.bag || []).filter((c) => c === this.cargo).length, 0); },
@@ -357,7 +342,7 @@
         if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st || i === cp);
         // бандиты-бродяги: по обычным тайлам (кроме стартового), у каждого в мешке карта добычи
         const tiles = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== cp && i !== sm);
-        const n = this.bandits[Math.min(4, g.heroes.length)];
+        const n = this.bandits[Math.min(4, ZG.Engine.party(g))];
         const order = Rng.shuffle(g, tiles.slice());
         for (let k = 0; k < n; k++) {
           const ti = order[k % order.length];
@@ -474,7 +459,7 @@
         if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st);
         // стаи: 4 карты «Стая/Пусто» на остальные закрытые тайлы — где стаи, неизвестно
         const cand = b.tiles.map((t, i) => i).filter((i) => i !== ut && i !== st);
-        E.placePacks(g, cand, 2, this.stacks[Math.min(4, g.heroes.length)]);
+        E.placePacks(g, cand, 2, this.stacks[Math.min(4, ZG.Engine.party(g))]);
       },
       // Особое правило: драка с Толстяками будит всех. Карты «Стая/Пусто» переворачиваются:
       // тайлы со стаями открываются, стаи вылетают уже охотящимися.
@@ -534,7 +519,7 @@
   // Одна карта тянется в начале партии. check(g) проверяется при победе.
   ZG.Bonuses.addAll([
     { id: 'quiet', name: 'Тише воды', text: 'Победить, не вызвав ни одной Волны.', check: (g) => g.stats.waves === 0, progress: (g) => `волн: ${g.stats.waves}` },
-    { track: 'Счётчик: +1 за каждого убитого зомби.', id: 'hunter', name: 'Охотник', text: 'Убить по 6 зомби на героя (минимум 12).', check: (g) => g.stats.kills >= Math.max(12, 6 * g.heroes.length), progress: (g) => `${g.stats.kills}/${Math.max(12, 6 * g.heroes.length)}` },
+    { track: 'Счётчик: +1 за каждого убитого зомби.', id: 'hunter', name: 'Охотник', text: 'Убить по 6 зомби на героя (минимум 12).', check: (g) => g.stats.kills >= Math.max(12, 6 * ZG.Engine.party(g)), progress: (g) => `${g.stats.kills}/${Math.max(12, 6 * ZG.Engine.party(g))}` },
     { track: 'Счётчик: +1 за каждый Обыск (вскрытие ящика тоже).', id: 'scavenger', name: 'Мародёр', text: 'Сделать 4 Обыска.', check: (g) => g.stats.searches >= 4, progress: (g) => `${g.stats.searches}/4` },
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
     { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
@@ -546,6 +531,6 @@
   ZG.Difficulties.addAll([
     { id: 'novice', name: 'Новичок', text: '+2 раунда, Ночь и Глухая ночь наступают на 2 раунда позже, порог Волны +2, на 1 люк меньше, Заражение только на 1 кубика, каждый герой начинает с картой добычи.', mods: { maxRounds: 2, alarmThreshold: 2, phaseShift: -2, infectDie: -1, spawnPointsBonus: -1 }, startLoot: 1 },
     { id: 'survivor', name: 'Выживший', text: 'Стандартные правила.', mods: {} },
-    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1 (не ниже 3), Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (g.heroes.length >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
+    { id: 'nightmare', name: 'Кошмар', text: '−1 раунд, порог Волны −1 (не ниже 3), Голод уже с Ночи, у каждого героя Рана в колоде; при 3+ героях +1 люк.', mods: { maxRounds: -1, alarmThreshold: -1, spawnPointsBonus: (g) => (ZG.Engine.party(g) >= 3 ? 1 : 0), zombieSpeed: (g) => (ZG.Engine.phase(g) === 1 ? 1 : 0) }, startWounds: 1 },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

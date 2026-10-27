@@ -1059,7 +1059,7 @@
       const sc = E.searchCost(g, h);
       const searchHere = E.searchableHere(g, h) || g.crates.some((c) => c.pos === h.pos && !c.opened) || g.search.some((s) => s.pos === h.pos);
       icon('search', 'Обыск', sc, has('search'), !searchHere ? 'в этой зоне нечего обыскивать' : zHere ? 'мешают зомби в зоне' : lack(sc), () => this.act({ t: 'search' }));
-      icon('punch', 'Кулак', 1, has('punch'), !zHere ? 'в зоне нет зомби' : lack(1), () => this.selectMode('punch'), this.sel && this.sel.mode === 'punch' ? ' sel' : '');
+      icon('punch', 'Кулак', E.PUNCH_COST, has('punch'), !zHere ? 'в зоне нет зомби' : lack(E.PUNCH_COST), () => this.selectMode('punch'), this.sel && this.sel.mode === 'punch' ? ' sel' : '');
       if (ZG.Mods.flag(g, h, 'ttShot')) icon('ttshot', 'Выстрел из ТТ', 1, has('ttshot'), g.turn.ttShot ? 'уже стреляли в этот ход' : h.energy < 1 ? lack(1) : 'нет врага в 0–2 зонах по прямой', () => this.selectMode('ttshot'), (this.sel && this.sel.mode === 'ttshot' ? ' sel' : '') + ' gold');
       const bc = E.barricadeCost(g, h);
       icon('barricade', 'Баррикада', bc, has('barricade'), g.barricades.length >= 4 ? 'все 4 баррикады уже на поле' : lack(bc), () => this.selectMode('barricade'), this.sel && this.sel.mode === 'barricade' ? ' sel' : '');
@@ -1796,7 +1796,11 @@
     act(fn) { const err = fn(); if (err) toast(err); else this.save(); this.render(); },
     async go() {
       const c = App.campaign.c;
-      if (this.squad.length !== c.squad) return toast(`В поход идут ровно ${c.squad} ${ZG.util.plural(c.squad, 'герой', 'героя', 'героев')}.`);
+      if (!this.squad.length) return toast('Выберите хотя бы одного героя в отряд.');
+      if (this.squad.length < c.squad) {
+        const v = await Modal.show(`<h2>Неполный отряд</h2><p>В поход идут ${this.squad.length} из ${c.squad}. Миссия всё равно рассчитана на <b>${c.squad}</b> ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}: врагов и задач будет как на полный отряд.</p>`, [{ label: 'Идти так', value: 'go' }, { label: 'Отмена', cls: 'primary' }]);
+        if (v !== 'go') return;
+      }
       if (c.players === 2) {
         const sq = this.squad.map((id) => CMP.hero(c, id));
         if (!sq.some((h) => h.player === 1 && !h.ai) || !sq.some((h) => h.player === 2 && !h.ai)) return toast('У каждого игрока в отряде должен быть герой не под ИИ.');
@@ -1933,7 +1937,7 @@
         const inSq = this.squad.includes(h.id);
         add(inSq ? '✓ В отряде' : 'В отряд', () => {
           if (inSq) this.squad = this.squad.filter((x) => x !== h.id);
-          else if (this.squad.length >= c.squad) return toast(`В поход идут ровно ${c.squad}. Сначала уберите кого-то из отряда.`);
+          else if (this.squad.length >= c.squad) return toast(`В поход идут не больше ${c.squad}. Сначала уберите кого-то из отряда.`);
           else this.squad.push(h.id);
           this.render();
         }, inSq ? 'primary' : '');

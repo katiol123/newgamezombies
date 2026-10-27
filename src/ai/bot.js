@@ -55,10 +55,14 @@
     const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h, shelter: E.sheltered(g, h) }))
       .concat(g.lures.map((l) => ({ pos: l.pos, lure: true })))
       .concat(g.stealth ? [] : Object.keys(g.noise).filter((k) => g.noise[k] > 0 && !E.heroesAt(g, +k).length).map((k) => ({ pos: +k })));
+    // смелость отряда: здоровые герои охотнее дерутся (убитый/раненый враг ценнее), израненные — осторожнее
+    const alive = g.heroes.filter((h) => h.onBoard);
+    const hurtAvg = alive.length ? alive.reduce((a, h) => a + E.hurtCount(g, h) / Math.max(1, E.maxHp(g, h)), 0) / alive.length : 0;
+    const bold = 1.6 - 1.2 * Math.min(1, hurtAvg * 1.5); // 1.6 — все целы … 0.4 — все изранены
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
-      s -= d.threat * W.zombieThreat;
-      s += (z.dmg / d.hp) * d.threat * (d.big ? W.bigDmg : W.partDmg);
+      s -= d.threat * W.zombieThreat * bold;
+      s += (z.dmg / d.hp) * d.threat * (d.big ? W.bigDmg : W.partDmg) * bold;
       if (d.dmg <= 0) return;
       const sp = z.suppressed ? 0 : E.zombieSpeed(g, z);
       if (E.hidden(g, z.pos)) return; // в тумане зомби не двигаются
@@ -109,6 +113,9 @@
       s -= (h.infection * 140 + infHand * 160 + E.infectCount(g, h) * 45) * (h.infection + infHand >= at - 1 ? 1.8 : 1);
       const hp = E.maxHp(g, h);
       const wounds = E.hurtCount(g, h);
+      // осторожность героя: чем меньше осталось Стойкости, тем дороже риск (0.55 — цел … 2 — на грани)
+      const hpLeft = hp - wounds;
+      const risk = hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp));
       s -= wounds * W.wound;
       if (hp - wounds <= 1) s -= W.nearDeath;
       // ожидаемая атака
@@ -125,10 +132,10 @@
       let blockable = h.block + ZG.Mods.value(g, h, 'autoBlock', 0);
       h.hand.forEach((u) => { blockable += E.blockValue(g, h, u); });
       const unb = Math.max(0, incoming - blockable);
-      s -= unb * W.unblocked + incoming * W.incoming;
+      s -= (unb * W.unblocked + incoming * W.incoming) * risk;
       if (wounds + unb >= hp) s -= W.death;
       // соседняя угроза
-      g.board.adj[h.pos].forEach((n) => { s -= (zoneIncoming[n] || 0) * W.adjThreat; });
+      g.board.adj[h.pos].forEach((n) => { s -= (zoneIncoming[n] || 0) * W.adjThreat * risk; });
       s += h.xp * W.xp;
       let val = 0;
       h.deck.concat(h.hand, h.discard, h.equip).forEach((u) => { val += ZG.Cards.get(g.cards[u]).value || 0; });

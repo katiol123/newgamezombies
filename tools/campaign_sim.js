@@ -46,7 +46,7 @@ function run(o, k) {
   const trail = [];
   while (c.status === 'ready') {
     const squad = shelterAI(c);
-    if (c.status !== 'ready' || squad.length < c.squad) { c.status = 'over'; c.endReason = 'Отряд не собрать'; break; }
+    if (c.status !== 'ready' || !squad.length) { c.status = 'over'; c.endReason = 'Отряд не собрать'; break; }
     const opts = C.startMission(c, squad);
     if (opts.error) throw new Error(opts.error);
     opts.quiet = true;
@@ -54,7 +54,8 @@ function run(o, k) {
     ZG.Bot.playGame(g, { depth2: !o.fast });
     const rep = C.finishMission(c, g);
     trail.push(`${rep.win ? 'W' : 'L'}${rep.stars}`);
-    const pm = (perMission[rep.missionNo - 1] = perMission[rep.missionNo - 1] || { n: 0, w: 0 }); pm.n++; if (rep.win) pm.w++;
+    const pm = (perMission[rep.missionNo - 1] = perMission[rep.missionNo - 1] || { n: 0, w: 0, wounds: 0, clean: 0 }); pm.n++; if (rep.win) pm.w++;
+    pm.wounds += g.stats.wounds; if (!g.stats.wounds) pm.clean++; // раны отряда за миссию; «чистые» миссии — без единой раны
     if (o.verbose) console.log(`  миссия ${rep.missionNo}: ${rep.win ? 'победа' : 'провал'} ★${rep.stars} | ` + c.roster.map((h) => `${h.id} L${h.level} xp${h.xp} hp${C.hp(h)} мор${h.morale} 🎫${h.talons} экип${h.equip.length} сунд${h.chest.length}`).join('; ') + (rep.lost.length ? ` | выбыли: ${rep.lost.map((l) => l.id + (l.turned ? '(обращён)' : '')).join(',')}` : '') + (c.wanderers.length ? ` | бродят: ${c.wanderers.join(',')}` : ''));
   }
   return { c, trail };
@@ -72,4 +73,5 @@ for (let k = 0; k < o.runs; k++) {
   console.log(`#${k} ${c.status.padEnd(4)} миссий ${c.missionNo}/${c.chainLength} [${trail.join(' ')}] ${c.endReason || ''}`);
 }
 console.log('По миссиям (побед/сыграно): ' + perMission.map((m, i) => `${i + 1}: ${m.w}/${m.n}`).join('  '));
+console.log('Ран отряда за миссию (в среднем) / миссий без ран: ' + perMission.map((m, i) => `${i + 1}: ${(m.wounds / m.n).toFixed(1)} / ${Math.round((100 * m.clean) / m.n)}%`).join('  '));
 console.log(`\nКампаний пройдено: ${won}/${o.runs}; в среднем миссий: ${(reached / o.runs).toFixed(1)}; уровни выживших: ${levels.length ? (levels.reduce((a, b) => a + b, 0) / levels.length).toFixed(1) : '-'}`);

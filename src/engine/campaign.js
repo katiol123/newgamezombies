@@ -71,7 +71,8 @@
     if (c.status !== 'ready') return { error: 'Кампания не готова к миссии.' };
     if (c.event) C.resolveEvent(c, C.aiEventChoice(c)); // нерешённое событие убежища решается «по-ИИ»
     const ids = squadIds || c.roster.slice(0, c.squad).map((h) => h.id);
-    if (ids.length !== c.squad) return { error: `Нужно выбрать ровно ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
+    // героев можно взять меньше размера отряда (например, после потерь), но миссия считается на полный отряд
+    if (!ids.length || ids.length > c.squad) return { error: `Нужно выбрать от 1 до ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
     if (ids.some((id) => !C.hero(c, id))) return { error: 'Этого героя нет в убежище.' };
     // хлам при выходе продаётся автоматически
     c.roster.forEach((h) => { h.junk.forEach((it) => { h.talons += C.price(it.id) || 0; }); h.junk = h.junk.filter((it) => C.price(it.id) == null); }); // уникальные карты кампании не продаются — остаются
@@ -82,7 +83,7 @@
     const M = CFG().morale;
     const md = C.missionDef(c);
     return {
-      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true,
+      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true, partySize: c.squad,
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
       bonds: C.bonds(c).filter(([a, b]) => ids.includes(a) && ids.includes(b)),
@@ -264,7 +265,7 @@
   // Отряд нельзя собрать (выбыли, а на наём не хватает) — кампания окончена
   C.hireable = (c) => ZG.Heroes.all().map((d) => d.id).filter((id) => !C.hero(c, id) && !c.fallen.includes(id) && !c.wanderers.includes(id));
   C.checkSquad = function (c) {
-    if (c.status !== 'ready' || c.roster.length >= c.squad) return true;
+    if (c.status !== 'ready' || c.roster.length >= 1) return true; // идти можно и неполным отрядом
     const can = C.hireable(c).length && c.roster.some((h) => h.talons + C.sellValue(h) >= CFG().prices.hire);
     if (!can) { c.status = 'over'; c.endReason = 'Отряд не собрать: героев не хватает, а талонов на наём нет.'; }
     return !!can;

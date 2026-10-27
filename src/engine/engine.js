@@ -51,6 +51,9 @@
   // 3+ карты в стопке — герой «Обессилен»: рука −1, недоступны базовые действия не с карт, включая движение (кроме «Отдышаться»)
   E.EXHAUST_AT = 3;
   E.exhausted = (g, h) => (h.exhaust || []).length >= E.EXHAUST_AT;
+  // размер отряда для масштабирования сложности: в кампании — сколько героев начинало кампанию, даже если часть выбыла
+  E.party = (g) => g.partySize || g.heroes.length;
+  E.PUNCH_COST = 2; // базовый удар без карты — дорогой: толстых врагов не забить кулаками за ход
   E.TIRED_LOCK = ['move', 'shout', 'foreman', 'search', 'punch', 'pickup', 'barricade', 'heal', 'cleanse', 'burn', 'plug', 'shut', 'give', 'ttshot'];
   // Отношения (кампания): шкала −3…+3 для каждой пары. g.relStart — на начало миссии (эффекты), g.relDelta — изменения за миссию.
   // Друзья (+3) — Узы; Приятели (+1…+2) — передача без ограничения «раз за ход»; Неприязнь (−1…−2) — передавать нельзя;
@@ -73,7 +76,7 @@
   E.chainsNow = (g, def) => !!g.turn && def.suit !== 'none' && (g.turn.lastSuit === def.suit || (!!g.turn.bond && !g.turn.played && !!def.chainText));
   // передача: обычно раз за ход; Приятелям и Друзьям — без ограничения, при Неприязни и Вражде — нельзя
   E.canGiveTo = (g, h, o) => { const r = E.rel(g, h, o); return r >= 0 && (!g.turn.gave || r >= 1); };
-  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (g.heroes.length === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
+  E.handSize = (g, h) => Mods.value(g, h, 'handSize', ZG.Heroes.get(h.id).hand) + (E.party(g) === 1 ? 1 : 0) - (E.exhausted(g, h) ? 1 : 0);
   // из чего складывается размер руки (для подсказки в интерфейсе)
   E.handSizeParts = function (g, h) {
     const parts = [{ name: 'База героя', n: ZG.Heroes.get(h.id).hand }];
@@ -82,16 +85,16 @@
       const n = m == null ? 0 : typeof m === 'function' ? m(g, h) : m;
       if (n) parts.push({ name: src.name, n });
     });
-    if (g.heroes.length === 1) parts.push({ name: 'Одиночка (соло)', n: 1 });
+    if (E.party(g) === 1) parts.push({ name: 'Одиночка (соло)', n: 1 });
     if (E.exhausted(g, h)) parts.push({ name: 'Обессилен', n: -1 });
     return parts;
   };
   E.activeHero = (g) => (g.active == null ? null : g.heroes[g.active]);
-  E.maxRounds = (g) => { const l = ZG.Levels.get(g.levelId); return Mods.value(g, null, 'maxRounds', l.rounds + ((l.roundsBonus || {})[Math.min(4, g.heroes.length)] || 0)); };
+  E.maxRounds = (g) => { const l = ZG.Levels.get(g.levelId); return Mods.value(g, null, 'maxRounds', l.rounds + ((l.roundsBonus || {})[Math.min(4, E.party(g))] || 0)); };
   E.alarmThreshold = (g) => {
     // порог Волны: число или таблица по размеру отряда { 1: 6, 4: 5 }
     const t = ZG.Levels.get(g.levelId).alarmThreshold;
-    const base = typeof t === 'number' ? t : t[Math.min(4, g.heroes.length)];
+    const base = typeof t === 'number' ? t : t[Math.min(4, E.party(g))];
     return Math.max(3, Mods.value(g, null, 'alarmThreshold', base));
   };
   E.phase = function (g, round) {
@@ -474,7 +477,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()), relStart: Object.assign({}, opts.rel || {}),
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()), relStart: Object.assign({}, opts.rel || {}), partySize: opts.partySize || null,
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -526,7 +529,7 @@
     if (cond.setup) cond.setup(g, E);
 
     // большой отряд шумит: Тревога в начале партии выше (уровень: startAlarm по числу героев)
-    g.alarm += (level.startAlarm || {})[Math.min(4, g.heroes.length)] || 0;
+    g.alarm += (level.startAlarm || {})[Math.min(4, E.party(g))] || 0;
     // секретные миссии: каждый тайно тянет карту; неподходящая (нет союзника/скрытности/тумана) — под низ, тянем новую
     g.missions = opts.missions != null ? !!opts.missions : level.missions !== false;
     if (g.missions) {
@@ -590,7 +593,7 @@
       g.start = Rng.pick(g, edge.length ? edge : on.filter((c) => c.type === 'street').length ? on.filter((c) => c.type === 'street') : on).i;
     } else g.start = edgeZone(0, 0);
     g.exit = edgeZone(maxTx, b.w - 1);
-    const base = level.spawnPoints[Math.min(4, g.heroes.length)];
+    const base = level.spawnPoints[Math.min(4, E.party(g))];
     const n = base ? Math.max(0, base + Mods.value(g, null, 'spawnPointsBonus', 0)) : 0; // уровень без люков — сложность их не добавляет
     const startTile = tileOf(g, g.start);
     g.spawnPoints = [];
@@ -1655,7 +1658,7 @@
     g.board.adj[h.pos].forEach((n) => { if (!E.hidden(g, n) && moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n }); });
     E.fogNeighbors(g, h.pos).forEach((n) => { if (moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n, explore: true }); });
     if (searchableHere(g, h) && searchCost(g, h) <= h.energy) out.push({ t: 'search' });
-    if (h.energy >= 1) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
+    if (h.energy >= E.PUNCH_COST) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
     if (h.energy >= 1 && g.drops.some((d) => d.pos === h.pos)) out.push({ t: 'pickup' });
     if (h.energy >= barricadeCost(g, h) && g.barricades.length < MAX_BARRICADES) {
       g.board.adj[h.pos].forEach((n) => { if (!E.barricadeAt(g, h.pos, n)) out.push({ t: 'barricade', to: n }); });
@@ -1779,10 +1782,10 @@
         return true;
       }
       case 'punch': {
-        if (h.energy < 1) return fail(g, 'Не хватает энергии.');
+        if (h.energy < E.PUNCH_COST) return fail(g, 'Не хватает энергии.');
         const z = E.zombie(g, a.zombie);
         if (!z || z.pos !== h.pos) return fail(g, 'Цель вне досягаемости.');
-        spend(g, h, 1);
+        spend(g, h, E.PUNCH_COST);
         const bonus = Mods.value(g, h, 'meleeBonus', 0, { kind: 'melee' });
         g.turn.meleeDone = true;
         E.log(g, `${E.heroName(h)} бьёт голыми руками.`, 'dim');
