@@ -384,7 +384,7 @@
         if (!this.live(run)) return;
         await Modal.briefing(this.g);
         if (!this.live(run)) return;
-        await Banner.show('РАУНД 1', ZG.PHASES[0].name.toUpperCase(), 'round');
+        await Banner.show('РАУНД 1', E.phaseName(this.g, 0).toUpperCase(), 'round');
       }
       if (!this.live(run)) return;
       this.refresh();
@@ -674,6 +674,7 @@
       let x = h.cx + 18, y = h.cy + 18;
       if (x + r.width > window.innerWidth - 8) x = h.cx - r.width - 18;
       if (y + r.height > window.innerHeight - 8) y = h.cy - r.height - 18;
+      x = Math.max(8, x); y = Math.max(8, Math.min(y, window.innerHeight - r.height - 8)); // высокая подсказка не уходит за край экрана
       tip.style.left = x + 'px'; tip.style.top = y + 'px';
     },
 
@@ -814,12 +815,12 @@
         for (let r = 1; r <= max; r++) {
           const ph = E.phase(g, r);
           const s = el('div', 'rt-slot ph' + ph, String(r));
-          s.title = `Раунд ${r}: ${ZG.PHASES[ph].name}`;
+          s.title = `Раунд ${r}: ${E.phaseName(g, ph)}`;
           track.appendChild(s);
         }
       }
       $$('.rt-slot', track).forEach((s, i) => { s.classList.toggle('past', i + 1 < g.round); s.classList.toggle('now', i + 1 === g.round); });
-      $('#phase-name').textContent = ZG.PHASES[E.phase(g)].name;
+      $('#phase-name').textContent = E.phaseName(g);
       $('#phase-name').className = 'ph' + E.phase(g);
       const th = E.alarmThreshold(g);
       const at = $('#alarm-track');
@@ -1200,7 +1201,7 @@
     async phase(ev) {
       this.refreshTop();
       if (ev.name === 'zombies') { this.refreshHand(); this.refreshActions(); this.defaultHelp(); await Banner.show('ФАЗА ЗОМБИ', 'мертвецы идут', 'zombies'); }
-      else if (ev.name === 'heroes') { this.refresh(); await Banner.show('РАУНД ' + ev.round, ZG.PHASES[E.phase(this.g)].name.toUpperCase(), 'round'); }
+      else if (ev.name === 'heroes') { this.refresh(); await Banner.show('РАУНД ' + ev.round, E.phaseName(this.g).toUpperCase(), 'round'); }
     },
     async dayphase(ev) {
       this.view.targetDark = this.view._darkFor();
@@ -1361,6 +1362,8 @@
   }
 
   // Поведение врагов в зоне: текущий статус и что принесёт кубик бродяг (раз за фазу зомби)
+  // кубик бродяги: без люков на 1–2 зомби стоит
+  const wanderDie = (g) => (g.spawnPoints.length ? '<b>1–2</b> — к ближайшему люку; <b>3–4</b> — к центру поля; <b>5–6</b> — стоит.' : '<b>3–4</b> — к центру поля; <b>1–2</b> и <b>5–6</b> — стоит (люков нет).');
   function behaviorInfo(g, zs, zuid) {
     const die = g.phase === 'zombies' && g.zs && g.zs.wander ? ` <span class="tt-die">кубик этой фазы: ${g.zs.wander}</span>` : '';
     const rows = {};
@@ -1371,7 +1374,7 @@
       let st, txt;
       const sp = E.zombieSpeed(g, z);
       if (!g.stealth) { st = 'идёт на врага'; txt = `Каждую фазу — до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} к ближайшему ${bandit ? 'врагу (герой или зомби)' : 'герою, бандиту или приманке'}. Кубик не бросается.`; }
-      else if (bandit && z.post) { st = z.awake ? 'часовой' : 'дремлет'; txt = 'Часовой: с поста не уходит. Пока он в зоне шлагбаума, уйти по мосту нельзя. ' + (z.awake ? 'Стреляет во врага в своей зоне или на линии до 2 зон.' : 'Проснётся, если увидит героя или услышит шум; бродящего можно убрать «Удавкой» или «Ножом в спину».'); }
+      else if (bandit && z.post) { const r = d.range != null ? d.range : 2; st = z.awake ? 'часовой' : 'дремлет'; txt = 'Часовой: с поста не уходит. Пока он в зоне выхода, уйти нельзя. ' + (z.awake ? `Стреляет во врага в своей зоне${r ? ` или на линии до ${r} ${ZG.util.plural(r, 'зоны', 'зон', 'зон')}` : ''}.` : 'Проснётся, если увидит героя или услышит шум; бродящего можно убрать «Удавкой» или «Ножом в спину».'); }
       else if (d.static) { st = 'на посту'; txt = `Не ходит, всегда начеку. Стреляет в ближайшего видимого героя на линии до ${d.range} зон: ${d.dmg} Раны, блок не спасает (только укрытие). Бесшумного замечает только вплотную. Кубик не бросается.`; }
       else if (d.patrol) {
         const t = E.banditTarget(g, z);
@@ -1381,6 +1384,11 @@
       else if (d.hunter && z.lurk) { st = 'спит'; txt = 'Притаился, как любой другой: проснётся, если заметит героя (по общим правилам «Скрытности»), услышит шум, получит удар — или от звона ключей. Пока спит, любой герой в его зоне может снять с него ключ (1 ⚡).'; }
       else if (d.hunter) { st = 'охотится'; txt = `${z.relentless ? 'Идёт по следу: всегда знает, где вы. ' : ''}До ${sp} шагов за фазу к ближайшему видимому врагу; «Чутьё охотника» — видит и тихих героев. Бьёт только в своей зоне. Кубик не бросается.`; }
       else if (z.lurk && !z.post) { st = 'притаился'; txt = 'Стоит на месте и не бросает кубик. Проснётся, если увидит героя' + (bandit ? ' или зомби' : ' или бандита') + ', услышит шум или его ударят.'; }
+      else if (d.crowd) {
+        const sw = d.dmg + (z.blood || 0);
+        st = z.awake ? 'охотится' : 'бродит';
+        txt = `«Кровь» ${z.blood || 0}: «Размах» бьёт на ${sw} каждого в зоне — героев, бандитов и даже своих мертвецов. ` + (z.awake ? `До ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} за фазу только к живым (герои, бандиты) — в зону, где их больше всего; приманки не отвлекают. Цепь: тянет к себе самого раненого героя из соседней зоны.` : `Кубик бродяг, 1 шаг: ${wanderDie(g)} Увидит живого — начнёт охотиться.`);
+      }
       else if (bandit && z.hunt) { st = 'загонщик'; txt = 'Поднят по тревоге: преследует отряд и стреляет во врага на линии до 2 зон. Кубик не бросается.'; }
       else if (bandit) {
         const t = E.banditTarget(g, z);
@@ -1391,7 +1399,7 @@
         txt = `Кубик не бросается: до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} за фазу к ближайшему видимому врагу (герой, бандит, приманка), иначе — к последнему следу. Дойдя до следа и никого не увидев, снова бродит.`;
       } else {
         st = 'бродит';
-        txt = 'Кубик бродяг, 1 шаг: <b>1–2</b> — к ближайшему люку; <b>3–4</b> — к центру поля; <b>5–6</b> — стоит. Увидит героя' + ' или бандита — начнёт охотиться.';
+        txt = `Кубик бродяг, 1 шаг: ${wanderDie(g)} Увидит героя или бандита — начнёт охотиться.`;
       }
       const key = st + '|' + txt; // одинаковое поведение разных врагов — одной строкой
       (rows[key] = rows[key] || { name: d.name, st, txt, n: 0, hl: false }).n++;
@@ -1410,7 +1418,8 @@
     ['Миссия 4 · Трасса', ['m4_start', 'm4_bandit', 'm4_bitten', 'm4_fuel', 'm4_night']],
     ['Миссия 5 · Мост', ['m5_start', 'm5_sniper', 'm5_forester', 'm5_key', 'm5_saw', 'm5_forester_dead']],
     ['Миссия 6 · За рекой', ['m6_start']],
-    ['Миссия 7 · Белый лебедь и финал', ['m7_start', 'm7_scream', 'm7_prisoner', 'm7_rescue', 'm7_executed', 'm7_bride_dead', 'epilogue']],
+    ['Миссия 7 · Белый лебедь', ['m7_start', 'm7_scream', 'm7_prisoner', 'm7_rescue', 'm7_executed', 'm7_bride_dead']],
+    ['Миссия 8 · Полдень и финал', ['m8_start', 'm8_butcher', 'm8_blood', 'm8_wolves', 'm8_butcher_dead', 'epilogue']],
   ];
   const Gallery = {
     show() {

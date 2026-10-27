@@ -370,6 +370,115 @@
       },
       timeoutText: 'Рассвет не наступил: вопль невесты собрал весь пригород.',
     },
+    // --- Кампания, миссия 8: Мясник на колхозном рынке, «Волки» у дороги ---
+    {
+      id: 'market', campaignOnly: true, name: 'Полдень',
+      short: 'Прорвись через рынок и стоянку «Волков» к дороге на правом краю. Мясник в центре бьёт всех вокруг — и чужих, и своих.',
+      brief: 'Колхозный рынок в полдень. Посреди мясного ряда бродит Мясник: цепь, крюк, тесак. Справа, у дороги на север, — «Волки». Пройти можно только через них.',
+      setupText: 'Поле 5×2: Колхозный рынок (западные ряды — 2-й столбец, мясной ряд — 3-й, восточные ряды — 4-й), Стоянка «Волков» — в правом столбце. Все тайлы открыты (день), люков нет. Старт — у левого края. Мясник со свитой (соло: Шатун; пара: Шатун и Бегун; трое: Толстяк и Шатун; четверо: Толстяк, Шатун и Бегун) — в мясном ряду, Крикун-зазывала — в центре западных рядов; нейтральные полосы — в центре случайного обычного тайла 2-го столбца и 4-го столбца бродят мертвецы (левая / правая: соло — Шатун / Шатун; пара — Шатун / Шатун и Бегун; трое — 2 Шатуна / Шатун и Бегун; четверо — 2 Шатуна / 2 Шатуна и Бегун). На стоянке — Головорезы (соло 2, пара 2, трое 5, четверо 6; бродят у лагеря), Снайпер на вышке; в зоне выхода у правого края — заслон из Головорезов на посту (соло 1, пара 2, трое 2, четверо 3); на соседнем тайле правого столбца — Бандиты-мародёры (1 / 1 / 2 / 2). У каждого бандита в мешке карта добычи. Всё на поле с начала бродит.',
+      exitLabel: 'Дорога на север', exitArt: 'exit_van',
+      retinue: { 1: ['walker'], 2: ['walker', 'runner'], 3: ['fatso', 'walker'], 4: ['fatso', 'walker', 'runner'] },
+      strips: { 1: [['walker'], ['walker']], 2: [['walker'], ['walker', 'runner']], 3: [['walker', 'walker'], ['walker', 'runner']], 4: [['walker', 'walker'], ['walker', 'walker', 'runner']] },
+      raiders: { 1: 2, 2: 2, 3: 5, 4: 6 },
+      looters: { 1: 1, 2: 1, 3: 2, 4: 2 },
+      guards: { 1: 1, 2: 2, 3: 2, 4: 3 }, // заслон в зоне выхода
+      reinforce: 2, // Головорезов на каждую Волну
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng, n = Math.min(4, ZG.Engine.party(g));
+        const tid = (id) => b.tiles.findIndex((t) => t.id === id);
+        const at = (ti, p) => b.cells.find((c) => c.tile === ti && c.lx === p[0] && c.ly === p[1]);
+        const street = (ti) => b.cells.filter((c) => c.tile === ti && c.type === 'street');
+        const wander = (type, cell) => { const z = E.spawnZombie(g, type, cell, null, true, true, true); if (z) { z.awake = false; z.trail = null; } return z; };
+        const bag = (z) => { const i = g.lootDeck.findIndex((id) => id !== 'ambush'); z.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : []; };
+        const maxTx = Math.max.apply(null, b.tiles.map((t) => t.tx));
+        const km = tid('kolhoz'), kw = tid('kolhoz_w'), ke = tid('kolhoz_e'), wc = tid('wolfcamp');
+        const market = [km, kw, ke].filter((i) => i >= 0);
+        g.obj = { butcher: null, butcherDead: false, camp: null };
+        // выход — у правого края на тайле стоянки «Волков»: прорываться придётся через лагерь
+        if (wc >= 0) {
+          const edge = b.cells.filter((c) => c.tile === wc && c.x === b.w - 1 && c.type === 'street');
+          if (edge.length) g.exit = Rng.pick(g, edge).i;
+        }
+        const st = b.cells[g.start].tile;
+        // Мясник и свита — в мясном ряду
+        const lair = km >= 0 ? at(km, ZG.Tiles.get('kolhoz').lair).i : street(b.tiles.findIndex((t) => t.tx === Math.floor(maxTx / 2)))[0].i;
+        const bz = wander('butcher', lair);
+        if (bz) g.obj.butcher = bz.uid;
+        this.retinue[n].forEach((type) => wander(type, lair));
+        // Крикун-зазывала — в западных рядах, на пути к Мяснику (без них — в углу главного ряда)
+        if (kw >= 0) wander('screamer', at(kw, [1, 1]).i);
+        else if (km >= 0) wander('screamer', at(km, [0, 1]).i);
+        // нейтральные полосы: тайлы между стартом и рынком и между рынком и стоянкой
+        const mx = km >= 0 ? b.tiles[km].tx : Math.floor(maxTx / 2);
+        const plain = b.tiles.map((t, i) => i).filter((i) => i !== st && i !== wc && !market.includes(i) && b.tiles[i].tx > 0 && b.tiles[i].tx < maxTx);
+        const sides = [plain.filter((i) => b.tiles[i].tx <= mx), plain.filter((i) => b.tiles[i].tx > mx)];
+        this.strips[n].forEach((pack, side) => {
+          const tiles = sides[side].length ? sides[side] : plain;
+          if (!tiles.length) return;
+          const ti = Rng.pick(g, tiles);
+          const mid = at(ti, [1, 1]);
+          const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, street(ti).length ? street(ti) : b.cells.filter((c) => c.tile === ti && c.type !== 'blocked'));
+          pack.forEach((type) => wander(type, cell.i));
+        });
+        // стоянка «Волков»: Головорезы бродят у лагеря, Снайпер на вышке, мародёры с мешками — рядом
+        if (wc >= 0) {
+          const W = ZG.Tiles.get('wolfcamp');
+          g.obj.camp = at(wc, W.camp).i;
+          const cells = b.cells.filter((c) => c.tile === wc && c.type !== 'blocked' && c.i !== g.exit && !(c.lx === W.perch[0] && c.ly === W.perch[1]));
+          for (let k = 0; k < this.raiders[n]; k++) {
+            const z = wander('raider', cells[k % cells.length].i);
+            if (z) { z.home = g.obj.camp; bag(z); }
+          }
+          const sn = E.spawnZombie(g, 'sniper', at(wc, W.perch).i, null, true, true, true); if (sn) { sn.awake = true; sn.trail = null; }
+          // заслон на дороге: Головорезы на посту в зоне выхода — пока там бандит, не уйти
+          for (let k = 0; k < this.guards[n]; k++) { const z = wander('raider', g.exit); if (z) { z.post = true; z.home = g.exit; bag(z); } }
+          // мародёры — на соседнем тайле правого столбца (или на стоянке)
+          const other = b.tiles.map((t, i) => i).filter((i) => b.tiles[i].tx === maxTx && i !== wc);
+          const lt = other.length ? other[0] : wc;
+          const lc = b.cells.filter((c) => c.tile === lt && c.type === 'street' && c.i !== g.exit);
+          for (let k = 0; k < this.looters[n]; k++) { const z = wander('bandit', Rng.pick(g, lc).i); if (z) bag(z); }
+        }
+        // день: всё как на ладони
+        if (g.revealed) g.revealed = b.tiles.map(() => true);
+      },
+      butcher(g) { return g.zombies.find((z) => z.uid === g.obj.butcher); },
+      goals(g) {
+        return [
+          { text: 'Прорваться через стоянку «Волков» на дорогу у правого края', done: false },
+          { text: 'Убить Мясника', done: g.obj.butcherDead, note: 'необязательно' },
+        ];
+      },
+      isComplete() { return true; },
+      actions() { return []; },
+      canEvac(g, h, E) { return !E.zombiesAt(g, g.exit).some((z) => E.isBandit(z)); },
+      evacBlockedText: 'На дороге заслон «Волков» — сначала уберите их из этой зоны.',
+      onKill(g, z, heroIdx, E) { if (z.uid === g.obj.butcher) { g.obj.butcherDead = true; E.log(g, 'Мясник рухнул на свой прилавок. Цепь звякнула в последний раз.', 'good'); } },
+      // Волна: вместо карт появления — подмога «Волков» с дороги, сразу загонщики
+      onWave(g, E, extra) {
+        const b = g.board;
+        const edge = b.cells.filter((c) => c.x === b.w - 1 && c.type === 'street');
+        if (!edge.length) return;
+        for (let k = 0; k < extra * this.reinforce; k++) {
+          const z = E.spawnZombie(g, 'raider', ZG.Rng.pick(g, edge).i, null, true, true, true);
+          if (!z) continue;
+          z.awake = true; z.hunt = true; z.home = g.obj.camp;
+          const live = g.heroes.filter((h) => h.onBoard && !h.hidden);
+          const d = E.distV(g, z.pos);
+          live.sort((a, c) => d[a.pos] - d[c.pos]);
+          z.trail = live.length ? live[0].pos : z.pos;
+        }
+        E.log(g, `Подмога «Волков»: с дороги подъехали ${extra * this.reinforce} Головореза и идут на шум!`, 'bad');
+        E.fx(g, { t: 'objective', pos: edge[0].i, text: 'Подмога «Волков»!' });
+        E.storyEvent(g, 'wolves');
+      },
+      botGoal() { return null; },
+      progress(g) {
+        const b = g.board, x = (h) => (h.evacuated ? b.w : b.cells[h.pos].x);
+        const alive = g.heroes.filter((h) => !h.fallen);
+        return (alive.length ? alive.reduce((s, h) => s + x(h), 0) / alive.length / b.w : 0) * 5 + (g.obj.butcherDead ? 2 : 0);
+      },
+      timeoutText: 'Солнце ушло за крыши: рынок затянуло мертвецами, а «Волки» перекрыли дорогу.',
+    },
     // --- Кампания, миссия 4: канистры на трассе, бандиты — третья сторона ---
     {
       id: 'highway', campaignOnly: true, name: 'Бензин и порох',
@@ -618,6 +727,7 @@
   // ------------------------------------------------------- Условия партии ---
   ZG.Conditions.addAll([
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
+    { id: 'noon', name: 'Ясный полдень', text: 'Без особых условий.', tone: 0, art: 'cond_calm' }, // миссия 8: день, «вечер» не к месту
     { id: 'fog', name: 'Смог', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
     { id: 'fullmoon', name: 'Полнолуние', text: 'Глухая ночь наступает на 1 раунд раньше.', tone: -1, mods: { deepShift: 1 }, art: 'cond_moon' },

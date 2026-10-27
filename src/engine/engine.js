@@ -105,6 +105,8 @@
     lvl.phaseStarts.forEach((s, i) => { if (r + (i === 2 ? deep : 0) >= s) p = i; });
     return p;
   };
+  // название фазы: уровень «только день» (dayOnly) не знает ни сумерек, ни ночи
+  E.phaseName = (g, ph) => (ZG.Levels.get(g.levelId).dayOnly ? 'День' : ZG.PHASES[ph == null ? E.phase(g) : ph].name);
   E.scenario = (g) => ZG.Scenarios.get(g.scenarioId);
   E.isComplete = (g) => E.scenario(g).isComplete(g);
   E.barricadeAt = (g, a, b) => g.barricades.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
@@ -769,6 +771,7 @@
     if (!h.onBoard) return;
     h.onBoard = false; h.fallen = true; h.turned = true;
     g.stats.fell++; g.stats.turned = (g.stats.turned || 0) + 1;
+    E.deathNear(g, h.pos);
     dropBelongings(g, h);
     const type = 'turned_' + h.id;
     E.log(g, `${E.heroName(h)} обращается! Перед вами — ${ZG.Zombies.has(type) ? ZG.Zombies.get(type).name : 'Шатун'}.`, 'bad');
@@ -837,6 +840,7 @@
     }
     h.onBoard = false; h.fallen = true;
     g.stats.fell++;
+    E.deathNear(g, h.pos);
     dropBelongings(g, h);
     E.log(g, `${E.heroName(h)} падает… и через минуту поднимается снова — уже Шатуном.`, 'bad');
     E.fx(g, { t: 'fall', hero: h.idx, pos: h.pos });
@@ -950,10 +954,13 @@
     const eff = Math.max(0, n - (def.armor || 0));
     if (!g.zombies.includes(z)) return false;
     z.dmg += eff;
+    // Мясник: сильный удар (3+ урона за раз) сбивает один жетон «Крови»
+    if (def.blood && eff >= 3 && z.blood > 0) { z.blood--; E.log(g, `Удар сбивает с Мясника «Кровь» — жетонов: ${z.blood}.`, 'good'); E.fx(g, { t: 'objective', pos: z.pos, text: '−Кровь' }); }
     if (def.big || z.type === 'fatso') g.stats.bigDmg = (g.stats.bigDmg || 0) + eff;
     E.fx(g, { t: 'hit', zombie: z.uid, pos: z.pos, n: eff, kind });
     if (z.dmg >= def.hp) {
       g.zombies.splice(g.zombies.indexOf(z), 1);
+      E.deathNear(g, z.pos);
       g.stats.kills++;
       g.stats.killsBy[z.type] = (g.stats.killsBy[z.type] || 0) + 1;
       if (kind === 'shot') g.stats.banditKills = (g.stats.banditKills || 0) + 1; // зомби, убитые бандитами
@@ -984,6 +991,18 @@
   E.damageZombie = damageZombie;
   E.gainXp = function (g, h, n) { gainXp(g, h, n); };
 
+  // Мясник «Свежее мясо»: любая смерть в его зоне или соседней — лечит 2 ♥ и даёт жетон «Крови» (+1 к «Размаху», без предела)
+  E.deathNear = function (g, pos) {
+    g.zombies.forEach((b) => {
+      const bd = ZG.Zombies.get(b.type);
+      if (!bd.blood || (b.pos !== pos && !g.board.adj[b.pos].includes(pos))) return;
+      b.dmg = Math.max(0, b.dmg - 2);
+      b.blood = (b.blood || 0) + 1;
+      E.log(g, `Мясник чует свежее мясо: +2 ♥, «Кровь» ${b.blood} (удар «Размаха» — ${bd.dmg + b.blood}).`, 'bad');
+      E.fx(g, { t: 'blood', zombie: b.uid, pos: b.pos, n: b.blood });
+      E.storyEvent(g, 'blood');
+    });
+  };
   // замешать карту в колоду героя (в случайное место)
   E.shuffleIn = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.splice(Rng.int(g, h.deck.length + 1), 0, u); };
   E.giveCard = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.hand.push(u); };
@@ -1108,6 +1127,15 @@
       if (!z.awake) return z.lurk ? null : wanderGoal(g, z); // притаившийся ждёт на месте, пока не разбудят
       // бандит: враг в своей зоне или на линии выстрела — стоит и стреляет; иначе не преследует, а мародёрствует дальше
       if (E.isBandit(z) && !ZG.Zombies.get(z.type).hunter && !z.hunt) return E.banditTarget(g, z) ? null : wanderGoal(g, z); // z.hunt — поднятый по тревоге: загонщик
+      // Мясник «Нюх на толпу»: только к живым (герои и бандиты), к зоне, где их больше всего; приманки не отвлекают
+      if (ZG.Zombies.get(z.type).crowd) {
+        const live = E.seenFoes(g, z), dz = E.distV(g, z.pos);
+        const count = (p) => live.filter((t) => t.pos === p).length;
+        let best = null;
+        live.forEach((t) => { if (dz[t.pos] === Infinity) return; if (!best || count(t.pos) > count(best) || (count(t.pos) === count(best) && dz[t.pos] < dz[best])) best = t.pos; });
+        if (best == null) return z.trail != null && z.trail !== z.pos ? z.trail : null;
+        return best === z.pos ? null : best;
+      }
       // охотник: видимые враги (герои, а также бандиты/зомби — для другой стороны) и приманки; никого не видно — последний след
       const cand = E.seenFoes(g, z).map((t) => ({ pos: t.pos, k: 1 })).concat(E.isBandit(z) ? [] : g.lures.map((l) => ({ pos: l.pos, k: 0 })));
       if (!cand.length && z.trail != null) cand.push({ pos: z.trail, k: 2 });
@@ -1273,6 +1301,7 @@
             E.perceive(g);
           }
         }
+        if (extra && E.scenario(g).onWave) E.scenario(g).onWave(g, E, extra); // задание может заменить Волну своим (подмога бандитов и т. п.)
         g.spawnPoints.forEach((p) => { for (let k = 0; k <= extra; k++) drawSpawn(g, p); });
         zs.step = 'end';
       } else if (zs.step === 'end') {
@@ -1295,19 +1324,33 @@
     // Теснота: одного героя за фазу кусают не больше maxAttackers зомби (самые опасные — первыми)
     const cap = ZG.Levels.get(g.levelId).maxAttackers || Infinity;
     const order = g.zombies.slice().sort((a, b) => ZG.Zombies.get(b.type).dmg - ZG.Zombies.get(a.type).dmg);
-    const toHero = (z, h, def) => {
+    const toHero = (z, h, def, dmgOver) => {
+      const dmg = dmgOver != null ? dmgOver : def.dmg;
       if (E.scenario(g).onZombieAttack) E.scenario(g).onZombieAttack(g, z, h, E); // особые правила задания
       (byHero[h.idx] = byHero[h.idx] || { hero: h.idx, incoming: 0, attackers: [] });
-      byHero[h.idx].incoming += def.dmg;
-      g.stats.incoming = (g.stats.incoming || 0) + def.dmg;
+      byHero[h.idx].incoming += dmg;
+      g.stats.incoming = (g.stats.incoming || 0) + dmg;
       byHero[h.idx].attackers.push(z.uid);
       z.attackedPhase = g.zphase; // атаковал в эту фазу (Невеста: за фазу — одна способность)
-      E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: def.dmg });
+      E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: dmg });
     };
     order.forEach((z) => {
       const def = ZG.Zombies.get(z.type);
       if (!g.zombies.includes(z)) return; // погиб в этой же схватке
       if (def.dmg <= 0 || (g.stealth && !z.awake)) return;
+      if (def.swing) {
+        // Мясник «Размах крюком»: бьёт всех в своей зоне — героев, бандитов и (случайно) своих же зомби
+        const dmg = def.dmg + (z.blood || 0);
+        const hs = E.heroesAt(g, z.pos).filter((h) => !h.hidden);
+        const others = g.zombies.filter((o) => o !== z && o.pos === z.pos && !ZG.Zombies.get(o.type).immobile);
+        if (!hs.length && !others.some((o) => E.isBandit(o))) return; // бьёт, только если рядом живые
+        E.log(g, `Мясник размахивает крюком (${dmg} урона каждому в зоне)!`, 'bad');
+        E.fx(g, { t: 'swing', zombie: z.uid, pos: z.pos, n: dmg });
+        hs.forEach((h) => toHero(z, h, def, dmg));
+        others.forEach((o) => damageZombie(g, o, dmg, null, 'swing'));
+        z.attackedPhase = g.zphase;
+        return;
+      }
       if (E.isBandit(z)) {
         // бандит: удар/выстрел по случайному врагу в зоне или по ближайшему на линии; выстрел слышен на 2 зоны
         const t = E.banditTarget(g, z, true);

@@ -522,6 +522,11 @@
       c.beginPath(); c.moveTo(50, 34); c.quadraticCurveTo(58, 16, 70, 18); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
       if (!o.shadow) { c.fillStyle = '#ffb030'; circle(c, 72, 17, 5); c.fill(); c.fillStyle = '#fff3a0'; circle(c, 72, 17, 2.5); c.fill(); }
     },
+    butcher_hook(c, o) {
+      c.strokeStyle = o.ink; c.lineWidth = 5; c.setLineDash([6, 4]); c.beginPath(); c.moveTo(50, 6); c.lineTo(50, 46); c.stroke(); c.setLineDash([]); // цепь
+      c.beginPath(); c.moveTo(50, 46); c.lineTo(50, 60); c.arc(38, 62, 12, 0, Math.PI * 0.9); c.lineWidth = 9; c.strokeStyle = o.shadow ? o.ink : '#9aa0a6'; c.stroke();
+      if (!o.shadow) { c.fillStyle = '#7a120c'; circle(c, 30, 70, 4); c.fill(); c.fillRect(29, 72, 2, 10); }
+    },
     bearfat(c, o) {
       // банка с жиром и отпечатком лапы
       rr(c, 26, 26, 48, 60, 8); fillInk(c, o.shadow ? o.ink : '#e8d8a0');
@@ -1216,7 +1221,20 @@
     c.fillStyle = '#ff5a3c'; circle(c, 44, 48, 1.6); c.fill(); circle(c, 56, 48, 1.6); c.fill();
     c.fillStyle = '#8a1a14'; poly(c, [28, 30, 50, 22, 72, 30, 72, 34, 28, 34]); c.fill(); // красная повязка
   }
-  [['bride', brideHead, '#8a7a8a', '#d4a017', true], ['raider', raiderHead, '#4a4a3a', '#8a1a14', false]].forEach(([id, head, bg, ring, round]) => {
+  // Мясник (босс миссии 8): лысая голова, резиновый фартук в крови, крюк на цепи
+  function butcherHead(c) {
+    c.fillStyle = '#d8d0b8'; c.beginPath(); c.moveTo(6, 100); c.quadraticCurveTo(10, 62, 50, 60); c.quadraticCurveTo(90, 62, 94, 100); c.fill(); strokeInk(c, 2.5); // плечи
+    c.fillStyle = '#e8e2d0'; rr(c, 26, 66, 48, 34, 4); c.fill(); strokeInk(c, 2); // фартук
+    c.fillStyle = 'rgba(150,20,14,.85)'; [[36, 78, 7], [58, 86, 9], [46, 94, 5]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); });
+    c.fillStyle = '#9aa58a'; c.beginPath(); c.ellipse(50, 42, 22, 24, 0, 0, 7); c.fill(); strokeInk(c, 2.2); // лысая голова
+    c.fillStyle = 'rgba(70,90,50,.4)'; circle(c, 40, 30, 5); c.fill(); circle(c, 60, 52, 4); c.fill(); // трупные пятна
+    c.fillStyle = '#ff4a2a'; circle(c, 42, 42, 3); c.fill(); circle(c, 58, 42, 3); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 2.5; c.beginPath(); c.moveTo(35, 36); c.lineTo(46, 39); c.moveTo(65, 36); c.lineTo(54, 39); c.stroke();
+    c.fillStyle = '#2a0806'; rr(c, 40, 52, 20, 7, 2); c.fill(); c.fillStyle = '#e8dcc0'; for (let i = 0; i < 4; i++) c.fillRect(42 + i * 4.5, 52, 2.5, 3); // оскал
+    c.strokeStyle = '#8a9096'; c.lineWidth = 3; c.beginPath(); c.moveTo(84, 96); c.lineTo(84, 40); c.stroke(); // цепь
+    c.lineWidth = 4.5; c.beginPath(); c.arc(78, 36, 8, -0.3, Math.PI * 1.1); c.stroke(); // крюк
+  }
+  [['bride', brideHead, '#8a7a8a', '#d4a017', true], ['raider', raiderHead, '#4a4a3a', '#8a1a14', false], ['butcher', butcherHead, '#8a4a3a', '#d4a017', true]].forEach(([id, head, bg, ring, round]) => {
     Art.define('zp_' + id, (ctx, w, h) => {
       const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, bg); g.addColorStop(1, '#0d0a08');
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);

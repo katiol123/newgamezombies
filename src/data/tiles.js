@@ -59,6 +59,27 @@
       saw: [1, 1], // пилорама: зона ловушки
       console: [2, 1], // пульт пилорамы
     },
+    // уникальные тайлы миссии 8: колхозный рынок (один тайл — поле 5×2; два — западные и восточные ряды, поле 4×2)
+    {
+      id: 'kolhoz', name: 'Колхозный рынок', num: 'М8', unique: true,
+      map: ['...', '...', '...'], doors: [], search: [[0, 0, 'armory'], [2, 0, 'armory'], [1, 2, 'armory']],
+      buildings: {},
+      decor: [{ k: 'stall', x: 0, y: 0 }, { k: 'stall', x: 2, y: 0 }, { k: 'crates_pile', x: 1, y: 2 }, { k: 'stall', x: 0, y: 2 }, { k: 'stall', x: 2, y: 2 }, { k: 'cart', x: 0, y: 1 }],
+      lair: [1, 1], // мясной ряд: здесь Мясник
+    },
+    {
+      id: 'kolhoz_w', name: 'Рынок · западные ряды', num: 'М8', unique: true,
+      map: ['...', '...', '...'], doors: [], search: [[1, 0, 'armory'], [1, 2, 'armory']],
+      buildings: {},
+      decor: [{ k: 'stall', x: 0, y: 0 }, { k: 'stall', x: 1, y: 0 }, { k: 'stall', x: 0, y: 2 }, { k: 'cart', x: 1, y: 2 }, { k: 'crates_pile', x: 2, y: 2 }],
+      lair: [2, 1], // мясной ряд на стыке двух тайлов
+    },
+    {
+      id: 'kolhoz_e', name: 'Рынок · восточные ряды', num: 'М8', unique: true,
+      map: ['...', '...', '...'], doors: [], search: [[1, 1, 'armory']],
+      buildings: {},
+      decor: [{ k: 'stall', x: 1, y: 0 }, { k: 'stall', x: 2, y: 0 }, { k: 'stall', x: 2, y: 2 }, { k: 'trash', x: 0, y: 2 }],
+    },
     // уникальные тайлы миссии 7: ресторан, где играли свадьбу, и стоянка банды «Волки»
     {
       id: 'banquet', name: 'Ресторан «Белый лебедь»', num: 'М7', unique: true,

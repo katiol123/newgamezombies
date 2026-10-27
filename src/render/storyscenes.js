@@ -553,6 +553,146 @@
     for (let k = 0; k < 3; k++) { const p = (t * 0.4 + k / 3) % 1; c.strokeStyle = `rgba(200,210,220,${0.4 * (1 - p)})`; c.lineWidth = 2; c.beginPath(); c.ellipse(260 + k * 520, 800, 20 + p * 80, 6 + p * 20, 0, 0, TAU); c.stroke(); } // круги на лужах
     tex(c, '#000', 0.18); vignette(c, 0.6); grain(c, t); frame(c);
   };
+  // --- миссия 8 «Полдень»: колхозный рынок, Мясник, «Волки» ---
+  function awning(c, x, y, w, h, a, b) { // полосатый выгоревший навес прилавка
+    const n = Math.max(3, Math.round(w / 40));
+    for (let i = 0; i < n; i++) { c.fillStyle = i % 2 ? a : b; c.beginPath(); c.moveTo(x + (w / n) * i, y); c.lineTo(x + (w / n) * (i + 1), y); c.lineTo(x + (w / n) * (i + 1) + 6, y + h); c.lineTo(x + (w / n) * i + 6, y + h); c.closePath(); c.fill(); }
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(x + 6, y + h, w, 10); // кромка тени
+  }
+  function flies(c, x, y, r, t, n) { c.fillStyle = INK; for (let i = 0; i < n; i++) { const a = t * (1.5 + (i % 5) * 0.4) + i * 2.1; c.beginPath(); c.arc(x + Math.cos(a) * r * (0.4 + (i % 3) * 0.3), y + Math.sin(a * 1.3) * r * 0.5, 2.6, 0, TAU); c.fill(); } }
+  function cleaver(c, x, y) { // тесак: широкое прямоугольное лезвие с отверстием и тёмной кромкой
+    c.fillStyle = '#9aa0a6'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 34, y); c.lineTo(x + 40, y + 74); c.lineTo(x - 30, y + 80); c.lineTo(x - 30, y + 6); c.closePath(); c.fill();
+    c.strokeStyle = '#3a3e42'; c.lineWidth = 3; c.stroke();
+    c.fillStyle = '#dfe3e6'; c.beginPath(); c.moveTo(x + 40, y + 74); c.lineTo(x - 30, y + 80); c.lineTo(x - 30, y + 70); c.lineTo(x + 39, y + 64); c.closePath(); c.fill(); // заточка
+    c.fillStyle = '#2a2420'; c.beginPath(); c.arc(x - 18, y + 18, 6, 0, TAU); c.fill(); // отверстие
+    c.fillStyle = 'rgba(140,20,14,.75)'; c.beginPath(); c.moveTo(x + 10, y + 66); c.quadraticCurveTo(x + 6, y + 40, x + 14, y + 30); c.quadraticCurveTo(x + 20, y + 46, x + 24, y + 66); c.fill(); // потёк крови
+  }
+  function carcass(c, x, y, s) { // туша на крюке: окорок с рёбрами и полоской жира
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.fillStyle = '#6a1e18'; c.beginPath(); c.moveTo(-10, 0); c.quadraticCurveTo(-46, 40, -40, 120); c.quadraticCurveTo(-30, 170, 0, 180); c.quadraticCurveTo(34, 170, 38, 110); c.quadraticCurveTo(40, 40, 10, 0); c.closePath(); c.fill();
+    c.strokeStyle = '#d8c0a8'; c.lineWidth = 5; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(-30, 50 + i * 22); c.quadraticCurveTo(-4, 44 + i * 22, 14, 56 + i * 22); c.stroke(); } // рёбра
+    c.fillStyle = '#e8d6bc'; c.beginPath(); c.moveTo(22, 20); c.quadraticCurveTo(44, 90, 30, 160); c.lineTo(22, 158); c.quadraticCurveTo(32, 90, 14, 24); c.fill(); // жир
+    c.restore();
+  }
+  function butcherFig(c, x, y, s, t, o) { // Мясник: громада в фартуке, тесак, цепь с крюком
+    o = o || {};
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.fillStyle = o.fill || '#2a1e18';
+    c.beginPath(); c.moveTo(-58, 0); c.quadraticCurveTo(-78, -90, -72, -150); c.quadraticCurveTo(-70, -205, -24, -222); c.quadraticCurveTo(0, -214, 24, -222); c.quadraticCurveTo(70, -205, 72, -150); c.quadraticCurveTo(78, -90, 58, 0); c.closePath(); c.fill(); // сгорбленная туша
+    c.fillStyle = '#5a1e16'; c.beginPath(); c.moveTo(-40, -4); c.quadraticCurveTo(-52, -90, -34, -158); c.lineTo(34, -158); c.quadraticCurveTo(52, -90, 40, -4); c.closePath(); c.fill(); // фартук
+    c.strokeStyle = '#5a1e16'; c.lineWidth = 7; c.beginPath(); c.moveTo(-30, -156); c.lineTo(-14, -214); c.moveTo(30, -156); c.lineTo(14, -214); c.stroke(); // лямки
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 3; c.beginPath(); c.moveTo(-36, -100); c.quadraticCurveTo(0, -92, 36, -100); c.stroke(); // завязки
+    c.fillStyle = 'rgba(150,24,18,.7)'; [[-14, -110, 18], [20, -70, 24], [-24, -40, 14], [8, -130, 10]].forEach(([px, py, r]) => { c.beginPath(); c.ellipse(px, py, r, r * 1.4, 0.3, 0, TAU); c.fill(); }); // пятна
+    c.fillStyle = o.fill || '#2a1e18'; c.beginPath(); c.ellipse(0, -232, 30, 30, 0, 0, TAU); c.fill(); // голова, втянутая в плечи
+    c.fillStyle = '#8a6a58'; c.beginPath(); c.ellipse(0, -228, 22, 22, 0, 0, TAU); c.fill(); // лицо
+    eyesPair(c, 0, -234, 0.8, o.eyes == null ? 1 : o.eyes);
+    c.strokeStyle = '#1a0f0a'; c.lineWidth = 3; c.beginPath(); c.moveTo(-10, -214); c.lineTo(10, -214); c.stroke();
+    // правая рука с тесаком: поднимается и опускается
+    const ch = o.chop == null ? 0 : o.chop;
+    c.save(); c.translate(64, -180); c.rotate(-1.2 + ch * 1.6);
+    c.fillStyle = o.fill || '#2a1e18'; c.fillRect(-12, 0, 24, 110);
+    c.fillStyle = '#5a3420'; c.fillRect(-7, 96, 14, 44); // рукоять
+    cleaver(c, -10, 136);
+    c.restore();
+    c.fillStyle = o.fill || '#2a1e18'; c.save(); c.translate(-64, -180); c.rotate(0.35); c.fillRect(-12, 0, 24, 110); c.restore(); // левая рука (держит цепь)
+    c.restore();
+  }
+  function chain(c, x0, y0, x1, y1, sag, t) { // провисшая цепь звеньями и крюк на конце
+    c.save(); c.strokeStyle = '#8a8e92'; c.lineWidth = 5;
+    for (let i = 0; i < 18; i++) {
+      const p = i / 18, mx = (x0 + x1) / 2, my = (y0 + y1) / 2 + sag;
+      const x = (1 - p) * (1 - p) * x0 + 2 * (1 - p) * p * mx + p * p * x1, y = (1 - p) * (1 - p) * y0 + 2 * (1 - p) * p * my + p * p * y1;
+      c.beginPath(); c.ellipse(x, y, 9, 5, i % 2 ? 0.6 : -0.6, 0, TAU); c.stroke();
+    }
+    c.strokeStyle = '#a8acb0'; c.lineWidth = 10; c.lineCap = 'round'; c.beginPath(); c.arc(x1, y1 + 30, 30, -Math.PI / 2, Math.PI * 0.9); c.stroke(); // крюк
+    c.restore();
+  }
+  S.m8_start = (c, t) => { // полдень над рынком: выгоревшие навесы, марево, мухи, в глубине — тень с тесаком
+    sky(c, [[0, '#e8e4d4'], [0.45, '#d8ccb0'], [1, '#8a7a5e']]);
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 800, 40, 520, 'rgba(255,250,220,A)', 0.55); c.restore(); // солнце в зените
+    c.fillStyle = '#a89878'; c.fillRect(0, 520, W, 380); // площадь
+    // дальние ряды: навесы и тёмный проём мясного ряда
+    c.fillStyle = '#5a4a38'; c.fillRect(560, 300, 480, 220); c.fillStyle = '#1a120c'; c.fillRect(640, 360, 320, 160);
+    awning(c, 540, 270, 520, 50, '#c8b8a0', '#a85848');
+    const ch = (Math.sin(t * 2.4) + 1) / 2; butcherFig(c, 800, 520, 0.62, t, { fill: '#100a08', eyes: 0, chop: ch }); // силуэт в глубине
+    if (ch > 0.95) { c.fillStyle = 'rgba(232,220,192,.9)'; c.font = "900 44px Impact, sans-serif"; c.textAlign = 'center'; c.fillText('ТУК', 930, 350); }
+    [[60, 340, 420], [1120, 340, 420]].forEach(([x, y, w]) => { c.fillStyle = '#6a5a44'; c.fillRect(x, y + 40, w, 200); awning(c, x - 20, y, w + 40, 60, '#d8ccb4', '#5a7a9a'); }); // боковые прилавки
+    // зазывала посреди площади: хрипит, мертвецы поворачивают головы
+    walker(c, 800, 760, 2.1, t, { fill: '#2a2018' });
+    c.fillStyle = '#c86a5a'; c.fillRect(780, 640, 40, 70); // фартук торговки
+    for (let k = 0; k < 3; k++) { const p = (t * 0.7 + k / 3) % 1; c.strokeStyle = `rgba(60,40,30,${0.5 * (1 - p)})`; c.lineWidth = 4; c.beginPath(); c.arc(830, 535, 20 + p * 90, -0.8, 0.8); c.stroke(); } // хрип
+    [[300, 800, 1.7, 0], [480, 780, 1.5, 0], [1180, 800, 1.7, 1], [1360, 790, 1.5, 1]].forEach(([x, y, s, f], i) => walker(c, x, y, s, t, { ph: i, flip: !f, fill: '#2a2018' }));
+    flies(c, 800, 600, 260, t, 26); flies(c, 300, 600, 120, t + 3, 10); flies(c, 1300, 600, 120, t + 5, 10);
+    // марево
+    c.save(); c.globalAlpha = 0.12; c.strokeStyle = '#fff'; c.lineWidth = 3; for (let i = 0; i < 8; i++) { c.beginPath(); for (let x = 0; x <= W; x += 40) c.lineTo(x, 520 + i * 12 + Math.sin(x * 0.02 + t * 3 + i) * 4); c.stroke(); } c.restore();
+    tex(c, '#3a2a1a', 0.12); vignette(c, 0.35); grain(c, t); frame(c);
+  };
+  S.m8_butcher = (c, t) => { // Мясник выходит из-под навеса: цепь с крюком волочится, искры, вокруг безразличные мертвецы
+    sky(c, [[0, '#d8ccb0'], [1, '#7a6a50']]);
+    c.fillStyle = '#9a8a6a'; c.fillRect(0, 700, W, 200);
+    c.fillStyle = '#3a2a1e'; c.fillRect(0, 120, W, 40); for (let i = 0; i < 7; i++) { const x = 120 + i * 230, sw = Math.sin(t * 0.8 + i) * 0.06; c.save(); c.translate(x, 160); c.rotate(sw); c.strokeStyle = '#8a8e92'; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 50); c.stroke(); c.lineWidth = 5; c.beginPath(); c.arc(0, 62, 12, -Math.PI / 2, Math.PI * 0.8); c.stroke(); carcass(c, 0, 66, 0.9); c.restore(); } // туши на крюках
+    awning(c, 0, 80, W, 50, '#c8b8a0', '#a85848');
+    [[260, 1.8, 0], [420, 1.6, 1], [1220, 1.7, 1], [1400, 1.9, 0]].forEach(([x, s, f], i) => walker(c, x, 760, s, t, { ph: i, flip: !!f, fill: '#2a2018' }));
+    const step = Math.sin(t * 1.2) * 10;
+    butcherFig(c, 800 + step, 790, 1.9, t, { chop: (Math.sin(t * 1.6) + 1) / 2 });
+    chain(c, 800 + step - 122, 500, 520 + step, 760, 80 + Math.sin(t * 2) * 20, t);
+    const sp = (t * 1.5) % 1; if (sp < 0.4) { c.save(); c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + (i - 4) * 0.25; c.strokeStyle = `rgba(255,${200 - i * 10},80,${1 - sp * 2.5})`; c.lineWidth = 3; c.beginPath(); c.moveTo(520 + step, 820); c.lineTo(520 + step + Math.cos(a) * (40 + sp * 160), 820 + Math.sin(a) * (40 + sp * 120)); c.stroke(); } c.restore(); } // искры от крюка
+    flies(c, 800, 480, 160, t, 18);
+    tex(c, '#2a1a10', 0.14); vignette(c, 0.5); grain(c, t); frame(c);
+  };
+  S.m8_blood = (c, t) => { // кровь тянется к Мяснику со всех сторон, раны стягиваются; пульс
+    sky(c, [[0, '#2a0c0a'], [1, '#0a0303']]);
+    const beat = Math.pow(Math.max(0, Math.sin(t * 3.2)), 8);
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 800, 520, 480 + beat * 80, 'rgba(200,30,20,A)', 0.35 + beat * 0.3); c.restore();
+    for (let i = 0; i < 14; i++) { // струйки крови текут к нему по земле
+      const a = i * TAU / 14 + 0.2, r0 = 760;
+      c.strokeStyle = 'rgba(150,20,14,.8)'; c.lineWidth = 7; c.beginPath();
+      for (let k = 0; k <= 20; k++) { const p = k / 20, r = r0 * (1 - p) + 60; c.lineTo(800 + Math.cos(a + Math.sin(p * 6 + i) * 0.06) * r, 760 + Math.sin(a) * r * 0.22); }
+      c.stroke();
+      const p = (t * 0.35 + i / 14) % 1, r = r0 * (1 - p) + 60; c.fillStyle = '#e04030'; c.beginPath(); c.arc(800 + Math.cos(a) * r, 760 + Math.sin(a) * r * 0.22, 8, 0, TAU); c.fill();
+    }
+    [[260, 1], [1340, 0]].forEach(([x, f]) => { c.save(); c.translate(x, 800); c.rotate(f ? 1.45 : -1.45); walker(c, 0, 0, 1.6, 0, { fill: '#1a0806' }); c.restore(); }); // упавшие рядом
+    butcherFig(c, 800, 790, 1.7 + beat * 0.04, t, { fill: '#1a0c08', chop: 0.2 });
+    c.fillStyle = PAPER; c.font = "900 64px Impact, sans-serif"; c.textAlign = 'center'; c.globalAlpha = 0.85 + beat * 0.15; c.fillText('СВЕЖЕЕ МЯСО', 800, 140); c.globalAlpha = 1;
+    tex(c, '#000', 0.22); vignette(c, 0.7); grain(c, t); frame(c);
+  };
+  S.m8_wolves = (c, t) => { // пикап с черепом в облаке пыли; «Волки» спрыгивают с кузова и расходятся цепью
+    sky(c, [[0, '#e0d6bc'], [0.55, '#c8b48e'], [1, '#6a5a40']]);
+    c.fillStyle = '#7a6a4e'; c.beginPath(); c.moveTo(0, 900); c.lineTo(640, 470); c.lineTo(960, 470); c.lineTo(W, 900); c.fill(); // дорога
+    c.strokeStyle = 'rgba(232,220,192,.5)'; c.lineWidth = 8; c.setLineDash([40, 40]); c.lineDashOffset = -t * 160; c.beginPath(); c.moveTo(800, 470); c.lineTo(800, 900); c.stroke(); c.setLineDash([]);
+    smoke(c, 800, 560, t, { n: 18, h: 260, spread: 300, r: 160, color: 'rgba(200,180,140,A)', a: 0.2, speed: 0.12, sway: 80 }); // пыль
+    const bob = Math.sin(t * 9) * 3, vy = 600 + bob;
+    c.fillStyle = '#2a2a26'; c.fillRect(620, vy - 120, 360, 130); c.fillRect(680, vy - 210, 240, 100); // кабина и кузов
+    c.fillStyle = '#3a4048'; c.fillRect(700, vy - 196, 200, 60); // стекло
+    c.fillStyle = '#e8e0d0'; c.beginPath(); c.ellipse(800, vy - 70, 44, 40, 0, 0, TAU); c.fill(); c.fillStyle = INK; c.beginPath(); c.arc(784, vy - 76, 10, 0, TAU); c.arc(816, vy - 76, 10, 0, TAU); c.fill(); c.fillRect(788, vy - 50, 24, 10); // череп на капоте
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 660, vy - 40, 60, 'rgba(255,240,200,A)', 0.5); glow(c, 940, vy - 40, 60, 'rgba(255,240,200,A)', 0.5); c.restore(); // фары днём
+    c.fillStyle = INK; c.beginPath(); c.arc(670, vy + 14, 30, 0, TAU); c.arc(930, vy + 14, 30, 0, TAU); c.fill();
+    const j = (t * 0.6) % 1; // прыгает с кузова
+    bandit(c, 640 - j * 200, vy - 120 + Math.sin(j * Math.PI) * -60 + j * 220, 1.6, t, { flip: 1 });
+    [[300, 820, 1.9, 1], [480, 760, 1.6, 1], [1120, 760, 1.6, 0], [1300, 820, 1.9, 0]].forEach(([x, y, s, f], i) => bandit(c, x + Math.sin(t * 0.6 + i) * 10 * (f ? -1 : 1), y, s, t, { flip: f }));
+    tex(c, '#3a2a1a', 0.14); vignette(c, 0.45); grain(c, t); frame(c);
+  };
+  S.m8_butcher_dead = (c, t) => { // проломленный прилавок, тесак в колоде, цепь на земле, мухи в столбе солнца
+    sky(c, [[0, '#cfc2a4'], [1, '#6a5a44']]);
+    c.fillStyle = '#8a7a5c'; c.fillRect(0, 640, W, 260);
+    c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,250,220,.18)'; c.beginPath(); c.moveTo(620, 0); c.lineTo(900, 0); c.lineTo(1100, 900); c.lineTo(560, 900); c.fill(); c.restore(); // столб солнца сквозь прореху в навесе
+    awning(c, 0, 40, 600, 50, '#c8b8a0', '#a85848'); awning(c, 940, 40, 660, 50, '#c8b8a0', '#a85848');
+    // проломленный прилавок
+    c.fillStyle = '#5a3e28'; c.save(); c.translate(560, 640); c.rotate(0.18); c.fillRect(0, -30, 260, 30); c.restore(); c.save(); c.translate(1080, 640); c.rotate(-0.22); c.fillRect(-260, -30, 260, 30); c.restore();
+    c.fillStyle = '#3a2618'; c.fillRect(560, 640, 20, 120); c.fillRect(1060, 640, 20, 120);
+    // Мясник лицом в обломках: горб спины, лямки фартука, свисающая рука
+    c.fillStyle = '#2a1e18'; c.beginPath(); c.moveTo(600, 700); c.quadraticCurveTo(640, 560, 820, 548); c.quadraticCurveTo(1000, 560, 1040, 700); c.closePath(); c.fill();
+    c.strokeStyle = '#5a1e16'; c.lineWidth = 12; c.beginPath(); c.moveTo(740, 560); c.lineTo(780, 700); c.moveTo(900, 560); c.lineTo(860, 700); c.stroke(); c.lineWidth = 8; c.beginPath(); c.moveTo(700, 630); c.quadraticCurveTo(820, 612, 940, 630); c.stroke();
+    c.fillStyle = '#2a1e18'; c.beginPath(); c.ellipse(1010, 610, 46, 40, 0.3, 0, TAU); c.fill(); // затылок
+    c.save(); c.translate(620, 640); c.rotate(0.3); c.fillStyle = '#2a1e18'; c.fillRect(-20, 0, 40, 130); c.fillStyle = '#8a6a58'; c.beginPath(); c.ellipse(0, 140, 24, 18, 0, 0, TAU); c.fill(); c.restore(); // рука свесилась с прилавка
+    c.fillStyle = 'rgba(130,18,12,.8)'; c.beginPath(); c.ellipse(820, 790, 260, 36, 0, 0, TAU); c.fill(); // лужа
+    // колода с тесаком
+    c.fillStyle = '#6a4a30'; c.fillRect(1260, 560, 180, 160); c.fillStyle = '#8a6a48'; c.beginPath(); c.ellipse(1350, 560, 90, 24, 0, 0, TAU); c.fill();
+    c.save(); c.translate(1350, 556); c.rotate(-0.12); c.fillStyle = '#5a3420'; c.fillRect(-8, -150, 16, 64); cleaver(c, 10, -90); c.restore(); // тесак в колоде
+    chain(c, 360, 680, 220, 700, 30, t);
+    flies(c, 820, 600, 160, t, 30); flies(c, 1350, 470, 60, t + 2, 8);
+    tex(c, '#2a1a10', 0.14); vignette(c, 0.45); grain(c, t); frame(c);
+  };
   S.epilogue = (c, t) => { // рассвет поднимается над пригородом, крошечная «буханка», длинные тени, вдали костёр
     const rise = Math.min(1, (t % 30) / 18);
     sky(c, [[0, `rgb(${40 + rise * 60},${44 + rise * 50},${60 + rise * 40})`], [0.55, `rgb(${120 + rise * 100},${90 + rise * 70},${70 + rise * 40})`], [1, '#1a1612']]);

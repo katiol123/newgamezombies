@@ -163,6 +163,7 @@
 
     _darkFor() {
       if (!this.g) return 0;
+      if (ZG.Levels.get(this.g.levelId).dayOnly) return 0.02; // день: поле светлое
       const ph = ZG.Engine.phase(this.g);
       return [0.2, 0.42, 0.58][ph] || 0.2;
     }
@@ -587,6 +588,30 @@
           if (h) { h.lunge = { t0: this.time, tx: to.x, ty: to.y }; }
           this._float(to.x, to.y - C * 0.2, 'стена!', '#e8dcc0', 1);
           this.addShake(3);
+          return 300;
+        }
+        case 'swing': {
+          // «Размах крюком»: красная дуга по всей зоне
+          const p = this.cellXY(ev.pos);
+          if (ZG.Sound) ZG.Sound.play('growl', { rate: 0.7 });
+          this.effects.push({ type: 'ring', x: p.x, y: p.y, color: '#ff4a3a', r: C * 0.6, t0: this.time, dur: 0.45 });
+          this._spark(p, 14, '#c0392b');
+          this._float(p.x, p.y - C * 0.45, 'РАЗМАХ ' + ev.n, '#ff6a4a', 1.2);
+          this.addShake(5);
+          return 380;
+        }
+        case 'chain': {
+          // цепь: искры по линии от зоны жертвы к Мяснику
+          const a = this.cellXY(ev.from), b = this.cellXY(ev.pos);
+          for (let i = 0; i <= 6; i++) this._spark({ x: a.x + (b.x - a.x) * i / 6, y: a.y + (b.y - a.y) * i / 6 }, 3, '#c8ccd0');
+          if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('bash');
+          return 250;
+        }
+        case 'blood': {
+          const e = this.zombies.get(ev.zombie);
+          const p = e || this.cellXY(ev.pos);
+          this._ring(p, '#c0392b', C * 0.5, 600);
+          this._float(p.x, p.y - C * 0.5, 'КРОВЬ ' + ev.n, '#ff4a3a', 1.3);
           return 300;
         }
         case 'scream': {

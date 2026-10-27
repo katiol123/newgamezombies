@@ -114,6 +114,7 @@
     const kb = (g.stats && g.stats.killsBy) || {};
     if (kb.bear) c.flags.bear = true;
     if (kb.forester) c.flags.forester = true;
+    if (g.scenarioId === 'market' && g.obj && g.obj.butcherDead) c.flags.butcher = true;
     if (g.scenarioId === 'bridge' && res.win) c.flags.bridge = g.obj && g.obj.way === 'quiet' ? 'quiet' : 'force'; // как добыт ключ (или банда перебита)
     if (g.scenarioId === 'forest' && g.obj && g.obj.attempted) c.flags.signal = true;
     // история похода — для эпилога (главы по миссиям)
