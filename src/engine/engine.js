@@ -1354,6 +1354,7 @@
       byHero[h.idx].incoming += dmg;
       g.stats.incoming = (g.stats.incoming || 0) + dmg;
       byHero[h.idx].attackers.push(z.uid);
+      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy]) ms(g.heroes[z.wokenBy], 'betrayals', dmg); // «Предатель»: натравленный зомби атакует союзника (сила атаки, до блока)
       z.attackedPhase = g.zphase; // атаковал в эту фазу (Невеста: за фазу — одна способность)
       E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: dmg });
     };
@@ -1464,12 +1465,6 @@
       E.fx(g, { t: 'wound', hero: h.idx, pos: h.pos, n: taken });
     } else E.log(g, `${E.heroName(h)} отражает атаку (${entry.incoming}).`, 'good');
     g.pending = null;
-    if (taken >= 2) {
-      // «Предатель»: укус (2+ урона) от зомби, которого разбудил или отвлёк другой герой
-      const by = new Set();
-      (entry.attackers || []).forEach((u) => { const z = E.zombie(g, u); if (z && z.wokenBy != null && z.wokenBy !== h.idx) by.add(z.wokenBy); });
-      by.forEach((i) => { if (g.heroes[i]) ms(g.heroes[i], 'betrayals'); });
-    }
     if (taken > 0) (entry.attackers || []).forEach((u) => {
       const z = E.zombie(g, u); if (!z) return;
       if (z.bitPhase !== g.zphase) { z.bitPhase = g.zphase; z.bitHeroes = []; }

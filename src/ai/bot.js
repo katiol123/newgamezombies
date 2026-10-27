@@ -91,6 +91,7 @@
       if (g.missionFirst === fh.idx) s += 150;
       else if (g.missionFirst == null && !fh.missionDone) {
         s += (E.missionProgress(g, fh) / m.goal) * 80;
+        if (m.traitor) s += traitorLure(g, fh);
       }
     }
     // заглушенные люки: каждый раунд тишины — меньше зомби
@@ -225,6 +226,22 @@
     return out;
   }
 
+  // «Предатель»: ценно, когда разбуженные или отвлечённые ИМ зомби оказываются рядом с союзником —
+  // но только если риска нет: сам предатель цел, союзнику есть куда падать, миссия не горит
+  function traitorLure(g, me) {
+    const left = E.maxRounds(g) - g.round;
+    if (left < 4 || g.alarm >= E.alarmThreshold(g) - 1) return 0; // время и Тревога — не до пакостей
+    if (E.hurtCount(g, me) * 2 >= E.maxHp(g, me)) return 0; // сам ранен — не до этого
+    const prey = g.heroes.filter((o) => o !== me && o.onBoard && E.maxHp(g, o) - E.hurtCount(g, o) >= 4); // союзник выдержит укус
+    if (!prey.length) return 0;
+    let v = 0;
+    g.zombies.forEach((z) => {
+      if (z.wokenBy !== me.idx || !z.awake || E.isBandit(z)) return;
+      prey.forEach((o) => { if (o.pos === z.pos && me.pos !== z.pos) v += 90; else if (g.board.adj[z.pos].includes(o.pos)) v += 45; });
+    });
+    return Math.min(v, 180);
+  }
+
   function candidateActions(g) {
     // give: ИИ передаёт только грузы — иначе слишком широкий перебор
     // «Ангел-хранитель» передаёт карты охотно, остальные — только грузы
@@ -308,7 +325,7 @@
     const me = g.heroes[idx];
     if (me && me.mission && !me.missionRedrawn && !me.missionDone && g.missionFirst == null) {
       const m = ZG.Missions.get(me.mission);
-      if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || m.traitor) E.act(g, { t: 'mredraw' });
+      if (m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) E.act(g, { t: 'mredraw' }); // «Предателя» ИИ оставляет и пакостит, когда это безопасно
     }
     for (let i = 0; i < 40; i++) {
       autoPending(g);
