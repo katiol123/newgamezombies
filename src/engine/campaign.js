@@ -69,7 +69,7 @@
   // Опции для ZG.Engine.create: отряд из ростера, перенос героев, блуждающие угрозы.
   C.startMission = function (c, squadIds) {
     if (c.status !== 'ready') return { error: 'Кампания не готова к миссии.' };
-    if (c.event) C.resolveEvent(c, C.aiEventChoice(c)); // нерешённое событие убежища решается «по-ИИ»
+    if (c.eventDraw && !c.eventDraw.done) C.resolveEvent(c, C.eventAI(c)); // нерешённое событие убежища решается «по-ИИ»
     const ids = squadIds || c.roster.slice(0, c.squad).map((h) => h.id);
     // героев можно взять меньше размера отряда (например, после потерь), но миссия считается на полный отряд
     if (!ids.length || ids.length > c.squad) return { error: `Нужно выбрать от 1 до ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
@@ -250,12 +250,7 @@
     else if (c.missionNo >= c.chainLength) { c.status = 'won'; c.endReason = 'Кампания пройдена!'; }
     else {
       c.status = 'ready';
-      // событие убежища «Паёк в долг»: самый бедный просит 2 🎫 у самого богатого (через раз)
-      const byT = c.roster.slice().sort((x, y) => x.talons - y.talons);
-      if (byT.length >= 2 && Rng.next(rng) < 0.5 && byT[byT.length - 1].talons >= 2 && byT[0] !== byT[byT.length - 1] && byT[0].talons < byT[byT.length - 1].talons) {
-        c.event = { type: 'ration', poor: byT[0].id, rich: byT[byT.length - 1].id };
-        if (C.hero(c, c.event.rich).ai) C.resolveEvent(c, C.aiEventChoice(c));
-      }
+      C.drawEvent(c); // фаза событий убежища: тянется карта из колоды (8 событий + 8 пустых)
       c.roster.forEach((h) => { if (h.ai) C.autoManage(c, h.id); });
       C.checkSquad(c);
     }
@@ -306,20 +301,35 @@
     h.talons -= p; h.injury--;
     return null;
   };
-  // События убежища. «Паёк в долг»: богатый отдаёт бедному 2 🎫 (отношения не меняются) или отказывает (−1).
-  C.EVENT_GIFT = 2;
-  C.aiEventChoice = function (c) {
-    const e = c.event; if (!e) return false;
-    const rich = C.hero(c, e.rich), P = CFG().prices;
-    return !!rich && rich.talons - C.EVENT_GIFT >= P.ration + Math.min(rich.injury, 2) * P.heal && C.rel(c, e.rich, e.poor) > -3;
+  // ---------------- помощники событий убежища
+  C.moraleAdd = (c, h, n) => { if (h) h.morale = Math.max(0, Math.min(CFG().morale.max, h.morale + n)); };
+  C.relAdd = (c, a, b, n) => C.relSet(c, a, b, C.rel(c, a, b) + n);
+  C.putChest = (c, h, id) => (h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(item(c, id));
+  C.injure = (c, h, n) => { h.injury = Math.min(C.baseHp(h) + C.hpTalents(h) - 1, h.injury + n); };
+  // Колода событий убежища: 8 событий по одной карте + 8 пустых; кончилась — перемешивается заново
+  C.eventDef = (id) => (ZG.SHELTER_EVENTS || []).find((d) => d.id === id) || null;
+  C.drawEvent = function (c) {
+    if (!c.eventDeck || !c.eventDeck.length) c.eventDeck = Rng.shuffle(c, (ZG.SHELTER_EVENTS || []).map((d) => d.id).concat((ZG.SHELTER_BLANKS || []).map((t, i) => 'blank' + i)));
+    const id = c.eventDeck.pop();
+    const def = C.eventDef(id);
+    if (!def) { c.eventDraw = { id, blank: true, done: true, result: (ZG.SHELTER_BLANKS || [])[+id.slice(5)] || 'Тихая ночь.' }; return c.eventDraw; }
+    if (!def.need(c)) { c.eventDraw = { id, done: true, skipped: true, result: 'Карта не разыгрывается: сейчас для неё нет участников.' }; return c.eventDraw; }
+    const e = Object.assign({ id }, def.setup(c));
+    e.story = def.story(c, e);
+    c.eventDraw = e;
+    if (C.hero(c, e.decider) && C.hero(c, e.decider).ai) C.resolveEvent(c, C.eventAI(c));
+    return e;
   };
-  C.resolveEvent = function (c, give) {
-    const e = c.event; if (!e) return 'Событий нет.';
-    const rich = C.hero(c, e.rich), poor = C.hero(c, e.poor);
-    c.event = null;
-    if (!rich || !poor) return null;
-    if (give && rich.talons >= C.EVENT_GIFT) { rich.talons -= C.EVENT_GIFT; poor.talons += C.EVENT_GIFT; c.eventLog = `Паёк в долг: ${ZG.Heroes.get(e.rich).name} → ${ZG.Heroes.get(e.poor).name}, ${C.EVENT_GIFT} 🎫.`; }
-    else { C.relSet(c, e.rich, e.poor, C.rel(c, e.rich, e.poor) - 1); c.eventLog = `Паёк в долг: ${ZG.Heroes.get(e.rich).name} — отказ (${ZG.Heroes.get(e.poor).name}), отношения −1.`; }
+  C.eventOptions = (c) => { const e = c.eventDraw, def = e && C.eventDef(e.id); return def && !e.done ? def.options(c, e) : []; };
+  C.eventAI = (c) => { const e = c.eventDraw, def = e && C.eventDef(e.id); if (!def) return null; const k = def.ai(c, e); const opt = def.options(c, e).find((o) => o.key === k && !o.off); return opt ? k : def.options(c, e).find((o) => !o.off).key; };
+  C.resolveEvent = function (c, key) {
+    const e = c.eventDraw, def = e && C.eventDef(e.id);
+    if (!def || e.done) return 'Событий нет.';
+    const opt = def.options(c, e).find((o) => o.key === key);
+    if (!opt || opt.off) return 'Этот вариант сейчас недоступен.';
+    e.key = key; e.choice = opt.label; e.done = true;
+    e.byAI = !!(C.hero(c, e.decider) || {}).ai;
+    e.result = def.apply(c, e, key);
     return null;
   };
 
@@ -399,6 +409,16 @@
         if (h.talons - price >= reserve) { h.talons -= price; it.worn = false; }
       });
     }
+    // постройки: ИИ строит активно — по приоритету, оставляя запас на паёк и лечение травм
+    const BUILD_ORDER = ['stash', 'infirmary', 'range', 'storage', 'workshop', 'bath', 'redcorner'];
+    const keep = CFG().prices.ration + Math.min(h.injury, 1) * CFG().prices.heal;
+    BUILD_ORDER.forEach((bId) => {
+      const b = ZG.Buildings.get(bId);
+      if (!b || C.built(h, bId) || h.talons - b.cost < keep) return;
+      if (bId === 'workshop' && !h.equip.concat(h.chest, h.junk).some((it) => it.worn)) return; // мастерская — когда есть что чинить
+      if (bId === 'bath' && h.morale > 2) return;
+      C.build(c, h.id, bId);
+    });
     // Тир: тренироваться, если после этого хватает на паёк и пару лечений
     if (C.canTrain(c, h) && h.talons - CFG().prices.train >= CFG().prices.ration + Math.min(h.injury, 2) * CFG().prices.heal) C.train(c, h.id);
     const survival = (it) => { const t = ZG.Cards.get(it.id).tags || []; return t.includes('heal') || t.includes('block') ? 4 : 0; };

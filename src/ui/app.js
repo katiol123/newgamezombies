@@ -1823,16 +1823,32 @@
       }
       Game.startCampaignMission(this.squad.slice());
     },
-    // событие убежища «Паёк в долг»: решает самый богатый
+    // фаза событий убежища: после миссии тянется карта; решение — за героем (ИИ решает сам, игрок — в этом окне)
     async showEvent(c) {
-      const e = c.event; if (!e || this._eventOpen) return;
+      const e = c.eventDraw; if (!e || e.seen || this._eventOpen) return;
       this._eventOpen = true;
+      const def = CMP.eventDef(e.id);
       const nm = (id) => esc(ZG.Heroes.get(id).name);
-      const r = CMP.rel(c, e.rich, e.poor);
-      const v = await Modal.show(`<div class="kicker">Событие убежища</div><h2>Паёк в долг</h2><p>Карманы почти пусты: <b>${nm(e.poor)}</b> (🎫 ${CMP.hero(c, e.poor).talons}) просит ${CMP.EVENT_GIFT} талона на паёк. Решает самый запасливый — <b>${nm(e.rich)}</b> (🎫 ${CMP.hero(c, e.rich).talons}).</p><p class="muted">Отношения сейчас: ${CMP.relName(r)} (${r > 0 ? '+' : ''}${r}). Поделиться — отношения не меняются, отказать — −1.</p>`,
-        [{ label: `Отдать ${CMP.EVENT_GIFT} 🎫`, value: 'give', cls: 'primary', modal: true }, { label: 'Отказать', value: 'no', modal: true }]);
+      const head = `<div class="kicker">Событие убежища · карта из колоды</div>`;
+      const card = (title, body, cls) => `<div class="ev-card ${cls || ''}"><div class="ev-back"></div><div class="ev-face"><div class="ev-title">${esc(title)}</div><div class="ev-text">${body}</div></div></div>`;
+      if (!def) {
+        await Modal.show(head + card('Тихая ночь', esc(e.result || ''), 'blank'), [{ label: 'Дальше', cls: 'primary' }], null, 'event');
+      } else if (e.skipped) {
+        await Modal.show(head + card(def.name, `<p>${esc(def.text)}</p><p class="muted">${esc(e.result)}</p>`), [{ label: 'Дальше', cls: 'primary' }], null, 'event');
+      } else if (!e.done) {
+        const opts = CMP.eventOptions(c);
+        const v = await Modal.show(head + card(def.name, `<p>${esc(e.story)}</p><p class="muted">${esc(def.text)}</p>`),
+          opts.map((o, i) => ({ label: o.label + (o.off ? ' — не хватает 🎫' : ''), value: o.key, cls: i === 0 ? 'primary' : '', modal: true, check: () => (o.off ? (toast('Не хватает талонов.'), false) : true) })), null, 'event');
+        const err = CMP.resolveEvent(c, v);
+        if (err) toast(err);
+        await Modal.show(head + card(def.name, `<p>${esc(e.result || '')}</p>`), [{ label: 'Дальше', cls: 'primary' }], null, 'event');
+      } else {
+        await Modal.show(head + card(def.name, `<p>${esc(e.story)}</p><p><b>${nm(e.decider)}${e.byAI ? ' (ИИ)' : ''}: «${esc(e.choice)}».</b></p><p>${esc(e.result || '')}</p>`), [{ label: 'Дальше', cls: 'primary' }], null, 'event');
+      }
+      e.seen = true;
       this._eventOpen = false;
-      this.act(() => CMP.resolveEvent(c, v === 'give'));
+      this.save();
+      this.render();
     },
     // эпилог кампании: финальная вставка и итоги пути
     epilogue(c) {
@@ -1860,8 +1876,7 @@
       this.renderReport(c);
       if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
-      if (c.eventLog) { toast(c.eventLog, 4200); c.eventLog = null; this.save(); }
-      if (c.event && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
+      if (c.eventDraw && !c.eventDraw.seen && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
       if (!done && md.special && md.special.length) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${md.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`);

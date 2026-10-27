@@ -59,6 +59,7 @@
 <script src="src/data/scenarios.js"></script>
 <script src="src/data/events.js"></script>
   <script src="src/data/missions.js"></script>
+<script src="src/data/campaign.js"></script>
 <script src="src/data/levels.js"></script>
 <script src="src/engine/board.js"></script>
 <script src="src/render/art.js"></script>
@@ -132,6 +133,12 @@
   wideSheets('Секретные миссии', ZG.MISSION_DECK.map((id) => CV.missionCard(id)));
   wideSheets('Бонусные цели', lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; return d; }));
 
+  // события убежища (кампания): 8 событий + 8 пустых, перемешать и тянуть по карте после каждой миссии
+  if (ZG.SHELTER_EVENTS) {
+    const evEls = ZG.SHELTER_EVENTS.map((d) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">СОБЫТИЕ УБЕЖИЩА</div><div class="scen-name">${d.name}</div><div class="scen-brief">${d.text}</div>`; return e; })
+      .concat((ZG.SHELTER_BLANKS || []).map((t) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">СОБЫТИЕ УБЕЖИЩА</div><div class="scen-name">Тихая ночь</div><div class="scen-brief">${t}</div><div class="scen-setup">Ничего не происходит.</div>`; return e; }));
+    wideSheets('Кампания: события убежища (перемешайте; после каждой миссии — 1 карта)', evEls);
+  }
   // сюжетные события кампании: режьте, переворачивайте и не читайте заранее — тянутся по условию на карте
   const plots = ZG.Scenarios.all().filter((d) => d.plotCard).map((d) => CV.plotCard(d.id));
   if (plots.length) {

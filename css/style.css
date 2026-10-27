@@ -929,3 +929,15 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .gv-inner { width: min(100%, 1100px); max-height: 100%; overflow-y: auto; }
 .gv-inner canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; background: #000; }
 .gv-text { padding: 12px 4px 0; }
+
+/* событие убежища: карта переворачивается из колоды */
+.modal-box.event { max-width: 560px; }
+.ev-card { position: relative; margin: 10px auto 4px; width: 100%; max-width: 480px; perspective: 900px; }
+.ev-card .ev-face { position: relative; padding: 16px 18px; border-radius: 10px; background: linear-gradient(160deg, #3a2c20, #221811); border: 2px solid #8a6a3a; box-shadow: 0 6px 18px rgba(0,0,0,.5); animation: evFlip .6s ease-out both; transform-origin: center; backface-visibility: hidden; }
+.ev-card.blank .ev-face { border-color: #4a4a4a; background: linear-gradient(160deg, #2a2a2a, #1a1a1a); }
+.ev-card .ev-back { display: none; }
+.ev-title { font-family: var(--font-d); font-size: 22px; color: #e0a83a; margin-bottom: 8px; }
+.ev-card.blank .ev-title { color: #a8a8a8; }
+.ev-text p { margin: 6px 0; }
+@keyframes evFlip { 0% { transform: rotateY(90deg) scale(.9); opacity: 0; } 60% { transform: rotateY(-8deg) scale(1.02); opacity: 1; } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ev-card .ev-face { animation: none; } }

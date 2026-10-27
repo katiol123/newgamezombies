@@ -306,3 +306,145 @@
     },
   ]);
 })(typeof globalThis !== "undefined" ? globalThis : window);
+
+// ============================================================ события убежища
+// Колода: 8 событий по 1 карте + 8 пустых («Тихая ночь»). После каждой успешной миссии тянется одна карта.
+// Решение принимает указанный герой: под ИИ — решает бот, под игроком — игрок.
+// need(c) — можно ли разыграть (иначе карта уходит без эффекта); setup(c) — участники; options(c, e) — варианты;
+// ai(c, e) — выбор бота; apply(c, e, key) — последствия, возвращает текст итога. Помощники — ZG.Campaign (C).
+(function (G) {
+  const ZG = G.ZG;
+  const C = () => ZG.Campaign;
+  const name = (id) => ZG.Heroes.get(id).name;
+  const R = () => ZG.CAMPAIGN.prices;
+  const reserve = (h) => R().ration + Math.min(h.injury, 2) * R().heal; // запас ИИ: паёк и пара лечений
+  const richest = (c) => c.roster.slice().sort((a, b) => b.talons - a.talons)[0];
+  const rareLoot = () => Object.keys(ZG.Levels.get('outskirts').loot).filter((id) => { const d = ZG.Cards.get(id); return !d.event && d.rarity === 'rare'; });
+  ZG.SHELTER_EVENTS = [
+    {
+      id: 'ration', name: 'Паёк в долг',
+      text: 'Самый бедный герой просит 2 🎫 на паёк у самого богатого. Поделиться — без последствий; отказать — отношения между ними −1. Если в убежище один герой — карта не разыгрывается.',
+      need: (c) => { const s = c.roster.slice().sort((a, b) => a.talons - b.talons); return s.length >= 2 && s[s.length - 1].talons >= 2 && s[0].talons < s[s.length - 1].talons; },
+      setup: (c) => { const s = c.roster.slice().sort((a, b) => a.talons - b.talons); return { decider: s[s.length - 1].id, other: s[0].id }; },
+      story: (c, e) => `Карманы почти пусты: ${name(e.other)} (🎫 ${C().hero(c, e.other).talons}) просит 2 талона на паёк. Решает самый запасливый — ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
+      options: () => [{ key: 'give', label: 'Отдать 2 🎫' }, { key: 'no', label: 'Отказать (отношения −1)' }],
+      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 2 >= reserve(h) && C().rel(c, e.decider, e.other) > -3 ? 'give' : 'no'; },
+      apply: (c, e, key) => {
+        const a = C().hero(c, e.decider), b = C().hero(c, e.other);
+        if (key === 'give' && a.talons >= 2) { a.talons -= 2; b.talons += 2; return `${name(e.decider)} отдаёт 2 🎫 — ${name(e.other)} не останется без пайка.`; }
+        C().relAdd(c, e.decider, e.other, -1); return `${name(e.decider)} отказывает. Отношения с ${name(e.other)} −1.`;
+      },
+    },
+    {
+      id: 'refugees', name: 'Беженцы у ворот',
+      text: 'Женщина с двумя детьми просит еды. Решает самый богатый: накормить (3 🎫) — +1 мораль всем; прогнать — −1 мораль решавшему.',
+      need: (c) => c.roster.length >= 1,
+      setup: (c) => ({ decider: richest(c).id }),
+      story: (c, e) => `У ворот — женщина с двумя детьми. Дети молчат и смотрят на ваши консервы. Решает ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
+      options: (c, e) => [{ key: 'feed', label: 'Накормить (3 🎫)', off: C().hero(c, e.decider).talons < 3 }, { key: 'no', label: 'Прогнать (−1 мораль)' }],
+      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 3 >= reserve(h) ? 'feed' : 'no'; },
+      apply: (c, e, key) => {
+        const h = C().hero(c, e.decider);
+        if (key === 'feed' && h.talons >= 3) { h.talons -= 3; c.roster.forEach((o) => C().moraleAdd(c, o, 1)); return 'Беженцев накормили. Впервые за долгое время в убежище кто-то улыбнулся: +1 мораль всем.'; }
+        C().moraleAdd(c, h, -1); return `Ворота закрыты. ${name(e.decider)} долго не может уснуть: −1 мораль.`;
+      },
+    },
+    {
+      id: 'stranger', name: 'Укушенный незнакомец',
+      text: 'Ночью в ворота стучит раненый. Впустить: 50% — отблагодарит редкой картой (в сундук решавшего), 50% — обратится ночью: случайный герой −1 Стойкость, решавший −1 мораль. Не открывать — ничего.',
+      need: (c) => c.roster.length >= 1,
+      setup: (c) => ({ decider: ZG.Rng.pick(c, c.roster).id }),
+      story: (c, e) => `Глубокой ночью — слабый стук в ворота. За ними мужчина, рукав в крови: «Это гвоздь… просто гвоздь». Решает ${name(e.decider)}.`,
+      options: () => [{ key: 'open', label: 'Впустить (риск)' }, { key: 'no', label: 'Не открывать' }],
+      ai: (c) => (c.roster.every((h) => C().hp(h) >= 3) ? 'open' : 'no'),
+      apply: (c, e, key) => {
+        if (key !== 'open') return 'Стук стихает к утру. Никто не выходит проверить.';
+        const h = C().hero(c, e.decider);
+        if (ZG.Rng.next(c) < 0.5) { const id = ZG.Rng.pick(c, rareLoot()); C().putChest(c, h, id); return `Незнакомец оказался честен. Уходя на рассвете, он оставил ${name(e.decider)} «${ZG.Cards.get(id).name}».`; }
+        const v = ZG.Rng.pick(c, c.roster); C().injure(c, v, 1); C().moraleAdd(c, h, -1);
+        return `Под утро незнакомец поднялся — уже не человеком. ${name(v.id)} ранен в схватке (−1 Стойкость), ${name(e.decider)} винит себя (−1 мораль).`;
+      },
+    },
+    {
+      id: 'quarrel', name: 'Ссора',
+      text: 'Двое героев с худшими отношениями ссорятся. Один из них решает: уступить — отношения +1, его мораль −1; стоять на своём — отношения −1. Нужно 2+ героя.',
+      need: (c) => c.roster.length >= 2,
+      setup: (c) => {
+        let best = null;
+        c.roster.forEach((a, i) => c.roster.slice(i + 1).forEach((b) => { const r = C().rel(c, a.id, b.id); if (!best || r < best.r) best = { r, a: a.id, b: b.id }; }));
+        return ZG.Rng.next(c) < 0.5 ? { decider: best.a, other: best.b } : { decider: best.b, other: best.a };
+      },
+      story: (c, e) => `Из-за последней банки тушёнки ${name(e.decider)} и ${name(e.other)} сцепились всерьёз. Ещё слово — и дойдёт до кулаков. Решает ${name(e.decider)}.`,
+      options: () => [{ key: 'yield', label: 'Уступить (отношения +1, мораль −1)' }, { key: 'stand', label: 'Стоять на своём (отношения −1)' }],
+      ai: (c, e) => (C().hero(c, e.decider).morale >= 3 ? 'yield' : 'stand'),
+      apply: (c, e, key) => {
+        if (key === 'yield') { C().relAdd(c, e.decider, e.other, 1); C().moraleAdd(c, C().hero(c, e.decider), -1); return `${name(e.decider)} уступает. Обидно, но мир дороже: отношения +1, мораль −1.`; }
+        C().relAdd(c, e.decider, e.other, -1); return `Ни один не уступил. Отношения ${name(e.decider)} и ${name(e.other)} −1.`;
+      },
+    },
+    {
+      id: 'trader', name: 'Бродячий торговец',
+      text: 'Торговец с тележкой предлагает редкую карту за 6 🎫. Решает самый богатый: купить (карта — в его сундук) или отказаться.',
+      need: (c) => c.roster.length >= 1,
+      setup: (c) => ({ decider: richest(c).id, card: ZG.Rng.pick(c, rareLoot()) }),
+      story: (c, e) => `К воротам подкатывает тележка, скрипучая на всю улицу. Торговец в противогазе молча показывает товар: «${ZG.Cards.get(e.card).name}». Цена — 6 🎫. Решает ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
+      options: (c, e) => [{ key: 'buy', label: 'Купить (6 🎫)', off: C().hero(c, e.decider).talons < 6 }, { key: 'no', label: 'Отказаться' }],
+      ai: (c, e) => { const h = C().hero(c, e.decider); return h.talons - 6 >= reserve(h) ? 'buy' : 'no'; },
+      apply: (c, e, key) => {
+        const h = C().hero(c, e.decider);
+        if (key === 'buy' && h.talons >= 6) { h.talons -= 6; C().putChest(c, h, e.card); return `${name(e.decider)} покупает «${ZG.Cards.get(e.card).name}».`; }
+        return 'Тележка скрипит дальше по улице.';
+      },
+    },
+    {
+      id: 'basement', name: 'Запертый подвал',
+      text: 'Под убежищем нашли запертую дверь. Вскрыть: 50% — 2 расходника в сундук решавшего, 50% — там мертвец: решавший −1 Стойкость. Заколотить — ничего.',
+      need: (c) => c.roster.length >= 1,
+      setup: (c) => ({ decider: ZG.Rng.pick(c, c.roster).id }),
+      story: (c, e) => `Разбирая завал, ${name(e.decider)} находит в полу железную дверь с ржавым замком. Из-под неё тянет холодом… и чем-то ещё.`,
+      options: () => [{ key: 'open', label: 'Вскрыть (риск)' }, { key: 'no', label: 'Заколотить' }],
+      ai: (c, e) => (C().hp(C().hero(c, e.decider)) >= 3 ? 'open' : 'no'),
+      apply: (c, e, key) => {
+        if (key !== 'open') return 'Дверь заколотили досками. Иногда по ночам оттуда что-то скребётся.';
+        const h = C().hero(c, e.decider);
+        if (ZG.Rng.next(c) < 0.5) { const a = ZG.Rng.pick(c, C().STASH), b = ZG.Rng.pick(c, C().STASH); C().putChest(c, h, a); C().putChest(c, h, b); return `Довоенный склад! ${name(e.decider)} забирает «${ZG.Cards.get(a).name}» и «${ZG.Cards.get(b).name}».`; }
+        C().injure(c, h, 1); return `В темноте подвала кто-то ждал. ${name(e.decider)} отбился, но ранен (−1 Стойкость).`;
+      },
+    },
+    {
+      id: 'watch', name: 'Ночная вахта',
+      text: 'Кто-то должен не спать всю ночь. Решает герой с самой высокой моралью: вызваться самому — его мораль −1, отношения с остальными +1; тянуть жребий — случайный другой герой −1 мораль. Нужно 2+ героя.',
+      need: (c) => c.roster.length >= 2,
+      setup: (c) => ({ decider: c.roster.slice().sort((a, b) => b.morale - a.morale)[0].id }),
+      story: (c, e) => `Снаружи всю ночь что-то бродит вдоль стен. Кому-то придётся сидеть у окна до рассвета. Решает ${name(e.decider)}.`,
+      options: () => [{ key: 'self', label: 'Вызваться самому' }, { key: 'lots', label: 'Тянуть жребий' }],
+      ai: (c, e) => (C().hero(c, e.decider).morale >= 4 ? 'self' : 'lots'),
+      apply: (c, e, key) => {
+        const h = C().hero(c, e.decider);
+        if (key === 'self') { C().moraleAdd(c, h, -1); c.roster.forEach((o) => { if (o !== h) C().relAdd(c, h.id, o.id, 1); }); return `${name(e.decider)} всю ночь на вахте: мораль −1, но остальные это запомнили (отношения +1).`; }
+        const v = ZG.Rng.pick(c, c.roster.filter((o) => o !== h)); C().moraleAdd(c, v, -1); return `Жребий выпал ${name(v.id)}: бессонная ночь, мораль −1.`;
+      },
+    },
+    {
+      id: 'generator', name: 'Сломался генератор',
+      text: 'Генератор заглох. Решает владелец Мастерской (если нет — самый богатый): починить за 4 🎫 (с Мастерской — 2 🎫) — +1 мораль всем; сидеть в темноте — −1 мораль всем.',
+      need: (c) => c.roster.length >= 1,
+      setup: (c) => ({ decider: (c.roster.find((h) => C().built(h, 'workshop')) || richest(c)).id }),
+      cost: (c, e) => (C().built(C().hero(c, e.decider), 'workshop') ? 2 : 4),
+      story: (c, e) => `Генератор кашлянул и затих. В темноте каждый шорох за стеной кажется шагами. Решает ${name(e.decider)} (🎫 ${C().hero(c, e.decider).talons}).`,
+      options(c, e) { const p = this.cost(c, e); return [{ key: 'fix', label: `Починить (${p} 🎫)`, off: C().hero(c, e.decider).talons < p }, { key: 'no', label: 'Сидеть в темноте (−1 мораль всем)' }]; },
+      ai(c, e) { const h = C().hero(c, e.decider); return h.talons - this.cost(c, e) >= reserve(h) ? 'fix' : 'no'; },
+      apply(c, e, key) {
+        const h = C().hero(c, e.decider), p = this.cost(c, e);
+        if (key === 'fix' && h.talons >= p) { h.talons -= p; c.roster.forEach((o) => C().moraleAdd(c, o, 1)); return `${name(e.decider)} запускает генератор. Свет! +1 мораль всем.`; }
+        c.roster.forEach((o) => C().moraleAdd(c, o, -1)); return 'Ночь в темноте. Никто не спал: −1 мораль всем.';
+      },
+    },
+  ];
+  ZG.SHELTER_BLANKS = [
+    'Тихая ночь. Даже собаки не воют.', 'Дождь барабанит по крыше до утра. Спится на удивление крепко.',
+    'Кто-то нашёл колоду карт. Играли до рассвета.', 'Ночь прошла спокойно. Подозрительно спокойно.',
+    'По радио — только треск. Но кто-то упрямо крутит ручку.', 'Утро серое, как всегда. Ничего не случилось.',
+    'Вдалеке горел склад. Зарево до утра, но к вам никто не пришёл.', 'Тишина. Даже мертвецы, кажется, устали.',
+  ];
+})(typeof globalThis !== 'undefined' ? globalThis : window);
