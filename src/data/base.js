@@ -97,6 +97,10 @@
       text: 'Гремит: в фазу зомби Тревога +1. Броня 1.', art: 'z_turned_gosha',
       hooks: { zombiePhase(g, z, E) { E.raiseAlarm(g, 1, 'Гоша-Обращённый гремит'); } },
     },
+    {
+      id: 'turned_gleb', name: 'Глеб-Обращённый', hp: 5, dmg: 3, speed: 1, xp: 5, armor: 0, threat: 9, big: true, turned: 'gleb',
+      text: 'Двойной хват: бьёт сразу двумя руками — 3 урона.', art: 'z_turned_gleb',
+    },
   ]);
 
   // ---------------------------------------------------------- Служебные ---

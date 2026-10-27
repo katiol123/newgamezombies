@@ -425,6 +425,134 @@
     c.save(); c.translate(90, 0); c.rotate(t * 0.8); c.lineWidth = 3; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(i) * 60, Math.sin(i) * 60); c.stroke(); } c.restore(); c.restore(); // колесо крутится
     tex(c, '#000', 0.2); vignette(c, 0.6); grain(c, t); frame(c);
   };
+  // --- Миссия 7 «Белый лебедь» ---
+  function veilFigure(c, x, y, s, t, o) { // невеста: белое платье и фата, голова медленно поворачивается
+    o = o || {};
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.fillStyle = o.dress || '#e8e2d6'; c.beginPath(); c.moveTo(-60, 0); c.quadraticCurveTo(-30, -110, -16, -150); c.lineTo(16, -150); c.quadraticCurveTo(30, -110, 60, 0); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(150,20,14,.85)'; c.beginPath(); c.ellipse(-8, -130, 10, 14, 0.3, 0, TAU); c.fill(); // тёмное пятно на плече
+    const turn = Math.sin(t * 0.4) * 6;
+    c.fillStyle = 'rgba(236,230,220,.55)'; c.beginPath(); c.moveTo(-6 + turn, -190); c.quadraticCurveTo(-60, -150, -52, -60); c.lineTo(52, -60); c.quadraticCurveTo(60, -150, 6 + turn, -190); c.fill(); // фата
+    c.fillStyle = '#b8c2a8'; c.beginPath(); c.ellipse(turn, -168, 15, 19, 0, 0, TAU); c.fill();
+    c.fillStyle = '#e8d070'; for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(turn - 14 + i * 7, -186, 3, 0, TAU); c.fill(); } // венок
+    if (o.eyes !== false) { c.fillStyle = BLOOD; c.beginPath(); c.arc(turn - 6, -170, 2.4, 0, TAU); c.arc(turn + 6, -170, 2.4, 0, TAU); c.fill(); }
+    c.restore();
+  }
+  function bandit(c, x, y, s, t, o) { // силуэт «Волка» в балаклаве с черепом
+    o = o || {};
+    c.save(); c.translate(x, y); c.scale(s * (o.flip ? -1 : 1), s);
+    c.fillStyle = INK; c.beginPath(); c.moveTo(-24, 0); c.lineTo(-20, -90); c.quadraticCurveTo(0, -110, 20, -90); c.lineTo(24, 0); c.fill();
+    c.beginPath(); c.ellipse(0, -118, 15, 19, 0, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(216,208,192,.85)'; c.beginPath(); c.ellipse(0, -114, 9, 11, 0, 0, TAU); c.fill(); // череп-принт
+    c.fillStyle = INK; c.beginPath(); c.arc(-4, -116, 2.6, 0, TAU); c.arc(4, -116, 2.6, 0, TAU); c.fill();
+    if (o.glow) { c.fillStyle = `rgba(255,120,40,${o.glow})`; c.fillRect(-24, -92, 48, 5); } // отсвет костра
+    c.restore();
+  }
+  S.m7_start = (c, t) => { // окно банкетного зала: мёртвые гости кружат без музыки, в центре — невеста
+    sky(c, [[0, '#14121a'], [1, '#050405']]);
+    c.fillStyle = '#2a2018'; c.fillRect(220, 120, 1160, 560); // рама окна
+    const g = c.createLinearGradient(0, 140, 0, 660); g.addColorStop(0, '#5a4630'); g.addColorStop(1, '#2a1c12'); c.fillStyle = g; c.fillRect(240, 140, 1120, 520); // тёплый тусклый свет зала
+    c.save(); c.beginPath(); c.rect(240, 140, 1120, 520); c.clip();
+    c.save(); c.globalCompositeOperation = 'lighter'; [500, 800, 1100].forEach((x, i) => glow(c, x, 170, 160, 'rgba(255,200,120,A)', 0.18 + Math.sin(t * 3 + i) * 0.04)); c.restore(); // люстры
+    for (let i = 0; i < 9; i++) { const ph = t * 0.35 + i * 0.7, x = 800 + Math.cos(ph) * (200 + (i % 3) * 120), y = 640 + Math.sin(ph) * 20; if (Math.abs(x - 800) < 60) continue; walker(c, x, y, 1.6 + (i % 2) * 0.2, t, { ph: i, flip: Math.sin(ph) > 0, fill: '#1a1410' }); }
+    veilFigure(c, 800, 650, 1.6, t);
+    c.restore();
+    c.fillStyle = INK; c.fillRect(790, 120, 20, 560); c.fillRect(220, 400, 1160, 16); // переплёт
+    c.fillStyle = '#0c0a0a'; c.fillRect(0, 720, W, 180); // асфальт
+    c.fillStyle = 'rgba(232,220,192,.55)'; for (let i = 0; i < 90; i++) { c.fillRect((i * 173) % W, 740 + (i * 61) % 150, 4, 2); } // рассыпанный рис
+    c.save(); c.translate(1180, 820); c.rotate(-0.3); c.fillStyle = '#e8e2d6'; c.beginPath(); c.moveTo(-50, 0); c.quadraticCurveTo(-10, -26, 40, -14); c.lineTo(46, 4); c.closePath(); c.fill(); c.restore(); // туфля без каблука
+    c.strokeStyle = 'rgba(200,190,180,.35)'; c.lineWidth = 8; for (let i = 0; i < 6; i++) { const x = 120 + i * 260; c.beginPath(); c.moveTo(x, 700); c.quadraticCurveTo(x + 30, 760 + Math.sin(t + i) * 10, x + 10, 840); c.stroke(); } // ленты на ограде
+    tex(c, '#000', 0.22); vignette(c, 0.75); grain(c, t); frame(c);
+  };
+  S.m7_scream = (c, t) => { // вопль: волны звука из раскрытого рта, карты вылетают из рук
+    sky(c, [[0, '#1c1424'], [1, '#07050a']]);
+    const sh = Math.sin(t * 40) * 4; c.save(); c.translate(sh, -sh);
+    for (let k = 0; k < 7; k++) { const p = (t * 0.6 + k / 7) % 1; c.strokeStyle = `rgba(200,140,255,${0.55 * (1 - p)})`; c.lineWidth = 10 * (1 - p) + 2; c.beginPath(); c.ellipse(800, 470, 80 + p * 760, 60 + p * 460, 0, 0, TAU); c.stroke(); }
+    c.fillStyle = 'rgba(236,230,220,.5)'; c.beginPath(); c.moveTo(800, 170); c.quadraticCurveTo(560, 330, 600, 760); c.lineTo(1000, 760); c.quadraticCurveTo(1040, 330, 800, 170); c.fill(); // фата
+    c.fillStyle = '#b8c2a8'; c.beginPath(); c.ellipse(800, 420, 120, 160, 0, 0, TAU); c.fill(); // лицо
+    c.fillStyle = BLOOD; c.beginPath(); c.arc(756, 380, 12, 0, TAU); c.arc(844, 380, 12, 0, TAU); c.fill();
+    const m = 0.85 + Math.sin(t * 6) * 0.15; c.fillStyle = '#1a0405'; c.beginPath(); c.ellipse(800, 500, 46, 80 * m, 0, 0, TAU); c.fill(); // распахнутый рот
+    c.restore();
+    for (let i = 0; i < 6; i++) { const p = (t * 0.35 + i / 6) % 1, x = 800 + Math.cos(i * 1.7) * p * 900, y = 470 + Math.sin(i * 1.7) * p * 520; c.save(); c.translate(x, y); c.rotate(p * 6 + i); c.globalAlpha = 1 - p; c.fillStyle = PAPER; c.fillRect(-36, -50, 72, 100); c.strokeStyle = INK; c.lineWidth = 3; c.strokeRect(-36, -50, 72, 100); c.restore(); } // карты из рук
+    tex(c, '#000', 0.2); vignette(c, 0.7); grain(c, t); frame(c);
+  };
+  S.m7_prisoner = (c, t) => { // костёр, человек у столба, «Волки» смеются; один смотрит на часы
+    sky(c, [[0, '#0e0c10'], [1, '#050404']]);
+    c.fillStyle = '#0c0a08'; c.fillRect(0, 700, W, 200);
+    const f = 0.8 + Math.sin(t * 9) * 0.1 + Math.sin(t * 23) * 0.05;
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 800, 720, 520 * f, 'rgba(255,120,40,A)', 0.35); c.restore();
+    for (let i = 0; i < 5; i++) { const ph = t * 4 + i; c.fillStyle = i % 2 ? '#ffb040' : '#ff6a20'; c.beginPath(); c.moveTo(740 + i * 30, 740); c.quadraticCurveTo(760 + i * 28 + Math.sin(ph) * 10, 640 - (i % 3) * 30, 770 + i * 25, 600 - (i % 2) * 40 + Math.sin(ph) * 15); c.quadraticCurveTo(780 + i * 26, 680, 800 + i * 25, 740); c.fill(); }
+    smoke(c, 800, 600, t, { n: 14, h: 480, spread: 40, r: 90, color: 'rgba(120,110,100,A)', a: 0.12, speed: 0.06 });
+    c.fillStyle = '#3a2a1e'; c.fillRect(1086, 260, 24, 460); // столб
+    const up = Math.max(0, Math.sin(t * 0.5)); // поднимает голову
+    c.fillStyle = '#4a382c'; c.strokeStyle = 'rgba(255,150,70,.85)'; c.lineWidth = 5; // отсвет костра по контуру — пленник читается
+    c.beginPath(); c.moveTo(1060, 700); c.lineTo(1066, 470); c.quadraticCurveTo(1098, 440, 1130, 470); c.lineTo(1136, 700); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#9a7a64'; c.beginPath(); c.ellipse(1098 + 6 * (1 - up), 430 + 18 * (1 - up), 22, 27, 0, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(150,30,20,.8)'; c.beginPath(); c.ellipse(1090 + 6 * (1 - up), 420 + 18 * (1 - up), 8, 6, 0, 0, TAU); c.fill(); // кровь на лице
+    c.strokeStyle = '#9aa0a6'; c.lineWidth = 3; for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(1098, 520 + i * 22, 44, 9, 0, 0, TAU); c.stroke(); } // проволока
+    c.fillStyle = INK; c.beginPath(); c.arc(1091 + 6 * (1 - up), 430 + 18 * (1 - up), 2.6, 0, TAU); c.arc(1105 + 6 * (1 - up), 430 + 18 * (1 - up), 2.6, 0, TAU); c.fill();
+    c.fillStyle = '#4a3a28'; c.fillRect(300, 640, 160, 70); c.fillStyle = '#2a1e14'; [330, 400].forEach((x) => { c.save(); c.translate(x, 640); c.rotate(x === 330 ? -0.5 : 0.5); c.fillRect(-12, -46, 24, 50); c.restore(); }); // ящик и две пустые кобуры
+    [[520, 1.7, 0], [640, 1.9, 1], [1300, 1.8, 0], [1440, 1.6, 1]].forEach(([x, s, fl], i) => bandit(c, x, 720, s, t, { flip: fl, glow: 0.4 * f }));
+    c.save(); c.translate(1300, 560); c.strokeStyle = GOLD; c.lineWidth = 3; c.beginPath(); c.arc(-30, 0, 9, 0, TAU); c.stroke(); c.beginPath(); c.moveTo(-30, 0); c.lineTo(-30 + Math.cos(t * 2) * 7, Math.sin(t * 2) * 7); c.stroke(); c.restore(); // часы
+    tex(c, '#000', 0.22); vignette(c, 0.7); grain(c, t); frame(c);
+  };
+  S.m7_rescue = (c, t) => { // кусачки рвут проволоку; два пистолета крест-накрест; первый серый свет
+    sky(c, [[0, '#3a3a44'], [0.6, '#5a5048'], [1, '#1a1614']]);
+    const cut = Math.min(1, (t * 0.4) % 2.2);
+    c.strokeStyle = '#9aa0a6'; c.lineWidth = 8; c.beginPath(); c.moveTo(200, 300); c.lineTo(780 - (cut > 0.8 ? 60 : 0), 300 + (cut > 0.8 ? 80 : 0)); c.moveTo(820 + (cut > 0.8 ? 60 : 0), 300 + (cut > 0.8 ? 80 : 0)); c.lineTo(1400, 300); c.stroke(); // проволока
+    if (cut > 0.75 && cut < 0.95) { c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 800, 300, 90, 'rgba(255,240,200,A)', 0.9); c.restore(); }
+    c.save(); c.translate(800, 300); const k = cut < 0.8 ? 0.35 - cut * 0.4 : 0.03; // кусачки
+    [-1, 1].forEach((d) => { c.save(); c.rotate(d * k); c.fillStyle = '#c0392b'; c.fillRect(-14 + d * 6, 40, 22, 200); c.fillStyle = '#6a6e72'; c.beginPath(); c.moveTo(d * 4, 40); c.lineTo(d * 20, -30); c.lineTo(d * 2, -40); c.fill(); c.restore(); });
+    c.restore();
+    // два пистолета крест-накрест: затвор, ствол, рукоять под углом, спусковая скоба
+    [[-1, 560], [1, 1040]].forEach(([d, x]) => {
+      c.save(); c.translate(x, 640); c.rotate(d * 0.5); c.scale(d, 1);
+      c.fillStyle = '#4a4e54'; c.strokeStyle = INK; c.lineWidth = 6;
+      c.beginPath(); c.moveTo(-170, -40); c.lineTo(110, -40); c.lineTo(110, 10); c.lineTo(-170, 10); c.closePath(); c.fill(); c.stroke(); // затвор
+      c.fillStyle = '#2a2e32'; c.fillRect(-196, -24, 30, 22); c.strokeRect(-196, -24, 30, 22); // дуло
+      c.fillStyle = '#5a3a24'; c.beginPath(); c.moveTo(40, 10); c.lineTo(110, 10); c.lineTo(140, 150); c.lineTo(76, 160); c.closePath(); c.fill(); c.stroke(); // рукоять
+      c.beginPath(); c.arc(20, 30, 28, 0, Math.PI); c.stroke(); // скоба
+      c.strokeStyle = 'rgba(232,220,192,.35)'; c.lineWidth = 3; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(40 + i * 12, -34); c.lineTo(40 + i * 12, 4); c.stroke(); } // насечки
+      c.restore();
+    });
+    c.fillStyle = PAPER; c.font = "900 66px Impact, sans-serif"; c.textAlign = 'center'; c.globalAlpha = 0.9; c.fillText('СТРЕЛЯЮ С ДВУХ РУК', 800, 830); c.globalAlpha = 1;
+    tex(c, '#000', 0.18); vignette(c, 0.55); grain(c, t); frame(c);
+  };
+  S.m7_executed = (c, t) => { // костёр, обмякшая фигура на столбе; вспышка выстрела повторяется в памяти
+    sky(c, [[0, '#120a0a'], [1, '#040303']]);
+    c.fillStyle = '#0c0a08'; c.fillRect(0, 700, W, 200);
+    const f = 0.8 + Math.sin(t * 8) * 0.1; c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 900, 720, 620 * f, 'rgba(255,110,40,A)', 0.45); c.restore();
+    for (let i = 0; i < 4; i++) { const ph = t * 4 + i; c.fillStyle = i % 2 ? '#ffb040' : '#ff6a20'; c.beginPath(); c.moveTo(860 + i * 26, 740); c.quadraticCurveTo(870 + i * 26 + Math.sin(ph) * 8, 660, 880 + i * 22, 620 + Math.sin(ph) * 14); c.quadraticCurveTo(890 + i * 24, 690, 905 + i * 24, 740); c.fill(); } // костёр
+    c.fillStyle = '#3a2a1e'; c.fillRect(1086, 260, 24, 460);
+    c.fillStyle = '#4a382c'; c.strokeStyle = 'rgba(255,150,70,.8)'; c.lineWidth = 5;
+    c.beginPath(); c.moveTo(1066, 700); c.lineTo(1070, 480); c.quadraticCurveTo(1100, 460, 1128, 480); c.lineTo(1132, 700); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#9a7a64'; c.beginPath(); c.ellipse(1112, 500, 22, 26, 0.6, 0, TAU); c.fill(); c.stroke(); // голова упала на грудь
+    c.strokeStyle = '#9aa0a6'; c.lineWidth = 3; for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(1098, 540 + i * 22, 44, 9, 0, 0, TAU); c.stroke(); }
+    bandit(c, 820, 720, 2, t, { glow: 0.4 });
+    const fl = (t * 0.5) % 1; if (fl < 0.06) { c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 900, 470, 160, 'rgba(255,240,180,A)', 1 - fl * 15); c.restore(); c.fillStyle = 'rgba(255,255,255,.08)'; c.fillRect(0, 0, W, H); }
+    c.strokeStyle = INK; c.lineWidth = 12; c.beginPath(); c.moveTo(860, 520); c.lineTo(920, 470); c.stroke(); // рука с пистолетом
+    smoke(c, 760, 620, t, { n: 12, h: 460, spread: 40, r: 80, color: 'rgba(110,100,95,A)', a: 0.12, speed: 0.05 });
+    c.fillStyle = 'rgba(192,57,43,.9)'; c.font = "italic 46px Georgia, serif"; c.textAlign = 'center'; c.lineWidth = 8; c.strokeStyle = 'rgba(0,0,0,.85)'; c.strokeText('Он знал, что мы смотрим.', 800, 860); c.fillText('Он знал, что мы смотрим.', 800, 860);
+    tex(c, '#000', 0.25); vignette(c, 0.75); grain(c, t); frame(c);
+  };
+  S.m7_bride_dead = (c, t) => { // фата белым пятном на мокром асфальте, венок у бордюра, туфля на ступенях; капли
+    sky(c, [[0, '#2a2e34'], [1, '#121416']]);
+    c.fillStyle = '#1c1e22'; c.fillRect(0, 520, W, 380);
+    c.fillStyle = '#3a3a3e'; c.fillRect(1100, 380, 500, 40); c.fillRect(1060, 420, 540, 40); c.fillRect(1020, 460, 580, 60); // ступени
+    c.fillStyle = '#2a2420'; c.fillRect(1240, 200, 220, 180); c.strokeStyle = 'rgba(232,226,214,.6)'; c.lineWidth = 6; c.beginPath(); c.moveTo(1240, 210); c.quadraticCurveTo(1350, 260, 1460, 210); c.stroke(); // дверь ресторана и лента
+    c.save(); c.translate(1340, 372); c.scale(2, 2); c.fillStyle = '#ece6dc'; c.beginPath(); c.moveTo(-40, 0); c.quadraticCurveTo(-4, -26, 36, -14); c.lineTo(40, 0); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke(); c.restore(); // туфля носком к двери
+    // фата: кружевное полотно с волнистым краем и складками, пятно крови
+    const veil = () => { c.beginPath(); c.moveTo(240, 720); c.bezierCurveTo(300, 600, 560, 580, 700, 630); c.bezierCurveTo(800, 660, 880, 700, 860, 740); c.bezierCurveTo(760, 800, 420, 820, 240, 720); c.closePath(); };
+    c.save(); c.globalAlpha = 0.5; c.fillStyle = '#ece6dc'; veil(); c.fill(); c.restore(); // прозрачный тюль: сквозь него виден мокрый асфальт
+    c.save(); veil(); c.clip(); c.strokeStyle = 'rgba(110,100,92,.35)'; c.lineWidth = 6; [[330, 0.1], [470, -0.05], [610, 0.08]].forEach(([x, r]) => { c.beginPath(); c.moveTo(x, 600); c.quadraticCurveTo(x + 40, 700, x + 10 + r * 100, 820); c.stroke(); }); c.restore(); // мягкие складки
+    c.save(); c.setLineDash([3, 9]); c.lineCap = 'round'; c.lineWidth = 6; c.strokeStyle = 'rgba(250,248,240,.85)'; veil(); c.stroke(); c.restore(); // кружевная кайма
+    c.fillStyle = 'rgba(150,20,14,.75)'; c.beginPath(); c.ellipse(520, 700, 60, 22, 0.2, 0, TAU); c.fill();
+    c.save(); c.translate(270, 700); c.rotate(-0.3 + Math.sin(t * 0.6) * 0.03); c.strokeStyle = '#6a8a3a'; c.lineWidth = 9; c.beginPath(); c.ellipse(0, 0, 60, 34, 0, 0, TAU); c.stroke(); c.fillStyle = '#f4f4e8'; for (let i = 0; i < 9; i++) { const a = i * TAU / 9; c.beginPath(); c.arc(Math.cos(a) * 60, Math.sin(a) * 34, 12, 0, TAU); c.fill(); c.fillStyle = '#e8d070'; c.beginPath(); c.arc(Math.cos(a) * 60, Math.sin(a) * 34, 4.5, 0, TAU); c.fill(); c.fillStyle = '#f4f4e8'; } c.restore(); // венок там, где была голова
+    for (let i = 0; i < 7; i++) { const p = (t * 0.07 + i / 7) % 1; c.fillStyle = 'rgba(244,244,232,.85)'; c.beginPath(); c.ellipse(380 + i * 110 + p * 120, 760 + Math.sin(i * 2 + p * 6) * 30, 9, 5, i, 0, TAU); c.fill(); } // лепестки ветер гонит по асфальту
+    for (let i = 0; i < 40; i++) { const p = (t * 0.8 + i / 40) % 1, x = (i * 397) % W, y = p * 900; c.fillStyle = 'rgba(200,210,220,.35)'; c.fillRect(x, y, 2, 14); } // дождь
+    for (let k = 0; k < 3; k++) { const p = (t * 0.4 + k / 3) % 1; c.strokeStyle = `rgba(200,210,220,${0.4 * (1 - p)})`; c.lineWidth = 2; c.beginPath(); c.ellipse(260 + k * 520, 800, 20 + p * 80, 6 + p * 20, 0, 0, TAU); c.stroke(); } // круги на лужах
+    tex(c, '#000', 0.18); vignette(c, 0.6); grain(c, t); frame(c);
+  };
   S.epilogue = (c, t) => { // рассвет поднимается над пригородом, крошечная «буханка», длинные тени, вдали костёр
     const rise = Math.min(1, (t % 30) / 18);
     sky(c, [[0, `rgb(${40 + rise * 60},${44 + rise * 50},${60 + rise * 40})`], [0.55, `rgb(${120 + rise * 100},${90 + rise * 70},${70 + rise * 40})`], [1, '#1a1612']]);

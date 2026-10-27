@@ -5,7 +5,7 @@ const E = ZG.Engine;
 let fails = 0;
 function check(cond, msg) { if (!cond) { fails++; console.error('FAIL:', msg); } }
 
-const heroes = ZG.Heroes.all().map((h) => h.id);
+const heroes = ZG.Heroes.visible().map((h) => h.id);
 const lvl = ZG.Levels.get('outskirts');
 let n = 0;
 lvl.scenarios.forEach((sc) => lvl.conditions.forEach((cond, ci) => {

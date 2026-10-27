@@ -85,7 +85,20 @@
       mods: { loud: 1, plugAction: 1 },
       art: 'hero_gosha',
     },
+    {
+      // секретный герой: появляется только после спасения из плена (кампания, миссия 7); не нанимается, в одиночной игре — после первого спасения
+      id: 'gleb', secret: true, pic: 'art/heroes/gleb.jpg', face: 'art/heroes/gleb_face.jpg', turnedPic: 'art/heroes/gleb_turned.jpg', turnedFace: 'art/heroes/gleb_turned_face.jpg', name: 'Глеб', nick: 'Дуплет', role: 'Дуэлянт', color: '#6a8a4a',
+      hp: 4, hand: 4, energy: 3,
+      bio: 'Инструктор стрелкового клуба. Колонна взяла его проводником, «Волки» — в плен. Стреляет с двух рук и думает, что это красиво.',
+      ability: 'По-македонски', abilityText: 'Карта дальнего боя, сыгранная сразу после другой карты дальнего боя, стоит 0 ⚡ (раз за ход). Изъяны: «Перезарядка» — после такого дуплета в следующий ход −1 ⚡; «Руки заняты» — Кулак недоступен; «Громкие стволы» — все его выстрелы +1 Шум.',
+      deck: STARTER.concat(['gl_left', 'gl_right', 'gl_fan', 'gl_reload']),
+      talents: [['gl_steady', 'gl_speedload'], ['gl_macedon', 'gl_rain']],
+      mods: { doublet: 1, noPunch: 1, shotNoise: 1 },
+      art: 'hero_gleb',
+    },
   ]);
+  // герои, видимые в выборе отряда, печати и симуляторах: секретные — только открытые (ZG.unlockedHeroes)
+  ZG.Heroes.visible = () => ZG.Heroes.all().filter((h) => !h.secret || (ZG.unlockedHeroes || []).includes(h.id));
 
   // ------------------------------------------------------------- Таланты ---
   // Уровень 2 — при 4 Опыта, уровень 3 — при 10 Опыта. Из пары выбирается один.
@@ -157,5 +170,10 @@
     { id: 'workwear', name: 'Луженая глотка', text: 'Раз за ход, 0 ⚡: крикни — все бродячие в 2 зонах от тебя идут к тебе. Тревога не растёт.', mods: { shoutAction: 1 } },
     { id: 'foreman', name: 'Бригадир', text: 'После Заглушки возьми 1 карту и получи 1 Блок.', mods: { plugBonus: 1 } },
     { id: 'overtime', name: 'Прораб', text: 'Раз за ход, 1 ⚡: другой герой в твоей зоне получит +1 ⚡ в начале своего следующего хода.', mods: { foremanAction: 1 } },
+    // Глеб
+    { id: 'gl_steady', name: 'Твёрдая рука', text: '+1 к дальности твоих выстрелов.', mods: { rangeBonus: 1 } },
+    { id: 'gl_speedload', name: 'Быстрая перезарядка', text: '«Перезарядка» не отнимает ⚡, если в ход дуплета ты не двигался (ни шагом, ни картой).', mods: { speedload: 1 } },
+    { id: 'gl_macedon', name: 'Македонец', text: '«По-македонски» срабатывает дважды за ход (штраф «Перезарядки» — всё равно −1 ⚡).', mods: { doubletMax: 1 } },
+    { id: 'gl_rain', name: 'Свинцовый дождь', text: 'Твои выстрелы по зоне («Веер» и др.) наносят +1 урон.', mods: { rangedBonus: (g, h, ctx) => (ctx && ctx.def && ctx.def.target && ctx.def.target.kind === 'zone' ? 1 : 0) } },
   ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

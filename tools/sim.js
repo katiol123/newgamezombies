@@ -60,7 +60,7 @@ function fmt(heroIds, r) {
 
 function main() {
   const o = parseArgs();
-  const all = ZG.Heroes.all().map((h) => h.id);
+  const all = ZG.Heroes.visible().map((h) => h.id);
   let combos = [];
   if (o.allPairs) { for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) combos.push([all[i], all[j]]); }
   else if (o.solo) combos = all.map((h) => [h]);

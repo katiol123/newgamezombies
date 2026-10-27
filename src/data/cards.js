@@ -435,4 +435,32 @@
       unplayable: true,
     },
   ]);
+
+  // --- Глеб «Дуплет»: парные пистолеты (секретный герой кампании) ---
+  ZG.Cards.addAll([
+    {
+      id: 'gl_left', name: 'Левый ствол', suit: 'agility', cost: 1, shield: 0, noise: 1, type: 'Атака', tags: ['ranged', 'gun'], hero: 'gleb',
+      text: 'Дальний бой, дальность 0–2. 2 урона. Шум 1.', chainText: '+1 урон.', art: 'pistol', value: 10,
+      target: { kind: 'zombie', range: 2, ranged: true },
+      play(c) { c.shot(1); c.rangedHit(c.target, 2 + (c.chain ? 1 : 0)); },
+    },
+    {
+      id: 'gl_right', name: 'Правый ствол', suit: 'agility', cost: 1, shield: 0, noise: 1, type: 'Атака', tags: ['ranged', 'gun'], hero: 'gleb',
+      text: 'Дальний бой, дальность 0–2. 2 урона. Шум 1.', chainText: 'возьми 1 карту.', art: 'pistol', value: 10,
+      target: { kind: 'zombie', range: 2, ranged: true },
+      play(c) { c.shot(1); c.rangedHit(c.target, 2); if (c.chain) c.draw(1); },
+    },
+    {
+      id: 'gl_fan', name: 'Веер', suit: 'rage', cost: 2, shield: 0, noise: 2, type: 'Атака', tags: ['ranged', 'gun'], hero: 'gleb',
+      text: 'Дальний бой, дальность 0–1. 1 урон каждому врагу в зоне. Шум 2.', chainText: '+1 урон каждому.', art: 'shotgun', value: 11,
+      target: { kind: 'zone', range: 1, ranged: true },
+      play(c) { c.shot(2); c.zoneDamage(c.target, 1 + (c.chain ? 1 : 0), { kind: 'ranged' }); },
+    },
+    {
+      id: 'gl_reload', name: 'Перезарядка', suit: 'mind', cost: 0, shield: 1, type: 'Тактика', tags: [], hero: 'gleb',
+      text: 'Возьми 1 карту. Снимает штраф «Перезарядки» на следующий ход.', chainText: '+1 ⚡.', art: 'gear', value: 8,
+      target: null,
+      play(c) { c.draw(1); c.hero.reloadPending = false; c.hero.reloadDue = 0; if (c.chain) c.energy(1); },
+    },
+  ]);
 })(typeof globalThis !== 'undefined' ? globalThis : window);

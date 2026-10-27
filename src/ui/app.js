@@ -17,6 +17,10 @@
     set(k, v) { try { localStorage.setItem('zg_' + k, JSON.stringify(v)); } catch (e) { /* нет хранилища */ } },
   };
 
+  // открытые секретные герои (спасены в кампании хотя бы раз) — появляются в выборе отряда одиночной игры
+  ZG.unlockedHeroes = store.get('unlocked', []);
+  ZG.unlockHero = (id) => { if (!ZG.unlockedHeroes.includes(id)) { ZG.unlockedHeroes.push(id); store.set('unlocked', ZG.unlockedHeroes); } };
+
   // ================================================================ экраны
   const App = {
     screen: null,
@@ -85,7 +89,7 @@
     initSetup() {
       const s = this.setup;
       const heroesWrap = $('#setup-heroes');
-      ZG.Heroes.all().forEach((h) => {
+      ZG.Heroes.visible().forEach((h) => {
         const card = CV.heroCard(h.id, { bio: true, talents: false });
         card.classList.add('selectable');
         card.dataset.hero = h.id;
@@ -1369,6 +1373,11 @@
       if (!g.stealth) { st = 'идёт на врага'; txt = `Каждую фазу — до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} к ближайшему ${bandit ? 'врагу (герой или зомби)' : 'герою, бандиту или приманке'}. Кубик не бросается.`; }
       else if (bandit && z.post) { st = z.awake ? 'часовой' : 'дремлет'; txt = 'Часовой: с поста не уходит. Пока он в зоне шлагбаума, уйти по мосту нельзя. ' + (z.awake ? 'Стреляет во врага в своей зоне или на линии до 2 зон.' : 'Проснётся, если увидит героя или услышит шум; бродящего можно убрать «Удавкой» или «Ножом в спину».'); }
       else if (d.static) { st = 'на посту'; txt = `Не ходит, всегда начеку. Стреляет в ближайшего видимого героя на линии до ${d.range} зон: ${d.dmg} Раны, блок не спасает (только укрытие). Бесшумного замечает только вплотную. Кубик не бросается.`; }
+      else if (d.patrol) {
+        const t = E.banditTarget(g, z);
+        if (z.awake) { st = 'охотится'; txt = `Как зомби-охотник: до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} к ближайшему видимому врагу (герой или зомби), иначе — по следу. ${t ? 'Враг на линии — стоит и стреляет.' : `Бьёт в своей или соседней зоне`}: герою — Рана, зомби — ${d.foeDmg} урона.`; }
+        else { st = 'бродит'; txt = 'Кубик бродяг, 1 шаг: <b>1–2</b> — к своему лагерю; <b>3–4</b> — к центру поля; <b>5–6</b> — стоит. Заметит или услышит врага — начнёт охотиться, как зомби.'; }
+      }
       else if (d.hunter && z.lurk) { st = 'спит'; txt = 'Притаился, как любой другой: проснётся, если заметит героя (по общим правилам «Скрытности»), услышит шум, получит удар — или от звона ключей. Пока спит, любой герой в его зоне может снять с него ключ (1 ⚡).'; }
       else if (d.hunter) { st = 'охотится'; txt = `${z.relentless ? 'Идёт по следу: всегда знает, где вы. ' : ''}До ${sp} шагов за фазу к ближайшему видимому врагу; «Чутьё охотника» — видит и тихих героев. Бьёт только в своей зоне. Кубик не бросается.`; }
       else if (z.lurk && !z.post) { st = 'притаился'; txt = 'Стоит на месте и не бросает кубик. Проснётся, если увидит героя' + (bandit ? ' или зомби' : ' или бандита') + ', услышит шум или его ударят.'; }
@@ -1384,7 +1393,7 @@
         st = 'бродит';
         txt = 'Кубик бродяг, 1 шаг: <b>1–2</b> — к ближайшему люку; <b>3–4</b> — к центру поля; <b>5–6</b> — стоит. Увидит героя' + ' или бандита — начнёт охотиться.';
       }
-      const key = z.type + '|' + st;
+      const key = st + '|' + txt; // одинаковое поведение разных врагов — одной строкой
       (rows[key] = rows[key] || { name: d.name, st, txt, n: 0, hl: false }).n++;
       if (z.uid === zuid) rows[key].hl = true;
     });
@@ -1400,7 +1409,8 @@
     ['Миссия 3 · Лес', ['m3_start', 'm3_battery', 'm3_bear', 'm3_twist', 'm3_bear_dead']],
     ['Миссия 4 · Трасса', ['m4_start', 'm4_bandit', 'm4_bitten', 'm4_fuel', 'm4_night']],
     ['Миссия 5 · Мост', ['m5_start', 'm5_sniper', 'm5_forester', 'm5_key', 'm5_saw', 'm5_forester_dead']],
-    ['Миссия 6 и финал', ['m6_start', 'epilogue']],
+    ['Миссия 6 · За рекой', ['m6_start']],
+    ['Миссия 7 · Белый лебедь и финал', ['m7_start', 'm7_scream', 'm7_prisoner', 'm7_rescue', 'm7_executed', 'm7_bride_dead', 'epilogue']],
   ];
   const Gallery = {
     show() {
@@ -1859,6 +1869,7 @@
       facts.push(`Выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ') || 'никто'}`);
       if (c.fallen.length) facts.push(`Не дошли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}`);
       facts.push(f.bear ? 'Медведь-шатун из бора убит — его жир спас не одну жизнь.' : 'Медведь-шатун так и бродит по бору.');
+      if (f.gleb) facts.push(f.gleb === 'rescued' ? 'Пленник «Волков» спасён: Глеб «Дуплет» идёт с нами.' : 'Пленника у костра «Волков» спасти не успели.');
       if (f.bridge) facts.push(f.bridge === 'quiet' ? 'Мост пройден тихо: Лесник проснулся, когда ключ уже был у вас.' : 'Мост взят силой: Лесник мёртв, его топор теперь служит вам.');
       if (c.wanderers.length) facts.push(`Где-то позади бродят обращённые: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}.`);
       Modal.show(`${storyArt('epilogue')}<div class="story-kicker">${esc(st.kicker)}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(st.text)}</div><ul class="epi-facts">${facts.map((t) => `<li>${t}</li>`).join('')}</ul>`, [{ label: 'Конец пути', cls: 'primary' }], null, 'story');
@@ -1912,8 +1923,10 @@
       const r = c.report, box = $('#shelter-report');
       if (!r) { box.innerHTML = '<div class="rep-head">Отряд собран. Перед первым походом можно распределить экипировку и выбрать, кто управляет героями.</div>'; return; }
       const name = (id) => esc(ZG.Heroes.get(id).name);
+      if (r.joined) ZG.unlockHero(r.joined); // спасённый герой открывается и для одиночной игры
       box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
+        ${r.joined ? `<div class="rep-bond">🔓 ${name(r.joined)} «${esc(ZG.Heroes.get(r.joined).nick)}» спасён и присоединяется к отряду — новый герой в убежище.</div>` : ''}
         ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },

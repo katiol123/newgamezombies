@@ -59,6 +59,22 @@
       saw: [1, 1], // пилорама: зона ловушки
       console: [2, 1], // пульт пилорамы
     },
+    // уникальные тайлы миссии 7: ресторан, где играли свадьбу, и стоянка банды «Волки»
+    {
+      id: 'banquet', name: 'Ресторан «Белый лебедь»', num: 'М7', unique: true,
+      map: ['AAA', 'AAA', '...'], doors: [[0, 1, 0, 2], [2, 1, 2, 2]], search: [[2, 0, 'armory']],
+      buildings: { A: { floor: 'wood', label: 'Банкетный зал' } },
+      decor: [{ k: 'table', x: 0, y: 0 }, { k: 'table', x: 1, y: 0 }, { k: 'table', x: 0, y: 1 }, { k: 'counter', x: 2, y: 1 }, { k: 'car', x: 1, y: 2 }],
+      lair: [1, 1], // здесь бродит свадебная стая
+    },
+    {
+      id: 'wolfcamp', name: 'Стоянка «Волков»', num: 'М7', unique: true, ground: 'dirt',
+      map: ['A..', '...', '...'], doors: [[0, 0, 1, 0]], search: [[0, 0, 'armory']],
+      buildings: { A: { floor: 'wood', label: 'Сторожка' } },
+      decor: [{ k: 'sniper_tower', x: 2, y: 0 }, { k: 'tires', x: 0, y: 2 }, { k: 'crates_pile', x: 2, y: 2 }, { k: 'woodpile', x: 1, y: 2 }, { k: 'barrier', x: 2, y: 1 }],
+      perch: [2, 0], // вышка снайпера
+      camp: [1, 1], // костёр и пленник
+    },
     // уникальный тайл кампании (миссия 2): в пул уровня не входит, ставится правилами миссии
     {
       id: 'autobase', name: 'Автобаза №3', num: 'А3', unique: true,

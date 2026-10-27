@@ -250,6 +250,126 @@
       },
       progress(g) { return g.obj.attempted ? 9 : (this.hasBattery(g) ? 2 : 0); }, // сигнал весит много: после него всем далеко до «буханки»
     },
+    // --- Кампания, миссия 7 «Белый лебедь»: убить Укушенную невесту и уйти; пленник «Волков» — тайная возможность ---
+    {
+      id: 'wedding', campaignOnly: true, name: 'Белый лебедь',
+      short: 'Убей Укушенную невесту — её вопль держит весь пригород — и уходи по северной дороге.',
+      brief: 'Ресторан «Белый лебедь» на выезде из пригорода. Здесь играли свадьбу в тот день, когда всё началось. Невеста до сих пор бродит у зала со своими гостями, и её крик тянет мертвецов со всей округи. На дальнем краю, у дороги, жгут костёр «Волки».',
+      setupText: 'Поле 4×2: Ресторан «Белый лебедь» (левый столбец) и Стоянка «Волков» (правый столбец) + 6 обычных тайлов. Старт — случайный тайл второго столбца. Свадебная стая (Укушенная невеста, Толстяк, 3 Бегуна) — в зале ресторана, бродит. На стоянке — 5 Головорезов (бродят) и Снайпер на вышке (начеку). У костра стоянки — жетон события «?»: положите рядом лицом вниз карту сюжетного события «Пленник» и не читайте её. Люки: случайный тайл 2-го столбца и случайный тайл 3-го. Выход — у правого края на другом тайле правого столбца. Открыты сразу: старт, ресторан, стоянка, выход.',
+      exitLabel: 'Северная дорога', exitArt: 'exit_van',
+      deadline: 14, // пленника казнят в конце этого раунда (боты: спасают ~1/3)
+      brideWounds: { 1: 4, 2: 0, 3: 0, 4: 1 }, // жетоны урона на невесте в начале (жених успел ударить) — ровняет сложность для 1–4 героев
+      plotCard: {
+        name: 'Пленник',
+        when: 'Тяните, когда герой подходит к жетону «?» у костра на 2 зоны или ближе.',
+        effect: 'У костра — связанный человек: пленник «Волков». Пока не кончился 14-й раунд, его можно освободить: герой в его зоне, без бандитов в ней, тратит 1 ⚡. В конце 14-го раунда «Волки» его казнят. Спасённый — Глеб «Дуплет» — после миссии присоединяется к отряду в убежище.',
+      },
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng;
+        const at = (ti, p) => b.cells.find((c) => c.tile === ti && c.lx === p[0] && c.ly === p[1]);
+        const col = (tx) => b.tiles.map((t, i) => (t.tx === tx ? i : -1)).filter((i) => i >= 0);
+        const maxTx = Math.max.apply(null, b.tiles.map((t) => t.tx));
+        const bq = b.tiles.findIndex((t) => t.id === 'banquet'), wc = b.tiles.findIndex((t) => t.id === 'wolfcamp');
+        const street = (ti) => b.cells.filter((c) => c.tile === ti && c.type === 'street');
+        // старт — случайный тайл второго столбца
+        const st = Rng.pick(g, col(1).filter((i) => i !== bq && i !== wc));
+        const sc = street(st);
+        g.start = (sc.find((c) => c.lx === 1 && c.ly === 1) || Rng.pick(g, sc.length ? sc : b.cells.filter((c) => c.tile === st && c.type !== 'blocked'))).i;
+        g.heroes.forEach((h) => { h.pos = g.start; });
+        // выход — у правого края на другом тайле правого столбца
+        const ex = col(maxTx).filter((i) => i !== wc);
+        const exTile = ex.length ? Rng.pick(g, ex) : wc;
+        const edge = b.cells.filter((c) => c.tile === exTile && c.x === b.w - 1 && c.type === 'street');
+        g.exit = (edge.length ? Rng.pick(g, edge) : Rng.pick(g, street(exTile))).i;
+        // люки: случайный тайл 2-го столбца и 3-го
+        const hole = (ti) => { const m = b.cells.find((c) => c.tile === ti && c.manhole); const ok = (c) => c && c.i !== g.start && c.i !== g.exit && c.type !== 'blocked'; return ok(m) ? m.i : Rng.pick(g, street(ti).filter(ok)).i; };
+        g.spawnPoints = [hole(Rng.pick(g, col(1).filter((i) => i !== bq && i !== wc))), hole(Rng.pick(g, col(2)))];
+        g.obj = { brideDead: false, known: false, rescued: false, executed: false, camp: null, bride: null };
+        // свадебная стая — бродит в зале ресторана
+        if (bq >= 0) {
+          const lair = at(bq, ZG.Tiles.get('banquet').lair).i;
+          ['bride', 'fatso', 'runner', 'runner', 'runner'].forEach((type) => { const z = E.spawnZombie(g, type, lair, null, true, true, true); if (z) { z.awake = false; z.trail = null; if (type === 'bride') { g.obj.bride = z.uid; z.dmg = this.brideWounds[Math.min(4, ZG.Engine.party(g))] || 0; } } });
+        }
+        // стоянка «Волков»: 5 головорезов бродят, снайпер на вышке начеку, у костра — пленник (жетон «?»)
+        if (wc >= 0) {
+          const W = ZG.Tiles.get('wolfcamp');
+          g.obj.camp = at(wc, W.camp).i;
+          const cells = b.cells.filter((c) => c.tile === wc && c.type !== 'blocked' && c.lx + c.ly > 0);
+          for (let k = 0; k < 5; k++) {
+            const z = E.spawnZombie(g, 'raider', cells[k % cells.length].i, null, true, true, true);
+            if (!z) continue;
+            z.awake = false; z.trail = null; z.home = g.obj.camp;
+            const i = g.lootDeck.findIndex((id) => id !== 'ambush'); z.bag = i >= 0 ? [g.lootDeck.splice(i, 1)[0]] : [];
+          }
+          const sn = E.spawnZombie(g, 'sniper', at(wc, W.perch).i, null, true, true, true); if (sn) { sn.awake = true; sn.trail = null; }
+        }
+        // туман: старт, выход, ресторан (свет в окнах) и стоянка (костёр) видны сразу
+        if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st || i === exTile || i === bq || i === wc);
+      },
+      bride(g) { return g.zombies.find((z) => z.uid === g.obj.bride); },
+      // пленника замечают по ходу игры: герой подошёл к костру на 2 зоны
+      watch(g, E) {
+        if (g.sim || g.obj.known || g.obj.camp == null) return;
+        const d = E.distV(g, g.obj.camp);
+        if (!g.heroes.some((h) => h.onBoard && d[h.pos] <= 2)) return;
+        g.obj.known = true;
+        E.log(g, `У костра «Волков» — связанный человек! Его можно освободить до конца ${this.deadline}-го раунда (герой в его зоне, без бандитов в ней: 1 ⚡).`, 'warn');
+        E.fx(g, { t: 'objective', pos: g.obj.camp, text: 'Пленник!' });
+        E.storyEvent(g, 'prisoner');
+      },
+      goals(g) {
+        const out = [
+          { text: 'Убить Укушенную невесту', done: g.obj.brideDead },
+          { text: 'Все выжившие уходят по северной дороге', done: false },
+        ];
+        if (g.obj.known) out.splice(1, 0, g.obj.executed ? { text: 'Освободить пленника', failed: true, note: '«Волки» казнили его' } : { text: `Освободить пленника (до конца ${this.deadline}-го раунда)`, done: g.obj.rescued, isNew: !g.obj.rescued, note: 'необязательно' });
+        return out;
+      },
+      isComplete(g) { return g.obj.brideDead; },
+      onKill(g, z, heroIdx, E) { if (z.uid === g.obj.bride) { g.obj.brideDead = true; E.log(g, 'Невеста мертва. Пригород затихает — впервые за много ночей.', 'good'); } },
+      actions(g, hero) {
+        const o = g.obj;
+        if (!o.known || o.rescued || o.executed || hero.pos !== o.camp) return [];
+        if (g.zombies.some((z) => z.pos === hero.pos && ZG.Engine.isBandit(z))) return [];
+        return [{ t: 'scenario', key: 'free', cost: 1, label: 'Освободить пленника' }];
+      },
+      doAction(g, hero, key, E) {
+        if (key !== 'free') return;
+        g.obj.rescued = true;
+        E.log(g, `${E.heroName(hero)} режет верёвки. Пленник жив: «Глеб. Стрелять умею. Остальное — потом».`, 'good');
+        E.fx(g, { t: 'objective', pos: hero.pos, text: 'Спасён!' });
+        E.storyEvent(g, 'rescue');
+      },
+      roundEnd(g, E) {
+        const o = g.obj;
+        if (o.rescued || o.executed || g.round < this.deadline) return;
+        o.executed = true;
+        E.log(g, '«Волки» казнили пленника у костра. Выстрел слышен на весь пригород.', 'bad');
+        E.hear(g, o.camp, 3);
+        if (o.known) E.storyEvent(g, 'executed');
+      },
+      botGoal(g, hero, E) {
+        const o = g.obj;
+        // пленник: если о нём уже знают и успеваем (без бандитов в его зоне — иначе сначала зачистить подход)
+        if (o.known && !o.rescued && !o.executed && g.round <= this.deadline) {
+          const d = E.distV(g, hero.pos)[o.camp];
+          if (d <= (this.deadline - g.round + 1) * 3) return o.camp;
+        }
+        if (!o.brideDead) { const b = this.bride(g); if (b) return b.pos; }
+        return null;
+      },
+      // невеста мертва: пока есть время — к пленнику (или проверить жетон «?» у костра), иначе к выходу
+      botGoalDone(g, hero, E) {
+        const o = g.obj;
+        if (o.rescued || o.executed || g.round > this.deadline) return null;
+        return o.camp;
+      },
+      progress(g) {
+        const b = this.bride(g), d = ZG.Zombies.get('bride');
+        return (g.obj.brideDead ? 6 : b ? (b.dmg / d.hp) * 4 : 0) + (g.obj.rescued ? 2 : 0);
+      },
+      timeoutText: 'Рассвет не наступил: вопль невесты собрал весь пригород.',
+    },
     // --- Кампания, миссия 4: канистры на трассе, бандиты — третья сторона ---
     {
       id: 'highway', campaignOnly: true, name: 'Бензин и порох',

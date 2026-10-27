@@ -301,13 +301,15 @@
     if (r >= 5) return null;
     const d = E.distV(g, z.pos);
     let goal = null;
-    const loot = E.isBandit(z) && r <= 4 ? E.lootSpots(g).filter((p) => !E.hidden(g, p) && d[p] < Infinity) : [];
+    // головорез: вместо люка — к своему лагерю (1–2), к центру (3–4), стоит (5–6)
+    if (ZG.Zombies.get(z.type).patrol && r <= 2) return z.home != null && z.home !== z.pos ? z.home : null;
+    const loot = E.isBandit(z) && !ZG.Zombies.get(z.type).patrol && r <= 4 ? E.lootSpots(g).filter((p) => !E.hidden(g, p) && d[p] < Infinity) : [];
     if (loot.length) {
       // бандит-мародёр: вместо люка — к ближайшему ящику или жетону Обыска (дойдёт — обчистит)
       loot.forEach((p) => { if (goal == null || d[p] < d[goal]) goal = p; });
-    } else if (E.isBandit(z)) {
+    } else if (E.isBandit(z) && !ZG.Zombies.get(z.type).patrol) {
       return null; // лута не видно — стоит
-    } else if (r <= 2) {
+    } else if (r <= 2 && !ZG.Zombies.get(z.type).patrol) {
       g.spawnPoints.forEach((p) => { if (!E.hidden(g, p) && (goal == null || d[p] < d[goal])) goal = p; });
     } else {
       const b = g.board, cx = (b.w - 1) / 2, cy = (b.h - 1) / 2;
@@ -982,6 +984,8 @@
   E.damageZombie = damageZombie;
   E.gainXp = function (g, h, n) { gainXp(g, h, n); };
 
+  // замешать карту в колоду героя (в случайное место)
+  E.shuffleIn = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.splice(Rng.int(g, h.deck.length + 1), 0, u); };
   E.giveCard = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.hand.push(u); };
   // редкая или уникальная находка из колоды добычи (если таких нет — обычная)
   E.giveRareLoot = function (g, h) {
@@ -1297,6 +1301,7 @@
       byHero[h.idx].incoming += def.dmg;
       g.stats.incoming = (g.stats.incoming || 0) + def.dmg;
       byHero[h.idx].attackers.push(z.uid);
+      z.attackedPhase = g.zphase; // атаковал в эту фазу (Невеста: за фазу — одна способность)
       E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: def.dmg });
     };
     order.forEach((z) => {
@@ -1489,6 +1494,7 @@
     }
     h.adrenaline = 0;
     if (h.drainDue) { en = Math.max(0, en - h.drainDue); E.log(g, `${E.heroName(h)}: «Уныние» — −${h.drainDue} ⚡.`, 'warn'); h.drainDue = 0; }
+    if (h.reloadDue) { en = Math.max(0, en - h.reloadDue); E.log(g, `${E.heroName(h)}: «Перезарядка» — −${h.reloadDue} ⚡.`, 'warn'); h.reloadDue = 0; }
     if (h.irritated) { en = Math.max(0, en - 1); h.irritated = false; E.log(g, `${E.heroName(h)} на взводе из-за врага — −1 ⚡.`, 'warn'); }
     h.energy = en;
     if (g.relayBonus) { h.energy += g.relayBonus; E.log(g, `${E.heroName(h)}: +${g.relayBonus} ⚡ от товарища.`, 'good'); g.relayBonus = 0; }
@@ -1512,6 +1518,8 @@
       const gone = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).discardEndTurn);
       if (gone.length) { h.hand = h.hand.filter((u) => !gone.includes(u)); h.discard.push(...gone); }
       tickInfection(g, h);
+      // Глеб: после дуплета — «Перезарядка» (−1 ⚡ в следующий ход); «Быстрая перезарядка» — если не двигался
+      if (h.reloadPending) { h.reloadPending = false; if (!(Mods.flag(g, h, 'speedload') && !g.turn.moved)) h.reloadDue = 1; }
       // Враги: закончил ход в тайле врага — у того −1 ⚡ в следующий ход
       if (h.onBoard) g.heroes.forEach((o) => {
         if (o === h || !o.onBoard || E.rel(g, h, o) > -3 || g.board.cells[o.pos].tile !== g.board.cells[h.pos].tile) return;
@@ -1533,9 +1541,12 @@
     if (g.heroes.every((x) => x.acted || !x.onBoard)) startZombiePhase(g);
   }
 
+  // Глеб «По-македонски»: карта дальнего боя сразу после другой карты дальнего боя — бесплатно (раз за ход; «Македонец» — дважды)
+  E.doubletReady = (g, h, def) => !!(g.turn && g.active === h.idx && Mods.flag(g, h, 'doublet') && g.turn.lastRanged && (g.turn.doublets || 0) < 1 + Mods.value(g, h, 'doubletMax', 0) && (def.tags || []).includes('ranged'));
   E.cardCost = function (g, h, uid) {
     const def = E.cardDef(g, uid);
     if (def.cost == null) return null;
+    if (E.doubletReady(g, h, def)) return 0;
     let c = Math.max(0, def.cost + Mods.value(g, h, 'costDelta', 0, { def }));
     // Хватка: выход из зоны с зомби стоит +1 ⚡ и для карт перемещения
     if (def.target && def.target.kind === 'move' && !def.target.free && !def.target.through) {
@@ -1658,7 +1669,7 @@
     g.board.adj[h.pos].forEach((n) => { if (!E.hidden(g, n) && moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n }); });
     E.fogNeighbors(g, h.pos).forEach((n) => { if (moveCost(g, h, n) <= h.energy) out.push({ t: 'move', to: n, explore: true }); });
     if (searchableHere(g, h) && searchCost(g, h) <= h.energy) out.push({ t: 'search' });
-    if (h.energy >= E.PUNCH_COST) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
+    if (h.energy >= E.PUNCH_COST && !Mods.flag(g, h, 'noPunch')) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
     if (h.energy >= 1 && g.drops.some((d) => d.pos === h.pos)) out.push({ t: 'pickup' });
     if (h.energy >= barricadeCost(g, h) && g.barricades.length < MAX_BARRICADES) {
       g.board.adj[h.pos].forEach((n) => { if (!E.barricadeAt(g, h.pos, n)) out.push({ t: 'barricade', to: n }); });
@@ -1748,6 +1759,7 @@
 
   function applyHeroAction(g, h, a) {
     if (E.exhausted(g, h) && E.TIRED_LOCK.includes(a.t)) return fail(g, 'Герой обессилен — сначала отдышаться.');
+    if (a.t !== 'play' && a.t !== 'end' && g.turn) g.turn.lastRanged = false; // «по-македонски» — только карта сразу за картой
     switch (a.t) {
       case 'end': endTurn(g); return true;
       case 'play': return playCard(g, h, a.card, a.target);
@@ -1782,6 +1794,7 @@
         return true;
       }
       case 'punch': {
+        if (Mods.flag(g, h, 'noPunch')) return fail(g, 'Руки заняты стволами — кулаком не ударить.');
         if (h.energy < E.PUNCH_COST) return fail(g, 'Не хватает энергии.');
         const z = E.zombie(g, a.zombie);
         if (!z || z.pos !== h.pos) return fail(g, 'Цель вне досягаемости.');
@@ -1963,6 +1976,7 @@
 
   function moveHero(g, h, to) {
     const from = h.pos;
+    if (g.turn && g.active === h.idx) g.turn.moved = true; // для «Быстрой перезарядки» Глеба
     if (g.doors) {
       // двери по пути (карта может провести через несколько зон)
       // путь без тумана и без зомби; если его нет (например, «По крышам») — просто без тумана
@@ -2051,8 +2065,10 @@
     if (cost > h.energy) return fail(g, 'Не хватает энергии.');
     const targets = E.targetsFor(g, h, def);
     if (!targets.some((t) => t === target)) return fail(g, 'Неверная цель.');
+    const doublet = E.doubletReady(g, h, def);
     spend(g, h, cost);
     h.hand.splice(i, 1);
+    if (doublet) { g.turn.doublets = (g.turn.doublets || 0) + 1; h.reloadPending = true; E.log(g, `${E.heroName(h)} стреляет по-македонски: второй ствол — бесплатно (потом «Перезарядка»).`, 'good'); }
     const byBond = g.turn.bond && !g.turn.played && !!def.chainText && !(def.suit !== 'none' && g.turn.lastSuit === def.suit);
     const chain = E.chainsNow(g, def);
     if (g.turn.bond && !g.turn.played) { g.turn.bondUsed = !!def.chainText; g.turn.bond = false; } // узы сгорают на первой карте
@@ -2070,6 +2086,7 @@
     }
     if (!g.turn) return true; // герой пал/обратился от эффекта карты
     g.turn.lastSuit = def.suit;
+    g.turn.lastRanged = (def.tags || []).includes('ranged');
     g.turn.played++;
     if (def.tags && def.tags.includes('ranged')) g.turn.rangedPlayed = true;
     if (def.suit === 'mind') g.turn.mindPlayed = true;
@@ -2210,7 +2227,7 @@
 
   // поиск цели для ИИ и подсказок
   E.goalFor = function (g, h) {
-    if (E.isComplete(g)) return g.exit;
+    if (E.isComplete(g)) { const sd = E.scenario(g).botGoalDone && E.scenario(g).botGoalDone(g, h, E); return sd == null ? g.exit : sd; } // задание выполнено: необязательные цели сценария, иначе выход
     const sg = E.scenario(g).botGoal(g, h, E);
     return sg == null ? g.exit : sg;
   };

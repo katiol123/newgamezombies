@@ -856,6 +856,18 @@
       // светоотражающие полосы на жилете
       c.fillStyle = '#e8e8d0'; c.fillRect(26, 82, 48, 4); c.fillRect(30, 90, 40, 4);
     }),
+    gleb: (c) => bust(c, '#c89a74', '#4f5a36', (c) => {
+      eyes(c, '#4a5a3a', 44);
+      // взъерошенные тёмные волосы
+      c.fillStyle = '#2e2a24'; c.beginPath(); c.moveTo(27, 40); c.quadraticCurveTo(26, 16, 50, 14); c.quadraticCurveTo(76, 16, 73, 40); c.lineTo(68, 30); c.lineTo(62, 34); c.lineTo(56, 26); c.lineTo(48, 32); c.lineTo(42, 26); c.lineTo(36, 34); c.closePath(); c.fill(); strokeInk(c, 1.5);
+      // нахмуренные брови и щетина, шрам через бровь
+      c.strokeStyle = '#2e2a24'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(36, 37); c.lineTo(46, 39); c.moveTo(64, 37); c.lineTo(54, 39); c.stroke();
+      c.strokeStyle = 'rgba(120,40,30,.7)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(60, 33); c.lineTo(63, 47); c.stroke();
+      c.fillStyle = 'rgba(50,40,30,.25)'; c.beginPath(); c.ellipse(50, 60, 15, 8, 0, 0, Math.PI); c.fill();
+      c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(44, 58); c.lineTo(56, 57); c.stroke(); // сжатые губы
+      // два пистолета крест-накрест у плеч
+      [[-1, 22], [1, 78]].forEach(([dir, x]) => { c.save(); c.translate(x, 84); c.rotate(dir * -0.55); c.fillStyle = '#5a6066'; rr(c, -4, -22, 8, 20, 2); c.fill(); strokeInk(c, 1.4); c.fillStyle = '#3a2a1e'; rr(c, -4, -4, 8, 11, 2); c.fill(); strokeInk(c, 1.2); c.restore(); });
+    }),
     viktor: (c) => bust(c, '#cfa07e', '#6f8ea6', (c) => {
       eyes(c, '#3a2a1a', 44);
       // усы
@@ -1180,6 +1192,48 @@
     ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = '#d4a017'; ctx.stroke(); // золотое кольцо мини-босса
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
+  });
+  // Укушенная невеста (босс миссии 7): фата, белое платье, укус на шее, злые глаза
+  function brideHead(c) {
+    c.fillStyle = '#ece6dc'; c.beginPath(); c.moveTo(10, 100); c.quadraticCurveTo(14, 70, 50, 68); c.quadraticCurveTo(86, 70, 90, 100); c.fill(); strokeInk(c, 2.5); // платье
+    c.fillStyle = 'rgba(150,20,14,.8)'; c.beginPath(); c.ellipse(38, 82, 9, 6, -0.3, 0, 7); c.fill(); c.fillRect(36, 84, 3, 12); // кровь на платье
+    c.fillStyle = 'rgba(240,236,228,.85)'; c.beginPath(); c.moveTo(18, 92); c.quadraticCurveTo(10, 30, 50, 12); c.quadraticCurveTo(90, 30, 82, 92); c.lineTo(72, 92); c.quadraticCurveTo(76, 40, 50, 30); c.quadraticCurveTo(24, 40, 28, 92); c.fill(); strokeInk(c, 1.6); // фата
+    c.fillStyle = '#b8c2a8'; c.beginPath(); c.ellipse(50, 50, 17, 20, 0, 0, 7); c.fill(); strokeInk(c, 2); // мёртвое лицо
+    c.fillStyle = '#4a3a2a'; c.beginPath(); c.ellipse(50, 33, 18, 8, 0, Math.PI, 0); c.fill(); // волосы под фатой
+    c.fillStyle = '#e8d070'; [[36, 26], [44, 22], [50, 21], [56, 22], [64, 26]].forEach(([x, y]) => { circle(c, x, y, 2.2); c.fill(); }); // венок
+    c.fillStyle = '#ff3a2a'; c.shadowColor = '#ff3a2a'; c.shadowBlur = 5; circle(c, 43, 47, 2.6); c.fill(); circle(c, 57, 47, 2.6); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = '#3a0a08'; c.beginPath(); c.ellipse(50, 60, 5, 6, 0, 0, 7); c.fill(); // открытый в крике рот
+    c.fillStyle = '#7a120c'; c.beginPath(); c.ellipse(62, 66, 6, 4, 0.4, 0, 7); c.fill(); // укус на шее
+    c.strokeStyle = '#7a120c'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(60, 70); c.lineTo(59, 78); c.stroke();
+  }
+  // Головорез «Волков»: балаклава с черепом, разгрузка
+  function raiderHead(c) {
+    c.fillStyle = '#3a3a30'; c.beginPath(); c.moveTo(12, 100); c.quadraticCurveTo(16, 72, 50, 70); c.quadraticCurveTo(84, 72, 88, 100); c.fill(); strokeInk(c, 2.5);
+    c.fillStyle = '#5a5a40'; rr(c, 28, 80, 44, 14, 3); c.fill(); strokeInk(c, 1.5); // разгрузка
+    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 48, 21, 25, 0, 0, 7); c.fill(); strokeInk(c, 2); // балаклава
+    c.fillStyle = '#d8d0c0'; c.beginPath(); c.ellipse(50, 52, 13, 15, 0, 0, 7); c.fill(); // череп-принт
+    c.fillStyle = '#1e1e22'; circle(c, 44, 48, 4); c.fill(); circle(c, 56, 48, 4); c.fill(); c.fillRect(45, 60, 10, 4);
+    c.fillStyle = '#ff5a3c'; circle(c, 44, 48, 1.6); c.fill(); circle(c, 56, 48, 1.6); c.fill();
+    c.fillStyle = '#8a1a14'; poly(c, [28, 30, 50, 22, 72, 30, 72, 34, 28, 34]); c.fill(); // красная повязка
+  }
+  [['bride', brideHead, '#8a7a8a', '#d4a017', true], ['raider', raiderHead, '#4a4a3a', '#8a1a14', false]].forEach(([id, head, bg, ring, round]) => {
+    Art.define('zp_' + id, (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, bg); g.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, head); ctx.restore();
+    });
+    if (!round) { Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, ring, head)); return; } // квадратная фишка банды
+    Art.define('z_' + id, (ctx, w, h) => {
+      const r = Math.min(w, h) / 2;
+      ctx.save(); ctx.translate(w / 2, h / 2);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.92, 0, 7);
+      const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, bg); gr.addColorStop(1, '#0d0a08');
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, head); ctx.restore();
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = ring; ctx.stroke(); // золотое кольцо босса
+      ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
+      ctx.restore();
+    });
   });
   Art.define('z_nest', (ctx, w, h, o) => {
     const r = Math.min(w, h) / 2;

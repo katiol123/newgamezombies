@@ -116,6 +116,7 @@
     if (kb.forester) c.flags.forester = true;
     if (g.scenarioId === 'bridge' && res.win) c.flags.bridge = g.obj && g.obj.way === 'quiet' ? 'quiet' : 'force'; // как добыт ключ (или банда перебита)
     if (g.scenarioId === 'forest' && g.obj && g.obj.attempted) c.flags.signal = true;
+    if (g.scenarioId === 'wedding' && g.obj) c.flags.gleb = g.obj.rescued ? 'rescued' : g.obj.executed ? 'executed' : c.flags.gleb;
     const moraleAdd = (h, n, why) => { if (!n) return; h.morale += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].morale += n; line(h.id, `${n > 0 ? '+' : ''}${n} мораль — ${why}`); };
     const talonsAdd = (h, n, why) => { if (!n) return; h.talons += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].talons += n; line(h.id, `+${n} 🎫 — ${why}`); };
 
@@ -210,6 +211,17 @@
       if (to !== from) rep.rel.push({ a, b, from, to, why: ev.map((x) => `${x.d > 0 ? '+' : ''}${x.d} ${x.why}`) });
     }));
 
+    // 2в) спасённый пленник (миссия 7) сразу присоединяется к убежищу — на уровне отряда; таланты выберет в начале следующей миссии
+    if (g.scenarioId === 'wedding' && g.obj && g.obj.rescued && !C.hero(c, 'gleb') && !c.fallen.includes('gleb')) {
+      const lead = C.hero(c, squad[0]) || c.roster[0];
+      const h = newHero(c, 'gleb', lead ? lead.player : 1, lead ? lead.ai : false);
+      const lv = c.roster.length ? Math.max(1, Math.round(c.roster.reduce((a, x) => a + x.level, 0) / c.roster.length)) : 1;
+      const XP = CFG().xpLevels;
+      h.level = lv; h.xp = lv > 1 ? XP[lv - 2] : 0; h.talentQueue = Array.from({ length: lv - 1 }, (_, i) => i);
+      c.roster.push(h);
+      rep.joined = 'gleb';
+    }
+
     // 3) блуждающие: обращённые союзники, чей монстр остался на поле (или так и не появился)
     const turnedNow = g.heroes.filter((gh) => gh.turned).map((gh) => gh.id);
     // в миссию без блуждающих (noWanderers) обращённые не выпускались — они никуда не делись
@@ -258,7 +270,8 @@
   };
 
   // Отряд нельзя собрать (выбыли, а на наём не хватает) — кампания окончена
-  C.hireable = (c) => ZG.Heroes.all().map((d) => d.id).filter((id) => !C.hero(c, id) && !c.fallen.includes(id) && !c.wanderers.includes(id));
+  // секретного героя не нанять — только спасти
+  C.hireable = (c) => ZG.Heroes.all().filter((d) => !d.secret).map((d) => d.id).filter((id) => !C.hero(c, id) && !c.fallen.includes(id) && !c.wanderers.includes(id));
   C.checkSquad = function (c) {
     if (c.status !== 'ready' || c.roster.length >= 1) return true; // идти можно и неполным отрядом
     const can = C.hireable(c).length && c.roster.some((h) => h.talons + C.sellValue(h) >= CFG().prices.hire);

@@ -118,6 +118,23 @@
   // Кампания, миссия 6 «За рекой»: обычный пригород, без вертолётного задания (герои уезжают на «буханке» — так и в эпилоге)
   ZG.Levels.add(Object.assign({}, base, { id: 'camp_m6', campaignOnly: true, num: 6, name: 'За рекой', scenarios: base.scenarios.filter((id) => id !== 'radio') }));
 
+  // Кампания, миссия 7 «Белый лебедь»: невеста со свитой, банда «Волки», два люка (2-й и 3-й столбцы)
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m7', campaignOnly: true, num: 7, name: 'Белый лебедь',
+    text: 'Пригород за рекой: ресторан, где играли свадьбу, и стоянка банды «Волки».',
+    scenarios: ['wedding'],
+    bonuses: base.bonuses.filter((id) => id !== 'biggame'),
+    conditions: ['calm'],
+    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // расставляет задание: 2-й и 3-й столбцы
+    spawnDeck: { sp_wedding: 1 },
+    loot: Object.assign({}, base.loot, { hunt_double: 2, silver_knife: 1 }), // находки только этой миссии: редкая ×2, уникальная ×1
+    zombieTypes: ['walker', 'runner', 'fatso'],
+    events: [],
+    rounds: 16,
+    roundsBonus: { 1: 3, 4: 1 }, // одиночке дольше добивать невесту и стаю; четвёрке — дольше идти всем к выходу
+    alarmThreshold: { 1: 7, 2: 6, 3: 6, 4: 6 }, // ровная сложность для 1–4 героев (у базы у четвёрки порог 4)
+  }));
+
   // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием
   ZG.Levels.add(Object.assign({}, base, {
     id: 'camp_m2', campaignOnly: true, num: 2, name: 'Автобаза',

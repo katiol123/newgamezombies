@@ -589,6 +589,15 @@
           this.addShake(3);
           return 300;
         }
+        case 'scream': {
+          // вопль невесты: расходящиеся фиолетовые кольца и надпись
+          const p = this.cellXY(ev.pos);
+          if (ZG.Sound) ZG.Sound.play('growl', { rate: 1.4 });
+          for (let i = 0; i < 3; i++) setTimeout(() => this._ring(p, '#c88aff', C * (1 + i * 0.6), 700), i * 120 / this.speed);
+          this._float(p.x, p.y - C * 0.45, 'ВОПЛЬ!', '#d8a8ff', 1.4);
+          this.addShake(4);
+          return 450;
+        }
         case 'wave': this.effects.push({ type: 'siren', t0: this.time, dur: 1.6 }); this.addShake(6); return 300;
         default: return 0;
       }
@@ -935,6 +944,20 @@
         const s = C * 0.34 * (1 + Math.sin(t * 6) * 0.06);
         ctx.save(); ctx.beginPath(); ctx.arc(c.x + C * 0.24, c.y + C * 0.22, s / 2, 0, TAU); ctx.fillStyle = '#e8e8e8'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f0c040'; ctx.stroke();
         ctx.fillStyle = '#c0392b'; ctx.font = `bold ${Math.round(C * 0.11)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOS', c.x + C * 0.24, c.y + C * 0.23); ctx.restore();
+      }
+      // миссия 7: жетон события у костра «Волков» — «?», пока пленника не заметили; потом — связанный человек
+      if (g.scenarioId === 'wedding' && g.obj && g.obj.camp != null && !g.obj.rescued && !g.obj.executed && !this.hiddenCell(g.obj.camp)) {
+        const c = this.cellXY(g.obj.camp), x = c.x - C * 0.3, y = c.y + C * 0.3, r = C * 0.17 * (1 + Math.sin(t * 4) * 0.05);
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g.obj.known ? '#5a3a2a' : '#2a2018'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f0c040'; ctx.stroke();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (!g.obj.known) { ctx.fillStyle = '#f0c040'; ctx.font = `bold ${Math.round(C * 0.2)}px 'Russo One', sans-serif`; ctx.fillText('?', x, y + 1); }
+        else { // фигурка у столба, обмотанная проволокой
+          ctx.fillStyle = '#c8a080'; ctx.beginPath(); ctx.arc(x, y - r * 0.45, r * 0.25, 0, TAU); ctx.fill();
+          ctx.fillRect(x - r * 0.18, y - r * 0.2, r * 0.36, r * 0.75);
+          ctx.strokeStyle = '#c0c4c8'; ctx.lineWidth = 1.5; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x - r * 0.3, y - r * 0.05 + i * r * 0.22); ctx.lineTo(x + r * 0.3, y + r * 0.05 + i * r * 0.22); ctx.stroke(); }
+        }
+        ctx.restore();
       }
       g.crates.forEach((cr) => {
         if (!cr.known || cr.opened) return;

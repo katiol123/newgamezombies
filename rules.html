@@ -330,7 +330,7 @@
     const zw = document.getElementById('zombies');
     ZG.Zombies.all().forEach((z) => zw.appendChild(CV.zombieCard(z.id)));
     const hw = document.getElementById('heroes');
-    ZG.Heroes.all().forEach((h) => hw.appendChild(CV.heroCard(h.id, { talents: true })));
+    ZG.Heroes.visible().forEach((h) => hw.appendChild(CV.heroCard(h.id, { talents: true }))); // секретный герой кампании не раскрывается
   })();
 </script>
 </body>

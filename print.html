@@ -104,11 +104,11 @@
 
   // ---------------------------------------------- стартовые и именные карты
   const starter = {};
-  ZG.Heroes.all()[0].deck.slice(0, 6).forEach((id) => { starter[id] = (starter[id] || 0) + 1; });
-  const nHeroes = ZG.Heroes.all().length;
+  ZG.Heroes.visible()[0].deck.slice(0, 6).forEach((id) => { starter[id] = (starter[id] || 0) + 1; });
+  const nHeroes = ZG.Heroes.visible().length;
   cardSheets('Стартовые карты (общие)', Object.entries(starter).map(([id, n]) => ({ el: CV.card(id), count: n * nHeroes })));
   const heroCards = [];
-  ZG.Heroes.all().forEach((h) => h.deck.slice(6).forEach((id) => heroCards.push({ el: CV.card(id), count: 1 })));
+  ZG.Heroes.visible().forEach((h) => h.deck.slice(6).forEach((id) => heroCards.push({ el: CV.card(id), count: 1 })));
   cardSheets('Именные карты героев', heroCards);
   cardSheets('Колода добычи', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
   cardSheets('Раны, Заражения и грузы', [
@@ -147,7 +147,7 @@
   }
 
   // ---------------------------------------------------- планшеты героев
-  const heroes = ZG.Heroes.all();
+  const heroes = ZG.Heroes.visible();
   for (let i = 0; i < heroes.length; i += 2) {
     const s = sheet('Планшеты героев', 'Отмечайте опыт и Раны кубиком или жетоном.');
     heroes.slice(i, i + 2).forEach((h) => {
@@ -216,7 +216,7 @@
   tok('z_walker', pool.walker || 24, 'Шатун'); tok('z_runner', pool.runner || 8, 'Бегун'); tok('z_fatso', pool.fatso || 5, 'Толстяк'); tok('z_screamer', pool.screamer || 4, 'Крикун');
   tok('z_brute', pool.brute || 2, 'Громила', 'big'); tok('z_plague', pool.plague || 3, 'Чумной'); tok('z_grabber', pool.grabber || 3, 'Хват'); tok('z_hound', 1, 'Ищейка', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 3, 'Гнездо', 'big', { t: 0 });
   // фишка героя: лицо — герой, оборот — он же, обращённый (печатайте двусторонней)
-  ZG.Heroes.all().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (оборот фишки)`, 'big'); });
+  ZG.Heroes.visible().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (оборот фишки)`, 'big'); });
   tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
   tok('tok_trap', 3, 'Растяжка', 'small'); tok('tok_lure', 2, 'Приманка', 'small'); tok('noiseIcon', 8, 'Шум', 'small'); tok('shieldIcon', 8, 'Блок', 'small');
   tok('energy', 6, 'Адреналин', 'small'); tok('skull', 8, 'Урон (крупные цели)', 'small', { color: '#e8a090' });
