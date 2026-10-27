@@ -949,6 +949,7 @@
     if (kind === 'melee' && heroIdx != null && g.heroes[heroIdx] && Mods.flag(g, g.heroes[heroIdx], 'meleeVsAlert') && (!g.stealth || z.awake || z.lurk)) n += 1;
     // любая атака героя выдаёт его укрытие до конца раунда (даже бесшумная)
     if (heroIdx != null && kind !== 'trap' && kind !== 'silent' && g.heroes[heroIdx]) (g.loud = g.loud || {})[g.heroes[heroIdx].pos] = 1;
+    const unaware = g.stealth && !z.awake; // «Тихая смерть»: зомби ещё не охотился (бродил или притаился)
     if (g.stealth && heroIdx != null && g.heroes[heroIdx] && kind !== 'silent') wake(g, z, g.heroes[heroIdx].pos, false, heroIdx); // на него напали
     const def = ZG.Zombies.get(z.type);
     if (heroIdx != null && E.scenario(g).onZombieHit) E.scenario(g).onZombieHit(g, z, heroIdx, E); // особые правила задания
@@ -976,6 +977,9 @@
         if (z.bitPhase === g.zphase) (z.bitHeroes || []).forEach((i) => { if (i !== heroIdx && g.heroes[i] && g.heroes[i].onBoard) E.relBump(g, h, g.heroes[i], 1, 'saved', `спасение: ${E.heroName(h)} убивает зомби, кусавшего ${E.heroName(g.heroes[i])}`); });
         if (kind === 'melee' || kind === 'silent') ms(h, 'meleeKills');
         if (def.big) ms(h, 'bigKills');
+        if ((kind === 'ranged' || kind === 'fire') && z.pos !== h.pos) ms(h, 'farKills'); // «Снайпер»: издалека
+        if (unaware && !E.isBandit(z)) ms(h, 'quietKills'); // «Тихая смерть»
+        if (E.isBandit(z)) ms(h, 'banditKills'); // «Охотник за головами»
         if (g.turn && g.active === heroIdx) { g.turn.kills = (g.turn.kills || 0) + 1; h.ms.bestTurnKills = Math.max(h.ms.bestTurnKills || 0, g.turn.kills); }
         gainXp(g, h, def.xp);
         if (def.turned) (g.putDown = g.putDown || []).push({ hero: heroIdx, turned: def.turned }); // упокоил бывшего союзника
@@ -1007,6 +1011,7 @@
   };
   // замешать карту в колоду героя (в случайное место)
   E.shuffleIn = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.deck.splice(Rng.int(g, h.deck.length + 1), 0, u); };
+  E.healWounds = (g, h, n, cures) => healWounds(g, h, n, cures);
   E.giveCard = function (g, h, id) { const u = E.newUid(g, 'c'); g.cards[u] = id; h.hand.push(u); };
   // редкая или уникальная находка из колоды добычи (если таких нет — обычная)
   E.giveRareLoot = function (g, h) {
@@ -1018,7 +1023,7 @@
   const ms = (h, key, n) => { h.ms = h.ms || {}; h.ms[key] = (h.ms[key] || 0) + (n == null ? 1 : n); };
   E.ms = ms;
   // подходит ли миссия к этой партии (союзник, скрытность, туман)
-  E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog));
+  E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog) || (m.needsBandits && !g.zombies.some((z) => E.isBandit(z))));
   // смена миссии: только сразу при получении — в начале первого хода героя, до любого его действия
   E.redrawMission = function (g, h) {
     if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || h.missionKept || !g.missionDeck.length) return false;
@@ -1262,6 +1267,8 @@
         E.perceive(g); // добрели до героя — заметили
         zs.step = 'attack';
       } else if (zs.step === 'attack') {
+        // «Хладнокровие»: кто стоит в толпе (3+ охотящихся зомби в зоне; спящие не в счёт) перед атаками — и сколько у него ран
+        if (!zs.crowd) { zs.crowd = {}; g.heroes.forEach((h) => { if (!h.onBoard) return; const n = g.zombies.filter((z) => z.pos === h.pos && !E.isBandit(z) && !ZG.Zombies.get(z.type).immobile && (!g.stealth || z.awake)).length; if (n >= 3) zs.crowd[h.idx] = E.hurtCount(g, h); }); }
         if (!zs.queue) zs.queue = buildAttacks(g);
         if (zs.queue.length) { prepareBlock(g, zs.queue[0]); continue; }
         // «Буйство» (тайл задания, g.frenzyTiles): мертвецы на нём делают второй ход — снова движение и атака
@@ -1276,6 +1283,7 @@
             continue;
           }
         }
+        Object.keys(zs.crowd || {}).forEach((i) => { const h = g.heroes[i]; if (h.onBoard && E.hurtCount(g, h) <= zs.crowd[i]) ms(h, 'coolHead'); });
         zs.step = 'special';
       } else if (zs.step === 'special') {
         const horde = ZG.Levels.get(g.levelId).hordeAlarm;
@@ -1449,6 +1457,7 @@
     }
     const taken = Math.max(0, entry.remaining - blocked);
     const totalBlocked = entry.incoming - taken;
+    if (totalBlocked > 0) ms(h, 'blocked', totalBlocked); // «Несгибаемый»
     if (totalBlocked > 0) E.fx(g, { t: 'blocked', hero: h.idx, pos: h.pos, n: totalBlocked });
     if (taken > 0) {
       E.log(g, `${E.heroName(h)} получает ${taken} ${ZG.util.plural(taken, 'Рану', 'Раны', 'Ран')} (атака ${entry.incoming}, отражено ${totalBlocked}).`, 'bad');
