@@ -251,6 +251,70 @@
       progress(g) { return g.obj.attempted ? 9 : (this.hasBattery(g) ? 2 : 0); }, // сигнал весит много: после него всем далеко до «буханки»
     },
     // --- Кампания, миссия 7 «Белый лебедь»: убить Укушенную невесту и уйти; пленник «Волков» — тайная возможность ---
+    // --- Кампания, миссия 6: лесная дорога и погост с Сияющим крестом ---
+    {
+      id: 'pogost', campaignOnly: true, name: 'Погост',
+      short: 'Забери рацию из сторожки у Сияющего креста и уходи по дороге у правого края. У Креста мертвецы буйствуют — ходят дважды.',
+      brief: 'За рекой дорога идёт через лес и старое кладбище. Над погостом светится огромный крест. В сторожке у Креста — рация сторожа.',
+      setupText: 'Поле 4×2: лес в двух левых столбцах (Сосновый бор ×2, Просека ЛЭП ×2), кладбище в двух правых (Старые могилы, Склепы, Часовня и Сияющий крест — Крест в случайном из кладбищенских столбцов). Старт — у левого края, выход — у правого края на кладбищенском тайле без Креста. Открыты сразу: старт, выход и Крест (его свет видно издалека). В сторожке у Креста — ящик с рацией. Засады (притаились в центрах двух разных случайных кладбищенских тайлов): А — Громилы и Хваты (соло: 2 Громилы и Хват; пара, трое, четверо: 3 Громилы и 2 Хвата); Б — 3 Бегуна и Крикун (пара: + Хват; трое: + Хват и Громила; четверо: + Хват и 2 Громилы). Когда рацию берут из ящика, она оживает: Шум у сторожки на 4 зоны. Люки: 2, в случайных тайлах, кроме стартового и тайла выхода. Лес пуст.',
+      exitLabel: 'Дорога в пригород', exitArt: 'exit_van', cargo: 'cargo_lodge_radio',
+      ambushA: { 1: ['brute', 'brute', 'grabber'], 2: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 3: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 4: ['brute', 'brute', 'brute', 'grabber', 'grabber'] },
+      ambushB: { 1: ['runner', 'runner', 'runner', 'screamer'], 2: ['runner', 'runner', 'runner', 'screamer', 'grabber'], 3: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute'], 4: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute', 'brute'] },
+      crackle: 4, // радиус шума, когда рацию берут из ящика
+      setup(g, E) {
+        const b = g.board, Rng = ZG.Rng, n = Math.min(4, ZG.Engine.party(g));
+        const at = (ti, p) => b.cells.find((c) => c.tile === ti && c.lx === p[0] && c.ly === p[1]);
+        const street = (ti) => b.cells.filter((c) => c.tile === ti && c.type === 'street');
+        const yard = ['pogost_graves', 'pogost_crypts', 'pogost_chapel', 'krest'];
+        const cem = b.tiles.map((t, i) => (yard.includes(t.id) ? i : -1)).filter((i) => i >= 0);
+        const kr = b.tiles.findIndex((t) => t.id === 'krest');
+        const maxTx = Math.max.apply(null, b.tiles.map((t) => t.tx));
+        const st = b.cells[g.start].tile;
+        // «Буйство»: тайл Креста
+        g.frenzyTiles = kr >= 0 ? [kr] : [];
+        // выход — у правого края на кладбищенском тайле без Креста
+        const exT = cem.filter((i) => b.tiles[i].tx === maxTx && i !== kr);
+        const exTile = exT.length ? Rng.pick(g, exT) : b.cells[g.exit].tile;
+        const edge = b.cells.filter((c) => c.tile === exTile && c.x === b.w - 1 && c.type === 'street');
+        if (edge.length) g.exit = Rng.pick(g, edge).i;
+        // рация — в ящике в сторожке у Креста
+        g.obj = { found: false, crate: null, brutes: false };
+        if (kr >= 0) { const lodge = at(kr, ZG.Tiles.get('krest').lodge).i; g.crates.push({ pos: lodge, card: this.cargo, opened: false }); g.obj.crate = lodge; }
+        // люки: 2, в случайных тайлах (кроме стартового и тайла выхода)
+        const holeTiles = Rng.shuffle(g, b.tiles.map((t, i) => i).filter((i) => i !== st && i !== exTile)).slice(0, 2);
+        g.spawnPoints = holeTiles.map((ti) => { const m = b.cells.find((c) => c.tile === ti && c.manhole); const ok = (c) => c && c.i !== g.start && c.i !== g.exit && c.i !== g.obj.crate && c.type === 'street'; return (ok(m) ? m : Rng.pick(g, street(ti).filter(ok))).i; });
+        // засады — в центрах двух разных случайных кладбищенских тайлов
+        const amb = Rng.shuffle(g, cem.slice()).slice(0, 2);
+        const lurk = (ti, list) => { const mid = at(ti, [1, 1]); const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, street(ti)); list.forEach((type) => E.lurker(g, type, cell.i)); };
+        lurk(amb[0], this.ambushA[n]);
+        lurk(amb[1], this.ambushB[n]);
+        g.hideFogCounts = true; // счётчики жетонов в тумане не выдают засады
+        // туман: старт, выход и Крест (свет видно издалека)
+        if (g.revealed) g.revealed = b.tiles.map((t, i) => i === st || i === exTile || i === kr);
+      },
+      hasRadio(g) { return g.heroes.some((h) => h.hand.some((u) => g.cards[u] === this.cargo)) || g.drops.some((d) => d.card === this.cargo); },
+      watch(g, E) {
+        if (!g.obj.found && g.heroes.some((h) => h.hand.some((u) => g.cards[u] === this.cargo))) {
+          g.obj.found = true;
+          // рация оживает в руках: хрип помех разносится по погосту — шум будит засады
+          E.log(g, 'Рация в руках оживает: треск и хрип помех разносятся по всему погосту!', 'bad');
+          E.fx(g, { t: 'noise', pos: g.obj.crate, n: this.crackle });
+          E.hear(g, g.obj.crate, this.crackle);
+        }
+        if (!g.obj.brutes && g.zombies.some((z) => z.type === 'brute' && z.awake)) { g.obj.brutes = true; E.storyEvent(g, 'brutes'); }
+      },
+      goals(g) {
+        return [
+          { text: 'Забрать рацию из сторожки у Сияющего креста (ящик)', done: g.obj.found },
+          { text: 'Все выжившие уходят по дороге у правого края', done: false },
+        ];
+      },
+      isComplete(g) { return g.obj.found; },
+      actions() { return []; },
+      botGoal(g) { if (g.obj.found) return null; const d = g.drops.find((x) => x.card === this.cargo); return d ? d.pos : g.obj.crate; },
+      progress(g) { return g.obj.found ? 5 : 0; },
+      timeoutText: 'Рассвет не наступил: погост не отпустил живых.',
+    },
     {
       id: 'wedding', campaignOnly: true, name: 'Белый лебедь',
       short: 'Убей Укушенную невесту — её вопль держит весь пригород — и уходи по северной дороге.',

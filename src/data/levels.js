@@ -116,7 +116,21 @@
   }));
 
   // Кампания, миссия 6 «За рекой»: обычный пригород, без вертолётного задания (герои уезжают на «буханке» — так и в эпилоге)
-  ZG.Levels.add(Object.assign({}, base, { id: 'camp_m6', campaignOnly: true, num: 6, name: 'За рекой', scenarios: base.scenarios.filter((id) => id !== 'radio') }));
+  // Кампания, миссия 6 «Погост»: лес (2 левых столбца) и старое кладбище (2 правых) с Сияющим крестом
+  ZG.Levels.add(Object.assign({}, base, {
+    id: 'camp_m6', campaignOnly: true, num: 6, name: 'Погост',
+    text: 'Лесная дорога за рекой и старое кладбище, над которым светится крест.',
+    scenarios: ['pogost'],
+    conditions: ['calm'],
+    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // расставляет задание: 2 люка в случайных тайлах
+    spawnDeck: { sp_pogost: 1 },
+    zombieTypes: ['walker', 'runner', 'brute', 'grabber', 'screamer'], // засады погоста
+    events: [],
+    rounds: 14,
+    roundsBonus: { 2: -2, 3: -3, 4: -5 }, // большой отряд дольше идёт к выходу — ему меньше времени
+    startAlarm: { 3: 1, 4: 1 },
+    alarmThreshold: { 1: 5, 2: 5, 3: 4, 4: 3 }, // большой отряд шумит — Волна у Креста приходит чаще
+  }));
 
   // Кампания, миссия 7 «Белый лебедь»: невеста со свитой, банда «Волки», два люка (2-й и 3-й столбцы)
   ZG.Levels.add(Object.assign({}, base, {

@@ -199,6 +199,8 @@
   // передать в бою можно только найденное: находки, грузы задания и карты кампании (подарки, трофеи); базовые карты героя — нет
   E.canGive = (g, uid) => { const d = ZG.Cards.get(g.cards[uid]); return !!(d && (d.loot || d.kind === 'cargo' || d.campaignOnly)); };
   E.canEvac = (g, h) => { const sc = E.scenario(g); return !sc.canEvac || sc.canEvac(g, h, E); };
+  // «Буйство»: мертвец (не бандит) на тайле из g.frenzyTiles действует в фазу зомби дважды
+  E.frenzied = (g, z) => !!(g.frenzyTiles && z && !E.isBandit(z) && g.frenzyTiles.includes(g.board.cells[z.pos].tile));
   E.isBandit = (z) => !!z && ZG.Zombies.get(z.type).faction === 'bandit';
   // видит ли существо другое существо (зомби ↔ бандит): своя зона, соседняя или прямая линия
   E.seesFoe = function (g, z, o) {
@@ -1248,11 +1250,12 @@
         // волнами: все зомби делают по шагу одновременно, затем следующий шаг — и так до макс. скорости
         const left = new Map();
         const goals = g.zs.goals = {}; // цель каждого зомби выбирается один раз за фазу
-        g.zombies.forEach((z) => { const sp = g.stealth && !z.awake ? 1 : E.zombieSpeed(g, z); /* бродячие — шаг за фазу */ if (!ZG.Zombies.get(z.type).immobile && !z.suppressed && sp > 0) left.set(z, sp); });
+        const fz = zs.frenzy; // второй ход «Буйства»: ходят только буйные, и только пока остаются на тайле
+        g.zombies.forEach((z) => { const sp = g.stealth && !z.awake ? 1 : E.zombieSpeed(g, z); /* бродячие — шаг за фазу */ if (!ZG.Zombies.get(z.type).immobile && !z.suppressed && sp > 0 && (!fz || fz.includes(z.uid))) left.set(z, sp); });
         for (let wave = 0; left.size; wave++) {
           if (wave) E.fx(g, { t: 'zwave' });
           [...left.keys()].forEach((z) => {
-            if (!g.zombies.includes(z) || !moveZombieStep(g, z, goals) || left.get(z) <= 1) left.delete(z);
+            if (!g.zombies.includes(z) || !moveZombieStep(g, z, goals) || left.get(z) <= 1 || (fz && !E.frenzied(g, z))) left.delete(z);
             else left.set(z, left.get(z) - 1);
           });
         }
@@ -1261,6 +1264,18 @@
       } else if (zs.step === 'attack') {
         if (!zs.queue) zs.queue = buildAttacks(g);
         if (zs.queue.length) { prepareBlock(g, zs.queue[0]); continue; }
+        // «Буйство» (тайл задания, g.frenzyTiles): мертвецы на нём делают второй ход — снова движение и атака
+        if (!zs.frenzy) {
+          const fz = g.zombies.filter((z) => E.frenzied(g, z) && !ZG.Zombies.get(z.type).immobile);
+          if (fz.length) {
+            zs.frenzy = fz.map((z) => z.uid); zs.queue = null; zs.step = 'move';
+            g.stats.frenzy = (g.stats.frenzy || 0) + fz.length;
+            E.log(g, `Буйство у Креста: ${fz.length} ${ZG.util.plural(fz.length, 'мертвец ходит', 'мертвеца ходят', 'мертвецов ходят')} ещё раз!`, 'bad');
+            E.fx(g, { t: 'frenzy', pos: fz[0].pos, zombies: zs.frenzy.slice() });
+            E.storyEvent(g, 'frenzy');
+            continue;
+          }
+        }
         zs.step = 'special';
       } else if (zs.step === 'special') {
         const horde = ZG.Levels.get(g.levelId).hordeAlarm;
@@ -1268,7 +1283,7 @@
         if (horde && mobile >= horde) E.raiseAlarm(g, 1, `Орда (${mobile} на поле) гудит`);
         g.zombies.slice().forEach((z) => {
           const def = ZG.Zombies.get(z.type);
-          if (def.hooks && def.hooks.zombiePhase) def.hooks.zombiePhase(g, z, E);
+          if (def.hooks && def.hooks.zombiePhase) { def.hooks.zombiePhase(g, z, E); if (E.frenzied(g, z) && g.zombies.includes(z)) def.hooks.zombiePhase(g, z, E); } // «Буйство»: особое свойство — дважды
         });
         g.zombies.filter((z) => E.isBandit(z)).forEach((z) => E.banditLoot(g, z));
         // Прорыв: если в закрытом тайле скопилось много зомби — он открывается сам
@@ -1334,9 +1349,11 @@
       z.attackedPhase = g.zphase; // атаковал в эту фазу (Невеста: за фазу — одна способность)
       E.fx(g, { t: 'attack', zombie: z.uid, hero: h.idx, pos: z.pos, n: dmg });
     };
+    const fz = g.zs && g.zs.frenzy;
     order.forEach((z) => {
       const def = ZG.Zombies.get(z.type);
       if (!g.zombies.includes(z)) return; // погиб в этой же схватке
+      if (fz && (!fz.includes(z.uid) || !E.frenzied(g, z))) return; // вторая атака «Буйства» — только буйные, оставшиеся на тайле
       if (def.dmg <= 0 || (g.stealth && !z.awake)) return;
       if (def.swing) {
         // Мясник «Размах крюком»: бьёт всех в своей зоне — героев, бандитов и (случайно) своих же зомби

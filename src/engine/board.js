@@ -19,15 +19,18 @@
   function build(level, g) {
     const { tw, th } = level.layout;
     const rules = g.tileRules || {};
-    const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : r));
+    const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : Object.assign({}, r))); // копия: данные миссии не меняются
     const skip = (rules.exclude || []).concat(req.map((r) => r.id));
     let pool = Rng.shuffle(g, level.tiles.filter((id) => !skip.includes(id)));
     if (!pool.length) pool = Rng.shuffle(g, level.tiles.slice()); // исключили всё — берём базовый пул
     const grid = {};
     const key = (tx, ty) => tx + ',' + ty;
     req.filter((r) => r.tx != null).forEach((r) => {
-      // tx = -1 — крайний правый столбец; ty не задан — случайная строка этого столбца
-      const tx = r.tx < 0 ? tw + r.tx : r.tx;
+      // tx = -1 — крайний правый столбец; tx: [a, b] — случайный из этих столбцов; ty не задан — случайная строка этого столбца
+      const col = (v) => (v < 0 ? tw + v : v);
+      const hasRow = (x) => { for (let y = 0; y < th; y++) if (!grid[key(x, y)]) return true; return false; };
+      const opts = Array.isArray(r.tx) ? Rng.shuffle(g, r.tx.map(col)) : [col(r.tx)];
+      const tx = opts.find(hasRow) != null ? opts.find(hasRow) : opts[0]; // занятый столбец пропускаем
       const rows = []; for (let ty = 0; ty < th; ty++) if (!grid[key(tx, ty)]) rows.push(ty);
       const ty = r.ty != null ? r.ty : rows.length ? Rng.pick(g, rows) : null;
       if (ty != null && !grid[key(tx, ty)]) grid[key(tx, ty)] = r.id; else r.tx = null; // место занято — ставим как без позиции

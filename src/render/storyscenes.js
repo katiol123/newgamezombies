@@ -412,18 +412,81 @@
   };
 
   // --- Миссия 6 и эпилог ---
-  S.m6_start = (c, t) => { // река, мост позади, брошенный велосипед; надписи на заборе мигают друг за другом
-    sky(c, [[0, '#3a3a3e'], [0.55, '#5a5650'], [1, '#141312']]);
-    c.fillStyle = '#4a5256'; c.fillRect(0, 420, W, 80); c.strokeStyle = 'rgba(232,220,192,.2)'; c.lineWidth = 2; for (let i = 0; i < 12; i++) { const x = ((i * 160 + t * 30) % (W + 200)) - 100; c.beginPath(); c.moveTo(x, 440 + (i % 3) * 18); c.lineTo(x + 60, 440 + (i % 3) * 18); c.stroke(); }
-    c.strokeStyle = 'rgba(20,20,22,.6)'; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 400); c.lineTo(600, 360); c.stroke();
-    c.fillStyle = '#2a2826'; c.fillRect(0, 500, W, 400);
-    c.fillStyle = '#4a4440'; c.fillRect(900, 330, 620, 300); // забор
-    const k = Math.sin(t * 1.1) > 0; scrawl(c, 'ЗДЕСЬ ЖИВЫЕ', 1210, 430, 64, k ? PAPER : 'rgba(232,220,192,.45)', -0.04);
-    scrawl(c, 'НЕ ВХОДИТЬ', 1210, 560, 64, !k ? '#e04a38' : 'rgba(224,74,56,.5)', 0.03); // обе надписи всегда читаются, мигание — лишь акцент
-    c.save(); c.translate(420, 760); c.rotate(-0.12); c.strokeStyle = INK; c.lineWidth = 9; c.beginPath(); c.arc(-90, 0, 60, 0, TAU); c.arc(90, 0, 60, 0, TAU); c.stroke(); // велосипед
-    c.beginPath(); c.moveTo(-90, 0); c.lineTo(-20, -70); c.lineTo(60, -70); c.lineTo(90, 0); c.moveTo(-20, -70); c.lineTo(10, 0); c.lineTo(60, -70); c.moveTo(-20, -70); c.lineTo(-30, -100); c.moveTo(60, -70); c.lineTo(70, -110); c.lineTo(100, -110); c.stroke();
-    c.save(); c.translate(90, 0); c.rotate(t * 0.8); c.lineWidth = 3; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(i) * 60, Math.sin(i) * 60); c.stroke(); } c.restore(); c.restore(); // колесо крутится
-    tex(c, '#000', 0.2); vignette(c, 0.6); grain(c, t); frame(c);
+  // --- Миссия 6 «Погост» ---
+  function pineSil(c, x, y, h, col) { c.fillStyle = col || INK; c.beginPath(); c.moveTo(x, y - h); for (let k = 0; k < 5; k++) { const yy = y - h + (k + 1) * h / 5, w = (k + 1) * h * 0.09; c.lineTo(x + w, yy); c.lineTo(x + w * 0.45, yy); } for (let k = 4; k >= 0; k--) { const yy = y - h + (k + 1) * h / 5, w = (k + 1) * h * 0.09; c.lineTo(x - w * 0.45, yy); c.lineTo(x - w, yy); } c.closePath(); c.fill(); c.fillRect(x - h * 0.02, y - 4, h * 0.04, 30); }
+  function crossGlow(c, x, y, s, t) { // сияющий крест: ровный белый свет без огня
+    const p = 0.85 + Math.sin(t * 1.3) * 0.08;
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, x, y, 420 * s * p, 'rgba(255,250,215,A)', 0.35); c.restore();
+    c.fillStyle = '#fffdf2'; c.strokeStyle = '#8a6a28'; c.lineWidth = 4 * s;
+    c.beginPath(); c.rect(x - 14 * s, y - 130 * s, 28 * s, 260 * s); c.rect(x - 74 * s, y - 80 * s, 148 * s, 26 * s); c.fill(); c.stroke();
+    c.fillStyle = '#fffdf2'; c.fillRect(x - 12 * s, y - 78 * s, 24 * s, 22 * s); // перекрестье без шва
+  }
+  S.m6_start = (c, t) => { // лесная дорога ночью; над соснами стоит белый свет креста
+    sky(c, [[0, '#0e1218'], [0.6, '#1a2026'], [1, '#07090a']]);
+    crossGlow(c, 1100, 300, 0.9, t);
+    for (let i = 0; i < 16; i++) { const x = i * 110 - 40 + (i % 2) * 30, h = 300 + (i * 53 % 160); if (x > 1020 && x < 1180) continue; pineSil(c, x, 640, h, i % 3 ? '#0a0d0c' : '#111614'); }
+    c.fillStyle = '#16181a'; c.beginPath(); c.moveTo(560, 900); c.lineTo(760, 620); c.lineTo(860, 620); c.lineTo(1100, 900); c.fill(); // дорога в лес
+    c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,250,215,.06)'; c.beginPath(); c.moveTo(760, 620); c.lineTo(860, 620); c.lineTo(1100, 900); c.lineTo(560, 900); c.fill(); c.restore(); // отсвет на асфальте
+    for (let i = 0; i < 30; i++) { const p = (t * 0.25 + i / 30) % 1; c.fillStyle = `rgba(200,210,220,${0.35 * (1 - p)})`; c.fillRect((i * 331) % W, p * 900, 2, 10); } // капли с веток
+    smoke(c, 800, 760, t, { n: 12, h: 120, spread: 500, r: 160, color: 'rgba(160,170,180,A)', a: 0.07, speed: 0.04, sway: 120 }); // туман у земли
+    tex(c, '#000', 0.2); vignette(c, 0.7); grain(c, t); frame(c);
+  };
+  S.m6_frenzy = (c, t) => { // в свете креста мертвецы рвутся вперёд — двойные силуэты-«эхо»
+    sky(c, [[0, '#1a1c22'], [1, '#08080a']]);
+    crossGlow(c, 800, 300, 1.1, t);
+    c.fillStyle = '#121416'; c.fillRect(0, 760, W, 140);
+    [[330, 3.0, 0], [600, 3.4, 1], [1010, 3.3, 0], [1280, 3.0, 1]].forEach(([x, s, f], i) => {
+      const lunge = ((t * 1.8 + i * 0.4) % 1), dx = (f ? -1 : 1) * (lunge < 0.5 ? lunge : 1 - lunge) * 120;
+      c.globalAlpha = 0.35; walker(c, x + dx * 0.4, 840, s, t, { ph: i, flip: !!f, fill: '#3a3e46' }); // эхо первого рывка
+      c.globalAlpha = 1; walker(c, x + dx, 840, s, t * 3, { ph: i, flip: !!f, fill: '#0c0d10', eyes: '#fff8d8' });
+    });
+    c.strokeStyle = 'rgba(255,250,215,.35)'; c.lineWidth = 3; for (let i = 0; i < 10; i++) { const p = (t * 1.5 + i / 10) % 1, x = 200 + i * 130; c.beginPath(); c.moveTo(x - 40 * p, 650 - p * 40); c.lineTo(x - 40 * p - 60, 650 - p * 40); c.stroke(); } // линии рывка
+    c.fillStyle = PAPER; c.font = "900 66px Impact, sans-serif"; c.textAlign = 'center'; c.globalAlpha = 0.85; c.fillText('ЕЩЁ РАЗ', 800, 120); c.globalAlpha = 1;
+    tex(c, '#000', 0.2); vignette(c, 0.65); grain(c, t); frame(c);
+  };
+  S.m6_brutes = (c, t) => { // из-за склепа поднимаются громадные «могильщики», по бокам — длиннорукие Хваты
+    sky(c, [[0, '#14161c'], [1, '#060607']]);
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 1400, 160, 380, 'rgba(255,250,215,A)', 0.25); glow(c, 800, 480, 520, 'rgba(200,210,230,A)', 0.12); c.restore(); // свет креста сбоку и подсветка за склепом
+    c.fillStyle = '#101214'; c.fillRect(0, 720, W, 180);
+    const rise = Math.min(1, ((t * 0.3) % 1.6));
+    [[640, 2.6], [800, 3.0], [960, 2.6]].forEach(([x, s], i) => { // громилы: широкие плечи, лопаты
+      const y = 720 + (1 - rise) * 260 * (1 + i * 0.1);
+      c.save(); c.translate(x, y); c.scale(s, s); c.fillStyle = '#0a0b0c';
+      c.strokeStyle = 'rgba(255,245,210,.55)'; c.lineWidth = 2.5; // контурный свет от Креста
+      c.beginPath(); c.moveTo(-46, 0); c.lineTo(-54, -100); c.quadraticCurveTo(-50, -150, -20, -158); c.lineTo(20, -158); c.quadraticCurveTo(50, -150, 54, -100); c.lineTo(46, 0); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(0, -176, 20, 22, 0, 0, TAU); c.fill(); c.stroke();
+      c.strokeStyle = '#3a3630'; c.lineWidth = 6; c.beginPath(); c.moveTo(52, -110); c.lineTo(80, -10); c.stroke(); c.fillStyle = '#5a564e'; c.fillRect(70, -14, 22, 26); // лопата
+      eyesPair(c, 0, -178, 0.6, rise);
+      c.restore();
+    });
+    c.fillStyle = '#3a3830'; c.fillRect(560, 620, 480, 120); c.fillStyle = '#2a2822'; c.beginPath(); c.moveTo(540, 620); c.lineTo(800, 540); c.lineTo(1060, 620); c.fill(); // склеп (передний план)
+    c.fillStyle = '#7a766c'; c.fillRect(790, 500, 20, 60); c.fillRect(770, 515, 60, 14);
+    [[260, 0], [1340, 1]].forEach(([x, f], i) => { // хваты: длинные руки тянутся к зрителю
+      c.save(); c.translate(x, 760); c.scale(f ? -2 : 2, 2); c.fillStyle = '#0c0d0e';
+      c.strokeStyle = 'rgba(255,245,210,.5)'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(-14, 0); c.lineTo(-10, -90); c.lineTo(10, -94); c.lineTo(14, 0); c.fill(); c.stroke(); c.beginPath(); c.ellipse(2, -106, 10, 12, 0, 0, TAU); c.fill(); c.stroke();
+      eyesPair(c, 4, -108, 0.35, 1);
+      const reach = 60 + Math.sin(t * 1.4 + i) * 20; c.strokeStyle = '#4a4c50'; c.lineWidth = 6; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(6, -80); c.quadraticCurveTo(50, -90, 60 + reach, -60); c.stroke(); c.beginPath(); c.moveTo(0, -70); c.quadraticCurveTo(40, -60, 50 + reach, -30); c.stroke();
+      c.restore();
+    });
+    tex(c, '#000', 0.22); vignette(c, 0.7); grain(c, t); frame(c);
+  };
+  S.m6_radio = (c, t) => { // сторожка: рация на журнале, свеча, запертый подпол, из-под двери тянет холодом
+    sky(c, [[0, '#1c1612'], [1, '#0a0806']]);
+    const fl = 0.85 + Math.sin(t * 7) * 0.08 + Math.sin(t * 17) * 0.04;
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 520, 420, 520 * fl, 'rgba(255,190,100,A)', 0.3); c.restore();
+    c.fillStyle = '#3a2818'; c.fillRect(160, 540, 820, 40); c.fillRect(200, 580, 30, 300); c.fillRect(910, 580, 30, 300); // стол
+    c.fillStyle = '#e4dcc4'; c.save(); c.translate(560, 520); c.rotate(-0.05); c.fillRect(-170, -20, 340, 40); c.strokeStyle = 'rgba(60,40,20,.5)'; c.lineWidth = 2; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(-150, -10 + i * 5); c.lineTo(150, -10 + i * 5); c.stroke(); } c.restore(); // журнал
+    c.fillStyle = '#3a4234'; c.fillRect(440, 400, 240, 120); c.strokeStyle = INK; c.lineWidth = 5; c.strokeRect(440, 400, 240, 120); // рация
+    c.fillStyle = '#1a1c18'; for (let i = 0; i < 5; i++) for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(470 + i * 18, 430 + k * 18, 5, 0, TAU); c.fill(); } // разбитый динамик
+    c.strokeStyle = '#c8c0b0'; c.lineWidth = 2; c.beginPath(); c.moveTo(470, 425); c.lineTo(540, 490); c.moveTo(520, 425); c.lineTo(480, 495); c.stroke(); // трещины
+    c.fillStyle = '#8a8478'; c.beginPath(); c.arc(600, 440, 16, 0, TAU); c.arc(640, 440, 12, 0, TAU); c.fill(); c.strokeStyle = '#2a2a26'; c.lineWidth = 5; c.beginPath(); c.moveTo(660, 400); c.lineTo(700, 260); c.stroke(); // ручки и антенна
+    c.fillStyle = '#e8e0c8'; c.fillRect(250, 450, 26, 90); c.fillStyle = '#ffcc55'; c.beginPath(); c.ellipse(263, 438 + Math.sin(t * 9) * 2, 9, 16, 0, 0, TAU); c.fill(); // свеча
+    c.fillStyle = '#2a1e14'; c.fillRect(1100, 640, 340, 200); c.strokeStyle = '#141008'; c.lineWidth = 8; c.strokeRect(1100, 640, 340, 200); c.fillStyle = '#6a6a66'; c.fillRect(1250, 720, 40, 16); // люк в подпол, засов изнутри
+    smoke(c, 1270, 650, t, { n: 10, h: 160, spread: 140, r: 70, color: 'rgba(180,200,220,A)', a: 0.1, speed: 0.06, sway: 30 }); // холод из-под двери
+    c.fillStyle = 'rgba(232,220,192,.85)'; c.font = "italic 40px Georgia, serif"; c.textAlign = 'center'; c.fillText('«Свет не гаснет. Они идут к нему.»', 800, 150);
+    tex(c, '#000', 0.2); vignette(c, 0.7); grain(c, t); frame(c);
   };
   // --- Миссия 7 «Белый лебедь» ---
   function veilFigure(c, x, y, s, t, o) { // невеста: белое платье и фата, голова медленно поворачивается

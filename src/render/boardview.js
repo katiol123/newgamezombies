@@ -607,6 +607,12 @@
           if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('bash');
           return 250;
         }
+        case 'frenzy': { // «Буйство» у Креста: белые вспышки на буйных мертвецах перед их вторым ходом
+          (ev.zombies || []).forEach((uid) => { const e = this.zombies.get(uid); if (e) this._ring(e, '#fff6d0', C * 0.45, 500); });
+          const p = this.cellXY(ev.pos);
+          this._float(p.x, p.y - C * 0.5, 'БУЙСТВО', '#fff2b0', 1.3);
+          return 450;
+        }
         case 'blood': {
           const e = this.zombies.get(ev.zombie);
           const p = e || this.cellXY(ev.pos);

@@ -1401,6 +1401,7 @@
         st = 'бродит';
         txt = `Кубик бродяг, 1 шаг: ${wanderDie(g)} Увидит героя или бандита — начнёт охотиться.`;
       }
+      if (E.frenzied(g, z)) txt += ' <b>Буйство:</b> пока на тайле Креста — в фазу зомби действует дважды.';
       const key = st + '|' + txt; // одинаковое поведение разных врагов — одной строкой
       (rows[key] = rows[key] || { name: d.name, st, txt, n: 0, hl: false }).n++;
       if (z.uid === zuid) rows[key].hl = true;
@@ -1417,7 +1418,7 @@
     ['Миссия 3 · Лес', ['m3_start', 'm3_battery', 'm3_bear', 'm3_twist', 'm3_bear_dead']],
     ['Миссия 4 · Трасса', ['m4_start', 'm4_bandit', 'm4_bitten', 'm4_fuel', 'm4_night']],
     ['Миссия 5 · Мост', ['m5_start', 'm5_sniper', 'm5_forester', 'm5_key', 'm5_saw', 'm5_forester_dead']],
-    ['Миссия 6 · За рекой', ['m6_start']],
+    ['Миссия 6 · Погост', ['m6_start', 'm6_frenzy', 'm6_brutes', 'm6_radio']],
     ['Миссия 7 · Белый лебедь', ['m7_start', 'm7_scream', 'm7_prisoner', 'm7_rescue', 'm7_executed', 'm7_bride_dead']],
     ['Миссия 8 · Полдень и финал', ['m8_start', 'm8_butcher', 'm8_blood', 'm8_wolves', 'm8_butcher_dead', 'epilogue']],
   ];

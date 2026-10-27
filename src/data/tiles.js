@@ -39,6 +39,33 @@
       buildings: {},
       decor: [{ k: 'pylon', x: 1, y: 1 }, { k: 'stump', x: 2, y: 2 }, { k: 'pine', x: 2, y: 0 }],
     },
+    // --- Погост (кампания, миссия 6): старое кладбище за рекой ---
+    {
+      id: 'pogost_graves', name: 'Старые могилы', num: 'П1', unique: true, ground: 'grass',
+      map: ['...', '...', '...'], doors: [], search: [[2, 0]],
+      buildings: {},
+      decor: [{ k: 'graves', x: 0, y: 0 }, { k: 'graves', x: 2, y: 2 }, { k: 'graves', x: 0, y: 2 }, { k: 'fence', x: 1, y: 0 }, { k: 'pine', x: 2, y: 1 }],
+    },
+    {
+      id: 'pogost_crypts', name: 'Склепы', num: 'П2', unique: true, ground: 'grass',
+      map: ['#..', '...', '..#'], doors: [], search: [[2, 0]],
+      buildings: {},
+      decor: [{ k: 'crypt', x: 0, y: 0 }, { k: 'crypt', x: 2, y: 2 }, { k: 'graves', x: 1, y: 0 }, { k: 'graves', x: 0, y: 2 }, { k: 'fence', x: 2, y: 1 }],
+    },
+    {
+      id: 'pogost_chapel', name: 'Часовня', num: 'П3', unique: true, ground: 'grass',
+      map: ['AA.', 'AA.', '...'], doors: [[1, 1, 2, 1], [0, 1, 0, 2]], search: [[0, 0, 'armory']],
+      buildings: { A: { floor: 'wood', label: 'Часовня' } },
+      decor: [{ k: 'pews', x: 0, y: 0 }, { k: 'pews', x: 1, y: 0 }, { k: 'candles', x: 1, y: 1 }, { k: 'graves', x: 2, y: 2 }, { k: 'graves', x: 0, y: 2 }],
+    },
+    {
+      id: 'krest', name: 'Сияющий крест', num: 'П4', unique: true, ground: 'grass',
+      map: ['A..', '...', '...'], doors: [[0, 0, 1, 0], [0, 0, 0, 1]], search: [],
+      buildings: { A: { floor: 'wood', label: 'Сторожка' } },
+      decor: [{ k: 'big_cross', x: 1, y: 1 }, { k: 'graves', x: 2, y: 0 }, { k: 'graves', x: 0, y: 2 }, { k: 'graves', x: 2, y: 2 }, { k: 'table', x: 0, y: 0 }],
+      lodge: [0, 0], // сторожка: здесь рация
+      frenzy: true, // «Буйство»: мертвецы на этом тайле действуют дважды
+    },
     // --- Мост (кампания, миссия 5): логово банды Лесника ---
     {
       id: 'checkpoint', name: 'Блокпост у моста', num: 'М1', unique: true,
