@@ -15,7 +15,7 @@
   //   ~40%: разовая мелочь · ~30%: находка/опыт · ~25%: пассивка · ~13%: сильная пассивка · <10%: очень сильная.
   ZG.Missions.addAll([
     {
-      id: 'm_butcher', name: 'Мясник', rarity: 'common', stat: 'meleeKills', goal: 5,
+      id: 'm_butcher', name: 'Рубака', rarity: 'common', stat: 'meleeKills', goal: 5,
       text: 'Убей 5 зомби в ближнем бою.', rewardText: '+3 опыта.',
       reward(g, h, E) { E.gainXp(g, h, 3); },
     },
