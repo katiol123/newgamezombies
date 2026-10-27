@@ -1864,15 +1864,14 @@
     epilogue(c) {
       const st = ZG.STORIES && ZG.STORIES.epilogue;
       if (!st) return;
-      const f = c.flags || {};
+      // эпилог собирается из глав пройденных миссий (ZG.EPILOGUE в data/campaign.js)
+      const ep = ZG.epilogueFor(c);
       const facts = [];
       facts.push(`Выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ') || 'никто'}`);
       if (c.fallen.length) facts.push(`Не дошли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}`);
-      facts.push(f.bear ? 'Медведь-шатун из бора убит — его жир спас не одну жизнь.' : 'Медведь-шатун так и бродит по бору.');
-      if (f.gleb) facts.push(f.gleb === 'rescued' ? 'Пленник «Волков» спасён: Глеб «Дуплет» идёт с нами.' : 'Пленника у костра «Волков» спасти не успели.');
-      if (f.bridge) facts.push(f.bridge === 'quiet' ? 'Мост пройден тихо: Лесник проснулся, когда ключ уже был у вас.' : 'Мост взят силой: Лесник мёртв, его топор теперь служит вам.');
+      ep.facts.forEach((t) => facts.push(esc(t)));
       if (c.wanderers.length) facts.push(`Где-то позади бродят обращённые: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}.`);
-      Modal.show(`${storyArt('epilogue')}<div class="story-kicker">${esc(st.kicker)}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(st.text)}</div><ul class="epi-facts">${facts.map((t) => `<li>${t}</li>`).join('')}</ul>`, [{ label: 'Конец пути', cls: 'primary' }], null, 'story');
+      Modal.show(`${storyArt('epilogue')}<div class="story-kicker">${esc(st.kicker)}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(ep.text)}</div><ul class="epi-facts">${facts.map((t) => `<li>${t}</li>`).join('')}</ul>`, [{ label: 'Конец пути', cls: 'primary' }], null, 'story');
     },
     render() {
       const c = App.campaign.c;
