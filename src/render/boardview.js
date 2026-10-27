@@ -11,7 +11,7 @@
   'use strict';
   const TABLE_TILT = 34, TABLE_PERSP = 1500; // режим «стол»: наклон поля и перспектива (совпадает с css .board-wrap.table)
   // событие поля → мелкий звук (ZG.Sound.sfx)
-  const SFX_MAP = { hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', rested: 'heal', tired: 'bash', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
+  const SFX_MAP = { safe: 'bash', hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', rested: 'heal', tired: 'bash', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
   const ZG = G.ZG;
   const Art = ZG.Art;
   const hash = Art.hash;
@@ -134,6 +134,7 @@
       this.zombies.forEach((e) => push(e.cell, e)); // умирающий держит место, пока не исчезнет, — соседи не наезжают на него
       const extras = new Set();
       this.g.crates.forEach((c) => { if (!c.opened) extras.add(c.pos); });
+      (this.g.safes || []).forEach((sf) => extras.add(sf.pos));
       this.g.search.forEach((s) => extras.add(s.pos));
       this.overflow = new Map();
       groups.forEach((list, cell) => {
@@ -533,6 +534,13 @@
           }, 450 / this.speed);
           return 1000;
         }
+        case 'safe': { // взлом сейфа: ценность — золотая вспышка, пусто — пыль, сирена — красные кольца и тряска
+          const p = this.cellXY(ev.pos);
+          if (ev.result === 'valuable') { this._spark(p, 30, '#f0c040'); this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1, color: '#f0c040' }); this._float(p.x, p.y - C * 0.5, 'ЦЕННОСТЬ', '#ffd36b', 1.2); return 500; }
+          if (ev.result === 'empty') { this._spark(p, 10, '#8a8e92'); this._float(p.x, p.y - C * 0.5, 'ПУСТО', '#c8ccd0', 1); return 300; }
+          this._ring(p, '#ff3a2a', C * 0.9, 700); this._ring(p, '#ff3a2a', C * 1.4, 900); this._float(p.x, p.y - C * 0.5, 'СИРЕНА!', '#ff5a4a', 1.5); this.addShake(10);
+          return 700;
+        }
         case 'crate': {
           const p = this.cellXY(ev.pos);
           this._spark(p, ev.found ? 30 : 12, ev.found ? '#f0c040' : '#c9a46a');
@@ -857,6 +865,12 @@
         const s = C * 0.36;
         const bob = cr.opened ? 0 : Math.sin(t * 2 + cr.pos) * 1.5;
         Art.draw(ctx, 'tok_crate', c.x - s / 2 - C * 0.24, c.y - s / 2 - C * 0.24 + bob, s, s, { opened: cr.opened });
+      });
+      (g.safes || []).forEach((sf) => { // сейф: сколько жетонов осталось в стопке
+        const c = this.cellXY(sf.pos);
+        const s = C * 0.38, dead = sf.jammed || !sf.deck.length;
+        Art.draw(ctx, 'tok_safe', c.x - s / 2 + C * 0.24, c.y - s / 2 + C * 0.22, s, s, { jammed: sf.jammed, dead });
+        if (!dead) this._label(ctx, c.x + C * 0.24, c.y + C * 0.46, `×${sf.deck.length}`, '#e8dcc0');
       });
       g.search.forEach((s) => {
         const c = this.cellXY(s.pos);

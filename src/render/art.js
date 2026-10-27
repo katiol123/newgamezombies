@@ -522,6 +522,12 @@
       c.beginPath(); c.moveTo(50, 34); c.quadraticCurveTo(58, 16, 70, 18); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
       if (!o.shadow) { c.fillStyle = '#ffb030'; circle(c, 72, 17, 5); c.fill(); c.fillStyle = '#fff3a0'; circle(c, 72, 17, 2.5); c.fill(); }
     },
+    valuable(c, o) { // ценность: золотые часы на цепочке и перстень
+      c.strokeStyle = o.shadow ? o.ink : '#e0b040'; c.lineWidth = 4; c.beginPath(); c.moveTo(50, 22); c.quadraticCurveTo(20, 10, 18, 40); c.quadraticCurveTo(16, 70, 34, 80); c.stroke();
+      circle(c, 56, 56, 26); fillInk(c, o.shadow ? o.ink : '#e8c050'); strokeInk(c, 4, o.ink);
+      if (!o.shadow) { circle(c, 56, 56, 19); c.fillStyle = '#f8f0d8'; c.fill(); c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(56, 56); c.lineTo(56, 43); c.moveTo(56, 56); c.lineTo(66, 60); c.stroke(); c.fillStyle = '#c0392b'; circle(c, 26, 82, 6); c.fill(); }
+      rr(c, 52, 24, 8, 8, 2); fillInk(c, o.shadow ? o.ink : '#c8a030');
+    },
     gasmask(c, o) { // противогаз ГП-5: резиновая маска, два окуляра, фильтр-коробка
       c.beginPath(); c.ellipse(50, 44, 30, 34, 0, 0, Math.PI * 2); fillInk(c, o.shadow ? o.ink : '#4a5a48');
       rr(c, 38, 68, 24, 24, 5); fillInk(c, o.shadow ? o.ink : '#5a5e62');
@@ -611,6 +617,7 @@
       if (!o.shadow) { c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 3; rr(c, 33, 18, 34, 28, 2); c.stroke(); rr(c, 33, 54, 34, 30, 2); c.stroke(); circle(c, 64, 52, 4); fillInk(c, '#e0c070'); }
     },
     plug(c, o) { circle(c, 50, 54, 34); fillInk(c, o.shadow ? o.ink : '#5a5a5a'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.strokeStyle = '#2a2a2a'; c.lineWidth = 3; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(26, 54 + i * 9); c.lineTo(74, 54 + i * 9); c.stroke(); } } c.save(); c.translate(50, 30); c.rotate(-0.5); rr(c, -6, -26, 12, 34, 3); fillInk(c, o.shadow ? o.ink : '#e0a83a'); strokeInk(c, 2.5, o.ink); c.restore(); },
+    safe(c, o) { rr(c, 14, 14, 72, 72, 6); fillInk(c, o.shadow ? o.ink : '#5a6068'); strokeInk(c, 4, o.ink); circle(c, 50, 50, 18); fillInk(c, o.shadow ? o.ink : '#c8ccd0'); strokeInk(c, 3, o.ink); if (!o.shadow) { c.strokeStyle = INK; c.lineWidth = 3; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(50 + Math.cos(a) * 12, 50 + Math.sin(a) * 12); c.lineTo(50 + Math.cos(a) * 17, 50 + Math.sin(a) * 17); c.stroke(); } c.fillStyle = '#e0a83a'; c.fillRect(74, 40, 6, 20); } },
     pickup(c, o) { rr(c, 20, 36, 60, 46, 4); fillInk(c, o.shadow ? o.ink : '#9a6a32'); strokeInk(c, 4, o.ink); c.beginPath(); c.moveTo(50, 8); c.lineTo(66, 26); c.lineTo(56, 26); c.lineTo(56, 40); c.lineTo(44, 40); c.lineTo(44, 26); c.lineTo(34, 26); c.closePath(); fillInk(c, o.ink); },
     task(c, o) { poly(c, [50, 8, 61, 38, 94, 39, 68, 59, 77, 91, 50, 72, 23, 91, 32, 59, 6, 39, 39, 38]); fillInk(c, o.shadow ? o.ink : '#f0c040'); strokeInk(c, 4, o.ink); },
     evac(c, o) { c.beginPath(); c.moveTo(50, 8); c.lineTo(80, 42); c.lineTo(62, 42); c.lineTo(62, 88); c.lineTo(38, 88); c.lineTo(38, 42); c.lineTo(20, 42); c.closePath(); fillInk(c, o.shadow ? o.ink : '#6fe08a'); strokeInk(c, 4, o.ink); },
@@ -1307,6 +1314,16 @@
       circle(c, 50, 50, 20); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 3.5);
       c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 50, 52);
     }
+  }));
+  // сейф: стальной ящик с кодовым диском; заклинило — красный крест; пуст — тёмный
+  Art.define('tok_safe', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
+    c.save(); c.translate(3, 4); rr(c, 10, 10, 80, 80, 8); c.fillStyle = 'rgba(0,0,0,.45)'; c.fill(); c.restore();
+    rr(c, 10, 10, 80, 80, 8); c.fillStyle = o.dead ? '#3a3e44' : '#6a7078'; c.fill(); strokeInk(c, 4);
+    rr(c, 18, 18, 64, 64, 5); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 3; c.stroke();
+    circle(c, 50, 50, 17); c.fillStyle = o.dead ? '#6a6e72' : '#d8dce0'; c.fill(); strokeInk(c, 3);
+    c.strokeStyle = INK; c.lineWidth = 2.5; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(50 + Math.cos(a) * 11, 50 + Math.sin(a) * 11); c.lineTo(50 + Math.cos(a) * 16, 50 + Math.sin(a) * 16); c.stroke(); }
+    c.fillStyle = '#e0a83a'; c.fillRect(78, 38, 6, 24);
+    if (o.jammed) { c.strokeStyle = '#d0392b'; c.lineWidth = 9; c.beginPath(); c.moveTo(20, 20); c.lineTo(80, 80); c.moveTo(80, 20); c.lineTo(20, 80); c.stroke(); }
   }));
   Art.define('tok_search', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     circle(c, 52, 54, 40); c.fillStyle = 'rgba(0,0,0,.4)'; c.fill();

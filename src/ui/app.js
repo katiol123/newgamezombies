@@ -1105,6 +1105,8 @@
         if (i != null) this.act({ t: 'burn', hero: i });
       }, ' gold');
       if (g.drops.length) icon('pickup', 'Подобрать', 1, has('pickup'), 'в зоне нет брошенного груза', () => this.act({ t: 'pickup' }));
+      const sfH = E.safeAt(g, h.pos);
+      if (sfH) icon('safe', 'Взлом', E.SAFE_COST, has('safe'), sfH.jammed ? 'сейф заклинило — сирена' : !sfH.deck.length ? 'сейф пуст' : zHere ? 'мешают зомби в зоне' : lack(E.SAFE_COST), () => this.act({ t: 'safe' }), ' gold');
       const sa = legal.filter((a) => a.t === 'scenario');
       sa.forEach((a) => icon('task', a.label, a.cost, true, '', () => this.act(a), ' gold'));
       if (E.isComplete(g)) icon('evac', 'Эвакуация', 0, has('evac'), 'дойдите до зоны выхода', async () => {
@@ -1357,6 +1359,7 @@
       case 'evac': return 'эвакуироваться!';
       case 'rescue': return 'спасти выжившего';
       case 'pickup': return 'подобрать груз';
+      case 'safe': return 'взломать сейф';
       default: return a.t;
     }
   }
@@ -1515,6 +1518,8 @@
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
     if (cell === g.fire) parts.push('<div class="tt-gold">Горящий бензовоз — его зарево освещает всю трассу</div>');
     if (g.spawnPoints.includes(cell)) parts.push(E.plugged(g, cell) ? `<div class="tt-gold">Люк заглушен: молчит ещё ${g.plugs[cell] - g.round + 1} р.</div>` : '<div class="tt-red">Точка появления зомби</div>');
+    const sf = E.safeAt(g, cell);
+    if (sf) parts.push(sf.jammed ? `<div class="tt-red">${esc(sf.label)}: заклинило — сирена</div>` : !sf.deck.length ? `<div>${esc(sf.label)}: пуст</div>` : `<div class="tt-gold">${esc(sf.label)}: жетонов ${sf.deck.length} (было 6: 4 Ценности, 1 Пусто, 1 Сирена). Взлом — ${E.SAFE_COST} ⚡ и Шум ${E.SAFE_NOISE}; Сирена — Тревога +2, сейф заклинит</div>`);
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
     const s = g.search.find((x) => x.pos === cell);
@@ -2016,7 +2021,8 @@
         const capN = list === 'equip' ? CMP.equipCap(h) : list === 'chest' ? CMP.chestCap(h) : null;
         const z = el('div', 'sh-zone ' + list);
         const sum = list === 'junk' ? h.junk.reduce((s2, it) => s2 + (CMP.price(it.id) || 0), 0) : 0;
-        z.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : ''}${list === 'equip' ? ' <small>— замешается в колоду на миссию</small>' : list === 'junk' && h.junk.length ? ` <small>— продастся при выходе ≈ +${sum} 🎫</small>` : ''}`));
+        const vals = list === 'junk' ? h.junk.filter((it) => CMP.isValuable$(it.id)).length : 0;
+        z.appendChild(el('div', 'sh-row-h', `${LIST_NAME[list]}${capN != null ? ` ${h[list].length}/${capN}` : ''}${list === 'equip' ? ' <small>— замешается в колоду на миссию</small>' : list === 'junk' && h.junk.length ? ` <small>— продастся при выходе ≈ +${sum} 🎫${vals ? ` и ${vals} ${ZG.util.plural(vals, 'ценность', 'ценности', 'ценностей')} (по ${CMP.VAL_MIN}–${CMP.VAL_MAX} 🎫)` : ''}</small>` : ''}`));
         const drop = el('div', 'sh-drop');
         drop.dataset.list = list;
         h[list].forEach((it, i) => {
@@ -2025,7 +2031,7 @@
           w.dataset.list = list; w.dataset.i = i;
           w.appendChild(CV.card(d));
           const p = CMP.price(it.id);
-          w.appendChild(el('div', 'sh-price', p == null ? 'не продаётся' : `🎫 ${p}`));
+          w.appendChild(el('div', 'sh-price', CMP.isValuable$(it.id) ? `🎫 ${CMP.VAL_MIN}–${CMP.VAL_MAX}?` : p == null ? 'не продаётся' : `🎫 ${p}`));
           if (it.worn) w.appendChild(el('div', 'sh-worn', '⚠ на грани поломки'));
           drop.appendChild(w);
         });
@@ -2120,18 +2126,19 @@
       const it = h[list][i], d = ZG.Cards.get(it.id), CFG = ZG.CAMPAIGN;
       const btns = [];
       ['equip', 'chest', 'junk'].filter((l) => l !== list).forEach((l) => btns.push({ label: { equip: 'В экипировку', chest: 'В сундук', junk: 'В хлам' }[l], value: 'mv:' + l }));
-      const p = CMP.price(it.id);
-      if (p != null) btns.push({ label: `Продать (+${p} 🎫)`, value: 'sell' });
+      const p = CMP.price(it.id), val = CMP.isValuable$(it.id);
+      if (val) btns.push({ label: `Продать скупщику (${CMP.VAL_MIN}–${CMP.VAL_MAX} 🎫, цена неизвестна)`, value: 'sell' });
+      else if (p != null) btns.push({ label: `Продать (+${p} 🎫)`, value: 'sell' });
       if (it.worn) btns.push({ label: `Починить (${CMP.repairPrice(it.id)} 🎫)${CMP.built(h, 'workshop') ? '' : ' — нужна Мастерская'}`, value: 'repair' });
       if (c.roster.length > 1) btns.push({ label: 'Передать…', value: 'give' });
       btns.push({ label: 'Закрыть', cls: 'primary' });
       const cel = CV.card(d);
       const note = it.worn ? '<p class="warn">⚠ На грани поломки: если снова взять её в поход, после миссии она сломается с шансом 50%.</p>'
         : list === 'equip' ? '<p class="muted">Экипированная карта замешивается в колоду на миссию. После похода она станет «на грани поломки».</p>' : '';
-      const v = await Modal.show(`<div class="kicker">${esc(ZG.Heroes.get(h.id).name)} · ${LIST_NAME[list]}</div>${note}${p == null ? '<p class="muted">Уникальная карта кампании — не продаётся.</p>' : ''}`, btns, cel, 'wide');
+      const v = await Modal.show(`<div class="kicker">${esc(ZG.Heroes.get(h.id).name)} · ${LIST_NAME[list]}</div>${note}${val ? '<p class="muted">Скупщик назовёт цену только при продаже. Не продали — сдадите при выходе в поход (если лежит в хламе).</p>' : p == null ? '<p class="muted">Уникальная карта кампании — не продаётся.</p>' : ''}`, btns, cel, 'wide');
       if (!v) return;
       if (v.startsWith('mv:')) return this.act(() => CMP.move(c, h.id, list, i, v.slice(3)));
-      if (v === 'sell') return this.act(() => CMP.sell(c, h.id, list, i));
+      if (v === 'sell') { this.act(() => CMP.sell(c, h.id, list, i)); if (val && c.lastSale) toast(`Скупщик повертел Ценность в руках и дал ${c.lastSale.price} 🎫.`); return; }
       if (v === 'repair') return this.act(() => CMP.repair(c, h.id, list, i));
       if (v === 'give') {
         const others = c.roster.filter((o) => o !== h);

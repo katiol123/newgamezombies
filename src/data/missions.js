@@ -4,7 +4,7 @@
  * Поэтому миссию выгодно скрывать: союзник может «перебить» вашу цель.
  *
  * Поля: rarity ('common' ×2 в колоде, 'rare' ×1), stat — счётчик героя (h.ms[stat]), goal — сколько нужно,
- *       needsAlly / needsStealth / needsFog / needsBandits — если условие не выполняется, карта уходит под низ и тянется новая,
+ *       needsAlly / needsStealth / needsFog / needsBandits / needsSafe — если условие не выполняется, карта уходит под низ и тянется новая,
  *       reward(g, h, E) — награда, perk — постоянная пассивка (как талант: mods/hooks), traitor — карта предателя.
  */
 (function (G) {
@@ -79,6 +79,11 @@
       id: 'm_bounty', name: 'Охотник за головами', rarity: 'rare', stat: 'banditKills', goal: 2, needsBandits: true,
       text: 'Нанеси последний удар двум бандитам. Нужны бандиты на поле.', rewardText: 'Пассивка «Глаз-алмаз»: дальность твоих дальних атак +1.',
       perk: { name: 'Глаз-алмаз', text: 'Дальность твоих дальних атак +1.', mods: { rangeBonus: 1 } },
+    },
+    {
+      id: 'm_fence', name: 'Скупщик', rarity: 'common', stat: 'safeLoot', goal: 1, needsSafe: true,
+      text: 'Достань из сейфа Ценность. Нужен сейф на поле.', rewardText: '+2 опыта.',
+      reward(g, h, E) { E.gainXp(g, h, 2); },
     },
   ]);
 

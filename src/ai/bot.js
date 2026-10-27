@@ -94,6 +94,8 @@
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
+    // сейф манит, пока есть время и силы (кампания — талоны, «Скупщик» — задание): лёгкое притяжение к нему
+    if (fh && fh.onBoard && (g.safes || []).length) s -= safePull(g, fh);
     // заглушенные люки: каждый раунд тишины — меньше зомби
     Object.keys(g.plugs || {}).forEach((k) => { const left = g.plugs[k] - g.round + 1; if (left > 0) s += left * 45; });
     g.heroes.forEach((h) => {
@@ -247,7 +249,41 @@
     // «Ангел-хранитель» передаёт карты охотно, остальные — только грузы
     const h = g.active != null ? g.heroes[g.active] : null;
     const angel = h && h.mission === 'm_angel' && !h.missionDone && g.missionFirst == null;
-    return E.legal(g).filter((a) => a.t !== 'mredraw' && (a.t !== 'give' || angel || ZG.Cards.get(g.cards[a.card]).kind === 'cargo'));
+    // взлом сейфа решается отдельно (wantSafe) — перебор «заглянул бы» в закрытую стопку жетонов
+    return E.legal(g).filter((a) => a.t !== 'mredraw' && a.t !== 'safe' && (a.t !== 'give' || giveOk(g, h, a, angel)));
+  }
+  function giveOk(g, h, a, angel) {
+    const d = ZG.Cards.get(g.cards[a.card]);
+    // Ценность ИИ не отдаёт (прибыль уйдёт другому) — разве что сам вот-вот падёт, а рядом приятель или друг
+    if (d.valuable) return E.maxHp(g, h) - E.hurtCount(g, h) <= 2 && E.rel(g, h, g.heroes[a.hero]) >= 1;
+    return angel || d.kind === 'cargo';
+  }
+  function safePull(g, h) {
+    const sf = g.safes.find((x) => !x.jammed && x.deck.length >= 3);
+    if (!sf) return 0;
+    const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
+    if (!g.campaign && !fence) return 0;
+    if (h.hand.filter((u) => ZG.Cards.get(g.cards[u]).valuable).length >= 2) return 0;
+    if (E.maxRounds(g) - g.round < 6 || E.hurtCount(g, h) * 2 >= E.maxHp(g, h)) return 0;
+    const d = E.distV(g, h.pos)[sf.pos];
+    return d === Infinity ? 0 : Math.min(d, 8) * (fence ? 60 : 20);
+  }
+  // Сейф: ломать ли ещё одну ячейку. Интерес — талоны (кампания) или «Скупщик»; риск — сирена (1 из оставшихся жетонов),
+  // время, Тревога, свои раны, охотники рядом и засорённая рука
+  function wantSafe(g, h) {
+    const sf = E.safeAt(g, h.pos);
+    if (!sf || sf.jammed || !sf.deck.length || h.energy < E.SAFE_COST) return false;
+    const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
+    if (!g.campaign && !fence) return false;
+    const vals = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).valuable).length;
+    if (vals >= 2 && !(fence && !(h.ms.safeLoot || 0))) return false; // рука и так засорена
+    if (sf.deck.length < (fence ? 2 : 3)) return false; // сирена — 1 из оставшихся: дальше слишком рискованно
+    if (E.maxRounds(g) - g.round < 4) return false;
+    if (E.hurtCount(g, h) * 2 >= E.maxHp(g, h)) return false;
+    if (g.alarm + E.SAFE_NOISE + (E.jingles(g, h) ? 1 : 0) >= E.alarmThreshold(g)) return false; // шум не должен вызвать Волну
+    const d = E.distV(g, h.pos);
+    if (g.zombies.some((z) => !E.isBandit(z) && (!g.stealth || z.awake) && d[z.pos] <= 1)) return false; // охотники вплотную
+    return true;
   }
 
   function bestAction(g, opts) {
@@ -330,6 +366,7 @@
     for (let i = 0; i < 40; i++) {
       autoPending(g);
       if (g.active !== idx || g.result) return;
+      if (wantSafe(g, g.heroes[idx])) { E.act(g, { t: 'safe' }); continue; }
       const a = bestAction(g, opts);
       if (!a) break;
       E.act(g, a);

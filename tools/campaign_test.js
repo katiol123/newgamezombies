@@ -309,5 +309,43 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(!C.trader(c), 'после миссии 7 торговец не возвращается');
 }
 
+// 22) Сейф и Ценности: стопка 4/1/1, взлом 2 ⚡ и шум, звон +1, выпадение только находок, продажа 2–8
+{
+  const g = E.create({ seed: 't22', heroes: [{ id: 'boris' }, { id: 'lisa' }], quiet: true });
+  const h = g.heroes[0];
+  g.zombies.length = 0;
+  const sf = E.placeSafe(g, h.pos, 'Сейф');
+  ok(sf.deck.filter((x) => x === 'valuable').length === 4 && sf.deck.includes('empty') && sf.deck.includes('siren'), 'стопка сейфа: 4 Ценности, Пусто, Сирена');
+  sf.deck = ['valuable', 'empty', 'siren'];
+  E.act(g, { t: 'begin', hero: 0 }); h.energy = 6;
+  const a0 = g.alarm;
+  ok(E.act(g, { t: 'safe' }) && h.hand.some((u) => g.cards[u] === 'valuable') && h.energy === 4 && g.alarm > a0, 'взлом: Ценность в руку, −2 ⚡, шум поднял Тревогу');
+  const a1 = g.alarm;
+  E.act(g, { t: 'safe' });
+  ok(g.alarm - a1 === E.SAFE_NOISE + 1, 'Ценность звенит: Шум взлома +1');
+  h.energy = 6; E.act(g, { t: 'safe' });
+  ok(sf.jammed && !E.legal(g).some((a) => a.t === 'safe'), 'сирена — сейф заклинило, взлом недоступен');
+  ok(E.blockValue(g, h, h.hand.find((u) => g.cards[u] === 'valuable')) === 0, 'Ценностью нельзя блокировать');
+  // падение: выпадают только находки (базовые карты остаются)
+  const g2 = E.create({ seed: 't22b', heroes: [{ id: 'boris' }, { id: 'lisa' }], quiet: true });
+  const b = g2.heroes[0];
+  E.giveCard(g2, b, 'valuable'); E.giveCard(g2, b, 'medkit');
+  const before = g2.drops.length;
+  for (let i = 0; i < 20; i++) { const u = E.newUid(g2, 'w'); g2.cards[u] = 'wound'; b.deck.push(u); }
+  E.turnHero(g2, b);
+  const dropped = g2.drops.slice(before).map((d) => d.card);
+  ok(dropped.length === 2 && dropped.every((id) => ZG.Cards.get(id).loot || ZG.Cards.get(id).campaignOnly), `при обращении выпали 2 находки: ${dropped.join(', ')}`);
+  // кампания: продажа по неизвестной цене, ИИ сдаёт в хлам
+  const c = C.create({ heroes: [{ id: 'marina', ai: true }], seed: 't22c' });
+  const m = C.hero(c, 'marina');
+  m.chest.push({ key: 'v1', id: 'valuable', worn: false }, { key: 'v2', id: 'valuable', worn: false });
+  C.autoManage(c, 'marina');
+  ok(m.junk.filter((it) => it.id === 'valuable').length === 2, 'ИИ кладёт Ценности в хлам');
+  const t0 = m.talons;
+  ok(!C.sell(c, 'marina', 'junk', m.junk.findIndex((it) => it.id === 'valuable')) && m.talons - t0 >= 2 && m.talons - t0 <= 8, `продажа Ценности: +${m.talons - t0} 🎫 (2–8)`);
+  const t1 = m.talons; C.startMission(c);
+  ok(m.talons - t1 >= 2 && m.talons - t1 <= 8 && !m.junk.some((it) => it.id === 'valuable'), 'при выходе Ценность из хлама продана');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

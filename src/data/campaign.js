@@ -423,6 +423,12 @@
       play(c) { c.heal(c.hero.idx, 2); c.block(2); },
     },
     {
+      // Ценность: только из сейфов. Груз — занимает руку; звенит; после миссии продаётся по неизвестной цене
+      id: 'valuable', name: 'Ценность', suit: 'none', cost: null, shield: 0, kind: 'cargo', cargo: 'valuable', valuable: true, campaignOnly: true,
+      type: 'Ценность', text: 'Занимает место в руке, нельзя сыграть или сбросить. Звенит: пока она у тебя в руке, твои шумные действия — Шум +1 (не складывается). После миссии продаётся — цена неизвестна, от 2 до 8 🎫.',
+      art: 'valuable', unplayable: true, value: 0,
+    },
+    {
       id: 'cargo_lodge_radio', name: 'Рация сторожа', suit: 'none', cost: null, shield: 0, kind: 'cargo', cargo: 'lodge_radio',
       type: 'Груз', text: 'Груз. Занимает место в руке. Нельзя сыграть или сбросить.\nУнеси с погоста.',
       art: 'cargo_radio', unplayable: true, value: 0,

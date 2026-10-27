@@ -476,7 +476,7 @@
     const g = {
       v: 2, seed, rng: Rng.seedFrom(seed), levelId: level.id,
       scenarioId: null, conditionId: null, difficultyId: opts.difficultyId || 'survivor',
-      cards: {}, nextUid: 1, heroes: [], zombies: [], crates: [], search: [], drops: [],
+      cards: {}, nextUid: 1, heroes: [], zombies: [], crates: [], safes: [], search: [], drops: [],
       lures: [], traps: [], barricades: [], doors: level.doors ? {} : null, noise: {}, spawnPoints: [],
       lootDeck: [], lootDiscard: [], spawnDeck: [], spawnDiscard: [],
       round: 1, alarm: 0, phase: 'heroes', active: null, turn: null, pending: null, zs: null,
@@ -759,13 +759,16 @@
     if (h.infection >= at) turnHero(g, h);
   }
 
-  // 2 случайные карты героя (не Раны/Заражения/грузы) падают в зоне вместе с грузом
+  // груз задания падает в зоне весь; кроме него — 2 случайные НАХОДКИ героя (находки, трофеи, карты кампании, ценности; не базовые карты)
   function dropBelongings(g, h) {
     const drop = (u) => g.drops.push({ pos: h.pos, card: g.cards[u], carried: g.carried && g.carried[u], holders: g.carriedHolders && g.carriedHolders[u] });
-    h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind === 'cargo').forEach(drop);
-    const pool = h.deck.concat(h.hand, h.discard, h.exhaust || [], h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return !d.kind || d.kind === 'action'; });
-    Rng.shuffle(g, pool).slice(0, 2).forEach(drop);
-    h.hand = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).kind !== 'cargo');
+    const cargo = (d) => d.kind === 'cargo' && !d.valuable;
+    h.hand.filter((u) => cargo(ZG.Cards.get(g.cards[u]))).forEach(drop);
+    const pool = h.deck.concat(h.hand, h.discard, h.exhaust || [], h.equip).filter((u) => { const d = ZG.Cards.get(g.cards[u]); return (d.loot || d.campaignOnly) && !cargo(d) && d.kind !== 'wound' && d.kind !== 'infection'; });
+    const lost = Rng.shuffle(g, pool).slice(0, 2);
+    lost.forEach(drop);
+    ['deck', 'hand', 'discard', 'exhaust', 'equip'].forEach((k) => { if (h[k]) h[k] = h[k].filter((u) => !lost.includes(u)); });
+    h.hand = h.hand.filter((u) => !cargo(ZG.Cards.get(g.cards[u])));
   }
 
   // Обращение: фишка героя переворачивается особым монстром
@@ -925,8 +928,11 @@
     if (why) E.log(g, `${why}: Тревога +${n} (${g.alarm}/${E.alarmThreshold(g)}).`, 'warn');
   };
 
+  // «Ценность» звенит: у героя с ценностью в руке шумные действия громче на 1 (несколько ценностей не складываются)
+  E.jingles = (g, h) => !!h && h.hand.some((u) => ZG.Cards.get(g.cards[u]).valuable);
   function makeNoise(g, h, cell, n) {
     if (n <= 0) return;
+    if (E.jingles(g, h)) n += 1;
     g.noise[cell] = (g.noise[cell] || 0) + n;
     const a = Math.max(0, n + Mods.value(g, h, 'noiseAlarm', 0));
     E.fx(g, { t: 'noise', pos: cell, n });
@@ -1023,7 +1029,7 @@
   const ms = (h, key, n) => { h.ms = h.ms || {}; h.ms[key] = (h.ms[key] || 0) + (n == null ? 1 : n); };
   E.ms = ms;
   // подходит ли миссия к этой партии (союзник, скрытность, туман)
-  E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog) || (m.needsBandits && !g.zombies.some((z) => E.isBandit(z))));
+  E.missionFits = (g, m) => !((m.needsAlly && g.heroes.length < 2) || (m.needsStealth && !g.stealth) || (m.needsFog && !g.fog) || (m.needsBandits && !g.zombies.some((z) => E.isBandit(z))) || (m.needsSafe && !(g.safes || []).length));
   // смена миссии: только сразу при получении — в начале первого хода героя, до любого его действия
   E.redrawMission = function (g, h) {
     if (!g.missions || !h.mission || h.missionDone || h.missionRedrawn || h.missionKept || !g.missionDeck.length) return false;
@@ -1735,6 +1741,7 @@
     if (searchableHere(g, h) && searchCost(g, h) <= h.energy) out.push({ t: 'search' });
     if (h.energy >= E.PUNCH_COST && !Mods.flag(g, h, 'noPunch')) E.zombiesAt(g, h.pos).forEach((z) => out.push({ t: 'punch', zombie: z.uid }));
     if (h.energy >= 1 && g.drops.some((d) => d.pos === h.pos)) out.push({ t: 'pickup' });
+    { const sf = E.safeAt(g, h.pos); if (sf && !sf.jammed && sf.deck.length && h.energy >= E.SAFE_COST && !E.zombiesAt(g, h.pos).length) out.push({ t: 'safe' }); }
     if (h.energy >= barricadeCost(g, h) && g.barricades.length < MAX_BARRICADES) {
       g.board.adj[h.pos].forEach((n) => { if (!E.barricadeAt(g, h.pos, n)) out.push({ t: 'barricade', to: n }); });
     }
@@ -1877,7 +1884,16 @@
         const u = E.newUid(g, 'c'); g.cards[u] = d.card; h.hand.push(u);
         if (d.carried) { g.carried[u] = d.carried; g.carriedHolders[u] = (d.holders || []).concat(h.id); } // принесённая карта сохраняет износ
         E.log(g, `${E.heroName(h)} подбирает: «${ZG.Cards.get(d.card).name}».`, 'good');
-        if (ZG.Cards.get(d.card).kind === 'cargo') E.storyEvent(g, 'cargo');
+        if (ZG.Cards.get(d.card).kind === 'cargo' && !ZG.Cards.get(d.card).valuable) E.storyEvent(g, 'cargo');
+        return true;
+      }
+      case 'safe': {
+        const sf = E.safeAt(g, h.pos);
+        if (!sf || sf.jammed || !sf.deck.length) return fail(g, 'Этот сейф уже не вскрыть.');
+        if (h.energy < E.SAFE_COST) return fail(g, 'Не хватает энергии.');
+        if (E.zombiesAt(g, h.pos).length) return fail(g, 'Мешают зомби в зоне.');
+        spend(g, h, E.SAFE_COST);
+        crackSafe(g, h, sf);
         return true;
       }
       case 'barricade': {
@@ -2066,6 +2082,38 @@
     g.barricades.push({ a: h.pos, b: to, hp, max: hp });
     E.log(g, `${E.heroName(h)} ставит баррикаду (прочность ${hp}).`, 'info');
     E.fx(g, { t: 'barricade', a: h.pos, b: to });
+  }
+
+  // ---- Сейф: мини-игра «испытай удачу». Стопка жетонов лицом вниз: 4 «Ценность», 1 «Пусто», 1 «Сирена».
+  // Взлом — 2 ⚡ и Шум 2: открывается верхний жетон. «Сирена» — Тревога +2, сейф заклинило насовсем.
+  E.SAFE_COST = 2;
+  E.SAFE_NOISE = 2;
+  E.SAFE_DECK = ['valuable', 'valuable', 'valuable', 'valuable', 'empty', 'siren'];
+  E.safeAt = (g, pos) => (g.safes || []).find((s) => s.pos === pos) || null;
+  E.placeSafe = function (g, pos, label) {
+    const sf = { pos, deck: Rng.shuffle(g, E.SAFE_DECK.slice()), jammed: false, label: label || 'Сейф', taken: 0 };
+    (g.safes = g.safes || []).push(sf);
+    return sf;
+  };
+  function crackSafe(g, h, sf) {
+    makeNoise(g, h, h.pos, E.SAFE_NOISE);
+    const tok = sf.deck.shift();
+    if (tok === 'valuable') {
+      E.giveCard(g, h, 'valuable');
+      sf.taken++;
+      ms(h, 'safeLoot');
+      E.log(g, `${E.heroName(h)} вскрывает ячейку — внутри Ценность! (жетонов осталось: ${sf.deck.length})`, 'good');
+      E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'valuable' });
+    } else if (tok === 'empty') {
+      E.log(g, `${E.heroName(h)} вскрывает очередную ячейку — пусто. (жетонов осталось: ${sf.deck.length})`, 'dim');
+      E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'empty' });
+    } else {
+      sf.jammed = true;
+      E.log(g, `${E.heroName(h)} задевает сигнализацию: «${sf.label}» воет сиреной и заклинивает намертво!`, 'bad');
+      E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'siren' });
+      E.raiseAlarm(g, 2, 'Сирена сейфа');
+      E.hear(g, h.pos, 4, h.idx);
+    }
   }
 
   function doSearch(g, h) {

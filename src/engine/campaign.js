@@ -52,8 +52,12 @@
     if (d.campaignOnly) return null; // уникальные карты кампании не продаются
     return CFG().prices.sell[d.rarity || 'common'];
   };
+  // Ценность: цена неизвестна до продажи — скупщик даёт от VAL_MIN до VAL_MAX талонов
+  C.VAL_MIN = 2; C.VAL_MAX = 8;
+  C.isValuable$ = (id) => !!(ZG.Cards.get(id) || {}).valuable;
+  C.appraise = (c) => C.VAL_MIN + Rng.int(c, C.VAL_MAX - C.VAL_MIN + 1);
   C.repairPrice = (id) => { const r = CFG().prices.repair; return typeof r === 'number' ? r : r[ZG.Cards.get(id).rarity || 'common']; };
-  C.sellValue = (h) => h.chest.concat(h.junk, h.equip).reduce((s, it) => s + (C.price(it.id) || 0), 0);
+  C.sellValue = (h) => h.chest.concat(h.junk, h.equip).reduce((s, it) => s + (C.isValuable$(it.id) ? (C.VAL_MIN + C.VAL_MAX) / 2 : C.price(it.id) || 0), 0);
   C.mission = (c) => ({ no: c.missionNo + 1, total: c.chainLength });
   // Отношения: шкала −3…+3 для каждой пары (Враги … Друзья); Друзья (+3) — Узы
   const pairKey = (a, b) => [a, b].sort().join('|');
@@ -75,7 +79,14 @@
     if (!ids.length || ids.length > c.squad) return { error: `Нужно выбрать от 1 до ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
     if (ids.some((id) => !C.hero(c, id))) return { error: 'Этого героя нет в убежище.' };
     // хлам при выходе продаётся автоматически
-    c.roster.forEach((h) => { h.junk.forEach((it) => { h.talons += C.price(it.id) || 0; }); h.junk = h.junk.filter((it) => C.price(it.id) == null); }); // уникальные карты кампании не продаются — остаются
+    c.lastJunkSale = [];
+    c.roster.forEach((h) => {
+      h.junk.forEach((it) => {
+        if (C.isValuable$(it.id)) { const p = C.appraise(c); h.talons += p; c.lastJunkSale.push({ hero: h.id, price: p }); }
+        else h.talons += C.price(it.id) || 0;
+      });
+      h.junk = h.junk.filter((it) => C.price(it.id) == null && !C.isValuable$(it.id)); // уникальные карты кампании не продаются — остаются
+    });
     c.current = { squad: ids.slice(), seed: `${c.seed}-m${c.missionNo + 1}` };
     c.lastSquad = ids.slice();
     c.status = 'mission';
@@ -305,10 +316,11 @@
   C.sell = function (c, heroId, from, idx) {
     const h = C.hero(c, heroId), it = h && LISTS.includes(from) && h[from][idx];
     if (!it) return 'Нет такой карты.';
-    const p = C.price(it.id);
+    const p = C.isValuable$(it.id) ? C.appraise(c) : C.price(it.id);
     if (p == null) return 'Эту карту нельзя продать.';
     h[from].splice(idx, 1);
     h.talons += p;
+    c.lastSale = { hero: h.id, id: it.id, price: p };
     return null;
   };
   C.heal = function (c, heroId) {
@@ -487,6 +499,7 @@
     const all = h.equip.concat(h.chest, h.junk).sort((a, b) => score(b) - score(a));
     h.equip = []; h.chest = []; h.junk = [];
     all.forEach((it) => {
+      if (C.isValuable$(it.id)) { h.junk.push(it); return; } // ценности ИИ сдаёт скупщику при выходе
       if (h.equip.length < C.equipCap(h) && !ZG.Cards.get(it.id).event && (desp || C.isValuable(it))) h.equip.push(it);
       else if (C.isValuable(it) && h.chest.length < C.chestCap(h)) h.chest.push(it);
       else h.junk.push(it);
