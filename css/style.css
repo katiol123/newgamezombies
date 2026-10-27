@@ -280,6 +280,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .hp-meta .bond-on { color: #ffd36b; font-weight: bold; }
 .sh-bond { color: #ffd36b; font-size: 13px; margin-top: 2px; }
 .rep-bond { color: #ffd36b; margin: 4px 0; }
+.rep-hint { color: var(--paper2); font-style: italic; margin: 6px 0; opacity: .9; }
 .rep-bond.down { color: #e08a6a; }
 .sh-bond .rel { display: inline-block; margin-right: 8px; }
 .sh-bond .rel.rn1, .sh-bond .rel.rn2 { color: #e0a080; }

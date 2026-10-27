@@ -1943,6 +1943,7 @@
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
         ${r.joined ? `<div class="rep-bond">🔓 ${name(r.joined)} «${esc(ZG.Heroes.get(r.joined).nick)}» спасён и присоединяется к отряду — новый герой в убежище.</div>` : ''}
         ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
+        ${r.hint ? `<div class="rep-hint">${esc(r.hint)}</div>` : ''}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },
     // отношения героя с остальными героями убежища
