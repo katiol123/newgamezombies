@@ -91,7 +91,8 @@
         list.push(ZG.Heroes.get(hero.id));
         hero.talents.forEach((t) => list.push(ZG.Talents.get(t)));
         (hero.perks || []).forEach((id) => list.push(ZG.Missions.get(id).perk)); // пассивки за секретные миссии
-        hero.equip.forEach((uid) => list.push(ZG.Cards.get(g.cards[uid])));
+        const seen = new Set(); // одинаковое снаряжение не складывается: два противогаза — как один
+        hero.equip.forEach((uid) => { const id = g.cards[uid]; if (seen.has(id)) return; seen.add(id); list.push(ZG.Cards.get(id)); });
       }
       if (g.conditionId) list.push(ZG.Conditions.get(g.conditionId));
       if (g.difficultyId) list.push(ZG.Difficulties.get(g.difficultyId));

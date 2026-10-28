@@ -738,7 +738,7 @@
       const z = list[i];
       const always = z && ZG.Zombies.get(z.type).infects;
       const roll = 1 + Rng.int(g, 6);
-      if (inf && (always || roll <= Mods.value(g, h, 'infectDie', inf.die))) infections++;
+      if (inf && (always || roll <= Math.max(1, Mods.value(g, h, 'infectDie', inf.die)))) infections++; // кубик Заражения не ниже 1: полной неуязвимости нет
     }
     const wounds = n - infections;
     if (infections) {
@@ -975,7 +975,7 @@
     E.fx(g, { t: 'hit', zombie: z.uid, pos: z.pos, n: eff, kind });
     if (z.dmg >= def.hp) {
       g.zombies.splice(g.zombies.indexOf(z), 1);
-      E.deathNear(g, z.pos);
+      E.deathNear(g, z.pos, kind);
       g.stats.kills++;
       g.stats.killsBy[z.type] = (g.stats.killsBy[z.type] || 0) + 1;
       if (kind === 'shot') g.stats.banditKills = (g.stats.banditKills || 0) + 1; // зомби, убитые бандитами
@@ -1010,12 +1010,13 @@
   E.gainXp = function (g, h, n) { gainXp(g, h, n); };
 
   // Мясник «Свежее мясо»: любая смерть в его зоне или соседней — лечит 2 ♥ и даёт жетон «Крови» (+1 к «Размаху», без предела)
-  E.deathNear = function (g, pos) {
+  E.deathNear = function (g, pos, kind) {
+    if (kind === 'swing') return; // кого Мясник зарубил сам «Размахом» — не в счёт: кровь даёт чужая смерть
     g.zombies.forEach((b) => {
       const bd = ZG.Zombies.get(b.type);
       if (!bd.blood || (b.pos !== pos && !g.board.adj[b.pos].includes(pos))) return;
       b.dmg = Math.max(0, b.dmg - 2);
-      b.blood = (b.blood || 0) + 1;
+      b.blood = (b.blood || 0) + 1; // без предела (решение по дизайну)
       E.log(g, `Мясник чует свежее мясо: +2 ♥, «Кровь» ${b.blood} (удар «Размаха» — ${bd.dmg + b.blood}).`, 'bad');
       E.fx(g, { t: 'blood', zombie: b.uid, pos: b.pos, n: b.blood });
       E.storyEvent(g, 'blood');
@@ -1069,6 +1070,8 @@
         }
         E.log(g, repeat ? `${E.heroName(h)} снова выполняет «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')} — награда уже получена раньше, вместо неё +${REPEAT_MISSION_XP} 🎖.` : `${E.heroName(h)} выполняет секретную миссию «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')}! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: true });
+        // предательство не забывают: отношения с каждым из отряда портятся
+        if (m.traitor) g.heroes.forEach((o) => { if (o !== h) E.relBump(g, h, o, -1, 'traitor', 'подставил' + (E.fem(h) ? 'а' : '') + ' отряд под зомби'); });
       } else {
         E.log(g, `${E.heroName(h)} выполняет миссию «${m.name}», но кто-то успел раньше — награды нет.`, 'dim');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: false });
@@ -1596,7 +1599,7 @@
       if (gone.length) { h.hand = h.hand.filter((u) => !gone.includes(u)); h.discard.push(...gone); }
       tickInfection(g, h);
       // Глеб: после дуплета — «Перезарядка» (−1 ⚡ в следующий ход); «Быстрая перезарядка» — если не двигался
-      if (h.reloadPending) { h.reloadPending = false; if (!(Mods.flag(g, h, 'speedload') && !g.turn.moved)) h.reloadDue = 1; }
+      if (h.reloadPending) { h.reloadPending = false; if (!(Mods.flag(g, h, 'speedload') && !(g.turn && g.turn.moved))) h.reloadDue = 1; } // герой мог обратиться в конце хода — g.turn уже сброшен
       // Враги: закончил ход в тайле врага — у того −1 ⚡ в следующий ход
       if (h.onBoard) g.heroes.forEach((o) => {
         if (o === h || !o.onBoard || E.rel(g, h, o) > -3 || g.board.cells[o.pos].tile !== g.board.cells[h.pos].tile) return;
@@ -2120,6 +2123,13 @@
       E.log(g, `${E.heroName(h)} задевает сигнализацию: «${sf.label}» воет сиреной и заклинивает намертво!`, 'bad');
       E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'siren' });
       makeNoise(g, null, h.pos, 3); // сирена — дополнительно Шум 3 (не звон героя: +1 Ценности не добавляется)
+      // в панике герой роняет одну Ценность из руки — она остаётся лежать в зоне
+      const vu = h.hand.find((u) => g.cards[u] === 'valuable');
+      if (vu) {
+        h.hand.splice(h.hand.indexOf(vu), 1);
+        g.drops.push({ pos: h.pos, card: 'valuable' });
+        E.log(g, `В панике ${E.heroName(h)} роняет Ценность — она лежит в зоне.`, 'warn');
+      }
     }
   }
 

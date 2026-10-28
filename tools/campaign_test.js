@@ -295,8 +295,8 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(owns(b, 'tr_gasmask') === 0 && owns(b, 'tr_medbag') === 0, 'Борис (ИИ) противогаз не берёт — он и так почти не заражается');
   C.autoManage(c, 'marina');
   ok(owns(m, 'tr_medbag') === 1, 'повторная раскладка ИИ не скупает дубли');
-  v.talons = 25;
-  ok(!C.buy(c, 'viktor', 'tr_binoculars') && !C.buy(c, 'viktor', 'tr_binoculars') && owns(v, 'tr_binoculars') === 2 && v.talons === 3, 'игрок покупает сколько угодно экземпляров одной карты');
+  v.talons = 21;
+  ok(!C.buy(c, 'viktor', 'tr_binoculars') && !C.buy(c, 'viktor', 'tr_binoculars') && owns(v, 'tr_binoculars') === 2 && v.talons === 5, 'игрок покупает сколько угодно экземпляров одной карты');
   ok(C.buy(c, 'viktor', 'tr_gasmask') === 'Не хватает талонов.', 'без талонов — отказ');
   ok(C.price('tr_binoculars') == null, 'товар торговца не продаётся');
   const c2 = C.create({ heroes: [{ id: 'marina', ai: true }], seed: 't21b' }); c2.missionNo = 6;
@@ -325,6 +325,8 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.alarm - a1 === E.SAFE_NOISE + 1, 'Ценность звенит: Шум взлома +1');
   h.energy = 6; E.act(g, { t: 'safe' });
   ok(sf.jammed && !E.legal(g).some((a) => a.t === 'safe'), 'сирена — сейф заклинило, взлом недоступен');
+  ok(h.hand.filter((u) => g.cards[u] === 'valuable').length === 0 && g.drops.some((d) => d.pos === h.pos && d.card === 'valuable'), 'сирена: Ценность выпала из руки в зону');
+  E.giveCard(g, h, 'valuable');
   ok(E.blockValue(g, h, h.hand.find((u) => g.cards[u] === 'valuable')) === 0, 'Ценностью нельзя блокировать');
   // падение: выпадают только находки (базовые карты остаются)
   const g2 = E.create({ seed: 't22b', heroes: [{ id: 'boris' }, { id: 'lisa' }], quiet: true });
