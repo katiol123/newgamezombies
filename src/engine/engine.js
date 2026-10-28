@@ -1513,7 +1513,7 @@
     g.noise = {};
     g.loud = {};
     g.relaySuit = null;
-    g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big && !z.post) z.dmg = 0; }); // часовой не уходит с поста перевязаться — его раны остаются
+    g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big && !z.post && !z.keepDmg) z.dmg = 0; }); // часовой не уходит с поста перевязаться, боссы задания (keepDmg) — тоже: их раны остаются
     if (g.round >= E.maxRounds(g)) {
       const tt = E.scenario(g).timeoutText;
       finish(g, false, (typeof tt === 'function' ? tt.call(E.scenario(g), g) : tt) || 'Рассвет не наступил: Орда поглотила квартал.');

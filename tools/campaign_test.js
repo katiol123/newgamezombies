@@ -256,7 +256,7 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(ut >= 0 && g.board.tiles[ut].tx === 2 && !g.revealed[ut] && g.board.cells[g.exit].tile === ut, 'автобаза в дальнем столбце, закрыта, фургон на ней');
   ok(!g.spawnPoints.length && g.scenarioId === 'autobase', 'люков нет, задание «Автобаза»');
   const lurk = g.zombies.filter((z) => z.lurk && !z.awake);
-  ok(lurk.filter((z) => z.type === 'fatso').length === 2 && lurk.length === 2 + 10, `притаились 2 Толстяка и 2 стаи по 5: ${lurk.length}`);
+  ok(lurk.filter((z) => z.type === 'fatso').length === 2 && lurk.length === 2 + 6 && lurk.filter((z) => z.type === "fatso").every((z) => z.keepDmg), `притаились 2 Толстяка (раны не заживают) и 2 стаи по 3: ${lurk.length}`);
   ok(g.stackTiles.length === 4 && g.hideFogCounts, 'на 4 тайлах карты «Стая/Пусто», счётчики скрыты');
 }
 

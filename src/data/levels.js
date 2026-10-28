@@ -57,6 +57,12 @@
     zombieTypes: ['walker', 'runner'],
     spawnPerCard: 1,
     rounds: base.rounds + 2, // +2 раунда: учебная миссия должна проходиться почти всегда
+    spawnPoints: { 1: 2, 2: 1, 3: 2, 4: 3 }, // учебная: люков меньше, чем на Окраине (2/3/4/4)
+    infection: Object.assign({}, base.infection, { die: 1 }), // учебная: Заражение только на «1»
+    alarmThreshold: { 1: 6, 2: 7, 3: 8, 4: 6 }, // и Волна позже (у Окраины 4/5/6/4)
+    medsNeed: { 1: 3, 2: 3, 3: 3, 4: 3 }, // учебная: 3 медикамента при любом отряде (на Окраине 3–4 героям нужно 4)
+    startAlarm: {},
+    roundsBonus: { 1: -2, 2: 2, 3: 1, 4: 0 }, // подгонка под ~80% побед при любом размере отряда
     events: base.events.filter((id) => id !== 'ev_hound'),
     scenarios: ['meds'], // сюжет: медикаменты для «скорой» (без вертолёта и гнёзд — они ломают историю)
     bonuses: base.bonuses.filter((id) => id !== 'biggame'), // Толстяков и Громил здесь нет
@@ -184,5 +190,6 @@
     fogBreak: 0, // стопок в тумане нет — прорыв не нужен
     rounds: 10,
     roundsBonus: { 1: 5, 4: -2 }, // соло: +5 раундов (одному долго добивать двух Толстяков, а драка будит всех); четвёрка: −2 (быстро прочёсывает район)
+    infection: Object.assign({}, base.infection, { die: 1 }), // учебная: Заражение только на «1»
   }));
 })(typeof globalThis !== 'undefined' ? globalThis : window);
