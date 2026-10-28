@@ -438,7 +438,10 @@
     const cards = def.deck.concat(own).map((x) => ZG.Cards.get(x)).filter(Boolean);
     const tagged = (t) => cards.filter((d) => (d.tags || []).includes(t)).length;
     if (own.includes(id)) return 0; // один экземпляр на героя
-    if (id === 'tr_gasmask') return (def.mods && def.mods.infectDie < 0) ? 0 : 2 + (C.desperate(h) ? 1 : 0); // Борис и так почти не заражается
+    if (id === 'tr_gasmask') { // порог Заражения не ниже 1: Борису и на «Новичке» фильтр уже ничего не даёт
+      const diff = ZG.Difficulties.get(c.difficultyId);
+      return (def.mods && def.mods.infectDie < 0) || (diff && diff.mods && diff.mods.infectDie < 0) ? 0 : 2 + (C.desperate(h) ? 1 : 0);
+    }
     if (id === 'tr_binoculars') { const n = tagged('ranged'); return n >= 2 ? 3 : n; }
     if (id === 'tr_medbag') return def.mods && def.mods.healAction ? 3 : tagged('heal') >= 2 ? 1 : 0;
     return 0;

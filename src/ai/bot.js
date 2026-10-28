@@ -96,6 +96,10 @@
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
+    // заслон на выходе (сценарий с evacBlockedText): каждый враг-блокировщик в зоне выхода — помеха, его раны — прогресс
+    if (sc.evacBlockedText && E.isComplete(g)) {
+      g.zombies.forEach((z) => { if (z.pos === g.exit && E.isBandit(z)) { const d = ZG.Zombies.get(z.type); s -= 120; s += (z.dmg / d.hp) * 100; } });
+    }
     // ненавидит бандитов: на своём ходу живой бандит — заноза, его раны — радость; тянется к ближайшему видимому
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).hatesBandits) {
       const bs = g.zombies.filter((z) => E.isBandit(z) && !E.hidden(g, z.pos));
@@ -110,7 +114,7 @@
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).loner && !(E.isComplete(g) && fh.pos === g.exit)) {
       g.heroes.forEach((o) => {
         if (o === fh || !o.onBoard) return;
-        if (o.pos === fh.pos) s -= 90; else if (g.board.adj[fh.pos].includes(o.pos)) s -= 30;
+        if (o.pos === fh.pos) s -= 60; else if (g.board.adj[fh.pos].includes(o.pos)) s -= 10; // мягче шага к цели: сторонится, но к делу идёт
       });
     }
     // сейф манит, пока есть время и силы (кампания — талоны, «Медвежатник» — задание): лёгкое притяжение к нему
@@ -294,6 +298,7 @@
   function wantSafe(g, h) {
     const sf = E.safeAt(g, h.pos);
     if (!sf || sf.jammed || !sf.deck.length || h.energy < E.SAFE_COST) return false;
+    if (E.zombiesAt(g, h.pos).length) return false; // в зоне враги (и бандиты, и спящие) — взлом невозможен
     const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
     const greed = ZG.Persona.get(h.id).greed;
     if (!fence && (!g.campaign || greed === 0)) return false; // бессребреник ломает сейф только по заданию
@@ -388,7 +393,7 @@
     for (let i = 0; i < 40; i++) {
       autoPending(g);
       if (g.active !== idx || g.result) return;
-      if (wantSafe(g, g.heroes[idx])) { E.act(g, { t: 'safe' }); continue; }
+      if (wantSafe(g, g.heroes[idx]) && E.act(g, { t: 'safe' })) continue; // не вышло — действуем обычным порядком
       const a = bestAction(g, opts);
       if (!a) break;
       E.act(g, a);

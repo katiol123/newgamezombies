@@ -1071,7 +1071,7 @@
         E.log(g, repeat ? `${E.heroName(h)} снова выполняет «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')} — награда уже получена раньше, вместо неё +${REPEAT_MISSION_XP} 🎖.` : `${E.heroName(h)} выполняет секретную миссию «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')}! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: true });
         // предательство не забывают: отношения с каждым из отряда портятся
-        if (m.traitor) g.heroes.forEach((o) => { if (o !== h) E.relBump(g, h, o, -1, 'traitor', 'подставил' + (E.fem(h) ? 'а' : '') + ' отряд под зомби'); });
+        if (m.traitor) g.heroes.forEach((o) => { if (o !== h) E.relBump(g, h, o, -2, 'traitor', 'подставил' + (E.fem(h) ? 'а' : '') + ' отряд под зомби'); });
       } else {
         E.log(g, `${E.heroName(h)} выполняет миссию «${m.name}», но кто-то успел раньше — награды нет.`, 'dim');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: false });
@@ -2123,12 +2123,13 @@
       E.log(g, `${E.heroName(h)} задевает сигнализацию: «${sf.label}» воет сиреной и заклинивает намертво!`, 'bad');
       E.fx(g, { t: 'safe', pos: h.pos, hero: h.idx, result: 'siren' });
       makeNoise(g, null, h.pos, 3); // сирена — дополнительно Шум 3 (не звон героя: +1 Ценности не добавляется)
-      // в панике герой роняет одну Ценность из руки — она остаётся лежать в зоне
+      // в панике герой роняет одну Ценность из руки — она отлетает в случайную соседнюю зону
       const vu = h.hand.find((u) => g.cards[u] === 'valuable');
       if (vu) {
         h.hand.splice(h.hand.indexOf(vu), 1);
-        g.drops.push({ pos: h.pos, card: 'valuable' });
-        E.log(g, `В панике ${E.heroName(h)} роняет Ценность — она лежит в зоне.`, 'warn');
+        const near = g.board.adj[h.pos].filter((n) => !E.hidden(g, n));
+        g.drops.push({ pos: near.length ? Rng.pick(g, near) : h.pos, card: 'valuable' });
+        E.log(g, `В панике ${E.heroName(h)} роняет Ценность — она отлетает в соседнюю зону.`, 'warn');
       }
     }
   }

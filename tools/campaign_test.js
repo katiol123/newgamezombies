@@ -325,7 +325,7 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.alarm - a1 === E.SAFE_NOISE + 1, 'Ценность звенит: Шум взлома +1');
   h.energy = 6; E.act(g, { t: 'safe' });
   ok(sf.jammed && !E.legal(g).some((a) => a.t === 'safe'), 'сирена — сейф заклинило, взлом недоступен');
-  ok(h.hand.filter((u) => g.cards[u] === 'valuable').length === 0 && g.drops.some((d) => d.pos === h.pos && d.card === 'valuable'), 'сирена: Ценность выпала из руки в зону');
+  ok(h.hand.filter((u) => g.cards[u] === 'valuable').length === 0 && g.drops.some((d) => g.board.adj[h.pos].includes(d.pos) && d.card === 'valuable'), 'сирена: Ценность отлетела в соседнюю зону');
   E.giveCard(g, h, 'valuable');
   ok(E.blockValue(g, h, h.hand.find((u) => g.cards[u] === 'valuable')) === 0, 'Ценностью нельзя блокировать');
   // падение: выпадают только находки (базовые карты остаются)

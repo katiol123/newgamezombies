@@ -2074,6 +2074,7 @@
         b.onclick = () => (h.talons < w.price ? toast(`Не хватает талонов: у ${ZG.Heroes.get(h.id).name} ${h.talons} 🎫.`) : this.act(() => CMP.buy(c, h.id, w.id)));
         cw.appendChild(b);
         if (n) cw.appendChild(el('div', 'sh-price', `куплено: ${n}`));
+        if (h.equip.concat(h.chest).some((it) => it.id === w.id)) cw.appendChild(el('div', 'sh-price', 'уже есть — второй такой не складывается (запасной на случай поломки)'));
         row.appendChild(cw);
       });
       box.appendChild(row);
