@@ -868,9 +868,9 @@
       });
       (g.safes || []).forEach((sf) => { // сейф: сколько жетонов осталось в стопке
         const c = this.cellXY(sf.pos);
-        const s = C * 0.38, dead = sf.jammed || !sf.deck.length;
-        Art.draw(ctx, 'tok_safe', c.x - s / 2 + C * 0.24, c.y - s / 2 + C * 0.22, s, s, { jammed: sf.jammed, dead });
-        if (!dead) this._label(ctx, c.x + C * 0.24, c.y + C * 0.46, `×${sf.deck.length}`, '#e8dcc0');
+        const s = C * 0.34, dead = sf.jammed || !sf.deck.length;
+        Art.draw(ctx, 'tok_safe', c.x - s / 2 + C * 0.26, c.y - s / 2 - C * 0.26, s, s, { jammed: sf.jammed, dead }); // правый верхний угол: не закрывает подпись тайла
+        if (!dead) this._label(ctx, c.x + C * 0.26, c.y - C * 0.02, `×${sf.deck.length}`, '#e8dcc0');
       });
       g.search.forEach((s) => {
         const c = this.cellXY(s.pos);

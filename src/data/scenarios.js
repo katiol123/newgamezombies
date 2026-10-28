@@ -258,10 +258,10 @@
       id: 'pogost', campaignOnly: true, name: 'Погост',
       short: 'Забери рацию из сторожки у Сияющего креста и уходи по дороге у правого края. У Креста мертвецы буйствуют — ходят дважды.',
       brief: 'За рекой дорога идёт через лес и старое кладбище. Над погостом светится огромный крест. В сторожке у Креста — рация сторожа.',
-      setupText: 'Поле 4×2: лес в двух левых столбцах (Сосновый бор ×2, Просека ЛЭП ×2), кладбище в двух правых (Старые могилы, Склепы, Часовня и Сияющий крест — Крест в случайном из кладбищенских столбцов). Старт — у левого края, выход — у правого края на кладбищенском тайле без Креста. Открыты сразу: старт, выход и Крест (его свет видно издалека). В сторожке у Креста — ящик с рацией. Засады (притаились в центрах двух разных случайных кладбищенских тайлов): А — Громилы и Хваты (соло: 2 Громилы и Хват; пара, трое, четверо: 3 Громилы и 2 Хвата); Б — 3 Бегуна и Крикун (пара: + Хват; трое: + Хват и Громила; четверо: + Хват и 2 Громилы). Когда рацию берут из ящика, она оживает: Шум у сторожки на 4 зоны. Люки: 2, в случайных тайлах, кроме стартового и тайла выхода. Лес пуст.',
+      setupText: 'Поле 4×2: лес в двух левых столбцах (Сосновый бор ×2, Просека ЛЭП ×2), кладбище в двух правых (Старые могилы, Склепы, Часовня и Сияющий крест — Крест в случайном из кладбищенских столбцов). Старт — у левого края, выход — у правого края на кладбищенском тайле без Креста. Открыты сразу: старт, выход и Крест (его свет видно издалека). В сторожке у Креста — ящик с рацией. Засады (притаились в центрах двух разных случайных кладбищенских тайлов, кроме Креста): А — Громилы и Хваты (соло: 3 Громилы и Хват; пара, трое, четверо: 3 Громилы и 2 Хвата); Б — 3 Бегуна и Крикун (пара: + Хват; трое и четверо: + Хват и Громила). Когда рацию берут из ящика, она оживает: её хрип слышно на 4 зоны от сторожки (Тревога не растёт). Унести рацию обязательно: первым уходит тот, кто её несёт. Люки: 2, в случайных тайлах, кроме стартового и тайла выхода. Лес пуст.',
       exitLabel: 'Дорога в пригород', exitArt: 'exit_van', cargo: 'cargo_lodge_radio',
-      ambushA: { 1: ['brute', 'brute', 'grabber'], 2: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 3: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 4: ['brute', 'brute', 'brute', 'grabber', 'grabber'] },
-      ambushB: { 1: ['runner', 'runner', 'runner', 'screamer'], 2: ['runner', 'runner', 'runner', 'screamer', 'grabber'], 3: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute'], 4: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute', 'brute'] },
+      ambushA: { 1: ['brute', 'brute', 'brute', 'grabber'], 2: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 3: ['brute', 'brute', 'brute', 'grabber', 'grabber'], 4: ['brute', 'brute', 'brute', 'grabber', 'grabber'] },
+      ambushB: { 1: ['runner', 'runner', 'runner', 'screamer'], 2: ['runner', 'runner', 'runner', 'screamer', 'grabber'], 3: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute'], 4: ['runner', 'runner', 'runner', 'screamer', 'grabber', 'brute'] },
       crackle: 4, // радиус шума, когда рацию берут из ящика
       setup(g, E) {
         const b = g.board, Rng = ZG.Rng, n = Math.min(4, ZG.Engine.party(g));
@@ -286,7 +286,7 @@
         const holeTiles = Rng.shuffle(g, b.tiles.map((t, i) => i).filter((i) => i !== st && i !== exTile)).slice(0, 2);
         g.spawnPoints = holeTiles.map((ti) => { const m = b.cells.find((c) => c.tile === ti && c.manhole); const ok = (c) => c && c.i !== g.start && c.i !== g.exit && c.i !== g.obj.crate && c.type === 'street'; return (ok(m) ? m : Rng.pick(g, street(ti).filter(ok))).i; });
         // засады — в центрах двух разных случайных кладбищенских тайлов
-        const amb = Rng.shuffle(g, cem.slice()).slice(0, 2);
+        const amb = Rng.shuffle(g, cem.filter((i) => i !== kr)).slice(0, 2); // засады — не на тайле Креста (у рации и так жарко)
         const lurk = (ti, list) => { const mid = at(ti, [1, 1]); const cell = mid && mid.type !== 'blocked' ? mid : Rng.pick(g, street(ti)); list.forEach((type) => E.lurker(g, type, cell.i)); };
         lurk(amb[0], this.ambushA[n]);
         lurk(amb[1], this.ambushB[n]);
@@ -308,10 +308,15 @@
       goals(g) {
         return [
           { text: 'Забрать рацию из сторожки у Сияющего креста (ящик)', done: g.obj.found },
-          { text: 'Все выжившие уходят по дороге у правого края', done: false },
+          { text: 'Унести рацию по дороге у правого края — без неё уйти нельзя', done: !!g.obj.out },
         ];
       },
       isComplete(g) { return g.obj.found; },
+      // первым уходит тот, кто несёт рацию; остальные — после него
+      canEvac(g, h) { return !!g.obj.out || h.hand.some((u) => g.cards[u] === this.cargo); },
+      evacBlockedText: 'Без рации уходить нельзя: первым уходит тот, кто её несёт (упала — подберите).',
+      onEvac(g, h) { if (h.hand.some((u) => g.cards[u] === this.cargo)) g.obj.out = true; },
+      botGoalDone(g) { if (g.obj.out) return null; const d = g.drops.find((x) => x.card === this.cargo); return d ? d.pos : null; },
       actions() { return []; },
       botGoal(g) { if (g.obj.found) return null; const d = g.drops.find((x) => x.card === this.cargo); return d ? d.pos : g.obj.crate; },
       progress(g) { return g.obj.found ? 5 : 0; },
@@ -321,7 +326,7 @@
       id: 'wedding', campaignOnly: true, name: 'Белый лебедь',
       short: 'Убей Укушенную невесту — её вопль держит весь пригород — и уходи по северной дороге.',
       brief: 'Ресторан «Белый лебедь» на выезде из пригорода. Здесь играли свадьбу в тот день, когда всё началось. Невеста до сих пор бродит у зала со своими гостями, и её крик тянет мертвецов со всей округи. На дальнем краю, у дороги, жгут костёр «Волки».',
-      setupText: 'Поле 4×2: Ресторан «Белый лебедь» (левый столбец) и Стоянка «Волков» (правый столбец) + 6 обычных тайлов. Старт — случайный тайл второго столбца. Свадебная стая (Укушенная невеста, Толстяк, 3 Бегуна) — в зале ресторана, бродит. В углу зала — «Сейф администратора» (стопка жетонов сейфа: 4 Ценности, Пусто, Сирена). На стоянке — 5 Головорезов (бродят) и Снайпер на вышке (начеку). У костра стоянки — жетон события «?»: положите рядом лицом вниз карту сюжетного события «Пленник» и не читайте её. Люки: случайный тайл 2-го столбца и случайный тайл 3-го. Выход — у правого края на другом тайле правого столбца. Открыты сразу: старт, ресторан, стоянка, выход.',
+      setupText: 'Поле 4×2: Ресторан «Белый лебедь» (левый столбец) и Стоянка «Волков» (правый столбец) + 6 обычных тайлов. Старт — случайный тайл второго столбца. Свадебная стая (Укушенная невеста, Толстяк, 3 Бегуна) — в зале ресторана, бродит. В углу зала — «Сейф администратора» (стопка жетонов сейфа: 4 Ценности, Пусто, Сирена). На стоянке — 5 Головорезов (бродят) и Снайпер на вышке (начеку). У костра стоянки — жетон события «?»: положите рядом лицом вниз карту сюжетного события этой миссии и не читайте её. Люки: случайный тайл 2-го столбца и случайный тайл 3-го. Выход — у правого края на другом тайле правого столбца. Открыты сразу: старт, ресторан, стоянка, выход.',
       exitLabel: 'Северная дорога', exitArt: 'exit_van',
       deadline: 14, // пленника казнят в конце этого раунда (боты: спасают ~1/3)
       brideWounds: { 1: 4, 2: 0, 3: 0, 4: 1 }, // жетоны урона на невесте в начале (жених успел ударить) — ровняет сложность для 1–4 героев
@@ -428,14 +433,17 @@
       // невеста мертва: пока есть время — к пленнику (или проверить жетон «?» у костра), иначе к выходу
       botGoalDone(g, hero, E) {
         const o = g.obj;
-        if (o.rescued || o.executed || g.round > this.deadline) return null;
-        return o.camp;
+        // к пленнику — только если о нём уже знают и время на обратный путь к выходу остаётся
+        if (!o.known || o.rescued || o.executed || g.round > this.deadline) return null;
+        const d = E.distV(g, hero.pos), back = E.distV(g, o.camp)[g.exit];
+        const left = E.maxRounds(g) - g.round;
+        return (d[o.camp] + back) / 2 + 2 <= left ? o.camp : null;
       },
       progress(g) {
         const b = this.bride(g), d = ZG.Zombies.get('bride');
         return (g.obj.brideDead ? 6 : b ? (b.dmg / d.hp) * 4 : 0) + (g.obj.rescued ? 2 : 0);
       },
-      timeoutText: 'Рассвет не наступил: вопль невесты собрал весь пригород.',
+      timeoutText(g) { return g.obj.brideDead ? 'Рассвет не наступил: пригород затих, но до северной дороги вы так и не дошли.' : 'Рассвет не наступил: вопль невесты собрал весь пригород.'; },
     },
     // --- Кампания, миссия 8: Мясник на колхозном рынке, «Волки» у дороги ---
     {
@@ -463,7 +471,8 @@
         g.obj = { butcher: null, butcherDead: false, camp: null };
         // выход — у правого края на тайле стоянки «Волков»: прорываться придётся через лагерь
         if (wc >= 0) {
-          const edge = b.cells.filter((c) => c.tile === wc && c.x === b.w - 1 && c.type === 'street');
+          const P = ZG.Tiles.get('wolfcamp').perch;
+          const edge = b.cells.filter((c) => c.tile === wc && c.x === b.w - 1 && c.type === 'street' && !(c.lx === P[0] && c.ly === P[1])); // не на вышке снайпера
           if (edge.length) g.exit = Rng.pick(g, edge).i;
         }
         const st = b.cells[g.start].tile;
@@ -511,7 +520,9 @@
       },
       butcher(g) { return g.zombies.find((z) => z.uid === g.obj.butcher); },
       goals(g) {
+        const blocked = g.zombies.some((z) => z.pos === g.exit && ZG.Engine.isBandit(z));
         return [
+          { text: 'Снять заслон «Волков» с дороги (в зоне выхода не должно остаться бандитов)', done: !blocked },
           { text: 'Прорваться через стоянку «Волков» на дорогу у правого края', done: false },
           { text: 'Убить Мясника', done: g.obj.butcherDead, note: 'необязательно' },
         ];
@@ -535,7 +546,7 @@
           live.sort((a, c) => d[a.pos] - d[c.pos]);
           z.trail = live.length ? live[0].pos : z.pos;
         }
-        E.log(g, `Подмога «Волков»: с дороги подъехали ${extra * this.reinforce} Головореза и идут на шум!`, 'bad');
+        E.log(g, `Подмога «Волков»: с дороги подъехали ${extra * this.reinforce} ${ZG.util.plural(extra * this.reinforce, 'Головорез', 'Головореза', 'Головорезов')} и идут на шум!`, 'bad');
         E.fx(g, { t: 'objective', pos: edge[0].i, text: 'Подмога «Волков»!' });
         E.storyEvent(g, 'wolves');
       },
@@ -798,7 +809,7 @@
   // ------------------------------------------------------- Условия партии ---
   ZG.Conditions.addAll([
     { id: 'calm', name: 'Тихий вечер', text: 'Без особых условий.', tone: 0, art: 'cond_calm' },
-    { id: 'noon', name: 'Ясный полдень', text: 'Без особых условий.', tone: 0, art: 'cond_calm' }, // миссия 8: день, «вечер» не к месту
+    { id: 'noon', name: 'Ясный полдень', text: 'Без особых условий.', tone: 0, art: 'cond_noon' }, // миссия 8: день, «вечер» не к месту
     { id: 'fog', name: 'Смог', text: 'Дальность всех дальних атак −1 (минимум 1). Зомби видят цели только на своём и соседних по стороне тайлах — остальные стоят на месте.', tone: 0, mods: { rangeBonus: -1, fogTiles: 1 }, art: 'cond_fog' },
     { id: 'rain', name: 'Ливень', text: 'Каждое шумное действие поднимает Тревогу на 1 меньше.', tone: 1, mods: { noiseAlarm: -1 }, art: 'cond_rain' },
     { id: 'fullmoon', name: 'Полнолуние', text: 'Глухая ночь наступает на 1 раунд раньше.', tone: -1, mods: { deepShift: 1 }, art: 'cond_moon' },
@@ -825,7 +836,7 @@
     { id: 'blitz', name: 'Блиц', text: 'Эвакуироваться до Глухой ночи.', check: (g) => ZG.Engine.phase(g) < 2, progress: (g) => `раунд ${g.round}` },
     { track: 'Счётчик: +1 за каждую сработавшую Связку.', id: 'combo', name: 'Слаженность', text: 'Сыграть 8 Связок.', check: (g) => g.stats.chains >= 8, progress: (g) => `${g.stats.chains}/8` },
     { track: 'Счётчик: +1 за каждую полученную Рану.', id: 'unscathed', name: 'Ни царапины', text: 'Победить, получив за партию не больше 1 Раны на весь отряд.', check: (g) => g.stats.wounds <= 1 && !g.heroes.some((h) => h.fallen), progress: (g) => `ран: ${g.stats.wounds}/1` },
-    { track: 'Счётчик: +1 за каждый урон по Толстякам, Громилам и Гнёздам.', id: 'biggame', name: 'Крупная дичь', text: 'Нанести 6 урона Толстякам, Громилам и Гнёздам.', check: (g) => (g.stats.bigDmg || 0) >= 6, progress: (g) => `${g.stats.bigDmg || 0}/6` },
+    { track: 'Счётчик: +1 за каждый урон по крупным целям — Толстякам, Громилам, Гнёздам и боссам.', id: 'biggame', name: 'Крупная дичь', text: 'Нанести 6 урона крупным целям — Толстякам, Громилам, Гнёздам и боссам.', check: (g) => (g.stats.bigDmg || 0) >= 6, progress: (g) => `${g.stats.bigDmg || 0}/6` },
   ]);
 
   // ---------------------------------------------------------- Сложность ---

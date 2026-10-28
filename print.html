@@ -228,6 +228,35 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
   tok('tok_barricade', 4, 'Баррикада', 'big'); tok('tok_round', 1, 'Маркер раунда', 'small'); tok('tok_alarm', 1, 'Маркер Тревоги', 'small'); tok('tok_start', 1, 'Старт', 'small');
   tok('exit_car', 1, 'Машина', 'big'); tok('exit_ambulance', 1, 'Скорая', 'big'); tok('exit_heli', 1, 'Вертолёт', 'big'); tok('tok_tower', 1, 'Вышка', 'big');
 
+  // ------------------------------------------------ кампания: жетоны врагов, сейф, выходы
+  const campZ = ['bear', 'forester', 'guard', 'sniper', 'bandit', 'raider', 'bride', 'butcher'].filter((id) => ZG.Zombies.has(id));
+  const campN = { bandit: 4, raider: 10, sniper: 2, guard: 1 };
+  campZ.forEach((id) => { const d = ZG.Zombies.get(id); tok(d.art, campN[id] || 1, `Кампания: ${d.name}`, d.big || d.boss ? 'big' : ''); });
+  tok('tok_safe', 1, 'Кампания: сейф', 'big');
+  tok('valuable', 4, 'Стопка сейфа: «Ценность» (лицом вниз)', 'small'); tok('tok_decoy', 1, 'Стопка сейфа: «Пусто»', 'small', { kind: 'gone' }); tok('noiseIcon', 1, 'Стопка сейфа: «Сирена» (Шум 3)', 'small');
+  ['exit_van'].forEach((k) => tok(k, 1, 'Кампания: «буханка» / фургон', 'big'));
+
+  // ---------------------------------------------------- кампания: тайлы
+  ZG.Tiles.all().filter((t) => t.unique).forEach((def) => {
+    const s = sheet(`Кампания · тайл ${def.num} — ${def.name}`, '150×150 мм. Уникальный тайл кампании: в общий пул не входит, его ставит миссия.');
+    const board = ZG.Board.fromPlaced([{ id: def.id, rot: 0, tx: 0, ty: 0 }], 1, 1);
+    const C = 50 * MM * 2;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(C * 3); cv.height = Math.round(C * 3);
+    ZG.TileRender.drawBoard(cv.getContext('2d'), board, 0, C, { noFrame: true, labels: true, printSearch: true });
+    const slot = document.createElement('div'); slot.className = 'tile-slot';
+    slot.appendChild(cv); s.appendChild(slot);
+  });
+
+  // ---------------------------------------------------- кампания: карты
+  const inBase = new Set(Object.keys(lvl.loot));
+  const campCount = { valuable: 12, bride_wail: 8, despair: 8, courage: 4, hunt_double: 2 }; // Ценности — до 4 из сейфа, по сейфу в M2, M7, M8
+  const campCards = ZG.Cards.all().filter((d) => !inBase.has(d.id) && d.kind !== 'wound' && d.kind !== 'infection' && !['cargo_fuel', 'cargo_meds', 'cargo_radio'].includes(d.id)
+    && (d.campaignOnly || d.kind === 'cargo' || d.kind === 'junk' || d.kind === 'temp' || d.trophy || d.loot || d.trader) && !ZG.Heroes.all().some((h) => h.deck.includes(d.id)));
+  cardSheets('Кампания: карты (грузы, трофеи, находки миссий, товар торговца, Ценности)', campCards.map((d) => ({ el: CV.card(d.id), count: campCount[d.id] || (d.trader ? 3 : 1) })));
+  const campSpawn = Array.from(new Set(ZG.Levels.all().filter((l) => l.campaignOnly).flatMap((l) => Object.keys(l.spawnDeck || {})))).filter((id) => !lvl.spawnDeck[id]);
+  if (campSpawn.length) cardSheets('Кампания: карты появления миссий', campSpawn.map((id) => ({ el: CV.spawnCard(id), count: 1 })));
+
   // ----------------------------------------------------- планшет треков
   const tk = sheet('Планшет треков');
   const trk = document.createElement('div'); trk.className = 'tracks';

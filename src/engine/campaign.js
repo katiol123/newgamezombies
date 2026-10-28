@@ -132,7 +132,7 @@
     // история похода — для эпилога (главы по миссиям)
     (c.history = c.history || []).push({ no: c.missionNo + 1, scenarioId: g.scenarioId, win: !!res.win, stars: res.stars || 0 });
     if (g.scenarioId === 'wedding' && g.obj) c.flags.gleb = g.obj.rescued ? 'rescued' : g.obj.executed ? 'executed' : c.flags.gleb;
-    const moraleAdd = (h, n, why) => { if (!n) return; h.morale += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].morale += n; line(h.id, `${n > 0 ? '+' : ''}${n} мораль — ${why}`); };
+    const moraleAdd = (h, n, why) => { if (!n) return; h.morale += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].morale += n; line(h.id, `${n > 0 ? '+' : '−'}${Math.abs(n)} мораль — ${why}`); };
     const talonsAdd = (h, n, why) => { if (!n) return; h.talons += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].talons += n; line(h.id, `+${n} 🎫 — ${why}`); };
 
     // карты, принесённые из убежища: key → предмет (износ следует за картой, даже если её передали в бою)
@@ -186,7 +186,7 @@
         } else found.push(item(c, id));
       });
       h.equip = [];
-      found.forEach((it) => (h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(it));
+      found.forEach((it) => (C.isValuable$(it.id) ? h.junk : h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(it)); // Ценности — сразу в хлам: сдадутся скупщику при выходе
     });
 
     // 2) звёзды → талоны (с долгом новичка), особые достижения → мораль
@@ -206,7 +206,7 @@
       }
       if (C.has(h, 'sh_scavenger') && gh && (gh.ms.searches || 0) >= 2) talonsAdd(h, 3, 'Мародёр');
       if (rep.stars >= 3) moraleAdd(h, 1, 'миссия на 3 ★');
-      if (gh && g.missionFirst === gh.idx) moraleAdd(h, 1, 'первым выполнил секретную миссию');
+      if (gh && g.missionFirst === gh.idx) moraleAdd(h, 1, ZG.Engine.fem(h) ? 'первой выполнила секретную миссию' : 'первым выполнил секретную миссию');
       deaths.forEach((d) => { const r = relOf(h.id, d); if (r <= -3) moraleAdd(h, 2, `погиб враг: ${ZG.Heroes.get(d).name}`); else moraleAdd(h, r >= 3 ? -2 : -1, `потеря${r >= 3 ? ' друга' : ''}: ${ZG.Heroes.get(d).name}`); });
       // Враги в одном отряде: −1 мораль каждому
       squad.forEach((o) => { if (o !== id && relOf(id, o) <= -3 && !deaths.includes(o)) moraleAdd(h, -1, `в одном отряде с врагом (${ZG.Heroes.get(o).name})`); });
@@ -311,11 +311,12 @@
     c.hints = c.hints || {};
     const used = (id, k) => c.hints[id + ':' + k] || 0;
     const cands = [];
+    const FIELD = ['bold', 'careful', 'loner', 'hater']; // черты, видные только в деле — про тех, кто ходил на миссию
     c.roster.forEach((h) => {
-      if (h.id === c.lastHintHero) return; // не тот же герой подряд
+      if (!h.ai || h.id === c.lastHintHero) return; // характер есть только у героев под ИИ; не тот же герой подряд
       const p = ZG.Persona.get(h.id), gh = g && g.heroes.find((x) => x.id === h.id);
       if (p.hatesBandits && gh && (gh.ms || {}).banditKills && used(h.id, 'haterDone') < 2) cands.push({ h, k: 'haterDone', w: 3 }); // событие миссии
-      traitKeys(p).forEach((k) => { if (used(h.id, k) < 2) cands.push({ h, k, w: 1 }); });
+      traitKeys(p).forEach((k) => { if (used(h.id, k) < 2 && (!FIELD.includes(k) || gh)) cands.push({ h, k, w: 1 }); });
     });
     if (!cands.length) return null;
     const ev = cands.filter((x) => x.w > 1);
@@ -346,6 +347,7 @@
     const h = C.hero(c, heroId);
     if (!h || !LISTS.includes(from) || !LISTS.includes(to) || !h[from][idx]) return 'Нет такой карты.';
     if (from === to) return null;
+    if (to === 'equip' && C.isValuable$(h[from][idx].id)) return 'Ценность в поход не берут — её сдают скупщику.';
     if (h[to].length >= cap(h, to)) return to === 'equip' ? 'Экипировка заполнена.' : 'Сундук заполнен.';
     h[to].push(h[from].splice(idx, 1)[0]);
     return null;
@@ -383,7 +385,8 @@
   C.eventDef = (id) => (ZG.SHELTER_EVENTS || []).find((d) => d.id === id) || null;
   C.drawEvent = function (c) {
     if (!c.eventDeck || !c.eventDeck.length) c.eventDeck = Rng.shuffle(c, (ZG.SHELTER_EVENTS || []).map((d) => d.id).concat((ZG.SHELTER_BLANKS || []).map((t, i) => 'blank' + i)));
-    const id = c.eventDeck.pop();
+    let id = c.eventDeck.pop();
+    if (id === 'trader' && C.missionDef(c).trader && c.eventDeck.length) { c.eventDeck.unshift(id); id = c.eventDeck.pop(); } // в вечер странствующего торговца коробейник не приходит
     const def = C.eventDef(id);
     if (!def) { c.eventDraw = { id, blank: true, done: true, result: (ZG.SHELTER_BLANKS || [])[+id.slice(5)] || 'Тихая ночь.' }; return c.eventDraw; }
     if (!def.need(c)) { c.eventDraw = { id, done: true, skipped: true, result: 'Карта не разыгрывается: сейчас для неё нет участников.' }; return c.eventDraw; }

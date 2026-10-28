@@ -73,7 +73,8 @@
     c.appendChild(art);
     const typeLine = [def.type];
     if (def.hero) typeLine.push(ZG.Heroes.get(def.hero).name);
-    if (def.loot) typeLine.push({ rare: 'Редкая', unique: 'Уникальная' }[def.rarity] || 'Добыча');
+    if (def.trader) typeLine.push('Торговец');
+    else if (def.loot) typeLine.push({ rare: 'Редкая', unique: 'Уникальная' }[def.rarity] || 'Добыча');
     if (def.rarity && def.rarity !== 'common') c.classList.add('r-' + def.rarity);
     if (def.rarity && def.rarity !== 'common') c.appendChild(el('div', 'rarity-gem', def.rarity === 'unique' ? '★' : '◆'));
     c.appendChild(el('div', 'card-type', esc(typeLine.join(' · '))));
@@ -212,15 +213,16 @@
   function missionCard(id) {
     const m = ZG.Missions.get(id);
     const c = el('div', 'scen-card mission-card' + (m.rarity === 'rare' ? ' rare' : '') + (m.traitor ? ' traitor' : ''));
-    const req = [m.needsAlly && 'нужен союзник', m.needsStealth && 'нужна скрытность', m.needsFog && 'нужен туман'].filter(Boolean);
+    const req = [m.needsAlly && 'нужен союзник', m.needsStealth && 'нужна скрытность', m.needsFog && 'нужен туман', m.needsBandits && 'нужны бандиты', m.needsSafe && 'нужен сейф'].filter(Boolean);
     c.innerHTML = `<div class="scen-kicker">СЕКРЕТНАЯ МИССИЯ${m.rarity === 'rare' ? ' · РЕДКАЯ' : ''}</div><div class="scen-name">${esc(m.name)}</div><div class="scen-brief">${esc(m.text)}</div>${req.length ? `<div class="scen-setup"><b>⚑ ${esc(req.join(', '))}</b></div>` : ''}<div class="scen-short">Награда (только первому): ${esc(m.rewardText)}</div><div class="scen-setup">Прогресс: ${'□ '.repeat(m.goal)}</div>`;
     return c;
   }
 
-  function scenarioCard(id) {
+  // o.noSetup — без «Подготовки» (в цифровой игре поле уже разложено; это инструкция для картонной версии)
+  function scenarioCard(id, o) {
     const def = ZG.Scenarios.get(id);
     const c = el('div', 'scen-card');
-    c.innerHTML = `<div class="scen-kicker">ЗАДАНИЕ</div><div class="scen-name">${esc(def.name)}</div><div class="scen-brief">${esc(def.brief)}</div><div class="scen-short">${esc(def.short)}</div>${def.setupText ? `<div class="scen-setup"><b>Подготовка:</b> ${esc(def.setupText)}</div>` : ''}`;
+    c.innerHTML = `<div class="scen-kicker">ЗАДАНИЕ</div><div class="scen-name">${esc(def.name)}</div><div class="scen-brief">${esc(def.brief)}</div><div class="scen-short">${esc(def.short)}</div>${def.setupText && !(o && o.noSetup) ? `<div class="scen-setup"><b>Подготовка:</b> ${esc(def.setupText)}</div>` : ''}`;
     const img = el('img');
     img.src = artURL(def.exitArt || 'exit_car', 64, 84, {});
     img.className = 'scen-exit';

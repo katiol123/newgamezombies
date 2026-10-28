@@ -34,6 +34,12 @@
   };
   E.fx = function (g, ev) { if (!g.quiet) g.fx.push(ev); };
   E.heroName = (h) => ZG.Heroes.get(h.id).name;
+  // падежи и род для журнала: «стреляет в Марину», «у Марины», «Марина обессилена»
+  const DECL = { boris: ['Бориса', 'Бориса'], marina: ['Марину', 'Марины', 1], lisa: ['Лизу', 'Лизы', 1], viktor: ['Виктора', 'Виктора'], kira: ['Киру', 'Киры', 1], sava: ['Саву', 'Савы'], gosha: ['Гошу', 'Гоши'], gleb: ['Глеба', 'Глеба'] };
+  E.heroAcc = (h) => (DECL[h.id] || [])[0] || E.heroName(h);
+  E.heroGen = (h) => (DECL[h.id] || [])[1] || E.heroName(h);
+  E.fem = (h) => !!(DECL[h.id] || [])[2];
+  E.g = (h, m, f) => (E.fem(h) ? f : m); // форма по роду героя
   E.cardDef = (g, uid) => ZG.Cards.get(g.cards[uid]);
   E.zombiesAt = (g, cell) => g.zombies.filter((z) => z.pos === cell);
   E.heroesAt = (g, cell) => g.heroes.filter((h) => h.onBoard && h.pos === cell);
@@ -792,7 +798,7 @@
     const target = Board.lineCells(g.board, z.pos, R, (c) => E.hidden(g, c)).filter((c) => c.dist >= 1).map((c) => E.heroesAt(g, c.cell)).find((hs) => hs.length);
     if (!target) return;
     const h = target[0];
-    E.log(g, `${ZG.Zombies.get(z.type).name} стреляет в ${E.heroName(h)}!`, 'bad');
+    E.log(g, `${ZG.Zombies.get(z.type).name} стреляет в ${E.heroAcc(h)}!`, 'bad');
     E.fx(g, { t: 'shot', hero: null, from: z.pos, to: h.pos });
     addWounds(g, h, 1);
   };
@@ -983,7 +989,7 @@
         if (z.bitPhase === g.zphase) (z.bitHeroes || []).forEach((i) => { if (i !== heroIdx && g.heroes[i] && g.heroes[i].onBoard) E.relBump(g, h, g.heroes[i], 1, 'saved', `спасение: ${E.heroName(h)} убивает зомби, кусавшего ${E.heroName(g.heroes[i])}`); });
         if (kind === 'melee' || kind === 'silent') ms(h, 'meleeKills');
         if (def.big) ms(h, 'bigKills');
-        if ((kind === 'ranged' || kind === 'fire') && z.pos !== h.pos) ms(h, 'farKills'); // «Снайпер»: издалека
+        if ((kind === 'ranged' || kind === 'fire') && z.pos !== h.pos) ms(h, 'farKills'); // «Меткий глаз»: издалека
         if (unaware && !E.isBandit(z)) ms(h, 'quietKills'); // «Тихая смерть»
         if (E.isBandit(z)) ms(h, 'banditKills'); // «Охотник за головами»
         if (g.turn && g.active === heroIdx) { g.turn.kills = (g.turn.kills || 0) + 1; h.ms.bestTurnKills = Math.max(h.ms.bestTurnKills || 0, g.turn.kills); }
@@ -1061,7 +1067,7 @@
           if (m.reward) m.reward(g, h, E);
           if (h.missionsDone) h.missionsDone.push(m.id);
         }
-        E.log(g, repeat ? `${E.heroName(h)} снова выполняет «${m.name}» ПЕРВЫМ — награда уже получена раньше, вместо неё +${REPEAT_MISSION_XP} 🎖.` : `${E.heroName(h)} выполняет секретную миссию «${m.name}» ПЕРВЫМ! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
+        E.log(g, repeat ? `${E.heroName(h)} снова выполняет «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')} — награда уже получена раньше, вместо неё +${REPEAT_MISSION_XP} 🎖.` : `${E.heroName(h)} выполняет секретную миссию «${m.name}» ${E.g(h, 'ПЕРВЫМ', 'ПЕРВОЙ')}! Награда: ${m.rewardText}`, m.traitor ? 'bad' : 'good');
         E.fx(g, { t: 'mission', hero: h.idx, id: m.id, rewarded: true });
       } else {
         E.log(g, `${E.heroName(h)} выполняет миссию «${m.name}», но кто-то успел раньше — награды нет.`, 'dim');
@@ -1293,7 +1299,7 @@
         zs.step = 'special';
       } else if (zs.step === 'special') {
         const horde = ZG.Levels.get(g.levelId).hordeAlarm;
-        const mobile = g.zombies.filter((z) => !ZG.Zombies.get(z.type).immobile && !E.isBandit(z)).length;
+        const mobile = g.zombies.filter((z) => !ZG.Zombies.get(z.type).immobile && !E.isBandit(z) && !z.lurk).length; // притаившиеся не гудят
         if (horde && mobile >= horde) E.raiseAlarm(g, 1, `Орда (${mobile} на поле) гудит`);
         g.zombies.slice().forEach((z) => {
           const def = ZG.Zombies.get(z.type);
@@ -1394,11 +1400,11 @@
         if (def.id === 'sniper') E.storyEvent(g, 'firstSniper');
         if (t.hero && t.shot && def.pierce) {
           // винтовка: выстрел не блокируется картами (спасают только укрытия)
-          E.log(g, `${def.name} стреляет в ${E.heroName(t.hero)} — ${def.dmg} ${ZG.util.plural(def.dmg, 'Рана', 'Раны', 'Ран')}, блок не спасает!`, 'bad');
+          E.log(g, `${def.name} стреляет в ${E.heroAcc(t.hero)} — ${def.dmg} ${ZG.util.plural(def.dmg, 'Рана', 'Раны', 'Ран')}, блок не спасает!`, 'bad');
           E.fx(g, { t: 'wound', hero: t.hero.idx, pos: t.hero.pos, n: def.dmg });
           g.stats.incoming = (g.stats.incoming || 0) + def.dmg;
           addWounds(g, t.hero, def.dmg);
-        } else if (t.hero) { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : def.verb || 'бьёт'} ${E.heroName(t.hero)}!`, 'bad'); toHero(z, t.hero, def); }
+        } else if (t.hero) { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : def.verb || 'бьёт'} ${E.heroAcc(t.hero)}!`, 'bad'); toHero(z, t.hero, def); }
         else { E.log(g, `${def.name} ${t.shot ? 'стреляет в' : 'бьёт'} зомби (${ZG.Zombies.get(t.foe.type).name}) — в голову!`, 'dim'); damageZombie(g, t.foe, def.foeDmg || def.dmg, null, 'shot'); }
         return;
       }
@@ -1459,7 +1465,7 @@
       E.fx(g, { t: 'blockcard', hero: h.idx, card: u });
     });
     if (!wasTired && E.exhausted(g, h)) {
-      E.log(g, `${E.heroName(h)} обессилен (Изнеможение ${h.exhaust.length}): рука −1, базовые действия недоступны, пока не отдышится.`, 'bad');
+      E.log(g, `${E.heroName(h)} ${E.g(h, 'обессилен', 'обессилена')} (Изнеможение ${h.exhaust.length}): рука −1, базовые действия недоступны, пока не отдышится.`, 'bad');
       E.fx(g, { t: 'tired', hero: h.idx, pos: h.pos });
     }
     const taken = Math.max(0, entry.remaining - blocked);
@@ -1506,7 +1512,8 @@
     g.relaySuit = null;
     g.zombies.forEach((z) => { z.suppressed = false; if (!ZG.Zombies.get(z.type).big) z.dmg = 0; });
     if (g.round >= E.maxRounds(g)) {
-      finish(g, false, E.scenario(g).timeoutText || 'Рассвет не наступил: Орда поглотила квартал.');
+      const tt = E.scenario(g).timeoutText;
+      finish(g, false, (typeof tt === 'function' ? tt.call(E.scenario(g), g) : tt) || 'Рассвет не наступил: Орда поглотила квартал.');
       return;
     }
     g.round++;
@@ -1891,7 +1898,7 @@
         const sf = E.safeAt(g, h.pos);
         if (!sf || sf.jammed || !sf.deck.length) return fail(g, 'Этот сейф уже не вскрыть.');
         if (h.energy < E.SAFE_COST) return fail(g, 'Не хватает энергии.');
-        if (E.zombiesAt(g, h.pos).length) return fail(g, 'Мешают зомби в зоне.');
+        if (E.zombiesAt(g, h.pos).length) return fail(g, 'Мешают враги в зоне.');
         spend(g, h, E.SAFE_COST);
         crackSafe(g, h, sf);
         return true;
@@ -1911,7 +1918,7 @@
         g.turn.healUsed++;
         const n = healWounds(g, o, 1 + Mods.value(g, h, 'healBonus', 0));
         if (o !== h) { ms(h, 'helps'); if (n) E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
-        E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} −${n} Рана.`, 'good');
+        E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} — минус ${n} ${ZG.util.plural(n, 'Рана', 'Раны', 'Ран')}.`, 'good');
         return true;
       }
       case 'cleanse': {
@@ -1923,7 +1930,7 @@
         g.turn.healUsed++;
         inf.forEach((u) => { g.cards[u] = 'wound'; });
         if (o !== h) { ms(h, 'helps'); E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
-        E.log(g, `${E.heroName(h)} вскрывает и прижигает укус: у ${E.heroName(o)} ${inf.length} Заражение → Рана.`, 'good');
+        E.log(g, `${E.heroName(h)} вскрывает и прижигает укус: у ${E.heroGen(o)} ${inf.length} Заражение → Рана.`, 'good');
         E.fx(g, { t: 'heal', hero: o.idx, n: inf.length, pos: o.pos });
         checkFall(g, o);
         return true;
@@ -1936,7 +1943,7 @@
         spend(g, h, 2);
         bites.forEach((u) => { g.cards[u] = 'wound'; });
         if (o !== h) { ms(h, 'helps'); E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
-        E.log(g, `${E.heroName(h)} прижигает укус${o === h ? '' : ` у ${E.heroName(o)}`}: Заражение → Рана.`, 'good');
+        E.log(g, `${E.heroName(h)} прижигает укус${o === h ? '' : ` у ${E.heroGen(o)}`}: Заражение → Рана.`, 'good');
         E.fx(g, { t: 'heal', hero: o.idx, n: 0, pos: o.pos });
         return true;
       }
@@ -2036,6 +2043,7 @@
         if (!E.isComplete(g) || h.pos !== g.exit) return fail(g, 'Эвакуация ещё не готова.');
         if (!E.canEvac(g, h)) return fail(g, E.scenario(g).evacBlockedText || 'Сейчас уйти нельзя.');
         E.leftBehind(g, h).forEach((o) => E.relBump(g, h, o, -1, 'left', `эвакуация без товарища: ${E.heroName(o)} был(а) у самого выхода`));
+        if (E.scenario(g).onEvac) E.scenario(g).onEvac(g, h, E); // задание отмечает, что унесли (например, рацию)
         h.onBoard = false; h.evacuated = true;
         E.log(g, `${E.heroName(h)} эвакуируется!`, 'good');
         E.fx(g, { t: 'evac', hero: h.idx, pos: h.pos });

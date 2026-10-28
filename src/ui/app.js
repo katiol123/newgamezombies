@@ -837,7 +837,9 @@
         const mark = x.failed ? '✕' : x.done ? '✓' : String(i + 1);
         return `<div class="goal ${st}"><i>${mark}</i><div class="goal-body">${x.isNew ? '<span class="goal-tag">Новая задача</span>' : ''}<span class="goal-text">${esc(x.text)}</span>${x.note ? `<small class="goal-note">${esc(x.note)}</small>` : ''}</div></div>`;
       }).join('') +
-        (E.isComplete(g) ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>` : '');
+        (E.isComplete(g) ? (g.heroes.some((h) => h.onBoard && E.canEvac(g, h))
+          ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>`
+          : `<div class="goal-evac blocked">Эвакуация закрыта: ${esc(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя.')}</div>`) : '');
       const cond = ZG.Conditions.get(g.conditionId);
       const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
       $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> <span class="cond-full">${esc(cond.text)}</span>` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> <span class="cond-full">${esc(bonus.text)}</span> <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
@@ -1377,7 +1379,7 @@
       let st, txt;
       const sp = E.zombieSpeed(g, z);
       if (!g.stealth) { st = 'идёт на врага'; txt = `Каждую фазу — до ${sp} ${ZG.util.plural(sp, 'шага', 'шагов', 'шагов')} к ближайшему ${bandit ? 'врагу (герой или зомби)' : 'герою, бандиту или приманке'}. Кубик не бросается.`; }
-      else if (bandit && z.post) { const r = d.range != null ? d.range : 2; st = z.awake ? 'часовой' : 'дремлет'; txt = 'Часовой: с поста не уходит. Пока он в зоне выхода, уйти нельзя. ' + (z.awake ? `Стреляет во врага в своей зоне${r ? ` или на линии до ${r} ${ZG.util.plural(r, 'зоны', 'зон', 'зон')}` : ''}.` : 'Проснётся, если увидит героя или услышит шум; бродящего можно убрать «Удавкой» или «Ножом в спину».'); }
+      else if (bandit && z.post) { const r = d.range != null ? d.range : 2; st = z.awake ? 'на посту' : 'дремлет'; txt = `${d.name} на посту: с места не уходит. Пока он в зоне выхода, уйти нельзя. ` + (z.awake ? `Стреляет во врага в своей зоне${r ? ` или на линии до ${r} ${ZG.util.plural(r, 'зоны', 'зон', 'зон')}` : ''}.` : 'Проснётся, если увидит героя или услышит шум; бродящего можно убрать «Удавкой» или «Ножом в спину».'); }
       else if (d.static) { st = 'на посту'; txt = `Не ходит, всегда начеку. Стреляет в ближайшего видимого героя на линии до ${d.range} зон: ${d.dmg} Раны, блок не спасает (только укрытие). Бесшумного замечает только вплотную. Кубик не бросается.`; }
       else if (d.patrol) {
         const t = E.banditTarget(g, z);
@@ -1514,12 +1516,21 @@
         : loud ? '<div class="tt-red">Двери закрыты, но внутри шумели — укрытия нет до конца раунда</div>'
         : '<div class="tt-gold">Двери закрыты — укрытие: зомби дальше 1 зоны героев здесь не видят</div>');
     }
-    if (cell === g.exit) parts.push(`<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} ${E.isComplete(g) ? '— ОТКРЫТА' : '— закрыта, пока не выполнена цель'}</div>`);
+    if (cell === g.exit) parts.push(!E.isComplete(g) ? `<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} — закрыта, пока не выполнена цель</div>`
+      : g.heroes.some((h) => h.onBoard && E.canEvac(g, h)) ? `<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} — ОТКРЫТА</div>`
+        : `<div class="tt-red">Эвакуация: ${esc(E.scenario(g).exitLabel)} — закрыта: ${esc(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя')}</div>`);
+    if (g.frenzyTiles && g.frenzyTiles.includes(g.board.cells[cell].tile)) parts.push('<div class="tt-red">Сияющий крест — «Буйство»: мертвецы на этом тайле в фазу зомби действуют дважды</div>');
+    if (g.obj && g.obj.camp === cell && g.scenarioId === 'wedding' && !g.obj.known) parts.push('<div class="tt-gold">У костра что-то лежит — подойдите ближе (на 2 зоны), чтобы разглядеть</div>');
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
     if (cell === g.fire) parts.push('<div class="tt-gold">Горящий бензовоз — его зарево освещает всю трассу</div>');
     if (g.spawnPoints.includes(cell)) parts.push(E.plugged(g, cell) ? `<div class="tt-gold">Люк заглушен: молчит ещё ${g.plugs[cell] - g.round + 1} р.</div>` : '<div class="tt-red">Точка появления зомби</div>');
     const sf = E.safeAt(g, cell);
-    if (sf) parts.push(sf.jammed ? `<div class="tt-red">${esc(sf.label)}: заклинило — сирена</div>` : !sf.deck.length ? `<div>${esc(sf.label)}: пуст</div>` : `<div class="tt-gold">${esc(sf.label)}: жетонов ${sf.deck.length} (было 6: 4 Ценности, 1 Пусто, 1 Сирена). Взлом — ${E.SAFE_COST} ⚡ и Шум ${E.SAFE_NOISE}; Сирена — ещё Шум 3, сейф заклинит</div>`);
+    if (sf) {
+      const left = { v: sf.deck.filter((x) => x === 'valuable').length, e: sf.deck.filter((x) => x === 'empty').length, s: sf.deck.filter((x) => x === 'siren').length };
+      const ah = g.active != null ? g.heroes[g.active] : null, noise = E.SAFE_NOISE + (ah && E.jingles(g, ah) ? 1 : 0);
+      parts.push(sf.jammed ? `<div class="tt-red">${esc(sf.label)}: заклинило — сирена</div>` : !sf.deck.length ? `<div>${esc(sf.label)}: пуст</div>`
+        : `<div class="tt-gold">${esc(sf.label)}: в стопке ${sf.deck.length} — Ценностей ${left.v}, «Пусто» ${left.e}, «Сирена» ${left.s} (шанс сирены 1 из ${sf.deck.length}). Вынуто Ценностей: ${sf.taken}. Взлом — ${E.SAFE_COST} ⚡ и Шум ${noise}${noise > E.SAFE_NOISE ? ' (звенит Ценность)' : ''}; Сирена — ещё Шум 3, сейф заклинит</div>`);
+    }
     const cr = g.crates.find((x) => x.pos === cell);
     if (cr) parts.push(cr.opened ? '<div>Вскрытый ящик</div>' : '<div class="tt-gold">Ящик: обыщите, чтобы вскрыть</div>');
     const s = g.search.find((x) => x.pos === cell);
@@ -1642,13 +1653,13 @@
     async briefing(g) {
       const sc = E.scenario(g);
       const wrap = el('div', 'brief-cards');
-      wrap.appendChild(CV.scenarioCard(sc.id));
+      wrap.appendChild(CV.scenarioCard(sc.id, { noSetup: true }));
       wrap.appendChild(CV.conditionCard(g.conditionId));
-      const steps = sc.goals(g).map((x) => `<li>${esc(x.text)}</li>`).join('');
+      const steps = sc.goals(g).map((x) => `<li>${esc(x.text)}${x.note ? ` <small class="muted">(${esc(x.note)})</small>` : ''}</li>`).join('');
       await this.show(`<div class="kicker">Брифинг</div><h2>${esc(sc.name)}</h2><ol class="brief-steps">${steps}</ol>
         ${g.special && g.special.length ? `<div class="special-box"><b>⚠ Особые условия миссии</b><ul>${g.special.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${g.bonusId ? `<p>★ Бонусная цель (3-я звезда): <b>${esc(ZG.Bonuses.get(g.bonusId).name)}</b> — ${esc(ZG.Bonuses.get(g.bonusId).text)}</p>` : ''}
-        <p class="muted">На поле: <b>жёлтые «?»</b> — жетоны обыска, <b>ящики</b> — возможные грузы, <b>люки</b> — точки появления. Наводите курсор на зоны, чтобы узнать подробности.</p>`, [{ label: 'В бой', cls: 'primary', modal: true }], wrap, 'wide');
+        <p class="muted">На поле: <b>лупы</b> — жетоны обыска, <b>ящики</b> — возможные грузы, <b>люки</b> — точки появления${g.safes && g.safes.length ? ', <b>стальной ящик с диском</b> — сейф' : ''}. Наводите курсор на зоны, чтобы узнать подробности.</p>`, [{ label: 'В бой', cls: 'primary', modal: true }], wrap, 'wide');
     },
 
     block(g, p) {

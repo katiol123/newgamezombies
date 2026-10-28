@@ -56,7 +56,7 @@
       perk: { name: 'Своя шкура', text: '+1 ⚡ каждый ход; 1 урон в фазу зомби блокируется.', mods: { autoBlock: 1, energy: 1 } },
     },
     {
-      id: 'm_sniper', name: 'Снайпер', rarity: 'common', stat: 'farKills', goal: 2,
+      id: 'm_sniper', name: 'Меткий глаз', rarity: 'common', stat: 'farKills', goal: 2,
       text: 'Убей 2 зомби дальним боем по цели не в своей зоне (метательное — кирпич, коктейль — тоже считается).', rewardText: '+2 опыта.',
       reward(g, h, E) { E.gainXp(g, h, 2); },
     },
@@ -81,7 +81,7 @@
       perk: { name: 'Глаз-алмаз', text: 'Дальность твоих дальних атак +1.', mods: { rangeBonus: 1 } },
     },
     {
-      id: 'm_fence', name: 'Скупщик', rarity: 'common', stat: 'safeLoot', goal: 1, needsSafe: true,
+      id: 'm_fence', name: 'Медвежатник', rarity: 'common', stat: 'safeLoot', goal: 1, needsSafe: true,
       text: 'Достань из сейфа Ценность. Нужен сейф на поле.', rewardText: '+2 опыта.',
       reward(g, h, E) { E.gainXp(g, h, 2); },
     },
