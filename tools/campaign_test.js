@@ -384,10 +384,12 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(g.retreats === C.retreatsLeft(c), 'запас отступлений передан в миссию');
   E.act(g, { t: 'begin', hero: 0 });
   ok(E.legal(g).some((a) => a.t === 'retreat') && E.act(g, { t: 'retreat' }) && g.result && !g.result.win && g.result.retreat, 'действие «Отступить» завершает миссию отступлением');
+  E.giveCard(g, g.heroes[1], 'valuable'); // Ценность из сейфа — при отступлении пропадёт
   const m0 = C.hero(c, 'kira').morale;
   const rep = C.finishMission(c, g);
   ok(rep.retreat && c.missionNo === 0 && c.status === 'ready' && c.retreats === ZG.CAMPAIGN.retreats - 1, 'после отступления — снова миссия 1, запас −1');
   ok(C.hero(c, 'kira').morale === Math.max(0, m0 - 1) && c.roster.length === 2, 'отступление: −1 мораль, выжившие в убежище');
+  ok(!C.hero(c, 'kira').junk.concat(C.hero(c, 'kira').chest).some((it) => it.id === 'valuable'), 'отступление: Ценности брошены');
   c.retreats = 0;
   const g2 = E.create(C.startMission(c));
   E.act(g2, { t: 'begin', hero: 0 });

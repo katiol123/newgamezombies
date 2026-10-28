@@ -1123,7 +1123,7 @@
       }, ' gold');
       if (g.survivor) icon('heal', 'Спасти', 1, has('rescue'), 'дойдите до выжившего (SOS на поле)', () => this.act({ t: 'rescue' }), ' gold');
       if (g.campaign && g.retreats > 0) icon('evac', 'Отступить', null, has('retreat'), '', async () => {
-        const v = await Modal.show(`<h2>Отступить в убежище?</h2><p>Задание будет сорвано, но все, кто ещё на ногах, вернутся в убежище (раны останутся). Наград за миссию не будет, каждому из отряда −1 мораль. Миссию предстоит переиграть.</p><p>Отступлений в запасе: <b>${g.retreats}</b> — это одно из них.</p>`, [{ label: 'Отступить', value: 'go' }, { label: 'Держимся', cls: 'primary' }]);
+        const v = await Modal.show(`<h2>Отступить в убежище?</h2><p>Задание будет сорвано, но все, кто ещё на ногах, вернутся в убежище (раны останутся). Наград за миссию не будет, все Ценности из этой миссии придётся бросить, каждому из отряда −1 мораль. Миссию предстоит переиграть.</p><p>Отступлений в запасе: <b>${g.retreats}</b> — это одно из них.</p>`, [{ label: 'Отступить', value: 'go' }, { label: 'Держимся', cls: 'primary' }]);
         if (v === 'go') this.act({ t: 'retreat' });
       });
     },
@@ -1973,6 +1973,7 @@
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
         ${r.joined ? `<div class="rep-bond">🔓 ${name(r.joined)} «${esc(ZG.Heroes.get(r.joined).nick)}» спасён и присоединяется к отряду — новый герой в убежище.</div>` : ''}
         ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
+        ${(r.hired || []).map((x) => `<div class="rep-bond">🤝 ${name(x.payer)} нанимает новобранца: ${name(x.id)} «${esc(ZG.Heroes.get(x.id).nick)}».</div>`).join('')}
         ${r.retreat ? `<div class="rep-lost">↩ Отряд отступил в убежище — миссию ${r.missionNo} придётся переиграть. Отступлений в запасе: ${r.retreatsLeft}.</div>` : ''}
         ${r.hint ? `<div class="rep-hint">${esc(r.hint)}</div>` : ''}
         ${r.finalSale && r.finalSale.length ? `<div class="rep-bond">Скупщик в последний раз: ${r.finalSale.map((x) => `${name(x.hero)} +${x.price} 🎫`).join(', ')}</div>` : ''}

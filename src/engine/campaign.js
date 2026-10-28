@@ -189,7 +189,9 @@
         } else found.push(item(c, id));
       });
       h.equip = [];
-      found.forEach((it) => (C.isValuable$(it.id) ? h.junk : h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(it)); // Ценности — сразу в хлам: сдадутся скупщику при выходе
+      // отступление: Ценности бросают на бегу — иначе сейф выгодно грабить до последнего и сразу отступать
+      if (rep.retreat) { const lost = found.filter((it) => C.isValuable$(it.id)).length; if (lost) line(h.id, `${lost > 1 ? lost + ' Ценности брошены' : 'Ценность брошена'} при отступлении`); }
+      found.filter((it) => !(rep.retreat && C.isValuable$(it.id))).forEach((it) => (C.isValuable$(it.id) ? h.junk : h.chest.length < C.chestCap(h) ? h.chest : h.junk).push(it)); // Ценности — сразу в хлам: сдадутся скупщику при выходе
     });
 
     // 2) звёзды → талоны (с долгом новичка), особые достижения → мораль
@@ -291,6 +293,7 @@
       c.status = 'ready';
       rep.hint = C.personaHint(c, g); // иногда — намёк на скрытый характер кого-то из отряда
       C.drawEvent(c); // фаза событий убежища: тянется карта из колоды (8 событий + 8 пустых)
+      rep.hired = C.hireAI(c); // отряд под ИИ сам добирает новобранцев
       c.roster.forEach((h) => { if (h.ai) C.autoManage(c, h.id); });
       C.checkSquad(c);
     }
@@ -498,6 +501,19 @@
     return null;
   };
   // Наём: платит один герой. Ему — подарок новичка (уникальная карта героя) и долг на 3 миссии новичка.
+  // ИИ в убежище: отряд неполон — кто-то из героев под ИИ, у кого хватает талонов (с запасом на паёк), нанимает новобранца
+  C.hireAI = function (c) {
+    const P = CFG().prices, out = [];
+    while (c.roster.length < c.squad) {
+      const payer = c.roster.filter((h) => h.ai && h.talons >= P.hire + P.ration).sort((a, b) => b.talons - a.talons)[0];
+      const pool = C.hireable(c);
+      if (!payer || !pool.length) break;
+      const id = Rng.pick(c, pool);
+      if (C.hire(c, payer.id, id)) break;
+      out.push({ payer: payer.id, id });
+    }
+    return out;
+  };
   C.hire = function (c, payerId, newId) {
     const payer = C.hero(c, payerId), P = CFG().prices;
     if (c.status !== 'ready') return 'Кампания не в убежище.';
