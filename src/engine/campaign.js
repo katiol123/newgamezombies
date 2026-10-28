@@ -268,6 +268,7 @@
       }
       h.morale = Math.max(0, Math.min(M.max, h.morale));
     });
+    c.roster.forEach((h) => { h.morale = Math.max(0, Math.min(M.max, h.morale)); }); // и при провале мораль не выходит за пределы шкалы
 
     c.missionNo++;
     c.current = null;

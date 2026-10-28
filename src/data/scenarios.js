@@ -16,17 +16,19 @@
 
   const E0 = () => ZG.Engine;
   // Общая логика «найти груз в ящиках → доставить»
-  function cargoInHands(g, cargoId) {
+  // груз у отряда: в руках + лежащий на земле (dropW — его вес; для прогресса ИИ — половина, иначе бот не станет подбирать)
+  function cargoInHands(g, cargoId, dropW) {
     let n = 0;
     g.heroes.forEach((h) => h.hand.forEach((u) => { if (g.cards[u] === cargoId) n++; }));
-    return n + g.drops.filter((d) => d.card === cargoId).length;
+    return n + g.drops.filter((d) => d.card === cargoId).length * (dropW == null ? 1 : dropW);
   }
   function fetchBotGoal(g, hero, E, cargoId, deliverCell) {
     const carrying = hero.hand.some((u) => g.cards[u] === cargoId);
+    // упавший с погибшего груз — тоже нужно подобрать: cargoInHands считает его «в наличии», поэтому ящики — только сверх него
+    const drops = g.drops.filter((d) => d.card === cargoId).map((d) => d.pos);
     const need = g.obj.need - g.obj.delivered - cargoInHands(g, cargoId);
-    const options = g.crates.filter((c) => !c.opened).map((c) => c.pos)
-      .concat(g.drops.filter((d) => d.card === cargoId).map((d) => d.pos));
-    if (need > 0 && options.length) {
+    const options = drops.concat(need > 0 ? g.crates.filter((c) => !c.opened).map((c) => c.pos) : []);
+    if ((need > 0 || drops.length) && options.length) {
       const near = E.nearest(g, hero.pos, options);
       if (!carrying) return near;
       // по пути заберём ещё, если ящик ближе, чем точка доставки
@@ -65,7 +67,7 @@
       actions(g, hero) { return deliverAction(g, hero, this.cargo, g.exit, 'Заправить машину'); },
       doAction(g, hero, key, E) { if (key === 'deliver') doDeliver(g, hero, E, this.cargo, 'канистра'); },
       botGoal(g, hero, E) { return fetchBotGoal(g, hero, E, this.cargo, g.exit); },
-      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
+      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo, 0.5); },
     },
     {
       setupText: 'Ящики: 7, с медикаментами: 6 (нужно 3, при 3–4 героях — 4). Выход — Скорая.', id: 'meds', name: 'Лекарство', short: 'Собери медикаменты для скорой (3, при 3–4 героях — 4).',
@@ -82,7 +84,7 @@
       actions(g, hero) { return deliverAction(g, hero, this.cargo, g.exit, 'Погрузить медикаменты'); },
       doAction(g, hero, key, E) { if (key === 'deliver') doDeliver(g, hero, E, this.cargo, 'медикаменты'); },
       botGoal(g, hero, E) { return fetchBotGoal(g, hero, E, this.cargo, g.exit); },
-      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
+      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo, 0.5); },
     },
     {
       setupText: 'Ящики: 3, с рацией: 1. Вышка — здание среднего столбца (этот тайл открыт сразу). Выход (Вертолёт) — ближайшая к вышке уличная зона. Передача: 2 раунда, при 3–4 героях — 3.', id: 'radio', name: 'Последний эфир', short: 'Найди рацию, выйди в эфир с вышки, продержись 2 раунда (при 3–4 героях — 3) и улетай.',
@@ -138,7 +140,7 @@
         if (g.obj.transmit < g.obj.transmitNeed) return g.tower;
         return null;
       },
-      progress(g) { return (g.obj.on ? 2 : cargoInHands(g, this.cargo)) + g.obj.transmit * 1.5; },
+      progress(g) { return (g.obj.on ? 2 : cargoInHands(g, this.cargo, 0.5)) + g.obj.transmit * 1.5; },
     },
     {
       setupText: 'Гнёзда: соло 1, двое 2, трое–четверо 3 (центры тайлов, начиная с правого столбца). Ящиков нет. Выход — Пикап.', id: 'nests', name: 'Выжечь гнёзда', short: 'Уничтожь гнёзда (1–3 по числу героев) и уходи.',
@@ -601,7 +603,7 @@
         const thieves = g.zombies.filter((z) => (z.bag || []).includes(this.cargo)).map((z) => z.pos); // и в тумане: ящик пропал с рубашки — ясно, кто его унёс
         return need > 0 && thieves.length ? E.nearest(g, hero.pos, thieves) : null;
       },
-      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo); },
+      progress(g) { return g.obj.delivered * 2 + cargoInHands(g, this.cargo, 0.5); },
     },
     // --- Кампания, миссия 5: мост, банда Лесника; два пути — тихо (ключ) или силой (зачистка) ---
     {
