@@ -756,6 +756,56 @@
     flies(c, 820, 600, 160, t, 30); flies(c, 1350, 470, 60, t + 2, 8);
     tex(c, '#2a1a10', 0.14); vignette(c, 0.45); grain(c, t); frame(c);
   };
+  // бегущий человек (не мертвец): прямая спина, наклон вперёд, ноги-ножницы; o.limp — хромает, o.arm — рука на плече соседа
+  function runner(c, x, y, s, t, o) {
+    o = o || {};
+    const ph = t * (o.limp ? 7 : 9) + (o.ph || 0), st = Math.sin(ph), bob = Math.abs(Math.cos(ph)) * 6;
+    c.save(); c.translate(x, y - bob); c.scale(s * (o.flip ? -1 : 1), s); c.rotate(-0.16 + (o.limp ? Math.sin(ph) * 0.05 : 0));
+    c.fillStyle = o.fill || INK; c.strokeStyle = c.fillStyle; c.lineCap = 'round';
+    c.lineWidth = 11; // ноги
+    c.beginPath(); c.moveTo(0, -48); c.lineTo(-st * 22, -22); c.lineTo(-st * 30 - 6, 0); c.stroke();
+    c.beginPath(); c.moveTo(0, -48); c.lineTo(st * 22, -24); c.lineTo(st * 26 + 8, -2 + (o.limp ? 4 : 0)); c.stroke();
+    c.beginPath(); c.moveTo(-12, -50); c.lineTo(-14, -100); c.quadraticCurveTo(0, -112, 14, -100); c.lineTo(12, -50); c.closePath(); c.fill(); // туловище
+    c.lineWidth = 8; // руки
+    if (o.arm) { c.beginPath(); c.moveTo(8, -96); c.lineTo(34, -104); c.stroke(); }
+    else { c.beginPath(); c.moveTo(4, -94); c.lineTo(st * 26, -72); c.lineTo(st * 30 + 10, -82); c.stroke(); }
+    c.beginPath(); c.moveTo(-4, -94); c.lineTo(-st * 24, -70); c.lineTo(-st * 28 - 8, -60); c.stroke();
+    if (o.pack) { c.fillRect(-26, -100, 16, 34); } // рюкзак
+    c.beginPath(); c.arc(2, -118, 11, 0, TAU); c.fill();
+    c.restore();
+  }
+  S.retreat = (c, t) => { // ночная улица: сигнальный огонь красным, из дыма — мертвецы; отряд бежит к полоске света в двери убежища
+    sky(c, [[0, '#120c10'], [0.55, '#2a1416'], [1, '#0c0908']]);
+    c.fillStyle = '#0c0a0a'; for (let i = 0; i < 12; i++) { const x = i * 140 - 30, h = 260 + (i * 53 % 160); c.fillRect(x, 560 - h, 120, h); } // дома-коробки
+    c.fillStyle = 'rgba(255,200,120,.25)'; for (let i = 0; i < 9; i++) if ((i * 7) % 3) c.fillRect(60 + i * 170, 360 + (i * 31 % 80), 18, 24); // редкие окна
+    c.fillStyle = '#151112'; c.fillRect(0, 560, W, 340); // асфальт
+    // дверь убежища слева: полоса тёплого света сужается — её закрывают
+    const close = 0.5 + 0.5 * Math.sin(t * 0.35), gap = 20 + close * 70;
+    c.fillStyle = '#1e1816'; c.fillRect(150, 300, 200, 300);
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 250, 470, 280, 'rgba(255,190,110,A)', 0.35 * (gap / 90)); c.restore();
+    c.fillStyle = '#ffd89a'; c.fillRect(250 - gap / 2, 310, gap, 290);
+    c.fillStyle = 'rgba(255,200,120,.18)'; c.beginPath(); c.moveTo(250 - gap / 2, 600); c.lineTo(250 + gap / 2, 600); c.lineTo(760, 900); c.lineTo(250 - gap * 2, 900); c.fill(); // свет на асфальте
+    // сигнальный огонь в центре: красное зарево и дым
+    const fl = 0.75 + Math.sin(t * 13) * 0.12 + Math.sin(t * 5.3) * 0.1;
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 1000, 690, 520, 'rgba(230,40,30,A)', 0.42 * fl); c.restore();
+    smoke(c, 1000, 690, t, { n: 26, h: 520, spread: 160, r: 120, color: 'rgba(170,40,36,A)', a: 0.12, speed: 0.06, sway: 70 });
+    c.save(); c.translate(1000, 690); c.rotate(-0.4); c.fillStyle = '#a0221a'; c.fillRect(-46, -9, 92, 18); c.restore();
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(c, 1036, 676, 90, 'rgba(255,120,90,A)', 0.8 * fl); c.restore();
+    c.fillStyle = '#fff3d0'; c.beginPath(); c.arc(1036, 676, 14 * fl, 0, TAU); c.fill();
+    for (let i = 0; i < 14; i++) { const p = (t * 1.6 + i / 14) % 1, a = -1.9 + Math.sin(i * 3.1) * 0.9; c.fillStyle = `rgba(255,${180 - p * 120},80,${1 - p})`; c.fillRect(1036 + Math.cos(a) * p * 180, 676 + Math.sin(a) * p * 180 + p * p * 140, 6, 6); } // искры
+    // мертвецы выходят из дыма справа — с каждым кругом ближе
+    for (let i = 0; i < 9; i++) {
+      const p = ((t * 0.05 + i * 0.137) % 1), x = 1640 - p * 380 - (i % 3) * 80, y = 650 + (i % 3) * 75 + p * 40, sc = 1.8 + (i % 3) * 0.4;
+      c.save(); c.globalAlpha = Math.min(1, p * 3); walker(c, x, y, sc, t, { ph: i, flip: true, fill: '#0a0606', eyes: 'rgba(255,90,70,.9)' }); c.restore();
+    }
+    // отряд бежит к двери: первый с рюкзаком, двое — один ведёт хромающего
+    runner(c, 540, 790, 2.7, t, { flip: true, pack: true });
+    runner(c, 700, 830, 2.8, t, { flip: true, ph: 1.4, arm: true });
+    runner(c, 790, 840, 2.75, t, { flip: true, ph: 2.1, limp: true });
+    c.fillStyle = INK; c.save(); c.translate(880, 820); c.rotate(0.3); c.fillRect(-26, -16, 52, 30); c.restore(); // брошенная сумка
+    c.fillStyle = 'rgba(230,60,40,.25)'; c.fillRect(0, 860, W, 40); // красный отблеск на мокром асфальте
+    tex(c, '#2a0a08', 0.12); vignette(c, 0.6); grain(c, t); frame(c);
+  };
   S.epilogue = (c, t) => { // рассвет поднимается над пригородом, крошечная «буханка», длинные тени, вдали костёр
     const rise = Math.min(1, (t % 30) / 18);
     sky(c, [[0, `rgb(${40 + rise * 60},${44 + rise * 50},${60 + rise * 40})`], [0.55, `rgb(${120 + rise * 100},${90 + rise * 70},${70 + rise * 40})`], [1, '#1a1612']]);

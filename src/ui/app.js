@@ -1432,6 +1432,7 @@
     ['Миссия 6 · Погост', ['m6_start', 'm6_frenzy', 'm6_brutes', 'm6_radio']],
     ['Миссия 7 · Белый лебедь', ['m7_start', 'm7_scream', 'm7_prisoner', 'm7_rescue', 'm7_executed', 'm7_bride_dead']],
     ['Миссия 8 · Полдень и финал', ['m8_start', 'm8_butcher', 'm8_blood', 'm8_wolves', 'm8_butcher_dead', 'epilogue']],
+    ['Убежище', ['retreat']],
   ];
   const Gallery = {
     show() {
@@ -1866,6 +1867,17 @@
       Game.startCampaignMission(this.squad.slice());
     },
     // фаза событий убежища: после миссии тянется карта; решение — за героем (ИИ решает сам, игрок — в этом окне)
+    // вставка «Уходим» — один раз за кампанию, при первом отступлении
+    async showRetreat(c) {
+      const st = ZG.STORIES && ZG.STORIES.retreat;
+      if (this._eventOpen || c.retreatSeen) return;
+      c.retreatSeen = true; this.save();
+      if (!st) return this.render();
+      this._eventOpen = true;
+      await Modal.show(`${storyArt('retreat')}<div class="story-kicker">${esc(st.kicker)}</div><h2 class="story-title">${esc(st.title)}</h2><div class="story-text">${esc(st.text)}</div>`, [{ label: 'Дальше', cls: 'primary' }], null, 'story');
+      this._eventOpen = false;
+      this.render(); // дальше — карта событий убежища и торговец
+    },
     async showEvent(c) {
       const e = c.eventDraw; if (!e || e.seen || this._eventOpen) return;
       this._eventOpen = true;
@@ -1918,7 +1930,8 @@
       this.renderReport(c);
       if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }
-      if (c.eventDraw && !c.eventDraw.seen && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
+      if (c.report && c.report.retreat && !c.retreatSeen && !done && !this._eventOpen) setTimeout(() => this.showRetreat(c), 300); // первое отступление за кампанию — вставка «Уходим»
+      else if (c.eventDraw && !c.eventDraw.seen && !done && !this._eventOpen) setTimeout(() => this.showEvent(c), 400);
       else if (!done && CMP.trader(c) && c.traderSeen !== c.missionNo && !this._eventOpen) setTimeout(() => this.showTrader(c), 450); // торговец — после карты событий
       const md = CMP.missionDef(c);
       if (!done && md.brief) $('#shelter-report').insertAdjacentHTML('beforeend', `<div class="rep-brief">${esc(md.brief)}</div>`);
