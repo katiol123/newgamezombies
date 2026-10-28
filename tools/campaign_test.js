@@ -376,5 +376,26 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(buys('lisa') <= 3, 'транжира не скупает прилавок раз за разом (не больше 3 за заход)');
 }
 
+// 24) Отступление: провал не конец кампании, пока есть запас; миссию переигрывают
+{
+  const c = C.create({ heroes: [{ id: 'boris', ai: true }, { id: 'kira', ai: true }], seed: 't24' });
+  ok(C.retreatsLeft(c) === ZG.CAMPAIGN.retreats && ZG.CAMPAIGN.retreats > 0, 'запас отступлений на старте кампании');
+  const g = E.create(C.startMission(c));
+  ok(g.retreats === C.retreatsLeft(c), 'запас отступлений передан в миссию');
+  E.act(g, { t: 'begin', hero: 0 });
+  ok(E.legal(g).some((a) => a.t === 'retreat') && E.act(g, { t: 'retreat' }) && g.result && !g.result.win && g.result.retreat, 'действие «Отступить» завершает миссию отступлением');
+  const m0 = C.hero(c, 'kira').morale;
+  const rep = C.finishMission(c, g);
+  ok(rep.retreat && c.missionNo === 0 && c.status === 'ready' && c.retreats === ZG.CAMPAIGN.retreats - 1, 'после отступления — снова миссия 1, запас −1');
+  ok(C.hero(c, 'kira').morale === Math.max(0, m0 - 1) && c.roster.length === 2, 'отступление: −1 мораль, выжившие в убежище');
+  c.retreats = 0;
+  const g2 = E.create(C.startMission(c));
+  E.act(g2, { t: 'begin', hero: 0 });
+  ok(!E.legal(g2).some((a) => a.t === 'retreat'), 'без запаса отступать нельзя');
+  g2.result = { win: false, stars: 0, reason: 'Все герои пали.' };
+  C.finishMission(c, g2);
+  ok(c.status === 'over', 'провал без запаса отступлений — конец кампании');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

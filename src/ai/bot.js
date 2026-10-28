@@ -278,7 +278,7 @@
     const h = g.active != null ? g.heroes[g.active] : null;
     const angel = h && h.mission === 'm_angel' && !h.missionDone && g.missionFirst == null;
     // взлом сейфа решается отдельно (wantSafe) — перебор «заглянул бы» в закрытую стопку жетонов
-    return E.legal(g).filter((a) => a.t !== 'mredraw' && a.t !== 'safe' && (a.t !== 'give' || giveOk(g, h, a, angel)));
+    return E.legal(g).filter((a) => a.t !== 'mredraw' && a.t !== 'safe' && a.t !== 'retreat' && (a.t !== 'give' || giveOk(g, h, a, angel)));
   }
   function giveOk(g, h, a, angel) {
     const d = ZG.Cards.get(g.cards[a.card]);
@@ -315,6 +315,16 @@
     const d = E.distV(g, h.pos);
     if (g.zombies.some((z) => !E.isBandit(z) && (!g.stealth || z.awake) && d[z.pos] <= 1)) return false; // охотники вплотную
     return true;
+  }
+
+  // Отступление (кампания): решают только боты, когда в живых одни боты. Задание не выполнено, а половина отряда пала —
+  // дальше будет только хуже: уводим выживших и переиграем миссию.
+  function wantRetreat(g) {
+    if (!g.campaign || !(g.retreats > 0) || E.isComplete(g) || !E.legal(g).some((a) => a.t === 'retreat')) return false;
+    const live = g.heroes.filter((h) => !h.fallen && !h.evacuated);
+    if (!live.length || live.some((h) => !h.ai)) return false;
+    const fell = g.heroes.filter((h) => h.fallen).length;
+    return g.heroes.length >= 2 && fell * 2 >= g.heroes.length; // половина отряда пала — уводим остальных
   }
 
   function bestAction(g, opts) {
@@ -394,6 +404,7 @@
       const m = ZG.Missions.get(me.mission);
       if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || (m.traitor && ZG.Persona.get(me.id).honor)) E.act(g, { t: 'mredraw' }); // честный «Предателя» меняет; остальные оставляют и пакостят, когда это безопасно
     }
+    if (wantRetreat(g)) { E.act(g, { t: 'retreat' }); return; }
     for (let i = 0; i < 40; i++) {
       autoPending(g);
       if (g.active !== idx || g.result) return;

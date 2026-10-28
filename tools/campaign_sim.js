@@ -43,7 +43,7 @@ function shelterAI(c) {
 }
 
 function run(o, k) {
-  const c = C.create({ heroes: o.heroes.map((id) => ({ id })), seed: `${o.seed}-${k}`, difficultyId: o.difficulty });
+  const c = C.create({ heroes: o.heroes.map((id) => ({ id, ai: true })), seed: `${o.seed}-${k}`, difficultyId: o.difficulty });
   const trail = [];
   while (c.status === 'ready') {
     const squad = shelterAI(c);
@@ -54,7 +54,7 @@ function run(o, k) {
     const g = ZG.Engine.create(opts);
     ZG.Bot.playGame(g, { depth2: !o.fast });
     const rep = C.finishMission(c, g);
-    trail.push(`${rep.win ? 'W' : 'L'}${rep.stars}`);
+    trail.push(`${rep.win ? 'W' : rep.retreat ? 'R' : 'L'}${rep.stars}`);
     const pm = (perMission[rep.missionNo - 1] = perMission[rep.missionNo - 1] || { n: 0, w: 0, wounds: 0, clean: 0 }); pm.n++; if (rep.win) pm.w++;
     pm.wounds += g.stats.wounds; if (!g.stats.wounds) pm.clean++; // раны отряда за миссию; «чистые» миссии — без единой раны
     if (o.verbose) console.log(`  миссия ${rep.missionNo}: ${rep.win ? 'победа' : 'провал'} ★${rep.stars} | ` + c.roster.map((h) => `${h.id} L${h.level} xp${h.xp} hp${C.hp(h)} мор${h.morale} 🎫${h.talons} экип${h.equip.length} сунд${h.chest.length}`).join('; ') + (rep.lost.length ? ` | выбыли: ${rep.lost.map((l) => l.id + (l.turned ? '(обращён)' : '')).join(',')}` : '') + (c.wanderers.length ? ` | бродят: ${c.wanderers.join(',')}` : ''));

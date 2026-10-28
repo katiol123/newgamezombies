@@ -25,6 +25,7 @@
       squad: opts.heroes.length, missionNo: 0, chainLength: CFG().chain.length,
       status: 'ready', // ready — можно идти на миссию; mission — идёт миссия; over — провал; won — пройдена
       roster: [], fallen: [], wanderers: [], nextKey: 1, report: null, current: null, endReason: null,
+      retreats: CFG().retreats || 0, // сколько ещё раз можно отступить и переиграть миссию
     };
     opts.heroes.forEach((hs) => c.roster.push(newHero(c, hs.id, hs.player, hs.ai)));
     return c;
@@ -39,6 +40,7 @@
   }
   function item(c, id, worn) { return { key: 'k' + c.nextKey++, id, worn: !!worn }; }
 
+  C.retreatsLeft = (c) => (c.retreats == null ? CFG().retreats || 0 : c.retreats); // старые сохранения — с полным запасом
   C.hero = (c, id) => c.roster.find((h) => h.id === id);
   C.has = (h, talentId) => h.talents.includes(talentId);
   C.built = (h, b) => h.buildings.includes(b);
@@ -94,7 +96,7 @@
     const M = CFG().morale;
     const md = C.missionDef(c);
     return {
-      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true, partySize: c.squad,
+      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true, partySize: c.squad, retreats: C.retreatsLeft(c),
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
       bonds: C.bonds(c).filter(([a, b]) => ids.includes(a) && ids.includes(b)),
@@ -119,6 +121,7 @@
     const res = g.result || { win: false, stars: 0, reason: 'Миссия прервана.' };
     const squad = c.current ? c.current.squad : g.heroes.map((h) => h.id);
     const rep = { missionNo: c.missionNo + 1, win: !!res.win, stars: res.stars || 0, reason: res.reason, heroes: {}, lost: [], wanderers: [] };
+    rep.retreat = !res.win && C.retreatsLeft(c) > 0 && !!res.reason; // провал — не конец, пока есть запас отступлений
     const line = (id, text) => (rep.heroes[id] = rep.heroes[id] || { lines: [], talons: 0, morale: 0 }).lines.push(text);
     // памятные события кампании (для эпилога)
     c.flags = c.flags || {};
@@ -130,7 +133,7 @@
     if (g.scenarioId === 'bridge' && res.win) c.flags.bridge = g.obj && g.obj.way === 'quiet' ? 'quiet' : 'force'; // как добыт ключ (или банда перебита)
     if (g.scenarioId === 'forest' && g.obj && g.obj.attempted) c.flags.signal = true;
     // история похода — для эпилога (главы по миссиям)
-    (c.history = c.history || []).push({ no: c.missionNo + 1, scenarioId: g.scenarioId, win: !!res.win, stars: res.stars || 0 });
+    (c.history = c.history || []).push({ no: c.missionNo + 1, scenarioId: g.scenarioId, win: !!res.win, stars: res.stars || 0, retreat: rep.retreat });
     if (g.scenarioId === 'wedding' && g.obj) c.flags.gleb = g.obj.rescued ? 'rescued' : g.obj.executed ? 'executed' : c.flags.gleb;
     const moraleAdd = (h, n, why) => { if (!n) return; h.morale += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].morale += n; line(h.id, `${n > 0 ? '+' : '−'}${Math.abs(n)} мораль — ${why}`); };
     const talonsAdd = (h, n, why) => { if (!n) return; h.talons += n; rep.heroes[h.id] = rep.heroes[h.id] || { lines: [], talons: 0, morale: 0 }; rep.heroes[h.id].talons += n; line(h.id, `+${n} 🎫 — ${why}`); };
@@ -246,7 +249,9 @@
     rep.wanderers = c.wanderers.slice();
 
     // 4) между миссиями: отдых, паёк, восстановление, баня
-    if (rep.win) c.roster.forEach((h) => {
+    // отступление: выжившим из отряда −1 мораль, миссию предстоит переиграть
+    if (rep.retreat) squad.forEach((id) => { const h = C.hero(c, id); if (h) moraleAdd(h, -1, 'отступление'); });
+    if (rep.win || rep.retreat) c.roster.forEach((h) => {
       const went = squad.includes(h.id);
       if (!went) {
         if (C.built(h, 'redcorner') && Rng.next(rng) < 0.5) line(h.id, 'Красный уголок: мораль не упала');
@@ -254,7 +259,7 @@
       }
       let heal = 0;
       if (h.talons >= P.ration) { h.talons -= P.ration; line(h.id, `−${P.ration} 🎫 паёк`); heal++; }
-      else moraleAdd(h, -1, 'не хватило на паёк');
+      else if (!rep.retreat) moraleAdd(h, -1, 'не хватило на паёк'); // после отступления мораль уже упала — без двойного наказания
       if (!went) heal++; // отдых
       if (C.built(h, 'infirmary')) heal++;
       if (C.has(h, 'sh_tough')) heal++;
@@ -270,11 +275,12 @@
     });
     c.roster.forEach((h) => { h.morale = Math.max(0, Math.min(M.max, h.morale)); }); // и при провале мораль не выходит за пределы шкалы
 
-    c.missionNo++;
+    if (rep.retreat) { c.retreats = C.retreatsLeft(c) - 1; rep.retreatsLeft = c.retreats; }
+    else c.missionNo++;
     c.current = null;
     c.report = rep;
     c.updated = Date.now();
-    if (!rep.win) { c.status = 'over'; c.endReason = 'Миссия провалена: ' + (rep.reason || ''); }
+    if (!rep.win && !rep.retreat) { c.status = 'over'; c.endReason = 'Миссия провалена: ' + (rep.reason || '') + (c.retreats === 0 ? ' Отступать больше некуда.' : ''); }
     else if (c.missionNo >= c.chainLength) {
       c.status = 'won'; c.endReason = 'Кампания пройдена!';
       // последний визит скупщика: Ценности, вынесенные из последней миссии, не пропадают

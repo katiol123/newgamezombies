@@ -1122,6 +1122,10 @@
         this.act({ t: 'evac' });
       }, ' gold');
       if (g.survivor) icon('heal', 'Спасти', 1, has('rescue'), 'дойдите до выжившего (SOS на поле)', () => this.act({ t: 'rescue' }), ' gold');
+      if (g.campaign && g.retreats > 0) icon('evac', 'Отступить', null, has('retreat'), '', async () => {
+        const v = await Modal.show(`<h2>Отступить в убежище?</h2><p>Задание будет сорвано, но все, кто ещё на ногах, вернутся в убежище (раны останутся). Наград за миссию не будет, каждому из отряда −1 мораль. Миссию предстоит переиграть.</p><p>Отступлений в запасе: <b>${g.retreats}</b> — это одно из них.</p>`, [{ label: 'Отступить', value: 'go' }, { label: 'Держимся', cls: 'primary' }]);
+        if (v === 'go') this.act({ t: 'retreat' });
+      });
     },
 
     async giveDialog() {
@@ -1193,7 +1197,7 @@
         const rep = CMP.finishMission(camp.c, g);
         camp.c.game = null;
         const got = Object.values(rep.heroes).reduce((s, x) => s + x.talons, 0);
-        $('#end-seed').insertAdjacentHTML('beforeend', `<div class="end-camp">Кампания: миссия ${rep.missionNo} из ${camp.c.chainLength}${got ? ` · заработано ${got} 🎫` : ''}${camp.c.status === 'over' ? ' · <b>кампания окончена</b>' : camp.c.status === 'won' ? ' · <b>кампания пройдена!</b>' : ''}</div>`);
+        $('#end-seed').insertAdjacentHTML('beforeend', `<div class="end-camp">Кампания: миссия ${rep.missionNo} из ${camp.c.chainLength}${got ? ` · заработано ${got} 🎫` : ''}${camp.c.status === 'over' ? ' · <b>кампания окончена</b>' : camp.c.status === 'won' ? ' · <b>кампания пройдена!</b>' : rep.retreat ? ` · <b>отступление</b> — миссию переиграете (отступлений в запасе: ${rep.retreatsLeft})` : ''}</div>`);
         CMP.save(camp.c, camp.slot);
         this.camp = null;
         $('#btn-again').onclick = () => Shelter.show();
@@ -1906,7 +1910,7 @@
       const done = c.status === 'over' || c.status === 'won';
       $('#shelter-sub').innerHTML = done
         ? `<b class="${c.status}">${c.status === 'won' ? 'КАМПАНИЯ ПРОЙДЕНА' : 'КАМПАНИЯ ОКОНЧЕНА'}</b> — ${esc(c.endReason || '')}`
-        : `Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
+        : `${c.report && c.report.retreat ? 'Повтор: ' : ''}Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)} · отступлений: ${CMP.retreatsLeft(c)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
       $('#btn-shelter-go').style.display = '';
       $('#btn-shelter-go').onclick = done ? () => App.newCampaign(App.campaign.slot) : () => this.go();
       $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
@@ -1952,10 +1956,11 @@
       if (!r) { box.innerHTML = '<div class="rep-head">Отряд собран. Перед первым походом можно распределить экипировку и выбрать, кто управляет героями.</div>'; return; }
       const name = (id) => esc(ZG.Heroes.get(id).name);
       if (r.joined) ZG.unlockHero(r.joined); // спасённый герой открывается и для одиночной игры
-      box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
+      box.innerHTML = `<div class="rep-head ${r.win ? 'win' : 'lose'}"><b>Миссия ${r.missionNo}: ${r.win ? 'выполнена' : r.retreat ? 'отступление' : 'провалена'}</b> <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span> — ${esc(r.reason || '')}</div>
         ${r.lost.map((l) => `<div class="rep-lost">✝ ${name(l.id)} — ${l.turned ? 'обратился и теперь бродит по району' : 'пал и выбывает навсегда'}</div>`).join('')}
         ${r.joined ? `<div class="rep-bond">🔓 ${name(r.joined)} «${esc(ZG.Heroes.get(r.joined).nick)}» спасён и присоединяется к отряду — новый герой в убежище.</div>` : ''}
         ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
+        ${r.retreat ? `<div class="rep-lost">↩ Отряд отступил в убежище — миссию ${r.missionNo} придётся переиграть. Отступлений в запасе: ${r.retreatsLeft}.</div>` : ''}
         ${r.hint ? `<div class="rep-hint">${esc(r.hint)}</div>` : ''}
         ${r.finalSale && r.finalSale.length ? `<div class="rep-bond">Скупщик в последний раз: ${r.finalSale.map((x) => `${name(x.hero)} +${x.price} 🎫`).join(', ')}</div>` : ''}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;

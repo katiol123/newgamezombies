@@ -489,7 +489,7 @@
       obj: {}, result: null, quiet: !!opts.quiet,
       stats: { kills: 0, killsBy: {}, wounds: 0, searches: 0, waves: 0, spawned: 0, fell: 0, cardsPlayed: 0, chains: 0 },
       log: [], fx: [],
-      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()), relStart: Object.assign({}, opts.rel || {}), partySize: opts.partySize || null,
+      campaign: !!opts.campaign, xpLevels: opts.xpLevels || null, tileRules: opts.tileRules || null, special: opts.special || null, stories: opts.stories || null, storySeen: {}, missionTitle: opts.missionTitle || null, bonds: (opts.bonds || []).map((p) => p.slice()), relStart: Object.assign({}, opts.rel || {}), partySize: opts.partySize || null, retreats: opts.retreats || 0,
       wanderers: (opts.wanderers || []).map((type) => ({ type, out: false })),
     };
     g.board = Board.generate(level, g);
@@ -1783,6 +1783,7 @@
     E.scenario(g).actions(g, h, E).forEach((a) => { if (a.cost <= h.energy) out.push({ t: 'scenario', key: a.key, cost: a.cost, label: a.label }); });
     if (E.isComplete(g) && h.pos === g.exit && E.canEvac(g, h)) out.push({ t: 'evac' });
     if (g.survivor && g.survivor.pos === h.pos && h.energy >= 1) out.push({ t: 'rescue' });
+    if (g.campaign && g.retreats > 0) out.push({ t: 'retreat' }); // отступление — решение всего отряда, доступно в любой ход
     if (E.exhausted(g, h)) return out.filter((a) => !E.TIRED_LOCK.includes(a.t));
     return out;
   };
@@ -1951,6 +1952,13 @@
         return true;
       }
       case 'mredraw': return E.redrawMission(g, h) || fail(g, 'Сменить миссию уже нельзя.');
+      case 'retreat': {
+        if (!g.campaign || !(g.retreats > 0)) return fail(g, 'Отступать некуда.');
+        E.log(g, `${E.heroName(h)} даёт команду отходить: отряд бросает задание и уходит в убежище.`, 'warn');
+        finish(g, false, 'Отряд отступил: задание сорвано, но выжившие вернулись в убежище.');
+        g.result.retreat = true;
+        return true;
+      }
       case 'plug': {
         const cost = E.plugCost(g, h);
         if (!Mods.flag(g, h, 'plugAction') || !g.spawnPoints.includes(h.pos) || E.plugged(g, h.pos) || h.energy < cost) return fail(g, 'Заглушить нельзя.');
