@@ -1,4 +1,4 @@
-// Скриншоты правил и печати: node tools/shot_pages.js <out-dir>
+// Screenshots of the rules and print pages: node tools/shot_pages.js <out-dir>
 const { chromium } = require('playwright');
 const path = require('path');
 const out = process.argv[2] || '.';

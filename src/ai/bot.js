@@ -1,8 +1,8 @@
 /*
- * ИИ-игрок. Используется симулятором баланса и кнопкой «Подсказка» в интерфейсе.
- * Жадный поиск с просмотром на 2 действия вперёд и эвристической оценкой позиции.
- * Ничего не знает о конкретных картах — оценивает результат, поэтому
- * автоматически «понимает» новый контент.
+ * The AI player. Used by the balance simulator and the "Hint" button in the interface.
+ * A greedy search with a 2-action lookahead and a heuristic position evaluation.
+ * It knows nothing about specific cards — it evaluates the result, so it
+ * automatically "understands" new content.
  */
 (function (G) {
   'use strict';
@@ -16,8 +16,8 @@
   };
   ZG.BotWeights = W;
 
-  // Честное расстояние в тумане: по открытым тайлам — как есть, закрытые тайлы считаются
-  // проходимыми насквозь (бот не знает, где там стены), цель на закрытом тайле — его центр.
+  // An honest distance in the fog: across open tiles — as is, closed tiles are treated
+  // as passable throughout (the bot does not know where the walls are), a target on a closed tile — its center.
   function fogTarget(g, cell) {
     if (cell == null || !E.hidden(g, cell)) return cell;
     const t = g.board.tiles[g.board.cells[cell].tile];
@@ -48,36 +48,36 @@
     if (E.isComplete(g)) s += W.complete;
     s += g.crates.filter((c) => c.opened).length * W.crate;
     s += g.stats.searches * W.search;
-    // угроза: зомби, которые успеют дойти до зоны героя в эту фазу
+    // threat: zombies that will reach the hero's zone this phase
     const zoneIncoming = {};
     const reach = {};
     const noBarr = (x, y) => !E.barricadeAt(g, x, y);
     const targets = g.heroes.filter((h) => h.onBoard && !h.hidden).map((h) => ({ pos: h.pos, hero: h, shelter: E.sheltered(g, h) }))
       .concat(g.lures.map((l) => ({ pos: l.pos, lure: true })))
       .concat(g.stealth ? [] : Object.keys(g.noise).filter((k) => g.noise[k] > 0 && !E.heroesAt(g, +k).length).map((k) => ({ pos: +k })));
-    // смелость отряда: здоровые герои охотнее дерутся (убитый/раненый враг ценнее), израненные — осторожнее
+    // squad boldness: healthy heroes fight more readily (a killed/wounded enemy is worth more), badly hurt ones are more careful
     const alive = g.heroes.filter((h) => h.onBoard);
     const hurtAvg = alive.length ? alive.reduce((a, h) => a + E.hurtCount(g, h) / Math.max(1, E.maxHp(g, h)), 0) / alive.length : 0;
     const tp = g.turnHero != null && g.heroes[g.turnHero] ? ZG.Persona.get(g.heroes[g.turnHero].id) : null;
-    const bold = (1.6 - 1.2 * Math.min(1, hurtAvg * 1.5)) * (tp ? tp.bold : 1); // 1.6 — все целы … 0.4 — все изранены; характер ходящего
+    const bold = (1.6 - 1.2 * Math.min(1, hurtAvg * 1.5)) * (tp ? tp.bold : 1); // 1.6 — all intact … 0.4 — all badly hurt; the acting hero's personality
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       s -= d.threat * W.zombieThreat * bold;
       s += (z.dmg / d.hp) * d.threat * (d.big ? W.bigDmg : W.partDmg) * bold;
       if (d.dmg <= 0) return;
       const sp = z.suppressed ? 0 : E.zombieSpeed(g, z);
-      if (E.hidden(g, z.pos)) return; // в тумане зомби не двигаются
+      if (E.hidden(g, z.pos)) return; // zombies do not move in the fog
       const dz = reach[z.pos] || (reach[z.pos] = E.distV(g, z.pos, noBarr));
       let best = Infinity;
-      // скрытность: опасны только герои, которых этот зомби видит (бродячий их заметит в начале фазы)
+      // stealth: only heroes this zombie sees are in danger (a wanderer notices them at the start of the phase)
       const seen = g.stealth ? targets.filter((t) => (t.hero ? E.sees(g, z, t.hero) : t.lure))
         : targets.filter((t) => !(t.shelter && dz[t.pos] > 1));
       seen.forEach((t) => { if (dz[t.pos] < best) best = dz[t.pos]; });
       if (best > sp) return;
-      // идёт к ближайшей цели: если это приманка — героям не опасен
+      // heads for the nearest target: if it is a lure — not dangerous to heroes
       seen.forEach((t) => { if (t.hero && dz[t.pos] === best) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg; });
     });
-    // стрелки третьей стороны (бандиты, снайперы): бьют издалека по линии — герою под прицелом грозит выстрел
+    // third-side shooters (bandits, snipers): fire from afar along a line — a hero in the crosshairs risks a shot
     g.zombies.forEach((z) => {
       const d = ZG.Zombies.get(z.type);
       if (!d.faction || !d.range || E.hidden(g, z.pos) || (g.stealth && !z.awake)) return;
@@ -85,25 +85,25 @@
       if (t && t.hero && t.shot) zoneIncoming[t.pos] = (zoneIncoming[t.pos] || 0) + d.dmg;
     });
     s += g.traps.length * W.trap;
-    // секретная миссия героя, который сейчас ходит: прогресс ценен, пока никто не успел первым
+    // the secret mission of the hero whose turn it is: progress is valuable while nobody has finished first
     const fh = g.missions && g.turnHero != null ? g.heroes[g.turnHero] : null;
     if (fh && fh.mission) {
       const m = ZG.Missions.get(fh.mission);
       if (g.missionFirst === fh.idx) s += 150;
       else if (g.missionFirst == null && !fh.missionDone) {
         const pf = ZG.Persona.get(fh.id);
-        if (!(m.traitor && pf.honor)) s += (E.missionProgress(g, fh) / m.goal) * 80 * pf.ambition; // честный предателем не станет
+        if (!(m.traitor && pf.honor)) s += (E.missionProgress(g, fh) / m.goal) * 80 * pf.ambition; // an honest one will not become a traitor
         if (m.traitor) s += traitorLure(g, fh);
       }
     }
-    // заслон на выходе (сценарий с evacBlockedText): каждый враг-блокировщик в зоне выхода — помеха, его раны — прогресс
-    // Штурм: задание выполнено, а выход держат враги — стоять рядом бессмысленно (время уходит), идём на прорыв:
-    // каждый блокировщик и его раны весят больше, а осторожность героев у выхода снижена.
+    // a roadblock at the exit (a scenario with evacBlockedText): each blocking enemy in the exit zone is an obstacle, its wounds are progress
+    // Assault: the task is complete, but enemies hold the exit — standing nearby is pointless (time runs out), break through:
+    // each blocker and its wounds weigh more, and heroes near the exit are less cautious.
     const blockers = sc.evacBlockedText && E.isComplete(g) ? g.zombies.filter((z) => z.pos === g.exit && E.isBandit(z)) : [];
     blockers.forEach((z) => { const d = ZG.Zombies.get(z.type); s -= 220; s += (z.dmg / d.hp) * 180; });
     const exitD = blockers.length ? E.distV(g, g.exit) : null;
     const alone = g.heroes.filter((o) => o.onBoard).length === 1;
-    // ненавидит бандитов: на своём ходу живой бандит — заноза, его раны — радость; тянется к ближайшему видимому
+    // hates bandits: on their turn a living bandit is a thorn, its wounds a joy; drawn toward the nearest visible one
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).hatesBandits) {
       const bs = g.zombies.filter((z) => E.isBandit(z) && !E.hidden(g, z.pos));
       bs.forEach((z) => { const d = ZG.Zombies.get(z.type); s -= 140; s += (z.dmg / d.hp) * 120; });
@@ -113,42 +113,42 @@
         if (near < Infinity) s -= Math.min(near, 8) * 25;
       }
     }
-    // ассоциальный: на своём ходу держится подальше от других героев (кроме зоны выхода, когда пора уходить)
+    // antisocial: on their turn keeps away from other heroes (except in the exit zone when it is time to leave)
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).loner && !(E.isComplete(g) && fh.pos === g.exit)) {
       g.heroes.forEach((o) => {
         if (o === fh || !o.onBoard) return;
-        if (o.pos === fh.pos) s -= 60; else if (g.board.adj[fh.pos].includes(o.pos)) s -= 10; // мягче шага к цели: сторонится, но к делу идёт
+        if (o.pos === fh.pos) s -= 60; else if (g.board.adj[fh.pos].includes(o.pos)) s -= 10; // softer than a step toward the goal: keeps apart, but gets the job done
       });
     }
-    // сейф манит, пока есть время и силы (кампания — талоны, «Медвежатник» — задание): лёгкое притяжение к нему
+    // a safe beckons while there is time and strength (campaign — tickets, "Safecracker" — the mission): a slight pull toward it
     if (fh && fh.onBoard && (g.safes || []).length) s -= safePull(g, fh);
-    // заглушенные люки: каждый раунд тишины — меньше зомби
+    // plugged manholes: every round of silence — fewer zombies
     Object.keys(g.plugs || {}).forEach((k) => { const left = g.plugs[k] - g.round + 1; if (left > 0) s += left * 45; });
     g.heroes.forEach((h) => {
       if (h.fallen) { s -= W.fallen; return; }
       if (h.evacuated) { s += W.evac; return; }
-      if (E.isComplete(g) && h.pos === g.exit) { s += W.evac * 0.9; return; } // эвакуация стоит 0⚡ — почти спасён
+      if (E.isComplete(g) && h.pos === g.exit) { s += W.evac * 0.9; return; } // evacuation costs 0⚡ — almost saved
       const goal = fogTarget(g, E.goalFor(g, h));
       const d = fogDist(g, h.pos);
       const left = E.maxRounds(g) - g.round;
       const urg = (E.isComplete(g) ? 2.5 : 1) * (left <= 3 ? 1.8 : 1);
       if (goal != null && d[goal] < Infinity) s -= d[goal] * W.dist * urg;
       s += h.adrenaline * W.adrenaline + h.block * W.block;
-      // Изнеможение: карты блока ждут «Отдышаться»; обессиленный герой без базовых действий и с рукой −1
+      // Fatigue: block cards wait for "Catch Breath"; an exhausted hero has no basic actions and a hand of −1
       s -= (h.exhaust || []).length * W.exhaust + (E.exhausted(g, h) ? W.tired : 0);
-      // заражение: каждая карта в руке в конце хода — шаг к обращению
+      // infection: each card in hand at the end of the turn is a step toward turning
       const at = E.infectTurnAt(g);
       const infHand = h.hand.filter((u) => g.cards[u] === 'infection').length;
       s -= (h.infection * 140 + infHand * 160 + E.infectCount(g, h) * 45) * (h.infection + infHand >= at - 1 ? 1.8 : 1);
       const hp = E.maxHp(g, h);
       const wounds = E.hurtCount(g, h);
-      // осторожность героя: чем меньше осталось Стойкости, тем дороже риск (0.55 — цел … 2 — на грани)
+      // hero caution: the less Grit is left, the costlier the risk (0.55 — intact … 2 — on the edge)
       const hpLeft = hp - wounds;
-      let risk = (hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp))) * (2 - ZG.Persona.get(h.id).bold); // смелый меньше бережётся
-      if (exitD && exitD[h.pos] <= 3 && hpLeft > 1) risk *= alone ? 0.75 : 0.45; // штурм заслона: у выхода не прячемся (кроме тех, кто на последней ране; одиночка — осторожнее)
+      let risk = (hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp))) * (2 - ZG.Persona.get(h.id).bold); // the bold are less careful
+      if (exitD && exitD[h.pos] <= 3 && hpLeft > 1) risk *= alone ? 0.75 : 0.45; // roadblock assault: no hiding by the exit (except those on their last wound; a loner — more careful)
       s -= wounds * W.wound;
       if (hp - wounds <= 1) s -= W.nearDeath;
-      // ожидаемая атака
+      // expected attack
       let incoming = 0;
       if (!h.hidden && zoneIncoming[h.pos]) {
         const here = E.heroesAt(g, h.pos).filter((o) => !o.hidden);
@@ -164,13 +164,13 @@
       const unb = Math.max(0, incoming - blockable);
       s -= (unb * W.unblocked + incoming * W.incoming) * risk;
       if (wounds + unb >= hp) s -= W.death;
-      // соседняя угроза
+      // adjacent threat
       g.board.adj[h.pos].forEach((n) => { s -= (zoneIncoming[n] || 0) * W.adjThreat * risk; });
       s += h.xp * W.xp;
       let val = 0;
       h.deck.concat(h.hand, h.discard, h.equip).forEach((u) => { val += ZG.Cards.get(g.cards[u]).value || 0; });
-      // запас полезных расходников: не тратить ради связки или «лишней» энергии, а ждать момента.
-      // Лечилки ценны, пока герой почти здоров; остальное — пока миссия не близка к концу (в кампании запас переносится).
+      // a reserve of useful consumables: do not spend them for a chain or "spare" energy, wait for the moment.
+      // Healing items are valuable while the hero is almost healthy; the rest — until the mission is near its end (in the campaign the reserve carries over).
       const roundsLeft = E.maxRounds(g) - g.round;
       const tail = g.campaign ? 1.4 : Math.min(1, roundsLeft / 5);
       const hurtR = E.hurtCount(g, h) / Math.max(1, E.maxHp(g, h));
@@ -183,25 +183,25 @@
       });
       s += val * W.cardValue + h.hand.length * W.hand;
     });
-    // заготовленная связка: после розыгрыша в руке осталась доступная карта той же масти —
-    // учит ИИ выстраивать порядок карт, чтобы срабатывали эффекты связки (без погони за ней любой ценой)
+    // a prepared chain: after playing, a playable card of the same suit remains in hand —
+    // teaches the AI to order its cards so chain effects trigger (without chasing them at any cost)
     if (g.turn && g.active != null) {
       const h = g.heroes[g.active];
       if (h && h.onBoard) {
         let n = 0;
         h.hand.forEach((u) => { const d = E.cardDef(g, u); if (d.chainText && !d.unplayable && E.chainsNow(g, d) && E.cardCost(g, h, u) <= h.energy) n++; });
         s += Math.min(1, n) * W.chainReady + (g.turn.chains || 0) * W.chainDone;
-        // Узы: первая карта хода без эффекта Связки — бонус сгорел впустую
+        // Bond: the first card of the turn has no Chain effect — the bonus was wasted
         if (g.turn.bondUsed === false) s -= W.bondWaste;
       }
     }
     s -= g.alarm * W.alarm;
-    // кампания: ход рядом с врагом (тот же тайл) раздражает его — −1 ⚡
+    // campaign: a turn next to an enemy (the same tile) irritates them — −1 ⚡
     if (g.campaign && g.relStart && g.active != null) {
       const h = g.heroes[g.active];
       if (h && h.onBoard) g.heroes.forEach((o) => { if (o !== h && o.onBoard && E.rel(g, h, o) <= -3 && g.board.cells[o.pos].tile === g.board.cells[h.pos].tile) s -= 8; });
     }
-    // событие «Утечка газа»: героям там стоять опасно, зомби там — хорошо
+    // the "Gas Leak" event: dangerous for heroes to stand there, good for zombies to be there
     if (g.hazard) {
       g.heroes.forEach((h) => { if (h.onBoard && h.pos === g.hazard.pos) s -= 60; });
       s += E.zombiesAt(g, g.hazard.pos).length * 6;
@@ -216,7 +216,7 @@
     return c;
   }
 
-  // решения, которые принимает ИИ без перебора
+  // decisions the AI makes without searching
   function autoPending(g) {
     let guard = 0;
     while (g.pending && guard++ < 20) {
@@ -228,7 +228,7 @@
     }
   }
 
-  // талант — по оценке позиции (с небольшим случайным разбросом, без изменения ГСЧ партии)
+  // a talent — by position evaluation (with a little random spread, without changing the game RNG)
   function chooseTalent(g, p) {
     let best = p.options[0], bv = -Infinity;
     p.options.forEach((id, i) => { const c = E.clone(g); E.act(c, { t: 'talent', id }); const v = evaluate(c) + ((g.round * 7 + i * 13) % 5); if (v > bv) { bv = v; best = id; } });
@@ -248,21 +248,21 @@
     const room = Math.max(0, E.EXHAUST_AT - 1 - (h.exhaust || []).length);
     let capRem = rem;
     cards.slice(0, room).forEach((u) => { capRem -= E.blockValue(g, h, u); });
-    // «Обессилен» дороже одной Раны: лишний 1 урон принимаем, если герой не на грани
+    // "Exhausted" is costlier than one Wound: take 1 extra damage if the hero is not on the edge
     const danger = E.hurtCount(g, h) + Math.max(0, capRem) >= E.maxHp(g, h) - 1 || capRem >= 2;
     const limit = danger ? cards.length : room;
     for (const u of cards) { if (rem <= 0 || out.length >= limit) break; out.push(u); rem -= E.blockValue(g, h, u); }
     return out;
   }
 
-  // «Предатель»: ценно, когда разбуженные или отвлечённые ИМ зомби оказываются рядом с союзником —
-  // но только если риска нет: сам предатель цел, союзнику есть куда падать, миссия не горит
+  // "Traitor": valuable when zombies woken or distracted BY THEM end up next to an ally —
+  // but only if there is no risk: the traitor is intact, the ally has room to fall, the mission is not burning
   function traitorLure(g, me) {
     if (ZG.Persona.get(me.id).honor) return 0;
     const left = E.maxRounds(g) - g.round;
-    if (left < 4 || g.alarm >= E.alarmThreshold(g) - 1) return 0; // время и Тревога — не до пакостей
-    if (E.hurtCount(g, me) * 2 >= E.maxHp(g, me)) return 0; // сам ранен — не до этого
-    const prey = g.heroes.filter((o) => o !== me && o.onBoard && E.maxHp(g, o) - E.hurtCount(g, o) >= 4); // союзник выдержит укус
+    if (left < 4 || g.alarm >= E.alarmThreshold(g) - 1) return 0; // time and Alarm — no time for dirty tricks
+    if (E.hurtCount(g, me) * 2 >= E.maxHp(g, me)) return 0; // hurt themselves — not now
+    const prey = g.heroes.filter((o) => o !== me && o.onBoard && E.maxHp(g, o) - E.hurtCount(g, o) >= 4); // the ally can take a bite
     if (!prey.length) return 0;
     let v = 0;
     g.zombies.forEach((z) => {
@@ -273,17 +273,17 @@
   }
 
   function candidateActions(g) {
-    // give: ИИ передаёт только грузы — иначе слишком широкий перебор
-    // «Ангел-хранитель» передаёт карты охотно, остальные — только грузы
+    // give: the AI gives only cargo — otherwise the search is too wide
+    // "Guardian Angel" gives cards gladly, the rest — only cargo
     const h = g.active != null ? g.heroes[g.active] : null;
     const angel = h && h.mission === 'm_angel' && !h.missionDone && g.missionFirst == null;
-    // взлом сейфа решается отдельно (wantSafe) — перебор «заглянул бы» в закрытую стопку жетонов
+    // cracking a safe is decided separately (wantSafe) — the search would "peek" into the closed token stack
     return E.legal(g).filter((a) => a.t !== 'mredraw' && a.t !== 'safe' && a.t !== 'retreat' && (a.t !== 'give' || giveOk(g, h, a, angel)));
   }
   function giveOk(g, h, a, angel) {
     const d = ZG.Cards.get(g.cards[a.card]);
-    // Ценность ИИ не отдаёт (прибыль уйдёт другому) — разве что сам вот-вот падёт, а рядом приятель или друг
-    if (d.valuable) { const p = ZG.Persona.get(h.id); return p.greed < 2 && E.maxHp(g, h) - E.hurtCount(g, h) <= (p.generous ? 3 : 2) && E.rel(g, h, g.heroes[a.hero]) >= 1; } // жадный не отдаст, щедрый — раньше
+    // the AI does not give away a Valuable (the profit goes to someone else) — unless it is about to fall and a pal or friend is next to it
+    if (d.valuable) { const p = ZG.Persona.get(h.id); return p.greed < 2 && E.maxHp(g, h) - E.hurtCount(g, h) <= (p.generous ? 3 : 2) && E.rel(g, h, g.heroes[a.hero]) >= 1; } // the greedy will not give it, the generous — sooner
     return angel || d.kind === 'cargo';
   }
   function safePull(g, h) {
@@ -297,43 +297,43 @@
     const d = E.distV(g, h.pos)[sf.pos];
     return d === Infinity ? 0 : Math.min(d, 8) * (fence ? 60 : greed >= 2 ? 35 : 20);
   }
-  // Сейф: ломать ли ещё одну ячейку. Интерес — талоны (кампания) или «Медвежатник»; риск — сирена (1 из оставшихся жетонов),
-  // время, Тревога, свои раны, охотники рядом и засорённая рука
+  // Safe: whether to crack one more compartment. The interest — tickets (campaign) or "Safecracker"; the risk — the siren (1 of the remaining tokens),
+  // time, Alarm, own wounds, hunters nearby and a cluttered hand
   function wantSafe(g, h) {
     const sf = E.safeAt(g, h.pos);
     if (!sf || sf.jammed || !sf.deck.length || h.energy < E.SAFE_COST) return false;
-    if (E.zombiesAt(g, h.pos).length) return false; // в зоне враги (и бандиты, и спящие) — взлом невозможен
+    if (E.zombiesAt(g, h.pos).length) return false; // enemies in the zone (bandits and sleepers too) — cracking is impossible
     const fence = h.mission === 'm_fence' && !h.missionDone && g.missionFirst == null;
     const greed = ZG.Persona.get(h.id).greed;
-    if (!fence && (!g.campaign || greed === 0)) return false; // бессребреник ломает сейф только по заданию
+    if (!fence && (!g.campaign || greed === 0)) return false; // the unmercenary cracks a safe only for a mission
     const vals = h.hand.filter((u) => ZG.Cards.get(g.cards[u]).valuable).length;
-    if (vals >= (greed >= 2 ? 3 : 2) && !(fence && !(h.ms.safeLoot || 0))) return false; // рука и так засорена (жадный терпит больше)
-    if (sf.deck.length < (fence || greed >= 2 ? 2 : 3)) return false; // сирена — 1 из оставшихся: жадный рискует до последнего
+    if (vals >= (greed >= 2 ? 3 : 2) && !(fence && !(h.ms.safeLoot || 0))) return false; // the hand is cluttered already (the greedy tolerate more)
+    if (sf.deck.length < (fence || greed >= 2 ? 2 : 3)) return false; // the siren is 1 of the remaining: the greedy risk it to the last
     if (E.maxRounds(g) - g.round < 4) return false;
     if (E.hurtCount(g, h) * 2 >= E.maxHp(g, h)) return false;
-    if (g.alarm + E.SAFE_NOISE + (E.jingles(g, h) ? 1 : 0) >= E.alarmThreshold(g)) return false; // шум не должен вызвать Волну
+    if (g.alarm + E.SAFE_NOISE + (E.jingles(g, h) ? 1 : 0) >= E.alarmThreshold(g)) return false; // the noise must not trigger a Wave
     const d = E.distV(g, h.pos);
-    if (g.zombies.some((z) => !E.isBandit(z) && (!g.stealth || z.awake) && d[z.pos] <= 1)) return false; // охотники вплотную
+    if (g.zombies.some((z) => !E.isBandit(z) && (!g.stealth || z.awake) && d[z.pos] <= 1)) return false; // hunters right next to you
     return true;
   }
 
-  // Отступление (кампания): решают только боты, когда в живых одни боты. Задание не выполнено, а на ногах остался один —
-  // дальше будет только хуже: уводим выжившего и переиграем миссию.
+  // Retreat (campaign): only bots decide, when only bots are alive. The task is not complete and only one is left standing —
+  // it will only get worse: lead the survivor out and replay the mission.
   function wantRetreat(g) {
     if (!g.campaign || !(g.retreats > 0) || E.isComplete(g) || !E.legal(g).some((a) => a.t === 'retreat')) return false;
     const live = g.heroes.filter((h) => !h.fallen && !h.evacuated);
     if (!live.length || live.some((h) => !h.ai)) return false;
     const fell = g.heroes.filter((h) => h.fallen).length;
-    return g.heroes.length >= 2 && fell > 0 && live.length <= 1; // на ногах остался один — уводим его (раньше отступать — терять выигрышные партии)
+    return g.heroes.length >= 2 && fell > 0 && live.length <= 1; // only one left standing — lead them out (retreating earlier loses winnable games)
   }
 
   function bestAction(g, opts) {
     const depth2 = !opts || opts.depth2 !== false;
     const cands = candidateActions(g);
-    // эвакуация доступна — уходим сразу (иначе оценка «после фазы зомби» нечестно пугает ИИ)
+    // evacuation is available — leave at once (otherwise the "after the zombie phase" evaluation unfairly scares the AI)
     const evac = cands.find((a) => a.t === 'evac');
     if (evac) {
-      // кампания: товарищ в 1–2 зонах от выхода — не бросать его, если самому ничто не грозит (иначе отношения −1)
+      // campaign: a comrade within 1–2 zones of the exit — do not abandon them if nothing threatens you (otherwise relations −1)
       const h = g.heroes[g.active];
       const near = E.leftBehind(g, h);
       const threat = g.board.adj[h.pos].concat(h.pos).some((n) => E.zombiesAt(g, n).length);
@@ -346,7 +346,7 @@
     cands.forEach((a) => {
       if (a.t === 'end') return;
       if (a.explore) {
-        // шаг в туман оцениваем без подглядывания: насколько ближе к цели + любопытство
+        // a step into the fog is evaluated without peeking: how much closer to the goal + curiosity
         const h = g.heroes[g.active];
         const goal = fogTarget(g, E.goalFor(g, h));
         if (goal == null) return;
@@ -356,7 +356,7 @@
       }
       const c = tryAct(g, a);
       if (!c) return;
-      // ход завершился (эвакуация/смерть) — оцениваем как есть
+      // the turn has ended (evacuation/death) — evaluate as is
       scored.push({ a, c, v: evaluate(c) });
     });
     if (!scored.length) return null;
@@ -382,14 +382,14 @@
 
   function chooseHero(g) {
     const ready = g.heroes.filter((h) => h.onBoard && !h.acted);
-    // лекарь ходит первым, если кому-то нужно обеззаразить укус; заражённые — после него
+    // the healer goes first if someone needs a bite disinfected; the infected — after them
     const bitten = g.heroes.filter((o) => o.onBoard && o.hand.some((u) => g.cards[u] === 'infection'));
     const pri = (h) => (bitten.length && ZG.Mods.flag(g, h, 'healAction') ? 2 : 0) - (bitten.includes(h) && ready.some((m) => m !== h && ZG.Mods.flag(g, m, 'healAction')) ? 1 : 0);
     ready.sort((a, b) => pri(b) - pri(a) || E.zombiesAt(g, b.pos).length - E.zombiesAt(g, a.pos).length || a.idx - b.idx);
     return ready[0];
   }
 
-  // Провести ход текущего (или следующего) героя целиком
+  // Play the turn of the current (or next) hero in full
   function playTurn(g, opts) {
     if (g.phase !== 'heroes' || g.result) return;
     if (g.active == null) {
@@ -398,17 +398,17 @@
       E.act(g, { t: 'begin', hero: h.idx });
     }
     const idx = g.active;
-    // секретная миссия не стыкуется с героем — сменить (раз за партию)
+    // the secret mission does not fit the hero — swap it (once per game)
     const me = g.heroes[idx];
     if (me && me.mission && !me.missionRedrawn && !me.missionDone && g.missionFirst == null) {
       const m = ZG.Missions.get(me.mission);
-      if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || (m.traitor && ZG.Persona.get(me.id).honor)) E.act(g, { t: 'mredraw' }); // честный «Предателя» меняет; остальные оставляют и пакостят, когда это безопасно
+      if ((m.id === 'm_ghost' && ZG.Mods.flag(g, me, 'loud')) || (m.traitor && ZG.Persona.get(me.id).honor)) E.act(g, { t: 'mredraw' }); // an honest one swaps the "Traitor"; the rest keep it and play dirty when it is safe
     }
     if (wantRetreat(g)) { E.act(g, { t: 'retreat' }); return; }
     for (let i = 0; i < 40; i++) {
       autoPending(g);
       if (g.active !== idx || g.result) return;
-      if (wantSafe(g, g.heroes[idx]) && E.act(g, { t: 'safe' })) continue; // не вышло — действуем обычным порядком
+      if (wantSafe(g, g.heroes[idx]) && E.act(g, { t: 'safe' })) continue; // did not work — act in the usual order
       const a = bestAction(g, opts);
       if (!a) break;
       E.act(g, a);

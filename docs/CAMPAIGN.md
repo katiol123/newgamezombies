@@ -1,281 +1,281 @@
-# Режим кампании — дизайн (черновик)
+# Campaign mode — design (draft)
 
-Документ фиксирует согласованные решения. Раздел «Открытые вопросы» — то, что ещё обсуждается.
+This document records the agreed decisions. The “Open questions” section lists what is still under discussion.
 
-## Структура
+## Structure
 
-- Миссий больше 5, их много и разных. Пока — линейная цепочка миссий (выбора следующей миссии нет; может появиться позже).
-- Начало цепочки — простые ознакомительные/тренировочные миссии с особыми правилами (шанс победы ~90%). Случайные миссии из режима одиночной вылазки (баланс ~50% на забег) — примерно с 3-й миссии. Сейчас миссии 1–5 — сюжетные, дальше — случайные.
-- Последующие миссии — со своими условиями и уникальными тайлами.
-- Режима «без тумана» в кампании нет: туман войны включён всегда.
-- Отступление (запас — 2 на кампанию, `CAMPAIGN.retreats`). Провал миссии (задание не выполнено, время вышло, все погибли) не заканчивает кампанию, пока есть запас: отряд уходит в убежище, миссия не засчитывается и её переигрывают. Можно отступить и добровольно — действие «Отступить» в любой ход (решение всего отряда): задание сорвано, но все, кто на ногах, возвращаются (раны остаются травмами). Цена: −1 отступление, наград за миссию нет, Ценности из этой миссии брошены (чтобы не грабить сейф до последнего и сразу отступать), каждому из отряда −1 мораль; паёк, отдых и событие убежища — как после обычной миссии. Павшие при этом не возвращаются. Без запаса провал — конец кампании.
-- Первое отступление за кампанию сопровождает сюжетная вставка «Уходим» (сцена `retreat`, показывается при входе в убежище один раз; есть в галерее).
-- ИИ отступает сам, только если в живых одни боты, задание не выполнено и на ногах остался один герой (отступать раньше — терять выигрышные партии: в M1 у четверых так терялось ~10% побед).
-- Боты (`tools/campaign_sim.js --fast`, пара Борис+Лиза и тройка): отступления спасают выживших, но пара всё ещё часто теряет героев в первых миссиях (M1 у пары 1-го уровня — ~60% побед), а нанять замену не на что — до финала боты доходят редко.
-- Отряд нельзя набрать до нужного размера (герои выбыли, талонов на наём не хватает) — кампания окончена.
-- Павший герой (убит, не обращён) выбывает из кампании навсегда.
+- There are more than 5 missions, many and varied. For now — a linear mission chain (no choice of the next mission; it may appear later).
+- The chain starts with simple introductory/training missions with special rules (win chance ~80%). Random missions from the single-sortie mode (balanced at ~50% per run) — roughly from mission 3. Currently missions 1–8 are story missions, random ones follow.
+- Later missions have their own conditions and unique tiles.
+- There is no “no fog” mode in the campaign: fog of war is always on.
+- Retreat (2 per campaign, `CAMPAIGN.retreats`). A failed mission (objective not completed, time ran out, everyone died) does not end the campaign while retreats remain: the squad returns to the shelter, the mission does not count and is replayed. You can also retreat voluntarily — the “Retreat” action on any turn (a decision for the whole squad): the objective is aborted, but everyone on their feet returns (wounds remain as injuries). The cost: −1 retreat, no mission rewards, Valuables from this mission are abandoned (so you cannot loot the safe to the last and then retreat at once), −1 morale for each squad member; the ration, rest and shelter event — as after a normal mission. The fallen do not return. With no retreats left, a failure ends the campaign.
+- The first retreat of the campaign comes with the “Pulling out” story scene (scene `retreat`, shown once on entering the shelter; also in the gallery).
+- The AI retreats on its own only if only bots are alive, the objective is not complete and one hero is left standing (retreating earlier loses winnable games: in M1 four heroes lost ~10% of wins that way).
+- Bots (`tools/campaign_sim.js --fast`, the Boris+Lisa pair and a trio): retreats save survivors, but the pair still often loses heroes in the first missions, and there is nothing to hire a replacement with — bots rarely reach the finale.
+- If the squad cannot be filled to the required size (heroes are gone, not enough tickets to hire) — the campaign is over.
+- A fallen hero (killed, not turned) leaves the campaign for good.
 
-## Тайлы миссии
+## Mission tiles
 
-1. Миссия задаёт обязательные уникальные тайлы (и, при необходимости, их позиции).
-2. Недостающее до размера поля (сейчас 4×2 = 8) добирается случайно из базового пула.
-3. Все тайлы перемешиваются и раскладываются.
-4. Уникальные тайлы по умолчанию не ставятся на стартовый тайл (он открыт с начала партии), если миссия не говорит иного.
-5. Миссия может исключать тайлы из базового пула.
+1. The mission sets mandatory unique tiles (and, if needed, their positions).
+2. The rest up to the board size (currently 4×2 = 8) is drawn at random from the base pool.
+3. All tiles are shuffled and laid out.
+4. By default unique tiles are not placed on the starting tile (it is open from the start of the game), unless the mission says otherwise.
+5. A mission can exclude tiles from the base pool.
 
-## Блуждающая угроза
+## Wandering threat
 
-Общее правило для обращённых союзников из прошлых миссий и для боссов локации (если в описании миссии или врага не сказано иного):
+A general rule for turned allies from past missions and for location bosses (unless the mission or enemy description says otherwise):
 
-- При открытии каждого тайла за каждую угрозу бросается кубик; на «6» она появляется на этом тайле.
-- Если открывается последний закрытый тайл — все ещё не появившиеся угрозы появляются там без броска.
-- Отдельный бросок за каждую угрозу, без лимита на их число.
-- Появляется в зоне тайла, самой дальней от героев; в режиме скрытности — бродячей.
-- Массовое открытие (прорыв тумана): бросок за каждый открытый тайл; если никто не выпал и закрытых тайлов больше нет — оставшиеся угрозы появляются в последнем из открытых.
+- When each tile is revealed, a die is rolled for each threat; on a “6” it appears on that tile.
+- If the last closed tile is revealed, all threats that have not yet appeared appear there without a roll.
+- A separate roll for each threat, no limit on their number.
+- It appears in the tile zone farthest from the heroes; in stealth mode — wandering.
+- Mass reveal (a fog breakout): a roll for each revealed tile; if none came up and there are no closed tiles left, the remaining threats appear in the last revealed one.
 
-Обращённый союзник переходит в следующую миссию, если остался на поле к концу миссии. Без усиления между миссиями (пока).
-Когда герой гибнет или обращается, в его зоне выпадают его грузы и 2 случайные карты из его колоды — их можно подобрать. За убийство обращённого ничего не выпадает — только опыт как за сильного врага.
+A turned ally carries over to the next mission if it remained on the board at the end of the mission. No strengthening between missions (for now).
+When a hero dies or turns, their cargo and 2 random cards from their deck drop in their zone — they can be picked up. Killing a turned hero drops nothing — only experience, as for a strong enemy.
 
-## Валюта
+## Currency
 
-Валюта — **талоны** 🎫. У каждого героя свой запас талонов; все покупки (постройки, лечение, ремонт) — лично для себя, в своё личное убежище. Источники:
-- награда за каждую полученную звезду миссии каждому её участнику — у звёзд появляется смысл в кампании;
-- продажа собранных карт добычи между миссиями (цена по редкости) — талоны получает продавец.
+The currency is **tickets** 🎫. Each hero has their own ticket supply; all purchases (buildings, healing, repair) are personal, for their own personal shelter. Sources:
+- a reward for each mission star earned, to each participant — so stars matter in the campaign;
+- selling collected loot cards between missions (price by rarity) — the seller gets the tickets.
 
-## Что переносится между миссиями
+## What carries over between missions
 
-- Уровень героя (получение уровней в кампании дольше, чем в одиночной миссии).
-- Таланты.
-- Пассивки за секретные миссии. Если выпала карта миссии, награда за которую уже получена, — вместо награды даётся опыт.
-- Карты добычи — см. «Убежище»: экипировка (до 3), сундук, хлам.
-- Уникальные карты: найдены в определённых миссиях или получены за особое условие (например, необязательное убийство особого врага миссии); нигде больше не встречаются.
-- Здоровье. В убежище переносится столько Стойкости, сколько у героя было на момент окончания миссии. Карты Ран и Заражений из колоды уничтожаются (герою оказывают помощь), но потерянная от них Стойкость сама не возвращается: герой уходит в следующую миссию с Стойкостью, сниженной на число непролеченных ран. Между миссиями восстанавливается +1 Стойкость автоматически и +1 — с Лазаретом; остальное лечится за талоны.
+- Hero level (levelling in the campaign is slower than in a single mission).
+- Talents.
+- Passives from secret missions. If a mission card comes up whose reward has already been received, experience is given instead of the reward.
+- Loot cards — see “Shelter”: loadout (up to 3), chest, junk.
+- Unique cards: found in certain missions or earned for a special condition (for example, an optional kill of a special mission enemy); they appear nowhere else.
+- Health. The shelter carries over as much Grit as the hero had at the end of the mission. Wound and Infection cards are removed from the deck (the hero gets first aid), but the Grit lost to them does not come back by itself: the hero goes into the next mission with Grit reduced by the number of untreated wounds. Between missions +1 Grit is restored automatically and +1 more with the Infirmary; the rest is healed for tickets.
 
-Герои становятся сильнее — миссии тоже должны усиливаться; тесты баланса проводить с учётом этого роста.
+Heroes grow stronger — missions must grow stronger too; balance tests should take this growth into account.
 
-## Неполный отряд
-На миссию можно взять от 1 героя до размера отряда (например, когда кто-то выбыл). Игра всё равно считает отряд полным — враги, задачи, раунды и «Одиночка» рассчитываются на число героев, начинавших кампанию.
+## Short squad
+A mission can be taken with anywhere from the minimum squad to 4 heroes. The minimum is the number of heroes who started the campaign and are still on their feet; if fewer are left, the remaining ones go. Difficulty (enemies, objectives, rounds, “Loner”) is scaled for the number of heroes actually sent.
 
-## Убежище (между миссиями)
+## Shelter (between missions)
 
-### Постройки (личные: каждый герой строит в своём убежище за свои талоны)
-- **Лазарет** — между миссиями каждый герой восстанавливает ещё +1 Стойкость.
-- **Склад** — сундук каждого героя расширяется с 4 до 6 мест.
-- **Мастерская** — чинит карты «на грани поломки».
-- **Красный уголок** — если герой не взят на миссию, мораль с шансом 50% не падает.
-- **Баня** — между миссиями, если мораль ниже 3, с шансом 50% +1 мораль.
-- **Тир** (10 🎫) — раз между миссиями: потренироваться за 6 🎫 → +1 опыт (новый уровень — талант предложат в начале миссии).
-- **Схрон** (14 🎫) — после каждой миссии в сундук (или в хлам, если сундук полон) кладётся случайный расходник: Аптечка, Бинт, Энергетик, Шоколадка, Тушёнка или Самопальная граната.
-(Если тесты покажут, что какая-то из построек морали бесполезна, — добавить ей доп. эффект.)
+### Buildings (personal: each hero builds in their own shelter with their own tickets)
+- **Infirmary** — between missions each hero restores another +1 Grit.
+- **Storeroom** — each hero's chest expands from 4 to 6 slots.
+- **Workshop** — repairs cards that are “about to break”.
+- **Red Corner** — if the hero is not taken on a mission, morale does not drop with a 50% chance.
+- **Bathhouse** — between missions, if morale is below 3, +1 morale with a 50% chance.
+- **Shooting Range** (10 🎫) — once between missions: train for 6 🎫 → +1 experience (a new level — the talent is offered at the start of the mission).
+- **Stash** (14 🎫) — after each mission a random consumable goes into the chest (or the junk if the chest is full): Medkit, Bandage, Energy Drink, Chocolate Bar, Canned Stew or a Pipe Grenade.
+(If tests show that one of the morale buildings is useless, give it an extra effect.)
 
-### Отношения
-Шкала для каждой пары героев: −3 Враги · −1…−2 Неприязнь · 0 · +1…+2 Приятели · +3 Друзья. Изменения за миссию копятся и применяются после неё; каждая причина — не чаще раза на пару за миссию.
-- **+1:** лечение товарища (лечение, обеззаразить, прижечь, лечащие карты); спасение — убил зомби, который кусал товарища в последнюю фазу зомби; миссия на 3 ★, оба выжили.
-- **−1:** товарища укусил зомби, которого разбудил/привёл этот герой; эвакуация, когда товарищ в 1–2 зонах от выхода (игроку — предупреждение; ИИ ждёт товарища, если ему ничто не грозит); отказ в событии «Паёк в долг».
-- **Не меняют:** передача карт в бою и подарки в убежище (иначе — абуз).
-- **Эффекты:** Друзья — Узы (товарищ закончил ход в твоём тайле → твоя первая карта следующего хода со Связкой, если у неё есть эффект Связки; гибель друга −2 морали). Приятели — передача карт без ограничения «раз за ход». Неприязнь — не передают карты. Враги — не передают карты; закончил ход в тайле врага → у того −1 ⚡ в следующий ход; оба в отряде → −1 морали каждому после миссии; гибель врага — +2 морали.
+### Relations
+A scale for each pair of heroes: −3 Enemies · −1…−2 Dislike · 0 · +1…+2 Pals · +3 Friends. Changes during a mission accumulate and apply after it; each reason at most once per pair per mission.
+- **+1:** healing a comrade (healing, disinfecting, cauterizing, healing cards); a rescue — killed a zombie that bit a comrade in the last zombie phase; a 3 ★ mission with both surviving.
+- **−1:** a comrade was bitten by a zombie this hero woke/led in; evacuating while a comrade is 1–2 zones from the exit (the player gets a warning; the AI waits for the comrade if nothing threatens it); refusing in the “Ration on credit” event.
+- **No change:** giving cards in battle and gifts in the shelter (otherwise — abuse).
+- **Effects:** Friends — Bond (a comrade ended their turn in your tile → your first card next turn plays with its Chain, if it has a Chain effect; a friend's death −2 morale). Pals — give cards without the “once per turn” limit. Dislike — do not give cards. Enemies — do not give cards; ending a turn in an enemy's tile → that enemy has −1 ⚡ next turn; both in the squad → −1 morale each after the mission; an enemy's death — +2 morale.
 
-### События убежища
-Колода из 16 карт: 8 событий (по одной) и 8 пустых («Тихая ночь» — ничего не происходит). После каждой успешной миссии наступает фаза событий: тянется одна карта (колода кончилась — перемешивается заново). Решение принимает указанный на карте герой: под ИИ — решает бот (держит запас талонов на паёк и лечение), под игроком — игрок. Если для карты нет участников (например, в убежище один герой), она не разыгрывается.
-- **Паёк в долг** — самый бедный просит 2 🎫 у самого богатого: отдать — без последствий; отказать — отношения −1. Нужно 2+ героя.
-- **Беженцы у ворот** — решает самый богатый: накормить (3 🎫) — +1 мораль всем; прогнать — −1 мораль решавшему.
-- **Укушенный незнакомец** — решает случайный герой: впустить — 50% редкая карта в его сундук, 50% обращение: случайный герой −1 Стойкость, решавший −1 мораль; не открывать — ничего.
-- **Ссора** — двое с худшими отношениями, решает один из них: уступить — отношения +1, его мораль −1; стоять на своём — отношения −1. Нужно 2+ героя.
-- **Коробейник** — решает самый богатый: купить редкую карту за 6 🎫 или отказаться.
-- **Запертый подвал** — решает случайный герой: вскрыть — 50% два расходника в сундук, 50% −1 Стойкость; заколотить — ничего.
-- **Ночная вахта** — решает герой с самой высокой моралью: вызваться — его мораль −1, отношения с остальными +1; тянуть жребий — случайный другой герой −1 мораль. Нужно 2+ героя.
-- **Сломался генератор** — решает владелец Мастерской (нет — самый богатый): починить за 4 🎫 (с Мастерской — 2 🎫) — +1 мораль всем; сидеть в темноте — −1 мораль всем.
+### Shelter events
+A deck of 16 cards: 8 events (one each) and 8 blanks (“A quiet night” — nothing happens). After each successful mission there is an event phase: one card is drawn (when the deck runs out it is reshuffled). The hero named on the card decides: under the AI the bot decides (it keeps a reserve of tickets for the ration and healing), under a player — the player. If the card has no participants (for example, there is only one hero in the shelter), it is not played.
+- **Ration on credit** — the poorest asks the richest for 2 🎫: give — no consequences; refuse — relations −1. Needs 2+ heroes.
+- **Refugees at the Gate** — the richest decides: feed them (3 🎫) — +1 morale to everyone; drive them off — −1 morale to the one who decided.
+- **The Bitten Stranger** — a random hero decides: let them in — 50% a rare card into their chest, 50% the stranger turns: a random hero −1 Grit, the decider −1 morale; keep the door shut — nothing.
+- **A Quarrel** — the two with the worst relations, one of them decides: give in — relations +1, their morale −1; stand firm — relations −1. Needs 2+ heroes.
+- **The Hawker** — the richest decides: buy a rare card for 6 🎫 or refuse.
+- **The Locked Cellar** — a random hero decides: break in — 50% two consumables into the chest, 50% −1 Grit; board it up — nothing.
+- **Night Watch** — the hero with the highest morale decides: volunteer — their morale −1, relations with the others +1; draw lots — a random other hero −1 morale. Needs 2+ heroes.
+- **The Generator Broke** — the Workshop owner decides (if none — the richest): repair it for 4 🎫 (with a Workshop — 2 🎫) — +1 morale to everyone; sit in the dark — −1 morale to everyone.
 
-### Странствующий торговец
-Отдельное событие убежища (не карта колоды событий): только перед миссией 7 «Белый лебедь» (в цепочке — поле `trader` у записи миссии; `C.trader(c)`). Сначала разыгрывается карта колоды событий, затем окно торговца; полка с товаром — в панели каждого героя до выхода в поход.
-- Товар фиксирован — 3 уникальные карты снаряжения, которых нет ни в одной колоде добычи; каждый герой покупает за свои талоны сколько угодно экземпляров (`C.buy`): «Противогаз ГП-5» (7 🎫: кубик Заражения −1; Связка — убрать 1 Заражение или Рану), «Полевой бинокль» (8 🎫: дальность дальних атак +1; Связка — взять карту), «Сумка санитара» (7 🎫: лечение убирает на 1 Рану больше; Связка — убрать себе Рану). Покупка ложится в экипировку, если есть место, иначе в сундук. Товар не продаётся. Одинаковое снаряжение не складывается: второй такой же предмет в экипировке ничего не добавляет (запасной — на случай поломки).
-- ИИ (`C.traderAI`, в начале `autoManage` — раньше построек: торговец бывает раз за кампанию): покупает только подходящее герою и по одному экземпляру — бинокль стрелкам (2+ карты дальнего боя: в колоде героя или в снаряжении), сумку — Марине (или герою с 2+ лечащими картами), противогаз — всем, кроме тех, кто и так плохо заражается (Борис); не больше 2 карт и только если после покупки остаётся запас на паёк и лечение травм.
+### The wandering peddler
+A separate shelter event (not a card from the event deck): only before mission 7 “White Swan” (in the chain — the `trader` field of the mission entry; `C.trader(c)`). The event deck card is played first, then the trader window; the shelf of goods is in each hero's panel until the squad heads out.
+- The goods are fixed — 3 unique gear cards that are in no loot deck; each hero buys any number of copies with their own tickets (`C.buy`): “GP-5 Gas Mask” (7 🎫: Infection die −1; Chain — remove 1 Infection or Wound), “Field Binoculars” (8 🎫: ranged attack range +1; Chain — draw a card), “Medic's Bag” (7 🎫: healing removes 1 more Wound; Chain — remove a Wound from yourself). A purchase goes to the loadout if there is room, otherwise to the chest. The goods cannot be sold. Identical gear does not stack: a second identical item in the loadout adds nothing (a spare in case of breakage).
+- The AI (`C.traderAI`, at the start of `autoManage` — before buildings, since the trader comes once per campaign): buys only what suits the hero, one copy each — binoculars for shooters (2+ ranged cards in the hero's deck or gear), the bag for Marina (or a hero with 2+ healing cards), the gas mask for everyone except those who rarely get infected anyway (Boris); no more than 2 cards and only if a reserve for the ration and injury healing remains after the purchase.
 
-### Сейф и Ценности
-Сейф ставит задание (`E.placeSafe`): в M2 — «Сейф завгара» в боксе рядом с притаившимися Толстяками (шум взлома может их разбудить, а драка с ними будит всех), в M7 — «Сейф администратора» в банкетном зале, в M8 — «Касса рынка» в восточных рядах (в стороне от Мясника). Стопка 6 жетонов: 4 «Ценность», 1 «Пусто», 1 «Сирена»; взлом — 2 ⚡ и Шум 2 (зона без зомби), «Сирена» — дополнительно Шум 3 (Тревога +3, слышно на 4 зоны), сейф заклинило, взломщик роняет одну Ценность — она отлетает в соседнюю зону. Ценность (`valuable`) — груз в руке, звенит (+1 Шум шумным действиям, не складывается), передаётся; в убежище продаётся по неизвестной цене 2–8 🎫 (`C.appraise`), ИИ кладёт её в хлам — сдаётся при выходе. При падении или обращении героя в зоне остаются его груз задания и 2 случайные находки (могут оказаться и Ценности).
-- ИИ ломает сейф отдельным решением (`wantSafe`, без «подглядывания» в стопку): в кампании ради талонов или с картой «Медвежатник»; не ломает, если жетонов осталось мало (сирена — 1 из оставшихся), времени < 4 раундов, сам изранен, Тревога близка к Волне, охотники вплотную или в руке уже 2 Ценности. Ценности не передаёт — разве что сам вот-вот падёт, а рядом приятель или друг.
-- Секретное задание «Медвежатник» (обычное, только с сейфом): достать из сейфа Ценность, +2 опыта; боты выполняют первыми ~35% в M7 и ~17% в M8.
+### The safe and Valuables
+The objective places the safe (`E.placeSafe`): in M2 — the “Depot Boss's Safe” in a garage bay next to the lurking Bloaters (the cracking noise may wake them, and a fight with them wakes everyone), in M7 — the “Manager's Safe” in the banquet hall, in M8 — the “Market Till” in the east rows (away from the Butcher). A stack of 6 tokens: 4 “Valuable”, 1 “Empty”, 1 “Siren”; cracking — 2 ⚡ and Noise 2 (a zone without zombies), “Siren” — an extra Noise 3 (Alarm +3, heard 4 zones away), the safe jams, the safecracker drops one Valuable — it flies into an adjacent zone. A Valuable (`valuable`) is cargo in hand, it jingles (+1 Noise to noisy actions, does not stack), can be given; in the shelter it sells at an unknown price of 2–8 🎫 (`C.appraise`), the AI puts it in the junk — it is sold on heading out. When a hero falls or turns, their objective cargo and 2 random finds (which may include Valuables) stay in the zone.
+- The AI cracks the safe as a separate decision (`wantSafe`, without “peeking” at the stack): in the campaign for tickets or with the “Safecracker” card; it does not crack if few tokens are left (the siren is 1 of the remaining), less than 4 rounds remain, it is badly wounded, the Alarm is close to a Wave, hunters are right next to it or it already holds 2 Valuables. It does not give Valuables away — unless it is about to fall and a pal or friend is nearby.
+- The “Safecracker” secret objective (common, only with a safe): take a Valuable out of the safe, +2 experience; bots complete it first ~35% of the time in M7 and ~17% in M8.
 
-### Скрытые характеры ИИ (только для разработки — в игре нигде не показываются)
-`src/ai/persona.js`, `ZG.Persona.get(id)`. Черты: `honor` (честный: «Предателя» меняет, а не сменив — не выполняет; засчитывание ему тоже не идёт), `greed` (0 — сейф только по заданию, 2 — ломает до последнего и не отдаёт Ценности), `spend` (`thrifty` — запас +8 🎫, строит только Схрон/Лазарет/Тир, у торговца берёт одну самую нужную вещь, на событиях не тратится; `spender` — оставляет только на паёк, строит и баню, у торговца — до 3 вещей за заход), `bold` (риск в бою: множитель «смелости» ходящего и скидка на собственный риск), `ambition` (вес секретной миссии), `generous` (отдаст Ценность приятелю раньше), `kind` и `brave` (выборы в событиях убежища: накормить беженцев, впустить незнакомца, уступить; вахта, подвал).
-- Борис — честный, смелый, вахту берёт сам. Марина — честная, бережливая, осторожная, щедрая, добрая, сейфы не трогает. Лиза — жадная транжира с амбициями. Виктор — честный и бережливый, не мародёрствует, добрый и смелый. Кира — смелая, азартная. Сава — ассоциальный одиночка (`loner`: на своём ходу штраф за зону с другим героем и соседнюю, кроме выхода), честный, бережливый, осторожный, щедрый, сейфы не трогает. Гоша — жадный транжира, смелый, щедрый. Глеб — ненавидит бандитов (`hatesBandits`: на своём ходу живой бандит −140, его раны в радость, тяга к ближайшему видимому — пока есть время и силы), жадный транжира, азартный, рвётся к своей цели.
+### Hidden AI personalities (development only — never shown in the game)
+`src/ai/persona.js`, `ZG.Persona.get(id)`. Traits: `honor` (honest: swaps the “Traitor”, and if it cannot swap — does not fulfil it; it is not credited either), `greed` (0 — the safe only for an objective, 2 — cracks to the last and does not give Valuables away), `spend` (`thrifty` — reserve +8 🎫, builds only the Stash/Infirmary/Shooting Range, takes the one most needed item from the trader, spends nothing on events; `spender` — keeps only enough for the ration, builds the bathhouse too, up to 3 items from the trader per visit), `bold` (risk in combat: a “courage” multiplier for the acting hero and a discount on its own risk), `ambition` (the weight of the secret mission), `generous` (gives a Valuable to a pal sooner), `kind` and `brave` (choices in shelter events: feed the refugees, let the stranger in, give in; the watch, the cellar).
+- Boris — honest, bold, takes the watch himself. Marina — honest, thrifty, careful, generous, kind, does not touch safes. Lisa — a greedy, ambitious spendthrift. Viktor — honest and thrifty, does not loot, kind and bold. Kira — bold, a gambler. Sava — an antisocial loner (`loner`: on his turn a penalty for a zone with another hero and the adjacent ones, except the exit), honest, thrifty, careful, generous, does not touch safes. Gosha — a greedy spendthrift, bold, generous. Gleb — hates bandits (`hatesBandits`: on his turn a living bandit −140, its wounds are a joy, a pull towards the nearest visible one — while there is time and strength), a greedy spendthrift, a gambler, presses on to his goal.
 
-### Намёки на характер
-В отчёте убежища после миссии иногда появляется одна курсивная строка — косвенный намёк на скрытый характер кого-то из отряда («Сава снова ночевал отдельно от всех»). Не больше одного намёка за раз и только в половине случаев; не тот же герой подряд; одна черта героя — не больше двух раз за кампанию. Если в миссии было характерное событие (Глеб добивал бандитов), намёк о нём выпадает в первую очередь. Фразы — `HINTS` в `src/engine/campaign.js` (`{м|ж}` — род глагола).
+### Personality hints
+After a mission the shelter report sometimes shows one italic line — an indirect hint at the hidden personality of someone in the squad (“Sava slept apart from everyone again”). No more than one hint at a time and only half the time; not the same hero twice in a row; one trait of a hero — no more than twice per campaign. If the mission had a characteristic event (Gleb finishing off bandits), a hint about it comes first. The phrases are `HINTS` in `src/engine/campaign.js` (`{he|she}`, `{his|her}` — chosen by the hero's gender).
 
-### Износ карт
-Износ идёт от походов: важно, взял ли герой карту в миссию (экипировал её перед миссией).
-- Карта, найденная в миссии, возвращается в убежище целой.
-- Целую карту экипировали и сходили в миссию — в конце миссии она без проверок становится «на грани поломки» (на карте значок-предупреждение).
-- Карту «на грани поломки» снова взяли в миссию — в конце миссии проверка: с шансом 50% она ломается безвозвратно; уцелела — остаётся на грани.
-- Не брали в миссию — нет износа и нет проверок.
-- Мастерская чинит карту: она снова целая.
-- Шанс поломки — худший среди всех героев, в чьих руках карта побывала за миссию (взял в поход, получил передачей, подобрал выпавшую). После миссии карта остаётся у того, у кого она была в конце. Выпавшая и подобранная принесённая карта сохраняет износ.
+### Card wear
+Wear comes from runs: what matters is whether the hero took the card on the mission (equipped it before the mission).
+- A card found during a mission comes back to the shelter intact.
+- An intact card that was equipped and taken on a mission becomes “about to break” at the end of the mission without any check (the card shows a warning icon).
+- A card that is “about to break” and taken on a mission again is checked at the end of the mission: with a 50% chance it breaks for good; if it survives, it stays about to break.
+- Not taken on a mission — no wear and no checks.
+- The Workshop repairs a card: it is intact again.
+- The break chance is the worst among all heroes whose hands the card passed through during the mission (taken on the run, received by giving, picked up after a drop). After the mission the card stays with whoever had it at the end. A brought card that was dropped and picked up keeps its wear.
 
-Пример: нашёл карту в 1-й миссии → экипировал на 2-ю → после 2-й она «на грани» → экипировал на 3-ю → после 3-й бросок 50%.
+Example: found a card in mission 1 → equipped it for mission 2 → after mission 2 it is “about to break” → equipped it for mission 3 → after mission 3 a 50% roll.
 
-### Карты между миссиями
-- **Экипировка** — до 3 карт на героя; в начале следующей миссии замешиваются в его колоду.
-- **Сундук** — свой у каждого героя, 4 места (со Складом — 6). Карты можно передавать между героями (как и в бою).
-- **Хлам** — сюда сразу после миссии попадает всё, что не поместилось; карты можно перекидывать между сундуком и хламом. Непроданное вручную и не убранное в сундук или экипировку при выходе на следующую миссию продаётся автоматически.
+### Cards between missions
+- **Loadout** — up to 3 cards per hero; at the start of the next mission they are shuffled into their deck.
+- **Chest** — each hero has their own, 4 slots (with a Storeroom — 6). Cards can be given between heroes (as in battle).
+- **Junk** — everything that did not fit goes here right after the mission; cards can be moved between the chest and the junk. Whatever was not sold manually and not put into the chest or loadout is sold automatically on heading out for the next mission.
 
-### Карты героев под ИИ
-При возвращении в убежище (и при найме) герой под ИИ сам раскладывает карты: лучшие — в экипировку (целые важнее изношенных), ценные, но не поместившиеся — в сундук, мелочь (обычные карты ценностью 7 и ниже) — в хлам на продажу.
-Отчаяние: если Стойкость упала до половины и ниже, герой берёт в поход даже мелочь вместо продажи, а лечение и защиту ставит в приоритет — риск смерти велик, цепляется за любую возможность.
+### Cards of AI heroes
+On returning to the shelter (and on hiring) an AI hero arranges its cards itself: the best go to the loadout (intact ones before worn ones), valuable ones that did not fit go to the chest, trifles (common cards with a value of 7 or less) go to the junk for sale.
+Desperation: if Grit has dropped to half or lower, the hero takes even trifles on the run instead of selling them, and prioritizes healing and defense — the risk of death is high, it clings to any chance.
 
-### Уровни и общие таланты
-- Пороги опыта в кампании: 2-й уровень — 4 🎖, 3-й — 10 🎖, 4-й — 18 🎖, 5-й — 28 🎖 (пока; уточнить по тестам баланса, возможно поднять).
-- На 2-м и 3-м уровнях — выбор из своих талантов героя, как сейчас.
-- На 4-м и 5-м — 2 случайных общих таланта из пула на выбор (без уже взятых).
-- Общие таланты простые, скорее для убежища; без возможности абуза через передачу карт между героями.
+### Levels and shared talents
+- Experience thresholds in the campaign: level 2 — 4 🎖, level 3 — 10 🎖, level 4 — 18 🎖, level 5 — 28 🎖 (for now; refine by balance tests, possibly raise).
+- At levels 2 and 3 — a choice from the hero's own talents, as now.
+- At levels 4 and 5 — 2 random shared talents from the pool to choose from (excluding those already taken).
+- Shared talents are simple, mostly for the shelter; with no way to abuse them by giving cards between heroes.
 
-Пул (черновик):
-- **Живучий** — между миссиями +1 Стойкость сверх обычного.
-- **Рукастый** — карты, которые за миссию побывали только в твоих руках, ломаются с шансом 25%, а не 50%.
-- **Барахольщик** — +2 места в твоём сундуке.
-- **Бережливый** — +1 талон за каждую звезду миссии, в которой ты участвовал. (Вариант «+1 талон за проданную карту» отвергнут: абуз через передачу карт.)
-- **Запасливый** — 4 места экипировки вместо 3.
-- **Собранный** — начинаешь миссию с +1 картой в руке.
-- **Мародёр** — +3 талона за миссию, в которой ты сделал 2+ Обыска.
+The pool (draft):
+- **Hardy** — between missions +1 Grit on top of the usual.
+- **Handy** — cards that were only in your hands during a mission break with a 25% chance instead of 50%.
+- **Hoarder** — +2 slots in your chest.
+- **Thrifty** — +1 ticket for each star of a mission you took part in. (The “+1 ticket per card sold” variant was rejected: abuse through giving cards.)
+- **Well-Packed** — 4 loadout slots instead of 3.
+- **Ready** — start a mission with +1 card in hand.
+- **Looter** — +3 tickets for a mission in which you made 2+ Searches.
 
-### Учебные миссии M1–M2 (~80% побед)
-Цель — около 80% побед при любом размере отряда (герои 1-го уровня, боты по 100 партий). Было: M1 61/45/54/64%, M2 39/41/68/71% — кампания чаще всего обрывалась в самом начале.
-- M1 (`camp_m1`): люков соло 2, пара 1, трое 2, четверо 3 (у Окраины 2/3/4/4); порог Волны 6/7/8/6; без стартовой Тревоги; раунды соло −2, пара +2, трое +1; нужно 3 медикамента при любом отряде (`medsNeed`); Заражение только на «1». Стало 76/80/82/84%.
-- M2 (`camp_m2`, `autobase`): раны Толстяков-водителей не заживают в конце раунда (`z.keepDmg`) — у Толстяка 4 ♥, и одиночка за ход их не выбивал, бился до рассвета; стаи соло — 1 Шатун, пара — 2 Шатуна и Бегун; Заражение только на «1». Стало 83/80/86/77%.
+### Training missions M1–M2 (~80% wins)
+The goal is about 80% wins with any squad size (level 1 heroes, bots, 100 games each). Before: M1 61/45/54/64%, M2 39/41/68/71% — the campaign most often broke off at the very start.
+- M1 (`camp_m1`): manholes solo 2, pair 1, three 2, four 3 (the Outskirts have 2/3/4/4); Wave threshold 6/7/8/6; no starting Alarm; rounds solo −2, pair +2, three +1; 3 medicine needed with any squad (`medsNeed`); Infection only on a “1”. Now 76/80/82/84%.
+- M2 (`camp_m2`, `autobase`): the wounds of the Bloater drivers do not heal at the end of the round (`z.keepDmg`) — a Bloater has 4 ♥, and a lone hero could not take them out in one turn and fought until dawn; packs solo — 1 Shambler, pair — 2 Shamblers and a Runner; Infection only on a “1”. Now 83/80/86/77%.
 
-## Отряд и наём
-- Стартовый размер отряда (1–4) выбирается в начале кампании. На миссию выходит от него до 4 героев (если в убежище столько есть): наняли третьего к паре — можно идти втроём. Сложность миссии (враги, раунды, порог Волны) считается по числу **вышедших** героев (`partySize` = отряд миссии). Меньше стартового размера брать нельзя, пока в убежище хватает героев на ногах (Стойкость 2+), — иначе можно было бы ходить одним прокачанным героем против «соло»-врагов. Если людей не хватает (погибли, изранены) — идут сколько есть, и миссия считается на них.
-- На старте в убежище ровно столько героев, сколько в отряде; запасные — только через наём.
-- Ростер: не больше max(стартовый отряд +2, 4) — пара может дорасти до полного отряда.
-- Паёк: между миссиями ВСЕ герои платят по 2 талона из своего запаса. Паёк — условие автоматического восстановления +1 Стойкости между миссиями.
-- Ротация: перед миссией выбираешь, кто идёт; оставшиеся отдыхают (+1 Стойкость сверх обычного). Опыт получают только участники миссии.
-- Наём: платит один герой; цена 10 🎫 (≈ доход за одну хорошую миссию; было 18 — после миссии у героев остаётся 2–7 🎫, погибшего было не заменить); герои под ИИ сами добирают отряд до полного, если у кого-то есть 10 🎫 + паёк; новичок приходит на 1-м уровне со «стартовым пайком» — 1 обычная карта добычи в экипировке; нанимать можно только героев, которые ни разу не выбывали (обращённого — нельзя, пока он бродит).
-- Бонусы нанимателю (оба сразу):
-  - **Подарок новичка** — уникальная карта этого героя, которую больше никак не получить, сразу в сундук нанимателя;
-  - **Долг** — в первых 3 миссиях, в которых новичок участвует (пропущенные не считаются), он отдаёт нанимателю половину своих талонов за звёзды.
+## Squad and hiring
+- The starting squad size (1–4) is chosen at the start of the campaign. From that size up to 4 heroes go on a mission (if the shelter has that many): hired a third for a pair — you can go as three. Mission difficulty (enemies, rounds, Wave threshold) is based on the number of heroes **sent** (`partySize` = the mission squad). You cannot take fewer than the starting size while the shelter has enough heroes on their feet (Grit 2+) — otherwise you could send one levelled-up hero against “solo” enemies. If there are not enough people (dead, badly wounded), those who are left go, and the mission is scaled for them.
+- At the start the shelter has exactly as many heroes as the squad; spares come only through hiring.
+- Roster: no more than max(starting squad +2, 4) — a pair can grow into a full squad.
+- Ration: between missions ALL heroes pay 2 tickets each from their own supply. The ration is the condition for the automatic restoration of +1 Grit between missions.
 
-### Баланс героев (Борис)
-Борис был заметно живучее всех (Стойкость 7, «Живой щит» с +1 к блоку картой и ещё 1 урон за фазу «сам»): в кампании с безвозвратной гибелью это делало его обязательным. «Держит сам 1 урон» убран, Стойкость 7 осталась. Замер (все пары, миссии 2–6, герои 2-го уровня, по 90 миссий на героя): гибель Бориса 17% → 23% (остальные 23–30%), побед 57% → 51% (остальные 39–57%). Глеб — секретный герой, сложный и неоднозначный намеренно; его не трогаем.
+- Rotation: before a mission you choose who goes; those left behind rest (+1 Grit on top of the usual). Only mission participants get experience.
+- Hiring: one hero pays; the price is 10 🎫 (≈ the income from one good mission; it used to be 18 — after a mission heroes have 2–7 🎫 left, so a dead hero could not be replaced); AI heroes top up the squad themselves if someone has 10 🎫 + the ration; the recruit arrives at level 1 with a “starter ration” — 1 common loot card in the loadout; only heroes who have never left the campaign can be hired (a turned one cannot, while it roams).
+- Bonuses for the hirer (both at once):
+  - **The recruit's gift** — this hero's unique card, which cannot be obtained any other way, goes straight into the hirer's chest;
+  - **Debt** — in the first 3 missions the recruit takes part in (skipped ones do not count), they give the hirer half of their star tickets.
 
-## Мораль
-Шкала 0–6, новый герой начинает с 3. Сама к середине не возвращается (пока).
+### Hero balance (Boris)
+Boris was noticeably tougher than everyone (Grit 7, “Living Shield” with +1 block per card and 1 more damage per phase “on his own”): in a campaign with permanent death this made him mandatory. “Absorbs 1 damage on his own” was removed, Grit 7 stayed. Measurement (all pairs, missions 2–6, level 2 heroes, 90 missions per hero): Boris's death rate 17% → 23% (others 23–30%), wins 57% → 51% (others 39–57%). Gleb is the secret hero, complex and ambiguous on purpose; we leave him alone.
 
-Падает:
-- пропустил миссию (отсиживался в убежище) — −1;
-- не хватило талонов на паёк (голодал, без +1 Стойкости) — −1;
-- союзник погиб или обратился в миссии (всем участникам) — −1;
-- сломалась его карта — −1.
+## Morale
+A 0–6 scale, a new hero starts at 3. It does not drift back to the middle by itself (for now).
 
-Растёт:
-- миссия пройдена на 3 звезды — +1;
-- первым выполнил свою секретную миссию — +1;
-- убил обращённого бывшего союзника — +2;
-- нанял новичка — +1.
+It drops:
+- skipped a mission (sat it out in the shelter) — −1;
+- not enough tickets for the ration (went hungry, no +1 Grit) — −1;
+- an ally died or turned in the mission (for all participants) — −1;
+- their card broke — −1.
 
-Временные карты (только на ближайшую миссию, замешиваются в колоду при выходе):
-- мораль ≤ 1 — **«Уныние»** (при морали 0 — две). Сыграть нельзя. Когда приходит в руку — сразу −1 ⚡; в конце хода сама уходит в сброс (после перемешивания колоды может прийти снова). Итого каждое появление съедает 1 ⚡ и 1 карту добора.
-- мораль 6 — **«Кураж»**: 0 ⚡, возьми 2 карты, +1 ⚡, все твои атаки в этот ход +1 урон; после розыгрыша убирается из игры.
+It rises:
+- a mission completed with 3 stars — +1;
+- was first to complete their secret mission — +1;
+- killed a turned former ally — +2;
+- hired a recruit — +1.
 
-## Сохранение и игроки
-- Несколько слотов сохранения кампании.
-- Как в одиночной миссии: 1 или 2 игрока (hot-seat), для каждого героя выбирается, кто им управляет — игрок или ИИ (можно отдать ИИ всех).
+Temporary cards (only for the next mission, shuffled into the deck on heading out):
+- morale ≤ 1 — **“Despair”** (two at morale 0). It cannot be played. When it comes into hand — immediately −1 ⚡; at the end of the turn it goes to the discard by itself (after a reshuffle it may come again). In total each appearance eats 1 ⚡ and 1 card draw.
+- morale 6 — **“Courage”**: 0 ⚡, draw 2 cards, +1 ⚡, all your attacks this turn deal +1 damage; removed from the game after it is played.
 
-## Открытые вопросы
+## Saving and players
+- Several campaign save slots.
+- As in a single mission: 1 or 2 players (hot-seat); for each hero you choose who controls it — a player or the AI (you can give all of them to the AI).
 
-- Пороги уровней в кампании и на каких уровнях общие таланты.
-- Содержание цепочки миссий: уникальные тайлы, условия, боссы, уникальные карты.
-- Цены: постройки, ремонт, лечение, продажа.
+## Open questions
 
-
-Значок опыта — медаль 🎖 (★ оставлен только звёздам миссии).
-
-## Как описать миссию цепочки (для разработки)
-
-Цепочка — `ZG.CAMPAIGN.chain` в `src/data/campaign.js`, по описанию на миссию. Все поля необязательны:
-- `name`, `brief` — название и вводная (показываются в убежище перед походом);
-- `scenarioId`, `conditionId` — задание и условие (без них — случайные, как в одиночной вылазке);
-- `tiles: { required: ['id' | { id, tx, ty }], exclude: ['id'] }` — уникальные тайлы и исключения из базового пула;
-- `bosses: ['zombieType']` — боссы локации, подчиняются правилу Блуждающей угрозы.
-- `levelId` — особый уровень (поле другого размера, другие враги и т. п.), например `camp_m1`;
-- `special: ['текст', …]` — особые условия: изменённые базовые правила миссии. Игра помечает их в убежище и в брифинге. Смена количества и качества врагов особым условием не считается.
-
-Миссия 1 «Первая вылазка» (`camp_m1`): случайное задание, поле 3×2 тайла (6 тайлов из базового пула), враги только Шатуны и Бегуны, у каждого люка с карты появления — 1 зомби. Особых условий нет.
-
-Пока миссии цепочки после пятой — случайные.
-
-Миссия 2 «Автобаза №3» (`camp_m2`, задание `autobase`), завязка сюжета: колонна МЧС уходит на рассвете, нужна «буханка» с автобазы; ключи у двух обратившихся водителей-Толстяков в боксе.
-- Поле 3×2, люков нет — никто не появляется, событий нет.
-- Уникальный тайл «Автобаза №3» — в дальнем (правом) столбце, строка случайна; его место известно (особая рубашка), открыт только стартовый тайл.
-- В боксе 2 притаившихся Толстяка. На 4 остальных закрытых тайла — 4 карты «Стая/Пусто» рубашкой вверх (2 «Стаи»): при открытии тайла со «Стаей» в его центр выставляется стая. Игрок знает, кто ждёт, но не знает где.
-- Стая: соло — 2 Шатуна + 2 Бегуна; пара — 3 + 2; трое — 4 + 3; четверо — 5 + 4. Раундов: 10 (соло 15, четверо 8).
-- Притаившиеся зомби стоят на месте, пока их не разбудят (режим «Притаился» описан в общих правилах, раздел «Скрытность»).
-- Особое правило (единственное, отмечается в игре): драка с Толстяками — первый удар по Толстяку или его удар по герою — будит всех: карты «Стая/Пусто» переворачиваются, тайлы со стаями открываются, все зомби просыпаются и идут на место драки.
-- Цель: убить обоих Толстяков и всем уехать на фургоне. Боты (с правилом «драка будит всех»): соло 81%, пара 87%, трое 90%, четверо 91% (слабые в бою составы, вроде Лизы, — ниже: их сила — в стелс-заданиях).
+- Level thresholds in the campaign and at which levels shared talents come.
+- The content of the mission chain: unique tiles, conditions, bosses, unique cards.
+- Prices: buildings, repair, healing, selling.
 
 
-Миссия 3 «Лес» (`camp_m3`, задание `forest`), продолжение сюжета: колонна встала за лесом, связь — через рацию на пожарной вышке.
-- Поле 3×2 только из лесных тайлов: Кордон лесника (старт; колодец — единственная точка появления; «буханка» во дворе — выход), Сосновый бор ×3, Просека ЛЭП ×2. Обычных тайлов нет.
-- Особая карта появления: в Сумерки — никого; с Ночи — по одному зомби, по очереди Шатун и Бегун.
-- Пожарная вышка — в углу одной из просек; этот тайл открыт сразу. В центре каждого бора ящик, в одном — аккумулятор (груз).
-- На 4 закрытых тайла — карты «Стая/Пусто» (1 «Стая»). Стая: соло и пара — 2 Шатуна + Бегун; трое — 3 + 2; четверо — 3 + 3.
-- Мини-босс Медведь-шатун (8 Стойкости, 3 урона, броня 1, +6 опыта) притаился в одном из боров; будится по общему правилу «Притаился». Убивший получает трофей — уникальный расходник «Медвежий жир» (снять 2 Раны и получить 2 Блока; продажа 8, починка 3).
-- Задание: найти аккумулятор → отнести на вышку → действие «Подать сигнал» (1 ⚡). Поворот: сигнал не проходит (антенна перегрызена, записка лесника — колонна ждёт у моста), появляется новая задача — вернуться к «буханке» и всем уехать. Игроки заранее не знают, что будет после сигнала: в задании и подготовке об этом ни слова. В картонной версии исход записан на запечатанной карте сюжетного события «Вышка» (лист «Кампания: сюжетные события» в print.html), её тянут при подаче сигнала.
-- Особых условий нет. Раундов: 12 (соло 15). Боты: соло 83%, пара 85%, трое 82%, четверо 88%; медведя убивают в ~20% партий.
+The experience icon is the medal 🎖 (★ is kept only for mission stars).
 
-Миссия 4 «Трасса» (`camp_m4`, задание `highway` «Бензин и порох»): весёлый непредсказуемый хаос — на поле три стороны.
-- Поле 4×2 (8 обычных тайлов). Особые условия: тумана нет (горит перевёрнутый бензовоз — зарево освещает всю трассу); 2 одинаковые стаи (соло 2 Шатуна + Бегун; пара 2 + 2; трое 3 + 2; четверо 3 + 3) выставляются сразу в центры двух случайных тайлов (кроме стартового и тайла выхода) и с первого раунда бродят.
-- 2 люка: в Сумерки тихо, с Ночи — по 2 Шатуна из каждого (карта `sp_chaos`).
-- Задание: найти канистры (ящиков 4, канистр 3, нужно 2; при 3–4 героях — 6 / 5 / 3), заправить «буханку» у правого края, всем уехать. Раундов 13 (соло 12).
-- Бандиты — новый враг, третья сторона (соло 2, пара и трое 3, четверо 4; бродят по тайлам без стай; у каждого в мешке карта добычи): враги для них — и герои, и зомби одинаково, зомби охотятся на бандитов так же. Бьёт в своей зоне или стреляет на линии до 2 зон, за врагами не гоняется; кубик бродяг: 1–4 — к ближайшему луту, 5–6 — стоит; пассивка «Мародёр»: оказавшись у лута, забирает его в мешок (так уплывают и канистры). Атака — Шум на 2 зоны, герою только Рана (без Заражения), зомби 2 урона. Убит — роняет мешок; загрызен — встаёт Шатуном. 3 ♥, +2 опыта.
-- Сюрприз (в правилах не описан): в колоде добычи этой миссии — 2 редких снаряжения: «Разгрузка» (+1 к руке, первый Обыск за ход — 0 ⚡) и «Ствол бандита» (пока надет — базовое действие «Выстрел из ТТ» раз за ход: 1 ⚡, 2 урона врагу в 0–2 зонах по прямой, Шум 1; полезен любому герою, а не только стрелкам).
-- Боты (герои 1-го уровня): соло ~83%, пара ~80%, трое ~70–75%, четверо ~80%. На партию: 3–7 атак бандитов, 2–3,5 зомби убито бандитами, ~0,5–0,7 бандита загрызено, 0,5–0,7 обчищенных ящиков/тайников, ~0,4–0,55 украденной канистры.
+## How to describe a chain mission (for development)
 
-Миссия 5 «Мост» (`camp_m5`, задание `bridge` «Пошлина за мост»): только банда Лесника, зомби нет. Связка с прошлыми миссиями: записка «колонна ждёт у моста» из 3-й миссии была приманкой; клочья шерсти и «перегрызенный» кабель — дело Лесника в медвежьей шкуре; у бандитов 4-й миссии на запястьях клеймо-лапа; приписка «ОН УЖЕ НЕ ЛЕСНИК» — предупреждение.
-- Поле 4×2: уникальные тайлы «Блокпост у моста» (правый столбец, открыт сразу) и «Лесопилка» (третий столбец) + 6 обычных. Особые условия (показываются перед миссией): в колоде добычи нет «Засад», обращённые союзники не бродят; пока в зоне шлагбаума враг — уйти нельзя; «Подъём!» (ключ у отряда → звон «пошлин»: Лесник всегда знает, где герои, бродяги становятся загонщиками). Количество и состав врагов (зомби нет, только банда) особым условием не считаются — это описано в брифинге и на карточках врагов.
-- Блокпост: шлагбаум (выход); Часовой у шлагбаума (отдельный юнит: с поста не уходит, картами не сдвигается), пока в его зоне враг, уйти нельзя; снайпер на вышке; мешки с песком (укрытие: по героям там не стреляют); будка — оружейный тайник.
-- Лесопилка: изба, где спит Лесник (ключ у него на поясе); второй снайпер на штабеле брёвен; пилорама (пульт: 1 ⚡, раз за миссию — 4 урона всем врагам в зоне пилы, Шум 3, Тревога +2).
-- Два пути (никакого выбора кнопкой — засчитывается то, что сделано): тихий — подкрасться к спящему Леснику (по общим правилам «Скрытности»; спящий — обычный притаившийся) и действием «Снять ключ» (1 ⚡, любой герой в его зоне) забрать ключ; силовой — убить Лесника (ключ выпадет из его мешка) или перебить всю банду. Когда ключ снят, звенят жетоны-«пошлины»: Лесник просыпается и до конца миссии идёт по следу, банда поднимается («Подъём!»), бродяги становятся загонщиками.
-- Враги: бродяги (соло 3, пара 5, трое 6, четверо 8), 2 снайпера (не ходят, всегда начеку, стреляют на 5 зон: 2 Раны, которые нельзя заблокировать; бесшумного замечают только вплотную), Лесник (8 ♥, броня 1, топор на 4, 2 шага за фазу, «Чутьё охотника» — проснувшись, видит героев под эффектами скрытности; спящий — обычный притаившийся; трофей — «Топор лесника»: 4 урона, Связка +2 урона другому врагу). Раундов: соло 12, пара 11, трое 9, четверо 8.
-- Новые обычные находки в общем пуле (по 4 копии): «Удавка» (беззвучно убить бродящего/притаившегося не крупного врага — например, часового) и «Самопальная граната» (2 урона всем врагам в зоне на 1–2, Шум 3 — против снайпера и кучек врагов).
-- Боты (герои 1-го уровня, по 35 партий): соло ~37%, пара ~43%, трое ~57%, четверо ~51% — заметно тяжелее прошлых миссий (там 80–90%); с прокачкой кампании — легче.
+The chain is `ZG.CAMPAIGN.chain` in `src/data/campaign.js`, one description per mission. All fields are optional:
+- `name`, `brief` — the name and the introduction (shown in the shelter before heading out);
+- `scenarioId`, `conditionId` — the objective and the condition (without them — random, as in a single sortie);
+- `tiles: { required: ['id' | { id, tx, ty }], exclude: ['id'] }` — unique tiles and exclusions from the base pool;
+- `bosses: ['zombieType']` — location bosses, subject to the Wandering threat rule.
+- `levelId` — a special level (a board of a different size, other enemies, etc.), for example `camp_m1`;
+- `special: ['text', …]` — special rules: changed base rules of the mission. The game marks them in the shelter and in the briefing. Changing the number and type of enemies does not count as a special rule.
 
-Миссия 6 «Погост» (`camp_m6`, задание `pogost`) — после «Моста»: дорога за рекой идёт через сосняк и старое кладбище. Цель — забрать рацию сторожа из сторожки у Сияющего креста и уйти по дороге у правого края (эту рацию потом слушают в брифинге M7).
-- Особое условие «Буйство»: мертвецы на тайле Креста в фазу зомби действуют дважды (движение и атака, затем снова движение и атака; особые свойства, например вой Крикуна, — тоже дважды). Ушедший с тайла во втором ходе сразу останавливается. В движке — `g.frenzyTiles`, `E.frenzied`, второй проход фазы зомби (`zs.frenzy`).
-- Поле 4×2: лес в двух левых столбцах (Сосновый бор ×2, Просека ЛЭП ×2 — тихий, без врагов), кладбище в двух правых: «Старые могилы», «Склепы», «Часовня», «Сияющий крест» (столбец Креста случайный — `tx: [2, -1]` в `tiles.required`). Старт — у левого края, выход — у правого края на кладбищенском тайле без Креста. Открыты: старт, выход, Крест.
-- Засады (притаились в центрах двух разных случайных тайлов кладбища, кроме Креста): А — соло 3 Громилы + Хват, иначе 3 Громилы + 2 Хвата; Б — 3 Бегуна + Крикун (пара + Хват, трое и четверо + Хват и Громила). Засады — притаившиеся стопки (стоят, пока не увидят героя, не услышат шум или их не ударят; проснувшись, охотятся, потеряв след — блуждают); счётчики жетонов в тумане скрыты.
-- Рацию берут из ящика в сторожке; в руках она оживает — её слышно на 4 зоны от сторожки (будит засады, Тревога не растёт). Рацию нужно унести: первым по дороге уходит её носильщик (`canEvac`, `onEvac`).
-- Люки: 2 в случайных кладбищенских тайлах (кроме выхода) — лес тихий; колода `sp_pogost`: Сумерки — тихо, Ночь — Шатун + Бегун, Глухая ночь — 2 Шатуна + Бегун. Раундов 14 (пара и трое −2, четверо −3), порог Волны 5 / 5 / 4 / 3, стартовая Тревога у троих и четверых — 1.
-- Боты (герои 2–3 уровня с экипировкой, «Выживший», 40–60 партий): побед соло 55%, пара 62%, трое 40%, четверо 47%.
+Mission 1 “First Sortie” (`camp_m1`): a random objective, a 3×2 board (6 tiles from the base pool), only Shamblers and Runners as enemies, each manhole spawns 1 zombie per spawn card. No special rules.
 
-Миссия 7 «Белый лебедь» (`camp_m7`, задание `wedding`) — после «За рекой»: рация колонны велит ехать по северной дороге, а она идёт мимо ресторана, где в день эпидемии играли свадьбу. Цель — убить Укушенную невесту (её вопль держит пригород) и уйти по северной дороге.
-- Поле 4×2: «Ресторан «Белый лебедь»» (левый столбец) и «Стоянка «Волков»» (правый) + 6 обычных тайлов. Старт — случайный тайл 2-го столбца; выход — другой тайл правого столбца. Люки: случайный тайл 2-го столбца и случайный тайл 3-го. Открыты сразу: старт, ресторан, стоянка, выход.
-- Свадебная стая в зале (бродит): Укушенная невеста (босс: 9 ♥, удар 2; за фазу — одна способность: бьёт героя в своей зоне, иначе, охотясь, кричит на видимых героев в соседних зонах — им в колоду замешивается бесполезная «Вопль невесты», крик слышен на 2 зоны) + Толстяк + 3 Бегуна. Соло: на невесте сразу 4 жетона урона, четверо — 1 («жених успел ударить»).
-- Стоянка «Волков»: 5 Головорезов (3 ♥, броня 1, обрез на 0–1 зону: герою Рана, зомби 2 урона; бродят как зомби — кубик 1–2 к своему лагерю, 3–4 к центру, 5–6 стоят — и как зомби охотятся) и Снайпер на вышке (как на мосту).
-- Тайна: жетон «?» у костра. Подошёл на 2 зоны — сюжетная вставка «Пленник» и новая необязательная цель: освободить до конца 14-го раунда (герой в его зоне, без бандитов в ней, 1 ⚡). Не успели — казнь. В целях и брифинге пленник не упоминается; в картонной версии — запечатанная карта сюжетного события «Пленник».
-- Награда за спасение — секретный герой Глеб «Дуплет»: сразу присоединяется к убежищу (на среднем уровне отряда, таланты выбирает в начале следующей миссии), не нанимается; после первого спасения открывается и для одиночной игры.
-- Колода появления `sp_wedding`: Сумерки — тихо, Ночь — Бегун + Шатун, Глухая ночь — Толстяк + Бегун. Раундов 16 (соло 19, четверо 17); порог Волны 7 / 6 / 6 / 6.
-- Находки только этой миссии: «Охотничья двустволка» (редкая ×2: 3 урона цели + 1 соседу, 0–1 зона) и «Серебряный нож» (уникальная ×1: ближний бой 2, по крупной цели 4).
-- Боты (герои 2–3 уровня с экипировкой, «Выживший», по 80 партий): побед соло 31%, пара 36%, трое 35%, четверо 28%; пленник спасён 4 / 21 / 24 / 24% (после гибели невесты ИИ идёт проверить жетон «?» у костра, если успевает вернуться к выходу; соло не рискует); без единой раны — 1–3% (соло 16%).
+For now, chain missions after the last story mission are random.
+
+Mission 2 “Motor Depot No. 3” (`camp_m2`, objective `autobase`), the start of the story: the emergency convoy leaves at dawn, a van from the motor depot is needed; the keys are with two turned Bloater drivers in a garage bay.
+- A 3×2 board, no manholes — no one spawns, no events.
+- The unique “Motor Depot No. 3” tile is in the far (right) column, random row; its place is known (a special back), only the starting tile is open.
+- 2 lurking Bloaters in the garage bay. On the other 4 closed tiles — 4 “Pack/Empty” cards face down (2 “Packs”): when a tile with a “Pack” is revealed, a pack is placed in its centre. The player knows who is waiting, but not where.
+- A pack: solo — 2 Shamblers + 2 Runners; pair — 3 + 2; three — 4 + 3; four — 5 + 4. Rounds: 10 (solo 15, four 8).
+- Lurking zombies stay in place until woken (the “Lurking” mode is described in the general rules, the “Stealth” section).
+- A special rule (the only one, marked in the game): a fight with the Bloaters — the first hit on a Bloater or its hit on a hero — wakes everyone: the “Pack/Empty” cards are flipped, the tiles with packs are revealed, all zombies wake up and head for the fight.
+- Goal: kill both Bloaters and all drive away in the van. Bots (with the “a fight wakes everyone” rule): solo 81%, pair 87%, three 90%, four 91% (squads that are weak in combat, like Lisa, are lower: their strength is in stealth objectives).
+
+Mission 3 “The Forest” (`camp_m3`, objective `forest`), the story continues: the convoy has stopped beyond the forest; contact goes through the radio on the fire lookout tower.
+- A 3×2 board made only of forest tiles: the Ranger Station (start; the well is the only spawn point; the van in the yard is the exit), Pine Forest ×3, Power Line Clearing ×2. No ordinary tiles.
+- A special spawn card: at Dusk — no one; from Night on — one zombie at a time, alternating Shambler and Runner.
+- The fire lookout tower is in the corner of one of the clearings; that tile is open from the start. In the centre of each pine forest there is a crate, one of them holds the battery (cargo).
+- On the 4 closed tiles — “Pack/Empty” cards (1 “Pack”). A pack: solo and pair — 2 Shamblers + a Runner; three — 3 + 2; four — 3 + 3.
+- The mini-boss Rogue Bear (8 Grit, 3 damage, armor 1, +6 experience) lurks in one of the pine forests; it wakes by the general “Lurking” rule. Whoever kills it gets a trophy — the unique consumable “Bear Fat” (remove 2 Wounds and gain 2 Block; sells for 8, repair 3).
+- The objective: find the battery → carry it to the tower → the “Send a signal” action (1 ⚡). The twist: the signal does not get through (the antenna is chewed through, the forester's note — the convoy is waiting at the bridge), a new task appears — return to the van and all drive away. The players do not know in advance what happens after the signal: the objective and setup say nothing about it. In the cardboard version the outcome is written on a sealed “Tower” story event card (the “Campaign: story events” sheet in print.html), drawn when the signal is sent.
+- No special rules. Rounds: 12 (solo 15). Bots: solo 83%, pair 85%, three 82%, four 88%; the bear is killed in ~20% of games.
+
+Mission 4 “The Highway” (`camp_m4`, objective `highway` “Gas and Gunpowder”): a fun, unpredictable chaos — three sides on the board.
+- A 4×2 board (8 ordinary tiles). Special rules: no fog (an overturned fuel tanker is burning — its glow lights up the whole highway); 2 identical packs (solo 2 Shamblers + a Runner; pair 2 + 2; three 3 + 2; four 3 + 3) are placed right away in the centres of two random tiles (except the starting and exit tiles) and wander from the first round.
+- 2 manholes: quiet at Dusk, from Night on — 2 Shamblers from each (card `sp_chaos`).
+- The objective: find jerrycans (4 crates, 3 jerrycans, 2 needed; with 3–4 heroes — 6 / 5 / 3), fuel the van at the right edge, all drive away. 13 rounds (solo 12).
+- Bandits — a new enemy, a third side (solo 2, pair and three 3, four 4; they wander the tiles without packs; each has a loot card in its bag): heroes and zombies are equally enemies to them, and zombies hunt bandits the same way. A bandit hits in its zone or shoots along a line up to 2 zones and does not chase enemies; the wanderers' die: 1–4 — towards the nearest loot, 5–6 — stays; the “Looter” passive: next to loot, it takes it into its bag (that is how jerrycans go missing too). An attack is Noise for 2 zones; to a hero only a Wound (no Infection), to a zombie 2 damage. Killed — drops its bag; mauled — rises as a Shambler. 3 ♥, +2 experience.
+- A surprise (not described in the rules): this mission's loot deck has 2 rare gear cards: the “Load-Bearing Vest” (+1 hand size, the first Search each turn — 0 ⚡) and “Bandit's Pistol” (while equipped — the basic “TT Shot” action once per turn: 1 ⚡, 2 damage to an enemy 0–2 zones away in a straight line, Noise 1; useful for any hero, not only shooters).
+- Bots (level 1 heroes): solo ~83%, pair ~80%, three ~70–75%, four ~80%. Per game: 3–7 bandit attacks, 2–3.5 zombies killed by bandits, ~0.5–0.7 bandits mauled, 0.5–0.7 crates/caches cleaned out, ~0.4–0.55 jerrycans stolen.
+
+Mission 5 “The Bridge” (`camp_m5`, objective `bridge` “Bridge Toll”): only the Forester's gang, no zombies. Links to earlier missions: the note “the convoy is waiting at the bridge” from mission 3 was bait; the tufts of fur and the “chewed” cable were the work of the Forester in a bear skin; the bandits of mission 4 have a paw brand on their wrists; the postscript “HE'S NOT A FORESTER ANY MORE” is a warning.
+- A 4×2 board: the unique tiles “Bridge Checkpoint” (right column, open from the start) and “Sawmill” (third column) + 6 ordinary ones. Special rules (shown before the mission): no “Ambushes” in the loot deck, turned allies do not roam; while an enemy is in the barrier zone, you cannot leave; “Rise and shine!” (the squad has the key → the “toll” tokens jingle: the Forester always knows where the heroes are, wanderers become beaters). The number and makeup of enemies (no zombies, only the gang) do not count as special rules — they are described in the briefing and on the enemy cards.
+- The checkpoint: the barrier (the exit); the Sentry at the barrier (a separate unit: does not leave its post, cannot be moved by cards) — while it is in the zone, you cannot leave; a sniper on the tower; sandbags (cover: heroes there are not shot at); the booth — a weapons cache.
+- The sawmill: the hut where the Forester sleeps (the key is on his belt); a second sniper on a log pile; the saw (the control panel: 1 ⚡, once per mission — 4 damage to all enemies in the saw zone, Noise 3, Alarm +2).
+- Two ways (no button to choose — what you do is what counts): quiet — sneak up to the sleeping Forester (by the general “Stealth” rules; asleep he is an ordinary lurker) and take the key with the “Take the key” action (1 ⚡, any hero in his zone); forceful — kill the Forester (the key drops from his bag) or wipe out the whole gang. Once the key is taken, the “toll” tokens jingle: the Forester wakes up and follows the trail until the end of the mission, the gang rises (“Rise and shine!”), wanderers become beaters.
+- Enemies: wanderers (solo 3, pair 5, three 6, four 8), 2 snipers (they do not move, are always alert, shoot 5 zones: 2 Wounds that cannot be blocked; a silent hero is spotted only up close), the Forester (8 ♥, armor 1, an axe for 4, 2 steps per phase, “Hunter's Instinct” — once awake, sees heroes under stealth effects; asleep he is an ordinary lurker; trophy — the “Forester's Axe”: 4 damage, Chain +2 damage to another enemy). Rounds: solo 12, pair 11, three 9, four 8.
+- New ordinary finds in the shared pool (4 copies each): the “Garrote” (silently kill a wandering/lurking non-large enemy — for example, the sentry) and the “Pipe Grenade” (2 damage to all enemies in a zone 1–2 away, Noise 3 — against the sniper and clusters of enemies).
+- Bots (level 1 heroes, 35 games each): solo ~37%, pair ~43%, three ~57%, four ~51% — noticeably harder than earlier missions (80–90% there); easier with campaign levelling.
+
+Mission 6 “The Churchyard” (`camp_m6`, objective `pogost`) — after “The Bridge”: the road beyond the river goes through a pine wood and an old cemetery. The goal is to take the watchman's radio from the lodge by the Shining Cross and leave by the road at the right edge (this radio is later heard in the M7 briefing).
+- The “Frenzy” special rule: the dead on the Cross tile act twice in the zombie phase (move and attack, then move and attack again; special abilities, such as the Screamer's howl, also twice). One that leaves the tile in the second pass stops at once. In the engine — `g.frenzyTiles`, `E.frenzied`, the second pass of the zombie phase (`zs.frenzy`).
+- A 4×2 board: forest in the two left columns (Pine Forest ×2, Power Line Clearing ×2 — quiet, no enemies), the cemetery in the two right ones: “Old Graves”, “Crypts”, “Chapel”, “Shining Cross” (the Cross column is random — `tx: [2, -1]` in `tiles.required`). The start is at the left edge, the exit at the right edge on a cemetery tile without the Cross. Open: the start, the exit, the Cross.
+- Ambushes (lurking in the centres of two different random cemetery tiles, except the Cross): A — solo 3 Brutes + a Grabber, otherwise 3 Brutes + 2 Grabbers; B — 3 Runners + a Screamer (pair + a Grabber, three and four + a Grabber and a Brute). Ambushes are lurking stacks (they stay put until they see a hero, hear a noise or get hit; once awake they hunt, and having lost the trail they wander); the token counts in the fog are hidden.
+- The radio is taken from a crate in the lodge; in hand it comes to life — it can be heard 4 zones from the lodge (it wakes ambushes, the Alarm does not rise). The radio must be carried out: its carrier is the first to leave by the road (`canEvac`, `onEvac`).
+- Manholes: 2 on random cemetery tiles (except the exit) — the forest is quiet; deck `sp_pogost`: Dusk — quiet, Night — a Shambler + a Runner, Dead of Night — 2 Shamblers + a Runner. 14 rounds (pair and three −2, four −3), Wave threshold 5 / 5 / 4 / 3, starting Alarm for three and four — 1.
+- Bots (level 2–3 heroes with gear, “Survivor”, 40–60 games): wins solo 55%, pair 62%, three 40%, four 47%.
+
+Mission 7 “White Swan” (`camp_m7`, objective `wedding`) — after “Beyond the river”: the convoy's radio says to take the northern road, and it runs past a restaurant where a wedding was held on the day of the outbreak. The goal is to kill the Bitten Bride (her wail holds the suburb) and leave by the northern road.
+- A 4×2 board: “White Swan Restaurant” (left column) and “Wolves Camp” (right) + 6 ordinary tiles. The start is a random tile in column 2; the exit is another tile in the right column. Manholes: a random tile in column 2 and a random tile in column 3. Open from the start: the start, the restaurant, the camp, the exit.
+- The wedding pack in the hall (wandering): the Bitten Bride (a boss: 9 ♥, hit 2; one ability per phase: hits a hero in her zone, otherwise, while hunting, wails at visible heroes in adjacent zones — a useless “Bride's Wail” card is shuffled into their decks, the wail is heard 2 zones away) + a Bloater + 3 Runners. Solo: the bride starts with 4 damage tokens, four heroes — 1 (“the groom managed to strike”).
+- The Wolves Camp: 5 Cutthroats (3 ♥, armor 1, a sawn-off for 0–1 zones: a Wound to a hero, 2 damage to a zombie; they wander like zombies — die 1–2 towards their camp, 3–4 towards the centre, 5–6 stay — and hunt like zombies) and a Sniper on the tower (as at the bridge).
+- A mystery: a “?” token by the campfire. Coming within 2 zones triggers the “The Prisoner” story scene and a new optional goal: free him before the end of round 14 (a hero in his zone, no bandits in it, 1 ⚡). Too late — an execution. The prisoner is not mentioned in the goals or the briefing; in the cardboard version — a sealed “The Prisoner” story event card.
+- The reward for the rescue is the secret hero Gleb “Double-Tap”: he joins the shelter at once (at the squad's average level, choosing talents at the start of the next mission), cannot be hired; after the first rescue he is also unlocked for single games.
+- Spawn deck `sp_wedding`: Dusk — quiet, Night — a Runner + a Shambler, Dead of Night — a Bloater + a Runner. 16 rounds (solo 19, four 17); Wave threshold 7 / 6 / 6 / 6.
+- Finds unique to this mission: the “Double-Barrel Hunting Rifle” (rare ×2: 3 damage to the target + 1 to a neighbour, 0–1 zones) and the “Silver Knife” (unique ×1: melee 2, 4 against a large target).
+- Bots (level 2–3 heroes with gear, “Survivor”, 80 games each): wins solo 31%, pair 36%, three 35%, four 28%; the prisoner rescued 4 / 21 / 24 / 24% (after the bride's death the AI goes to check the “?” token by the campfire if it has time to get back to the exit; solo it does not take the risk); without a single wound — 1–3% (solo 16%).
 
 
-Миссия 8 «Полдень» (`camp_m8`, задание `market`) — после «Белого лебедя»: северная дорога упирается в колхозный рынок райцентра, за ним у выезда — стоянка «Волков». Цель — прорваться через рынок и стоянку на дорогу у правого края; убить Мясника — необязательно.
-- Особые условия: «День» (сумерек и ночи нет, все тайлы открыты), «Подмога «Волков»» (люков нет; Волна — по 2 Головореза-загонщика у правого края за каждую), «Заслон» (пока в зоне выхода бандит — уйти нельзя).
-- Поле 5×2 (вариант 4×2 проверен и отброшен: соло 33%, четверо 73% — сложность сильно зависит от размера отряда). Западные ряды — 2-й столбец, «Колхозный рынок» (мясной ряд) — 3-й, восточные ряды — 4-й, «Стоянка «Волков»» — 5-й. Старт — у левого края, выход — у правого края на тайле стоянки.
-- Мясник (босс: 12 ♥, броня 1, удар 2, скорость 1). «Размах»: бьёт всех в своей зоне — героев, бандитов и своих зомби — на 2 + «Кровь». Цепь: после атаки подтягивает самого раненого героя из соседней зоны (нет героя — бандита). «Свежее мясо»: любая смерть в его или соседней зоне (кроме зарубленных им самим «Размахом») — +2 ♥ и жетон «Кровь» (без предела); удар на 3+ урона сбивает жетон. «Нюх на толпу»: идёт только к живым (герои, бандиты), в видимую зону, где их больше всего; приманки и зомби не отвлекают. Трофей — «Крюк мясника».
-- Свита Мясника (бродит): соло — Шатун; пара — Шатун и Бегун; трое — Толстяк и Шатун; четверо — Толстяк, Шатун и Бегун. Крикун-зазывала — в центре западных рядов (его вой поднимает Тревогу → подмога «Волков»).
-- Нейтральные полосы (обычные бродячие): 2-й и 4-й столбцы — соло Шатун + Бегун / Шатун; пара Шатун + Бегун / Шатун + Бегун; трое 2 Шатуна + Бегун / Шатун + Бегун; четверо 2 Шатуна + Бегун / 2 Шатуна + Бегун.
-- «Волки»: Головорезы у лагеря 2 / 3 / 5 / 7, Снайпер на вышке, заслон на посту в зоне выхода 2 / 3 / 4 / 4 (часовые на посту не залечивают раны в конце раунда — иначе заслон «отрастал» и отряд упирался в него до таймаута), мародёры на соседнем тайле правого столбца 2 / 1 / 2 / 2; у каждого бандита в мешке карта добычи.
-- Раундов 12, порог Волны 6, условие «Ясный полдень» (без эффектов), бонус «Блиц» исключён.
-- Боты (герои 2–3 уровня с экипировкой, «Выживший», по 60 партий): побед соло 32%, пара 48%, трое 38%, четверо 53%. ИИ штурмует заслон: когда задание выполнено, а выход держат враги, урон по ним весит больше, а осторожность героев в 3 зонах от выхода снижена (кроме тех, кто на последней ране); таймаутов у четверых — 20 из 100 (было 32), больше никто не «стоит в двух шагах» от выхода; Мясника убивают 10–45% (чаще большой отряд). ИИ ценит урон по заслону в зоне выхода (без этого четверо упирались в пост и проигрывали по времени).
+Mission 8 “High Noon” (`camp_m8`, objective `market`) — after “White Swan”: the northern road runs into the district town's farmers' market, and beyond it, at the way out, is the Wolves camp. The goal is to break through the market and the camp to the road at the right edge; killing the Butcher is optional.
+- Special rules: “Day” (no dusk or night, all tiles open), “Wolves reinforcements” (no manholes; for each Wave — 2 beater Cutthroats at the right edge), “Roadblock” (while a bandit is in the exit zone, you cannot leave).
+- A 5×2 board (a 4×2 variant was tested and dropped: solo 33%, four 73% — the difficulty depended heavily on squad size). The west rows — column 2, the “Farmers Market” (the meat row) — column 3, the east rows — column 4, the “Wolves Camp” — column 5. The start is at the left edge, the exit at the right edge on the camp tile.
+- The Butcher (a boss: 12 ♥, armor 1, hit 2, speed 1). “Swing”: hits everyone in his zone — heroes, bandits and his own zombies — for 2 + “Blood”. The chain: after an attack he pulls the most wounded hero from an adjacent zone (no hero — a bandit). “Fresh Meat”: any death in his or an adjacent zone (except those he cut down himself with the “Swing”) — +2 ♥ and a “Blood” token (no limit); a hit for 3+ damage knocks a token off. “Nose for a crowd”: he goes only for the living (heroes, bandits), to the visible zone where there are the most of them; lures and zombies do not distract him. Trophy — the “Butcher's Hook”.
+- The Butcher's retinue (wandering): solo — a Shambler; pair — a Shambler and a Runner; three — a Bloater and a Shambler; four — a Bloater, a Shambler and a Runner. A Screamer hawker is in the centre of the west rows (its howl raises the Alarm → Wolves reinforcements).
+- Neutral strips (ordinary wanderers): columns 2 and 4 — solo a Shambler + a Runner / a Shambler; pair a Shambler + a Runner / a Shambler + a Runner; three 2 Shamblers + a Runner / a Shambler + a Runner; four 2 Shamblers + a Runner / 2 Shamblers + a Runner.
+- The Wolves: Cutthroats at the camp 2 / 3 / 5 / 7, a Sniper on the tower, the roadblock on post in the exit zone 2 / 3 / 4 / 4 (sentries on post do not heal their wounds at the end of the round — otherwise the roadblock “regrew” and the squad got stuck on it until the timeout), looters on the adjacent tile of the right column 2 / 1 / 2 / 2; each bandit has a loot card in its bag.
+- 12 rounds, Wave threshold 6, the “Clear Noon” condition (no effects), the “Blitz” bonus excluded.
+- Bots (level 2–3 heroes with gear, “Survivor”, 60 games each): wins solo 32%, pair 48%, three 38%, four 53%. The AI storms the roadblock: when the objective is complete and enemies hold the exit, damage to them weighs more, and heroes' caution within 3 zones of the exit is lowered (except for those on their last wound); four-hero timeouts — 20 of 100 (were 32), no one “stands two steps away” from the exit any more; the Butcher is killed 10–45% of the time (more often by a big squad). The AI values damage to the roadblock in the exit zone (without that, four heroes got stuck on the post and lost on time).
 
-## Глеб «Дуплет» (секретный герой)
-Дуэлянт с парными пистолетами: Стойкость 4, рука 4. «По-македонски»: карта дальнего боя сразу после другой — 0 ⚡ (раз за ход). Изъяны: «Перезарядка» (после дуплета −1 ⚡ в следующий ход), «Руки заняты» (Кулак недоступен), «Громкие стволы» (+1 Шум каждому выстрелу). Карты: Левый ствол, Правый ствол (Сноровка — связка друг с другом), Веер (по зоне), Перезарядка. Таланты: Твёрдая рука / Быстрая перезарядка; Македонец / Свинцовый дождь.
+## Gleb “Double-Tap” (the secret hero)
+A duellist with paired pistols: Grit 4, hand 4. “Two-Handed”: a ranged card right after another one costs 0 ⚡ (once per turn). Flaws: “Reload” (after a double tap −1 ⚡ next turn), “Hands Full” (Punch unavailable), “Loud Barrels” (+1 Noise to each shot). Cards: Left Barrel, Right Barrel (Agility — they chain with each other), Fan Fire (on a zone), Reload. Talents: Steady Hand / Speed Loader; Gunslinger / Lead Rain.
 
-## Эпилог
-Показывается один раз после победы в последней миссии цепочки (повторно — кнопкой «📜 Эпилог»). Текст собирается из глав: вступление → по фразе от каждой пройденной миссии (в зависимости от того, как её прошли: `c.flags`, звёзды из `c.history`) → финал (сколько дошло, кого потеряли). Ниже — итоги: выжившие, павшие, строки-факты глав, бродящие обращённые.
-- Данные — `ZG.EPILOGUE` в `src/data/campaign.js`: `intro`, `chapters: [{ no, line(c, m), fact(c, m) }]`, `outro(c)`.
-- **Новая миссия цепочки = новая запись в `chapters`** с её номером (и, если нужно, флаг в `C.finishMission`, например `c.flags.gleb`). Код эпилога менять не нужно; финал всегда идёт после последней главы.
+## Epilogue
+Shown once after winning the last mission of the chain (again — with the “📜 Epilogue” button). The text is assembled from chapters: the introduction → a line from each completed mission (depending on how it went: `c.flags`, stars from `c.history`) → the finale (how many made it, whom they lost). Below — the summary: survivors, the fallen, the chapters' fact lines, the roaming turned.
+- The data is `ZG.EPILOGUE` in `src/data/campaign.js`: `intro`, `chapters: [{ no, line(c, m), fact(c, m) }]`, `outro(c)`.
+- **A new chain mission = a new entry in `chapters`** with its number (and, if needed, a flag in `C.finishMission`, for example `c.flags.gleb`). The epilogue code does not need changes; the finale always comes after the last chapter.
 
-## Сюжетные вставки
+## Story scenes
 
-Миссия задаёт `stories: { событие: id }`, тексты — `ZG.STORIES` в `src/data/campaign.js`, иллюстрации — `art/story/<id>.jpg` (16:9; промпты — `docs/STORY_ART.md`). Каждая вставка показывается один раз за миссию, только в кампании. События: `start` (пролог перед брифингом), `firstKill`, `night`, `packReveal`, `rouse`, `bossesDown`, `cargo` (первый груз из ящика), `bossWake`, `bossKill`, `twist` (иллюстрация к окну поворота), `firstBandit`, `banditBitten`, `firstSniper`, `saw`, `blood` (первая смерть рядом с Мясником), `wolves` (подмога «Волков» на Волне), `frenzy` (первое «Буйство» у Креста), `brutes` (проснулись Громилы на погосте).
+A mission sets `stories: { event: id }`, the texts are `ZG.STORIES` in `src/data/campaign.js`, the illustrations `art/story/<id>.jpg` (16:9; prompts — `docs/STORY_ART.md`). Each scene is shown once per mission, only in the campaign. Events: `start` (the prologue before the briefing), `firstKill`, `night`, `packReveal`, `rouse`, `bossesDown`, `cargo` (the first cargo from a crate), `bossWake`, `bossKill`, `twist` (an illustration for the twist window), `firstBandit`, `banditBitten`, `firstSniper`, `saw`, `blood` (the first death next to the Butcher), `wolves` (Wolves reinforcements on a Wave), `frenzy` (the first “Frenzy” at the Cross), `brutes` (the Brutes woke up in the churchyard).

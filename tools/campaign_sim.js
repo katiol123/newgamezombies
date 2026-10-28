@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /*
- * Симулятор кампании: ИИ проходит цепочку миссий с переносом героев между ними.
+ * Campaign simulator: the AI plays through the mission chain, carrying heroes between missions.
  *   node tools/campaign_sim.js [--runs N] [--heroes boris,lisa] [--difficulty novice] [--fast] [--seed S] [--verbose]
- * Между миссиями — простая политика убежища: продать хлам, лечиться, строить Лазарет/Склад, нанимать при нехватке.
+ * Between missions — a simple shelter policy: sell junk, heal, build the Infirmary/Storeroom, hire when short-handed.
  */
 const ZG = require('./load');
 const C = ZG.Campaign;
@@ -20,25 +20,25 @@ function args() {
   return o;
 }
 
-// Политика убежища для ИИ (простая, но разумная)
+// Shelter policy for the AI (simple but reasonable)
 function shelterAI(c) {
   c.roster.forEach((h) => {
-    while (h.injury > 0 && !C.heal(c, h.id)) { /* лечимся, пока хватает */ }
-    C.autoManage(c, h.id); // постройки, тир и раскладка — как у героев под ИИ в игре
+    while (h.injury > 0 && !C.heal(c, h.id)) { /* heal while we can afford it */ }
+    C.autoManage(c, h.id); // buildings, the range and card layout — as for AI heroes in the game
     h.chest.forEach((it, i) => { if (it.worn && C.built(h, 'workshop')) C.repair(c, h.id, 'chest', i); });
-    // экипировка: лучшие карты из сундука (по ценности)
+    // loadout: the best cards from the chest (by value)
     while (h.equip.length < C.equipCap(h) && h.chest.length) {
       let best = 0; h.chest.forEach((it, i) => { if ((ZG.Cards.get(it.id).value || 0) > (ZG.Cards.get(h.chest[best].id).value || 0)) best = i; });
       C.move(c, h.id, 'chest', best, 'equip');
     }
   });
-  if (c.eventDraw && !c.eventDraw.done) C.resolveEvent(c, C.eventAI(c)); // событие убежища — решает бот
+  if (c.eventDraw && !c.eventDraw.done) C.resolveEvent(c, C.eventAI(c)); // shelter event — the bot decides
   while (c.roster.length < c.squad) {
     const payer = c.roster.slice().sort((a, b) => b.talons - a.talons)[0];
     const id = C.hireable(c)[0];
     if (!payer || !id || C.hire(c, payer.id, id)) break;
   }
-  // отряд: самые здоровые
+  // squad: the healthiest
   return c.roster.slice().sort((a, b) => C.hp(b) - C.hp(a) || b.level - a.level).slice(0, c.squad).map((h) => h.id);
 }
 
@@ -47,7 +47,7 @@ function run(o, k) {
   const trail = [];
   while (c.status === 'ready') {
     const squad = shelterAI(c);
-    if (c.status !== 'ready' || !squad.length) { c.status = 'over'; c.endReason = 'Отряд не собрать'; break; }
+    if (c.status !== 'ready' || !squad.length) { c.status = 'over'; c.endReason = 'Cannot field a squad'; break; }
     const opts = C.startMission(c, squad);
     if (opts.error) throw new Error(opts.error);
     opts.quiet = true;
@@ -56,8 +56,8 @@ function run(o, k) {
     const rep = C.finishMission(c, g);
     trail.push(`${rep.win ? 'W' : rep.retreat ? 'R' : 'L'}${rep.stars}`);
     const pm = (perMission[rep.missionNo - 1] = perMission[rep.missionNo - 1] || { n: 0, w: 0, wounds: 0, clean: 0 }); pm.n++; if (rep.win) pm.w++;
-    pm.wounds += g.stats.wounds; if (!g.stats.wounds) pm.clean++; // раны отряда за миссию; «чистые» миссии — без единой раны
-    if (o.verbose) console.log(`  миссия ${rep.missionNo}: ${rep.win ? 'победа' : 'провал'} ★${rep.stars} | ` + c.roster.map((h) => `${h.id} L${h.level} xp${h.xp} hp${C.hp(h)} мор${h.morale} 🎫${h.talons} экип${h.equip.length} сунд${h.chest.length}`).join('; ') + (rep.lost.length ? ` | выбыли: ${rep.lost.map((l) => l.id + (l.turned ? '(обращён)' : '')).join(',')}` : '') + (c.wanderers.length ? ` | бродят: ${c.wanderers.join(',')}` : ''));
+    pm.wounds += g.stats.wounds; if (!g.stats.wounds) pm.clean++; // squad wounds per mission; “clean” missions have no wounds at all
+    if (o.verbose) console.log(`  mission ${rep.missionNo}: ${rep.win ? 'win' : 'loss'} ★${rep.stars} | ` + c.roster.map((h) => `${h.id} L${h.level} xp${h.xp} hp${C.hp(h)} mor${h.morale} 🎫${h.talons} eq${h.equip.length} ch${h.chest.length}`).join('; ') + (rep.lost.length ? ` | lost: ${rep.lost.map((l) => l.id + (l.turned ? '(turned)' : '')).join(',')}` : '') + (c.wanderers.length ? ` | roaming: ${c.wanderers.join(',')}` : ''));
   }
   return { c, trail };
 }
@@ -71,8 +71,8 @@ for (let k = 0; k < o.runs; k++) {
   if (c.status === 'won') won++;
   reached += c.missionNo;
   c.roster.forEach((h) => levels.push(h.level));
-  console.log(`#${k} ${c.status.padEnd(4)} миссий ${c.missionNo}/${c.chainLength} [${trail.join(' ')}] ${c.endReason || ''}`);
+  console.log(`#${k} ${c.status.padEnd(4)} missions ${c.missionNo}/${c.chainLength} [${trail.join(' ')}] ${c.endReason || ''}`);
 }
-console.log('По миссиям (побед/сыграно): ' + perMission.map((m, i) => `${i + 1}: ${m.w}/${m.n}`).join('  '));
-console.log('Ран отряда за миссию (в среднем) / миссий без ран: ' + perMission.map((m, i) => `${i + 1}: ${(m.wounds / m.n).toFixed(1)} / ${Math.round((100 * m.clean) / m.n)}%`).join('  '));
-console.log(`\nКампаний пройдено: ${won}/${o.runs}; в среднем миссий: ${(reached / o.runs).toFixed(1)}; уровни выживших: ${levels.length ? (levels.reduce((a, b) => a + b, 0) / levels.length).toFixed(1) : '-'}`);
+console.log('By mission (wins/played): ' + perMission.map((m, i) => `${i + 1}: ${m.w}/${m.n}`).join('  '));
+console.log('Squad wounds per mission (average) / missions without wounds: ' + perMission.map((m, i) => `${i + 1}: ${(m.wounds / m.n).toFixed(1)} / ${Math.round((100 * m.clean) / m.n)}%`).join('  '));
+console.log(`\nCampaigns completed: ${won}/${o.runs}; average missions: ${(reached / o.runs).toFixed(1)}; survivor levels: ${levels.length ? (levels.reduce((a, b) => a + b, 0) / levels.length).toFixed(1) : '-'}`);

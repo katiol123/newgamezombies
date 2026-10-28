@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Правила — Мёртвый квартал</title>
+  <title>Rules — Dead Block</title>
   <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -58,250 +58,250 @@
 <body>
 <div class="book">
   <div class="cover">
-    <p>кооперативная настольная игра · 1–4 героя · 40–60 минут</p>
-    <h1>МЁРТВЫЙ<br><span>КВАРТАЛ</span></h1>
-    <p>Книга правил · Уровень 1 «Окраина»</p>
+    <p>a cooperative board game · 1–4 heroes · 40–60 minutes</p>
+    <h1>DEAD<br><span>BLOCK</span></h1>
+    <p>Rulebook · Level 1 “The Outskirts”</p>
   </div>
 
-  <p class="lead">Первая ночь после падения города. Ваш отряд застрял на окраине. Нужно выполнить задание и эвакуироваться, пока мертвецы не заполонили квартал. Вы играете <b>вместе против игры</b>: либо спасаются все выжившие, либо квартал побеждает.</p>
+  <p class="lead">The first night after the city fell. Your squad is stuck on the outskirts. You must complete the objective and evacuate before the dead overrun the block. You play <b>together against the game</b>: either all the survivors escape, or the block wins.</p>
 
-  <div class="box gold"><h4>Главное за 30 секунд</h4>
-    Каждый раунд герои по очереди тратят <b>3 Энергии ⚡</b> на карты и простые действия. Потом ходят зомби: <b>идут к ближайшему герою и бьют</b>.
-    Карты, оставшиеся у вас в руке, — это ваша <b>защита</b>: их можно сбросить, чтобы отразить удары.
-    Играйте карты одной масти подряд — получите бонус <b>«Связка»</b>. Шумите осторожно: шум поднимает <b>Тревогу</b>, а переполненная Тревога вызывает <b>Волну</b>.
+  <div class="box gold"><h4>The essentials in 30 seconds</h4>
+    Each round the heroes take turns spending <b>3 Energy ⚡</b> on cards and simple actions. Then the zombies move: <b>they go for the nearest hero and attack</b>.
+    The cards left in your hand are your <b>defense</b>: you can discard them to block hits.
+    Play cards of the same suit in a row to get the <b>“Chain”</b> bonus. Be careful with noise: noise raises the <b>Alarm</b>, and a full Alarm brings a <b>Wave</b>.
   </div>
 
   <div class="toc">
-    <a href="#s1">1. Компоненты</a><br><a href="#s2">2. Подготовка</a><br><a href="#s3">3. Раунд</a><br><a href="#s4">4. Ход героя</a><br><a href="#s5">5. Карты и Связка</a><br><a href="#s6">6. Поле, зоны, линия огня</a><br>
-    <a href="#s7">7. Бой и раны</a><br><a href="#s8">8. Фаза зомби</a><br><a href="#s9">9. Опыт и таланты</a><br><a href="#s10">10. Задания и победа</a><br><a href="#s11">11. Враги и герои</a><br><a href="#s12">12. Памятка</a>
+    <a href="#s1">1. Components</a><br><a href="#s2">2. Setup</a><br><a href="#s3">3. The round</a><br><a href="#s4">4. A hero's turn</a><br><a href="#s5">5. Cards and Chain</a><br><a href="#s6">6. Board, zones, line of fire</a><br>
+    <a href="#s7">7. Combat and wounds</a><br><a href="#s8">8. Zombie phase</a><br><a href="#s9">9. Experience and talents</a><br><a href="#s10">10. Objectives and victory</a><br><a href="#s11">11. Enemies and heroes</a><br><a href="#s12">12. Reference</a>
   </div>
 
-  <h2 id="s1"><span class="n">1</span>Компоненты</h2>
+  <h2 id="s1"><span class="n">1</span>Components</h2>
   <table>
-    <tr><th>Компонент</th><th>Кол-во</th><th>Зачем</th></tr>
-    <tr><td>Тайлы поля 3×3 зоны (со значками люков и мест обыска)</td><td>11</td><td>Из 8 случайных собирается поле 12×6</td></tr>
-    <tr><td>Планшеты героев</td><td>7</td><td>Стойкость, способность, таланты, треки опыта</td></tr>
-    <tr><td>Карты действий (стартовые и именные)</td><td>70</td><td>По 10 на героя: 6 общих + 4 именных</td></tr>
-    <tr><td>Карты добычи</td><td id="loot-count">30</td><td>Колода обыска: оружие, расходники, снаряжение, засады. Редкость: обычные ×4, <b style="color:#2d6fb5">редкие</b> ×2 (синяя рамка), <b style="color:#b07a10">уникальные</b> ×1 (золотая рамка) — чуть сильнее обычных</td></tr>
-    <tr><td>Карты Ран</td><td>30</td><td>Попадают в вашу колоду, когда вас ранят</td></tr>
-    <tr><td>Карты Заражения ☣</td><td>12</td><td>Укус: идут прямо в руку; в конце хода в руке — обращение</td></tr>
-    <tr><td>Кубик d6</td><td>1</td><td>Укус (Заражение или Рана), события раунда</td></tr>
-    <tr><td>Карты груза (канистры, рация, медикаменты)</td><td>7</td><td>Цели заданий</td></tr>
-    <tr><td>Карты появления</td><td id="spawn-count">22</td><td>Кто выходит из люков</td></tr>
-    <tr><td>Карты заданий / условий / бонусных целей</td><td>4 / 7 / 7</td><td>Цель партии, её особенности и 3-я звезда</td></tr>
-    <tr><td>Жетоны зомби</td><td>41</td><td>Шатуны 16, Бегуны 6, Толстяки 4, Крикуны 3, Громилы 2, Чумные 3, Хваты 3, Ищейка 1, Гнёзда 3</td></tr>
-    <tr><td>Фишки героев</td><td>7</td><td>Двусторонние: на обороте — обращённый герой</td></tr>
-    <tr><td>Маркеры охоты «!» и следа «?»</td><td>20 + 10</td><td>Скрытность: кто из зомби охотится и куда идёт</td></tr>
-    <tr><td>Карты секретных миссий</td><td>23</td><td>9 обычных ×2 и 5 редких ×1; одна из редких — «Предатель»; «Охотник за головами» тянется только в миссии с бандитами, «Медвежатник» — только если на поле есть сейф</td></tr>
-    <tr><td>Жетоны-пустышки</td><td>20</td><td>Мешок: 17 «Ушли», 1 «Логово», 1 «Засада сверху», 1 «Следы» (рубашка как у зомби)</td></tr>
-    <tr><td>Жетоны заглушки люка</td><td>4</td><td>Гоша: люк молчит 2 раунда (кладите с числом раундов)</td></tr>
-    <tr><td>Жетоны дверей</td><td>18</td><td>Двусторонние: «закрыто» / «открыто»</td></tr>
-    <tr><td>Прочие жетоны</td><td>≈90</td><td>Люки, ящики (лицом: груз / пусто), обыск, баррикады, растяжки, приманки, шум, урон, блок, адреналин, маркеры раунда и Тревоги, газ и выживший (события)</td></tr>
-    <tr><td>Планшет треков</td><td>1</td><td>Раунды (сутки) и Тревога</td></tr>
+    <tr><th>Component</th><th>Qty</th><th>Purpose</th></tr>
+    <tr><td>Board tiles of 3×3 zones (with manhole and search icons)</td><td>11</td><td>8 random ones form a 12×6 board</td></tr>
+    <tr><td>Hero boards</td><td>7</td><td>Grit, ability, talents, experience tracks</td></tr>
+    <tr><td>Action cards (starter and signature)</td><td>70</td><td>10 per hero: 6 shared + 4 signature</td></tr>
+    <tr><td>Loot cards</td><td id="loot-count">30</td><td>The search deck: weapons, consumables, gear, ambushes. Rarity: common ×4, <b style="color:#2d6fb5">rare</b> ×2 (blue frame), <b style="color:#b07a10">unique</b> ×1 (gold frame) — slightly stronger than common ones</td></tr>
+    <tr><td>Wound cards</td><td>30</td><td>Go into your deck when you are wounded</td></tr>
+    <tr><td>Infection cards ☣</td><td>12</td><td>A bite: they go straight into your hand; still in hand at the end of your turn means turning</td></tr>
+    <tr><td>d6 die</td><td>1</td><td>Bites (Infection or Wound), round events</td></tr>
+    <tr><td>Cargo cards (jerrycans, radio, medicine)</td><td>7</td><td>Objective targets</td></tr>
+    <tr><td>Spawn cards</td><td id="spawn-count">22</td><td>Who comes out of the manholes</td></tr>
+    <tr><td>Objective / condition / bonus objective cards</td><td>4 / 7 / 7</td><td>The goal of the game, its twists and the 3rd star</td></tr>
+    <tr><td>Zombie tokens</td><td>41</td><td>Shamblers 16, Runners 6, Bloaters 4, Screamers 3, Brutes 2, Plaguebearers 3, Grabbers 3, Hound 1, Nests 3</td></tr>
+    <tr><td>Hero pawns</td><td>7</td><td>Double-sided: the back shows the turned hero</td></tr>
+    <tr><td>Hunting “!” and trail “?” markers</td><td>20 + 10</td><td>Stealth: which zombies are hunting and where they are going</td></tr>
+    <tr><td>Secret mission cards</td><td>23</td><td>9 common ×2 and 5 rare ×1; one of the rare ones is “Traitor”; “Bounty Hunter” is drawn only in missions with bandits, “Safecracker” only if there is a safe on the board</td></tr>
+    <tr><td>Decoy tokens</td><td>20</td><td>The bag: 17 “Gone”, 1 “Lair”, 1 “Ambush from above”, 1 “Tracks” (same back as the zombies)</td></tr>
+    <tr><td>Manhole plug tokens</td><td>4</td><td>Gosha: the manhole stays silent for 2 rounds (place with the round count)</td></tr>
+    <tr><td>Door tokens</td><td>18</td><td>Double-sided: “closed” / “open”</td></tr>
+    <tr><td>Other tokens</td><td>≈90</td><td>Manholes, crates (face: cargo / empty), search, barricades, tripwires, lures, noise, damage, block, adrenaline, round and Alarm markers, gas and survivor (events)</td></tr>
+    <tr><td>Track board</td><td>1</td><td>Rounds (time of night) and Alarm</td></tr>
   </table>
-  <p>Всё это можно распечатать: кнопка «Печать (Print &amp; Play)» в меню игры.</p>
+  <p>All of this can be printed: the “Print &amp; Play” button in the game menu.</p>
 
-  <h2 id="s2"><span class="n">2</span>Подготовка</h2>
+  <h2 id="s2"><span class="n">2</span>Setup</h2>
   <ol class="steps">
-    <li><b>Поле.</b> Перемешайте тайлы и разложите 8 случайных сеткой 4×2 (в режиме Разведки — рубашкой вверх, см. «Туман войны») (4 столбца, 2 ряда), каждый — в случайном повороте (бросьте кубик или просто покрутите не глядя). Тайлы устроены так, что середина каждой их стороны проходима, поэтому любая раскладка в любом повороте связна.</li>
-    <li><b>Старт.</b> Выберите случайный тайл левого столбца и любую зону на нём у левого края поля (лучше уличную) — поставьте туда фишки героев. Тайл со стартом называется <i>стартовым</i>.</li>
-    <li><b>Выход.</b> Выберите случайный тайл правого столбца и положите жетон выхода (машина / скорая / пикап) в любую зону на нём у правого края поля (лучше уличную). В «Последнем эфире» вертолёт садится иначе — см. ниже.</li>
-    <li><b>Люки.</b> Соло — 2, двое — 3, трое и четверо — 4. Кладите их на <b>значки люков, напечатанные на тайлах</b>: сначала на тайлы правого столбца, потом среднего, потом левого. Стартовый тайл и тайл с выходом пропускаются (при 4 героях последний люк может оказаться на тайле левого столбца — рядом со стартом). Если тайлов в столбце больше, чем нужно, выберите случайно.</li>
-    <li><b>Задание.</b> Вытяните карту задания (или выберите).
+    <li><b>Board.</b> Shuffle the tiles and lay out 8 random ones in a 4×2 grid (4 columns, 2 rows; in Scouting mode face down, see “Fog of War”), each in a random rotation (roll a die or just spin it without looking). The tiles are designed so that the middle of each side is passable, so any layout in any rotation is connected.</li>
+    <li><b>Start.</b> Pick a random tile in the left column and any zone on it at the left edge of the board (a street zone is better) — place the hero pawns there. The tile with the start is called the <i>starting tile</i>.</li>
+    <li><b>Exit.</b> Pick a random tile in the right column and place the exit token (car / ambulance / pickup) in any zone on it at the right edge of the board (a street zone is better). In “Last Broadcast” the helicopter lands differently — see below.</li>
+    <li><b>Manholes.</b> Solo — 2, two heroes — 3, three and four — 4. Place them on the <b>manhole icons printed on the tiles</b>: first on the tiles of the right column, then the middle, then the left. The starting tile and the exit tile are skipped (with 4 heroes the last manhole may end up on a left-column tile, next to the start). If a column has more tiles than needed, choose at random.</li>
+    <li><b>Objective.</b> Draw an objective card (or choose one).
       <ul>
-        <li><b>Ящики:</b> возьмите столько жетонов ящиков, сколько указано на карте задания в строке «Подготовка» (там же — сколько из них с грузом), перемешайте их лицом вниз. Кладите по одному на разные тайлы в том же порядке, что и люки (сначала правый столбец, стартовый тайл пропускается) — на значок обыска в здании, а если его нет — на любой значок обыска.</li>
-        <li><b>Вышка</b> («Последний эфир») — в здание на тайле среднего столбца, лучше в ряду без старта (если зданий несколько — выбирают игроки). Если ни на одном тайле среднего столбца нет здания — на тайл со зданием в правом столбце, затем в левом (кроме стартового). Жетон выхода (вертолёт) в этом задании кладётся не на правый край, а на ближайшую к вышке уличную зону.</li>
-        <li><b>Гнёзда</b> («Выжечь гнёзда»: соло 1, двое 2, трое–четверо 3) — в центральную зону тайлов, начиная с правого столбца (центр непроходим — в соседнюю зону того же тайла).</li>
+        <li><b>Crates:</b> take as many crate tokens as the objective card's “Setup” line says (it also says how many of them hold cargo) and shuffle them face down. Place them one at a time on different tiles in the same order as the manholes (right column first, the starting tile is skipped) — on a search icon inside a building, or, if there is none, on any search icon.</li>
+        <li><b>Tower</b> (“Last Broadcast”) — in a building on a middle-column tile, preferably in the row without the start (if there are several buildings, the players choose). If no middle-column tile has a building — on a tile with a building in the right column, then the left (except the starting tile). In this objective the exit token (the helicopter) is placed not at the right edge but in the street zone closest to the tower.</li>
+        <li><b>Nests</b> (“Burn the Nests”: solo 1, two heroes 2, three–four 3) — in the central zone of tiles, starting from the right column (if the centre is impassable — in an adjacent zone of the same tile).</li>
       </ul></li>
-    <li><b>Обыск.</b> На все оставшиеся значки обыска положите жетоны обыска.</li>
-    <li><b>Условие и бонус.</b> Вытяните карту условия и выполните её указания. Вытяните карту бонусной цели — она даст 3-ю звезду.</li>
-    <li><b>Колоды.</b> Каждый герой берёт 6 общих и 4 своих карты и перемешивает их. Перемешайте колоды добычи и появления.</li>
-    <li><b>Треки.</b> Маркер раунда — на «1». Тревога — на «0»; большой отряд (3–4 героя) — на «1», а у четверых ниже порог Волны (4).</li>
-    <li><b>Первые мертвецы.</b> Для каждого люка вытяните карту появления (строка «Сумерки»).</li>
-    <li><b>Руки.</b> Каждый герой сразу набирает полную руку (до своего размера руки). Ограничение «не больше 3 карт» действует только для добора в начале хода.</li>
+    <li><b>Search.</b> Place search tokens on all remaining search icons.</li>
+    <li><b>Condition and bonus.</b> Draw a condition card and follow its instructions. Draw a bonus objective card — it gives the 3rd star.</li>
+    <li><b>Decks.</b> Each hero takes 6 shared and 4 of their own cards and shuffles them. Shuffle the loot and spawn decks.</li>
+    <li><b>Tracks.</b> The round marker goes on “1”. Alarm goes on “0”; a big squad (3–4 heroes) starts at “1”, and four heroes have a lower Wave threshold (4).</li>
+    <li><b>The first dead.</b> Draw a spawn card for each manhole (the “Dusk” row).</li>
+    <li><b>Hands.</b> Each hero immediately draws a full hand (up to their hand size). The “no more than 3 cards” limit applies only to the draw at the start of a turn.</li>
   </ol>
 
-  <h2 id="s3"><span class="n">3</span>Раунд</h2>
+  <h2 id="s3"><span class="n">3</span>The round</h2>
   <div class="flow">
-    <div style="grid-column: 1 / -1; background:#fff1c4"><b>0. Событие (со 2-го раунда)</b>Бросьте кубик. На «6» тяните карту события и выполните её — она действует до конца раунда (если не сказано иное). На 1–5 — затишье. В среднем 1–2 события за партию.</div>
-    <div><b>1. Ход героев</b>Каждый герой делает свой ход. <b>Порядок выбираете вы</b> — это важная часть тактики.</div>
-    <div class="z"><b>2. Фаза зомби</b>Движение → Атака → Особые свойства → Появление (и Волна, если Тревога полна).</div>
-    <div><b>3. Конец раунда</b>Уберите приманки, шум и «прижатие». Сдвиньте маркер раунда. Если это был последний раунд — поражение.</div>
+    <div style="grid-column: 1 / -1; background:#fff1c4"><b>0. Event (from round 2)</b>Roll the die. On a “6”, draw an event card and resolve it — it lasts until the end of the round (unless stated otherwise). On 1–5 — all quiet. On average 1–2 events per game.</div>
+    <div><b>1. Hero turns</b>Each hero takes their turn. <b>You choose the order</b> — an important part of the tactics.</div>
+    <div class="z"><b>2. Zombie phase</b>Move → Attack → Special abilities → Spawn (and a Wave if the Alarm is full).</div>
+    <div><b>3. End of round</b>Remove lures, noise and “pinned”. Advance the round marker. If that was the last round — defeat.</div>
   </div>
-  <p>Трек раундов разбит на фазы суток: <b style="color:#8a7a50">Сумерки</b> (1–3), <b style="color:#b07a10">Ночь</b> (4–6), <b style="color:#a0281a">Глухая ночь</b> (7–14). У отряда из 3–4 героев цели больше, поэтому у него <b>16 раундов</b>. Чем темнее, тем больше мертвецов на картах появления, а в Глухую ночь все зомби <b>голодны: +1 к скорости</b>.</p>
+  <p>The round track is split into times of night: <b style="color:#8a7a50">Dusk</b> (1–3), <b style="color:#b07a10">Night</b> (4–6), <b style="color:#a0281a">Dead of Night</b> (7–14). A squad of 3–4 heroes has more targets, so it gets <b>16 rounds</b>. The darker it gets, the more dead on the spawn cards, and in the Dead of Night all zombies are <b>hungry: +1 speed</b>.</p>
 
-  <h2 id="s4"><span class="n">4</span>Ход героя</h2>
+  <h2 id="s4"><span class="n">4</span>A hero's turn</h2>
   <ol class="steps">
-    <li><b>Доберите карты</b> до размера руки, <b>но не больше 3 карт</b> за раз. Размер руки — число на планшете героя (у каждого своё: Борис и Лиза — 4, Марина, Виктор, Кира и Сава — 5, Гоша — 6) плюс бонусы: соло «Одиночка» +1, «Рюкзак» +1, талант Бориса «Скала» +1; «Обессилен» −1. Если карт в руке уже не меньше лимита — ничего не добирайте, но и лишнее не сбрасывайте. Колода кончилась — перемешайте сброс.</li>
-    <li><b>Получите 3 Энергии ⚡</b> (+ жетоны Адреналина, + 1, если вы «На грани»).</li>
-    <li><b>Действуйте</b> в любом порядке: играйте карты и делайте базовые действия, пока хватает ⚡.</li>
-    <li><b>Завершите ход.</b> Неистраченная ⚡ сгорает. <b>Карты в руке остаются</b> — ими вы защищаетесь в фазу зомби.</li>
+    <li><b>Draw cards</b> up to your hand size, <b>but no more than 3 cards</b> at a time. Hand size is the number on the hero board (each hero has their own: Boris and Lisa — 4, Marina, Viktor, Kira and Sava — 5, Gosha — 6) plus bonuses: solo “Loner” +1, “Backpack” +1, Boris's talent “Rock” +1; “Exhausted” −1. If you already hold at least the limit, draw nothing, but do not discard the excess either. If your deck runs out, shuffle the discard pile.</li>
+    <li><b>Gain 3 Energy ⚡</b> (+ Adrenaline tokens, + 1 if you are “On the Edge”).</li>
+    <li><b>Act</b> in any order: play cards and take basic actions while you have ⚡.</li>
+    <li><b>End your turn.</b> Unspent ⚡ is lost. <b>Cards in hand stay</b> — you defend with them in the zombie phase.</li>
   </ol>
-  <h3>Базовые действия (без карт)</h3>
+  <h3>Basic actions (no cards)</h3>
   <table>
-    <tr><th>Действие</th><th>⚡</th><th>Что делает</th></tr>
-    <tr><td>Движение</td><td>1</td><td>Перейти в соседнюю зону.</td></tr>
-    <tr><td>Обыск</td><td>1</td><td>В зоне с жетоном обыска или ящиком и <b>без зомби</b>. Ящик: переверните — груз идёт в руку (+1 🎖), «пусто» — обыщите как обычно. Обычный обыск: тяните <b>2 карты добычи, одну оставьте</b> в руке, другую — под низ колоды. «Засада!» прерывает обыск.</td></tr>
-    <tr><td>Кулак</td><td>2</td><td>1 урон зомби в своей зоне.</td></tr>
-    <tr><td>Баррикада</td><td>2</td><td>Поставьте баррикаду (прочность 3) на проход из своей зоны в соседнюю. На поле не больше 4 баррикад.</td></tr>
-    <tr><td>Подобрать груз</td><td>1</td><td>Взять брошенный груз из своей зоны.</td></tr>
-    <tr><td>Передать</td><td>0</td><td>Раз за ход: отдать герою в своей зоне находку, груз или карту кампании (подарок, трофей). Базовые карты героя, Раны и Заражения не передаются.</td></tr>
-    <tr><td>Отдышаться</td><td>3</td><td>Если в зоне нет зомби: все карты из вашего Изнеможения возвращаются в сброс (см. «Защита»). Раны не лечит.</td></tr>
-    <tr><td>Закрыть двери</td><td>1</td><td>Вы в помещении: закройте все его двери (укрытие от дальних зомби).</td></tr>
-    <tr><td>Прижечь укус</td><td>2</td><td>Себе или герою в своей зоне, <b>только если в зоне нет зомби</b>: все Заражения у него в руке становятся Ранами.</td></tr>
-    <tr><td>Задание / Эвакуация</td><td>по карте</td><td>Доставить груз, выйти в эфир, сесть в машину — см. карту задания.</td></tr>
+    <tr><th>Action</th><th>⚡</th><th>What it does</th></tr>
+    <tr><td>Move</td><td>1</td><td>Move to an adjacent zone.</td></tr>
+    <tr><td>Search</td><td>1</td><td>In a zone with a search token or a crate and <b>no zombies</b>. Crate: flip it — cargo goes into your hand (+1 🎖), “empty” — search as usual. A normal search: draw <b>2 loot cards, keep one</b> in hand, the other goes to the bottom of the deck. “Ambush!” interrupts the search.</td></tr>
+    <tr><td>Punch</td><td>2</td><td>1 damage to a zombie in your zone.</td></tr>
+    <tr><td>Barricade</td><td>2</td><td>Place a barricade (durability 3) on the passage from your zone to an adjacent one. No more than 4 barricades on the board.</td></tr>
+    <tr><td>Pick Up cargo</td><td>1</td><td>Take dropped cargo from your zone.</td></tr>
+    <tr><td>Give</td><td>0</td><td>Once per turn: give a hero in your zone a find, cargo or a campaign card (a gift, a trophy). A hero's basic cards, Wounds and Infections cannot be given.</td></tr>
+    <tr><td>Catch Breath</td><td>3</td><td>If there are no zombies in the zone: all cards in your Fatigue pile return to the discard pile (see “Defense”). Does not heal Wounds.</td></tr>
+    <tr><td>Close doors</td><td>1</td><td>You are indoors: close all its doors (cover from distant zombies).</td></tr>
+    <tr><td>Cauterize a bite</td><td>2</td><td>On yourself or a hero in your zone, <b>only if there are no zombies in the zone</b>: all Infections in their hand become Wounds.</td></tr>
+    <tr><td>Objective / Evacuate</td><td>per card</td><td>Deliver cargo, go on air, get into the car — see the objective card.</td></tr>
   </table>
-  <div class="box red"><h4>Хватка</h4>Выйти из зоны, где есть зомби, стоит <b>+1 ⚡</b> — и базовым «Движением», и картами перемещения. Пройти <b>сквозь</b> зону с зомби нельзя — в ней нужно остановиться. Перелезть через баррикаду — тоже +1 ⚡. Если в зоне есть <b>Хват</b>, выход стоит ещё +1 ⚡ (итого +2). В режиме скрытности держат только <b>охотники</b> — бродячий вас ещё не заметил.</div>
+  <div class="box red"><h4>Grip</h4>Leaving a zone with zombies costs <b>+1 ⚡</b> — both for the basic “Move” and for movement cards. You cannot pass <b>through</b> a zone with zombies — you must stop there. Climbing over a barricade also costs +1 ⚡. If there is a <b>Grabber</b> in the zone, leaving costs another +1 ⚡ (+2 in total). In stealth mode only <b>hunters</b> hold you — a wanderer has not noticed you yet.</div>
 
-  <h2 id="s5"><span class="n">5</span>Карты и Связка</h2>
+  <h2 id="s5"><span class="n">5</span>Cards and Chain</h2>
   <div class="anatomy">
     <div id="anatomy-card"></div>
     <ol>
-      <li><b>Цена</b> в Энергии (жёлтый кружок).</li>
-      <li><b>Масть</b> (значок справа и цвет рамки).</li>
-      <li><b>Эффект</b> — что делает карта.</li>
-      <li><b>Связка</b> — бонус, если предыдущая сыгранная <i>в этот ход</i> карта была той же масти.</li>
-      <li><b>Щит</b> (внизу слева) — сколько урона отражает карта, если сбросить её при атаке.</li>
-      <li><b>Шум</b> — громкие карты поднимают Тревогу.</li>
+      <li><b>Cost</b> in Energy (the yellow circle).</li>
+      <li><b>Suit</b> (the icon on the right and the frame colour).</li>
+      <li><b>Effect</b> — what the card does.</li>
+      <li><b>Chain</b> — a bonus if the previous card played <i>this turn</i> was of the same suit.</li>
+      <li><b>Shield</b> (bottom left) — how much damage the card blocks if discarded during an attack.</li>
+      <li><b>Noise</b> — loud cards raise the Alarm.</li>
     </ol>
   </div>
-  <div class="suits"><span class="suit" style="background:var(--rage)">Ярость — сила и натиск</span><span class="suit" style="background:var(--agility)">Сноровка — движение и ловкость</span><span class="suit" style="background:var(--mind)">Расчёт — тактика и поддержка</span></div>
-  <div class="box blue"><h4>Связка и Эстафета</h4>Сыграли «Удар» (Ярость), затем «Биту» (Ярость) — у Биты срабатывает Связка: +1 урон. Базовые действия не прерывают и не продолжают Связку — считаются только карты. Планируйте порядок: иногда выгоднее сначала сыграть слабую карту, чтобы «разогнать» сильную.<br><b>Эстафета:</b> первая карта героя может продолжить Связку <i>последней картой предыдущего героя в этом раунде</i>. Поэтому порядок ходов — тоже тактика: передавайте масть друг другу.</div>
-  <div class="box"><h4>🤝 Отношения (кампания)</h4>
-    <p>У каждой пары героев есть шкала отношений от −3 до +3: <b>Враги</b> (−3), <b>Неприязнь</b> (−1…−2), нейтрально (0), <b>Приятели</b> (+1…+2), <b>Друзья</b> (+3).</p>
-    <p><b>Растут (+1):</b> лечение товарища (в том числе обеззаразить и прижечь укус); спасение — убить зомби, который кусал товарища в последнюю фазу зомби; миссия, пройденная вместе на 3 ★ (оба выжили). <b>Падают (−1):</b> товарища укусил зомби, которого вы разбудили или привели; вы эвакуировались, бросив товарища в 1–2 зонах от выхода; отказ поделиться пайком (событие убежища). Каждая причина считается для пары не чаще раза за миссию; изменения вступают в силу после миссии.</p>
-    <p><b>Друзья — Узы:</b> если один заканчивает ход в <b>тайле</b> второго, второй в свой следующий ход разыгрывает <b>первую карту</b> с её эффектом Связки (если он у карты есть; если нет — узы в этот ход ничего не дают). Гибель друга — −2 морали. <b>Приятели</b> передают друг другу карты без ограничения «раз за ход». При <b>Неприязни</b> герои не передают друг другу карты. <b>Враги</b> тоже не передают карты; кто заканчивает ход в тайле врага, отнимает у того 1 ⚡ на следующий ход; если оба в отряде — после миссии −1 морали каждому; гибель врага — +2 морали.</p>
+  <div class="suits"><span class="suit" style="background:var(--rage)">Rage — strength and onslaught</span><span class="suit" style="background:var(--agility)">Agility — movement and dexterity</span><span class="suit" style="background:var(--mind)">Mind — tactics and support</span></div>
+  <div class="box blue"><h4>Chain and Relay</h4>You played “Strike” (Rage), then “Baseball Bat” (Rage) — the Bat's Chain triggers: +1 damage. Basic actions neither break nor continue a Chain — only cards count. Plan the order: sometimes it pays to play a weak card first to “power up” a strong one.<br><b>Relay:</b> a hero's first card can continue the Chain from <i>the last card of the previous hero this round</i>. So the turn order is tactics too: pass the suit to one another.</div>
+  <div class="box"><h4>🤝 Relations (campaign)</h4>
+    <p>Each pair of heroes has a relation scale from −3 to +3: <b>Enemies</b> (−3), <b>Dislike</b> (−1…−2), neutral (0), <b>Pals</b> (+1…+2), <b>Friends</b> (+3).</p>
+    <p><b>They rise (+1):</b> healing a comrade (including disinfecting and cauterizing a bite); a rescue — killing a zombie that bit a comrade in the last zombie phase; a mission completed together at 3 ★ (both survived). <b>They fall (−1):</b> a comrade was bitten by a zombie you woke or led in; you evacuated, leaving a comrade 1–2 zones from the exit; refusing to share a ration (a shelter event). Each reason counts for a pair at most once per mission; changes take effect after the mission.</p>
+    <p><b>Friends — Bond:</b> if one ends their turn in the other's <b>tile</b>, the other plays their <b>first card</b> on their next turn with its Chain effect (if the card has one; if not, the bond gives nothing that turn). A friend's death — −2 morale. <b>Pals</b> give each other cards without the “once per turn” limit. Heroes with <b>Dislike</b> do not give each other cards. <b>Enemies</b> do not give cards either; whoever ends their turn in an enemy's tile takes 1 ⚡ from that enemy's next turn; if both are in the squad — −1 morale each after the mission; an enemy's death — +2 morale.</p>
   </div>
-  <h3>Особые виды карт</h3>
-  <p><b>Расходник</b> после розыгрыша уходит из игры. <b>Снаряжение</b> остаётся лежать перед героем и действует постоянно (не больше 2 — третье вытесняет самое старое в сброс). Два одинаковых предмета не складываются: действует только один. <b>Груз</b> занимает место в руке, его нельзя сыграть или сбросить, но можно передать. <b>Рана</b> — мёртвая карта в руке.</p>
-  <p><b>Добыча.</b> Найденные карты идут прямо в руку, а после розыгрыша — в ваш сброс: ваша колода растёт и улучшается. Карта «Засада!» раскрывается сразу: в вашей зоне появляется Шатун (ночью — Бегун), и обыск прерывается — выбирайте только из уже вытянутых карт.</p>
+  <h3>Special card types</h3>
+  <p>A <b>Consumable</b> leaves the game after it is played. <b>Gear</b> stays in front of the hero and works permanently (no more than 2 — a third pushes the oldest into the discard pile). Two identical items do not stack: only one works. <b>Cargo</b> takes up a place in your hand; it cannot be played or discarded, but it can be given. A <b>Wound</b> is a dead card in your hand.</p>
+  <p><b>Loot.</b> Found cards go straight into your hand, and after being played — into your discard pile: your deck grows and improves. The “Ambush!” card is revealed immediately: a Shambler (at night — a Runner) appears in your zone and the search is interrupted — choose only from the cards already drawn.</p>
 
-  <h2 id="s6"><span class="n">6</span>Поле, зоны, линия огня</h2>
-  <p>Каждый квадрат тайла — <b>зона</b>. Улицы соединены между собой; в помещения ведут только <b>двери</b> (проёмы в стене). Заштрихованные зоны (машины, деревья, завалы) непроходимы. В зоне может стоять сколько угодно фишек.</p>
-  <p><b>Линия огня</b> — строго по прямой (строка или столбец) через открытые проходы. Стены и непроходимые зоны её перекрывают, двери — нет. <b>Дальность</b> считается в зонах: 0 — своя зона, 1 — соседняя и т. д.</p>
-  <p><b>Шум.</b> Громкие действия кладут жетоны шума в зону героя и поднимают Тревогу на столько же. Шум убирается в конце раунда.</p>
-  <div class="box gold" id="doors"><h4>🚪 Двери и укрытия</h4>
-    <p>На каждый <b>вход в помещение</b> (проём между помещением и улицей или другим помещением) положите жетон двери стороной «закрыто». Двери не мешают ходить и стрелять.</p>
-    <p><b>Скрип.</b> Герой, проходя через закрытую дверь, открывает её (переверните жетон) и кладёт <b>жетон шума на зону по ту сторону от помещения</b> — Тревога не растёт, но шум притягивает зомби. Зомби, упёршись в закрытую дверь, <b>тратят один шаг, чтобы её распахнуть</b> (молча) — закрытые двери задерживают толпу.</p>
-    <p><b>Закрыть двери</b> (1 ⚡): закройте все двери помещения, в котором стоите.</p>
-    <p><b>Укрытие.</b> Если все двери помещения закрыты и внутри нет жетонов шума, герои в нём <b>не видны зомби дальше 1 зоны</b> — те их не выбирают целью. Зомби в соседней зоне или в самом помещении чуют героев как обычно. Любая атака или шум внутри выдаёт укрытие до конца раунда. Шум снаружи (в том числе скрип) притягивает зомби: если там нет героев, они идут проверить. Дойдя до пустого шума, зомби снимает жетон («никого») и оставшимися шагами идёт к новой цели.</p>
-  </div>
-
-  <div class="box gold" id="fog"><h4>Туман войны (Разведка) — основной режим</h4>
-    <p><b>Подготовка с туманом.</b> Разложите 8 тайлов <b>рубашкой вверх</b> сеткой 4×2. Переверните один случайный тайл левого столбца — <b>стартовый</b> — и поставьте героев в любую зону у левого края поля на нём (лучше уличную). Так же переверните случайный тайл правого столбца и положите выход в зону у правого края поля на нём. Тайлы переворачивайте «от себя», как страницу книги, не вращая. Люки, ящики, вышку и гнёзда кладите по обычным правилам, но на закрытый тайл — <b>на его рубашку</b>: видно, <i>что</i> там есть, но не <i>где</i>. В «Последнем эфире» тайл с вышкой переворачивается сразу (вертолёт садится рядом с вышкой).</p>
-    <p><b>Разведка.</b> Герой в зоне у края открытого тайла может базовым действием «Движение» шагнуть в соседнюю зону закрытого тайла. Переверните тайл «от себя» и перенесите жетоны с рубашки: люк — на значок люка, ящик — на место обыска в здании (если мест несколько — выбирают игроки), вышку — в здание; на свободные места обыска положите жетоны обыска. Если между зонами оказалась стена — герой остаётся на месте, ⚡ потрачена. Картами перемещения входить в туман нельзя.</p>
-    <p><b>Зомби в тумане и пустышки.</b> Зомби, которые появляются на закрытом тайле (с люка, от Гнезда, от событий), не выставляются сразу: <b>за каждого зомби с карты появления положите на рубашку 2 жетона лицом вниз</b>. Для каждого бросьте кубик: 1–3 — жетон этого зомби, 4–6 — жетон из <b>мешка пустышек</b>. Стопка никуда не ходит — ведущий не нужен. Сколько жетонов — видно всем, а что там на самом деле, узнаете только при открытии: пять жетонов могут оказаться и толпой, и пустым двором (бывает, что за целую карту появления не вышло никого). Гнёзда, Ищейка и обращённые герои всегда настоящие (кладите их лицом вверх).</p>
-    <p><b>Открытие тайла.</b> Переверните жетоны стопки. Зомби выставьте в зону люка (или Гнезда). Пустышки: <b>«Ушли»</b> (17 шт.) — пусто, к вашему приходу они скрылись (жетон возвращается в мешок; особые пустышки после раскрытия выходят из игры; если мешок пуст — кладите только жетоны зомби); <b>«Логово»</b> (1) — на это место положите жетон находки (оружейный обыск); <b>«Засада сверху»</b> (1) — тяните карту появления для ближайшего незаглушённого люка; <b>«Следы»</b> (1) — ближайший зомби получает след в эту зону и идёт проверить (без скрытности — жетон шума). Если в стопке набралось <b>8 жетонов</b> (проверяется в шаге «Особые свойства»), тайл открывается сам — <b>прорыв орды</b>.</p>
-    <p>Через закрытые тайлы нельзя стрелять, ставить приманки и ловушки, а зомби на открытых тайлах не ищут путь через туман. Режим можно отключить при подготовке — тогда все тайлы открыты с самого начала.</p>
+  <h2 id="s6"><span class="n">6</span>Board, zones, line of fire</h2>
+  <p>Each square of a tile is a <b>zone</b>. Streets are connected to each other; only <b>doors</b> (openings in the wall) lead indoors. Hatched zones (cars, trees, rubble) are impassable. A zone can hold any number of pieces.</p>
+  <p><b>Line of fire</b> runs strictly in a straight line (row or column) through open passages. Walls and impassable zones block it, doors do not. <b>Range</b> is counted in zones: 0 — your own zone, 1 — an adjacent one, and so on.</p>
+  <p><b>Noise.</b> Loud actions put noise tokens in the hero's zone and raise the Alarm by the same amount. Noise is removed at the end of the round.</p>
+  <div class="box gold" id="doors"><h4>🚪 Doors and cover</h4>
+    <p>On every <b>entrance to a building</b> (an opening between a room and the street or another room) place a door token “closed” side up. Doors do not hinder moving or shooting.</p>
+    <p><b>Creak.</b> A hero passing through a closed door opens it (flip the token) and puts <b>a noise token in the zone on the other side of the room</b> — the Alarm does not rise, but the noise attracts zombies. Zombies that run into a closed door <b>spend one step to push it open</b> (silently) — closed doors hold the crowd back.</p>
+    <p><b>Close doors</b> (1 ⚡): close all doors of the room you are standing in.</p>
+    <p><b>Cover.</b> If all doors of a room are closed and there are no noise tokens inside, the heroes in it <b>are not visible to zombies more than 1 zone away</b> — those do not target them. Zombies in an adjacent zone or in the room itself sense the heroes as usual. Any attack or noise inside gives away the cover until the end of the round. Noise outside (including a creak) attracts zombies: if there are no heroes there, they go to check. Reaching an empty noise, a zombie removes the token (“no one”) and uses its remaining steps to head for a new target.</p>
   </div>
 
-  <div class="box red" id="stealth"><h4>🌙 Скрытность — основной режим</h4>
-    <p>Зомби не знают, где вы. Каждый зомби либо <b>бродит</b> (обычная фишка; в игре — значок «…»), либо <b>охотится</b> (под ним маркер «!»). Особый вид бродячего — <b>притаился</b> (в игре — значок «z»: спит, пока не разбудят). Новые зомби появляются бродячими; охотниками — если появились в зоне с героем или во время ярости орды (но не в тумане: стопка на рубашке всегда «бродит»).</p>
-    <p><b>Заметил.</b> Зомби «оглядываются» <b>в конце хода каждого героя</b> и в фазу зомби (в начале и после движения) — одинаково для всех. Бродячий зомби замечает героя, если тот: <b>в его зоне</b>; <b>в соседней зоне</b> (через любой проход, даже через закрытую дверь — слышно дыхание); или <b>на прямой</b> по строке/столбцу до 4 зон через открытые проходы — стены, закрытые двери и туман перекрывают такую видимость. Героя в укрытии замечают только из соседней зоны. Заметивший переворачивается в «охотится» и кладёт маркер следа «?» на зону героя. Поэтому в свой ход можно подкрасться, ударить и уйти за угол — если к концу хода вас не видно, вас не заметили. Но <b>шум и удары будят сразу</b> (см. «Услышал»).</p>
-    <p><b>Услышал.</b> Шум слышен сразу: на 1 + число жетонов шума зон от его источника (скрип двери — на 1 зону, Приманка — на 3). Все зомби в этом радиусе, которые сейчас не видят героев, начинают охотиться и идут на шум (след — в зону шума). Удар по зомби тоже будит его.</p>
-    <p><b>Охотник</b> идёт к ближайшему видимому герою (или Приманке) по обычным правилам; если никого не видит — к своему <b>последнему следу</b>. <b>Бродячий</b> делает 1 шаг за фазу: бросьте кубик один раз на всех — 1–2 к ближайшему люку, 3–4 к центру поля, 5–6 стоят. Бродячие не атакуют.</p>
-    <p><b>Притаился.</b> Особый вид бродячего зомби (задаётся миссией: засады, логова, спящие боссы). Притаившийся <b>не делает шагов</b> по кубику бродячих и не атакует — просто ждёт на месте. Просыпается так же, как бродячий: <b>заметил</b> героя, <b>услышал</b> шум или удар, началась <b>ярость орды</b> (Волна) — или по особому правилу миссии. Проснувшись, он сразу становится охотником и больше не таится.</p>
-    <p><b>Третья сторона — бандиты</b> (миссии кампании). Для бандита враги — и герои, и зомби, одинаково; зомби тоже охотятся на бандитов, как на героев. В зоне, где есть и герой, и бандит, зомби выбирает жертву случайно; так же бандит выбирает, по кому бить. Бандит не гоняется за врагами: он бьёт врага в своей зоне или стреляет в ближайшего на линии до 2 зон, а иначе мародёрствует. Кубик бродяг для бандита: <b>1–4</b> — шаг к ближайшему луту (ящик или жетон Обыска), <b>5–6</b> — стоит. Оказавшись в зоне с лутом, бандит сразу забирает его в свой мешок. Каждая атака бандита — Шум на 2 зоны; герою она наносит только <b>Рану</b> (без Заражения), зомби — 2 урона. Убитый бандит роняет мешок в своей зоне; загрызенный зомби — встаёт Шатуном. Особые бойцы банды (снайпер, главарь) описаны на их карточках и в брифинге миссии.</p>
-    <p><b>Потерял след.</b> В конце фазы зомби, который никого не видит и уже дошёл до своего следа, снимает маркеры и снова бродит. Так же теряет след тот, кому до следа не дойти (например, его отрезал туман). Чтобы оторваться, мало отбежать: нужно уйти за угол, за закрытую дверь или подальше — и подождать, пока охотник проверит последний след.</p>
-    <p><b>Ярость орды.</b> Когда Тревога достигает порога (Волна), все зомби на поле начинают охотиться и <b>видят всех героев на любом расстоянии</b> — до конца следующего раунда (даже затаившихся и в укрытии). Тише — дольше живёте.</p>
-    <p>Режим можно отключить при подготовке — тогда все зомби всегда знают, где вы (классика).</p>
+  <div class="box gold" id="fog"><h4>Fog of War (Scouting) — the default mode</h4>
+    <p><b>Setup with fog.</b> Lay out the 8 tiles <b>face down</b> in a 4×2 grid. Flip one random tile in the left column — the <b>starting</b> tile — and place the heroes in any zone on it at the left edge of the board (a street zone is better). In the same way flip a random tile in the right column and place the exit in a zone on it at the right edge of the board. Flip tiles “away from you”, like a book page, without rotating. Place manholes, crates, the tower and nests by the usual rules, but on a closed tile — <b>on its back</b>: you can see <i>what</i> is there, but not <i>where</i>. In “Last Broadcast” the tower tile is flipped right away (the helicopter lands next to the tower).</p>
+    <p><b>Scouting.</b> A hero in a zone at the edge of an open tile can use the basic “Move” action to step into an adjacent zone of a closed tile. Flip the tile “away from you” and move the tokens from its back: a manhole to a manhole icon, a crate to a search spot in a building (if there are several, the players choose), the tower into a building; place search tokens on the free search spots. If there turns out to be a wall between the zones, the hero stays put and the ⚡ is spent. You cannot enter the fog with movement cards.</p>
+    <p><b>Zombies in the fog and decoys.</b> Zombies that appear on a closed tile (from a manhole, a Nest, events) are not placed right away: <b>for each zombie on the spawn card, put 2 tokens face down on the tile back</b>. For each, roll the die: 1–3 — that zombie's token, 4–6 — a token from the <b>decoy bag</b>. The stack does not move — no game master is needed. Everyone sees how many tokens there are, but what they really are you learn only when the tile is revealed: five tokens may turn out to be a horde or an empty yard (sometimes a whole spawn card produces no one). Nests, the Hound and turned heroes are always real (place them face up).</p>
+    <p><b>Revealing a tile.</b> Flip the tokens in the stack. Place the zombies in the manhole (or Nest) zone. Decoys: <b>“Gone”</b> (17) — empty, they slipped away before you arrived (the token goes back into the bag; special decoys leave the game once revealed; if the bag is empty, place only zombie tokens); <b>“Lair”</b> (1) — put a find token on this spot (an armory search); <b>“Ambush from above”</b> (1) — draw a spawn card for the nearest unplugged manhole; <b>“Tracks”</b> (1) — the nearest zombie gets a trail to this zone and goes to check (without stealth — a noise token). If a stack reaches <b>8 tokens</b> (checked in the “Special abilities” step), the tile opens by itself — a <b>horde breakout</b>.</p>
+    <p>You cannot shoot, place lures or traps through closed tiles, and zombies on open tiles do not path through the fog. The mode can be switched off during setup — then all tiles are open from the start.</p>
   </div>
 
-  <h2 id="s7"><span class="n">7</span>Бой и раны</h2>
-  <p><b>Урон по зомби</b> отмечайте жетонами урона: он держится <b>до конца раунда</b>, поэтому раненого зомби может добить другой герой. В конце раунда уберите жетоны урона. Исключение — <b>крупные цели</b> (Громила, Гнездо): их урон сохраняется до конца партии. Так же копятся раны у часовых на посту (бандиты, которые по заданию стоят в зоне выхода или у шлагбаума). <b>Броня</b> уменьшает каждый отдельный эффект урона.</p>
-  <p>Если эффект бьёт «каждого в зоне» или «ещё одного», урон распределяется так, чтобы убить как можно больше, начиная с самых опасных.</p>
-  <h3>Защита</h3>
+  <div class="box red" id="stealth"><h4>🌙 Stealth — the default mode</h4>
+    <p>Zombies do not know where you are. Each zombie is either <b>wandering</b> (a normal token; in the app — a “…” icon) or <b>hunting</b> (a “!” marker under it). A special kind of wanderer is <b>lurking</b> (in the app — a “z” icon: asleep until woken). New zombies appear wandering; they appear hunting if they spawn in a zone with a hero or during a horde frenzy (but not in the fog: a stack on a tile back is always “wandering”).</p>
+    <p><b>Spotted.</b> Zombies “look around” <b>at the end of each hero's turn</b> and in the zombie phase (at the start and after moving) — the same for all. A wandering zombie spots a hero if the hero is: <b>in its zone</b>; <b>in an adjacent zone</b> (through any passage, even a closed door — it can hear breathing); or <b>in a straight line</b> along a row/column up to 4 zones through open passages — walls, closed doors and fog block such sight. A hero in cover is spotted only from an adjacent zone. The zombie that spots flips to “hunting” and puts a “?” trail marker on the hero's zone. So on your turn you can sneak up, strike and slip around a corner — if you are not visible by the end of your turn, you were not spotted. But <b>noise and hits wake them at once</b> (see “Heard”).</p>
+    <p><b>Heard.</b> Noise is heard at once: 1 + the number of noise tokens zones from its source (a door creak — 1 zone, a Lure — 3). All zombies within this radius that cannot currently see heroes start hunting and head for the noise (trail — in the noise zone). Hitting a zombie also wakes it.</p>
+    <p>A <b>hunter</b> goes for the nearest visible hero (or Lure) by the usual rules; if it sees no one — to its <b>last trail</b>. A <b>wanderer</b> takes 1 step per phase: roll the die once for all of them — 1–2 towards the nearest manhole, 3–4 towards the centre of the board, 5–6 they stay. Wanderers do not attack.</p>
+    <p><b>Lurking.</b> A special kind of wandering zombie (set by the mission: ambushes, lairs, sleeping bosses). A lurker <b>takes no steps</b> on the wanderers' die and does not attack — it just waits in place. It wakes up the same way as a wanderer: it <b>spots</b> a hero, <b>hears</b> noise or a hit, a <b>horde frenzy</b> (Wave) begins — or by a special mission rule. Once awake it immediately becomes a hunter and no longer lurks.</p>
+    <p><b>The third side — bandits</b> (campaign missions). To a bandit both heroes and zombies are enemies, equally; zombies hunt bandits just like heroes. In a zone with both a hero and a bandit, a zombie picks its victim at random; a bandit picks whom to hit the same way. A bandit does not chase enemies: it hits an enemy in its zone or shoots the nearest one on a line up to 2 zones, otherwise it loots. The wanderers' die for a bandit: <b>1–4</b> — a step towards the nearest loot (a crate or a Search token), <b>5–6</b> — it stays. In a zone with loot, a bandit immediately takes it into its bag. Each bandit attack is Noise for 2 zones; to a hero it deals only a <b>Wound</b> (no Infection), to a zombie — 2 damage. A killed bandit drops its bag in its zone; one mauled by zombies rises as a Shambler. Special gang fighters (the sniper, the leader) are described on their cards and in the mission briefing.</p>
+    <p><b>Lost the trail.</b> At the end of the zombie phase, a zombie that sees no one and has already reached its trail removes its markers and wanders again. A zombie that cannot reach its trail (for example, the fog cut it off) loses the trail too. To shake it off, running away is not enough: you need to go around a corner, behind a closed door or far away — and wait until the hunter checks the last trail.</p>
+    <p><b>Horde frenzy.</b> When the Alarm reaches the threshold (a Wave), all zombies on the board start hunting and <b>see all heroes at any distance</b> — until the end of the next round (even lurking and in cover). Quieter means longer lives.</p>
+    <p>The mode can be switched off during setup — then all zombies always know where you are (classic).</p>
+  </div>
+
+  <h2 id="s7"><span class="n">7</span>Combat and wounds</h2>
+  <p>Mark <b>damage to zombies</b> with damage tokens: it lasts <b>until the end of the round</b>, so another hero can finish off a wounded zombie. At the end of the round remove the damage tokens. The exception is <b>large targets</b> (Brute, Nest): their damage stays until the end of the game. Sentries on post (bandits who, per the objective, stand in the exit zone or at the barrier) also accumulate wounds. <b>Armor</b> reduces each separate damage effect.</p>
+  <p>If an effect hits “everyone in the zone” or “one more”, the damage is distributed to kill as many as possible, starting with the most dangerous.</p>
+  <h3>Defense</h3>
   <ol class="steps">
-    <li>Урон всех атакующих героя складывается.</li>
-    <li>Сначала его поглощают жетоны <b>Блока</b> (от «Укрытия» и т. п.) и снаряжение.</li>
-    <li>Затем вы можете <b>сбросить карты из руки</b>: каждая отражает урон по значению своего щита. Эти карты кладутся не в сброс, а в вашу стопку <b>Изнеможения</b>.</li>
-    <li>Если урон прошёл, <b>бросьте кубик за каждого укусившего зомби</b> (но не больше, чем урона): <b>1–2 — Заражение</b> (1 урон становится Заражением), иначе — Рана. Порог Заражения меняют снаряжение и умения, но ниже 1 он не опускается: результат «1» — всегда Заражение. Весь остальной урон — Раны. Рана кладётся в ваш сброс (позже придёт в руку и займёт место). Карту Заражения возьмите <b>сразу в руку</b> (она занимает место в руке при доборе).</li>
+    <li>The damage of all a hero's attackers is added up.</li>
+    <li>First it is absorbed by <b>Block</b> tokens (from “Take Cover” etc.) and gear.</li>
+    <li>Then you can <b>discard cards from your hand</b>: each blocks damage equal to its shield value. These cards go not to the discard pile but to your <b>Fatigue</b> pile.</li>
+    <li>If damage got through, <b>roll the die for each biting zombie</b> (but no more than the damage): <b>1–2 — Infection</b> (1 damage becomes an Infection), otherwise — a Wound. Gear and abilities change the Infection threshold, but it never goes below 1: a roll of “1” is always an Infection. All other damage is Wounds. A Wound goes into your discard pile (it will come to your hand later and take up space). Take an Infection card <b>straight into your hand</b> (it takes up a place in your hand when drawing).</li>
   </ol>
-  <div class="box"><h4>😮‍💨 Изнеможение</h4>
-    <p>Карты, сброшенные для защиты, лежат в стопке Изнеможения рядом с вашим сбросом. При перетасовке они в колоду не возвращаются.</p>
-    <p>Если в Изнеможении <b>3 карты или больше</b>, герой <b>обессилен</b>: размер руки −1, и <b>блокируются все действия, которые выполняются без розыгрыша карты с руки</b> (движение, обыск, кулак, баррикада, подобрать, передать, закрыть двери, действия талантов и снаряжения), — <b>кроме сюжетных</b> (действия задания, спасение выжившего, эвакуация) и «Отдышаться». Карты с руки, в том числе карты перемещения, разыгрывать можно. Осторожно: в зоне с зомби отдышаться нельзя — уйти или расчистить зону придётся картами.</p>
-    <p><b>Отдышаться</b> (3 ⚡, в зоне без зомби) возвращает <b>все</b> карты из Изнеможения в ваш сброс. Иногда выгоднее принять Рану, чем остаться без сил.</p>
+  <div class="box"><h4>😮‍💨 Fatigue</h4>
+    <p>Cards discarded for defense lie in the Fatigue pile next to your discard pile. They do not go back into the deck when you reshuffle.</p>
+    <p>If there are <b>3 or more cards</b> in Fatigue, the hero is <b>exhausted</b>: hand size −1, and <b>all actions taken without playing a card from hand are blocked</b> (move, search, punch, barricade, pick up, give, close doors, talent and gear actions) — <b>except story ones</b> (objective actions, rescuing a survivor, evacuation) and “Catch Breath”. Cards from hand, including movement cards, can be played. Careful: you cannot catch your breath in a zone with zombies — you will have to leave or clear the zone with cards.</p>
+    <p><b>Catch Breath</b> (3 ⚡, in a zone without zombies) returns <b>all</b> cards from Fatigue to your discard pile. Sometimes it is better to take a Wound than to be left without strength.</p>
   </div>
-  <div class="box red"><h4>☣ Заражение и Обращение</h4>
-    <p>Заражение — тоже Рана: оно считается при проверке падения. Сыграть его нельзя.</p>
-    <p>Если в <b>конце вашего хода</b> карта Заражения всё ещё <b>у вас в руке</b> — герой <b>обращается</b>: переверните его фишку — теперь это особый монстр (см. «Враги»), он ходит и атакует по правилам зомби. Его груз и <b>2 случайные карты</b> из его колоды остаются в зоне — их может подобрать другой герой.</p>
-    <p><b>Спасение</b> — до конца своего хода (у вас один ход на это):</p>
+  <div class="box red"><h4>☣ Infection and Turning</h4>
+    <p>An Infection is also a Wound: it counts when checking whether you fall. It cannot be played.</p>
+    <p>If at the <b>end of your turn</b> an Infection card is still <b>in your hand</b>, the hero <b>turns</b>: flip their pawn — it is now a special monster (see “Enemies”), it moves and attacks by the zombie rules. Its cargo and <b>2 random cards</b> from its deck stay in the zone — another hero can pick them up.</p>
+    <p><b>Rescue</b> — before the end of your turn (you have one turn for it):</p>
     <ul>
-      <li><b>Аптечка</b> убирает сначала Заражения, потом Раны.</li>
-      <li><b>Марина</b> (1 ⚡, герой в её зоне, вместо лечения Раны) превращает <b>все</b> его Заражения в обычные Раны. Пусть она ходит раньше укушенного!</li>
-      <li><b>Прижечь укус</b> (2 ⚡, себе или товарищу в своей зоне, <b>только в зоне без зомби</b>) — Заражения в руке → Раны. Дорого, но спасает — если успеть вырваться от врагов.</li>
+      <li>A <b>Medkit</b> removes Infections first, then Wounds.</li>
+      <li><b>Marina</b> (1 ⚡, a hero in her zone, instead of healing a Wound) turns <b>all</b> their Infections into ordinary Wounds. Let her take her turn before the bitten hero!</li>
+      <li><b>Cauterize a bite</b> (2 ⚡, yourself or a comrade in your zone, <b>only in a zone without zombies</b>) — Infections in hand → Wounds. Expensive, but it saves you — if you manage to break away from the enemies.</li>
     </ul>
-    <p>Заражение нельзя сыграть, сбросить для защиты или передать. Без аптечки и Марины укус в гуще боя — почти верная смерть.</p>
+    <p>An Infection cannot be played, discarded for defense or given. Without a medkit and Marina, a bite in the thick of battle is almost certain death.</p>
   </div>
-  <div class="box gold" id="safe"><h4>Сейф и Ценности (некоторые миссии кампании)</h4>
-    <p>На сейф кладётся стопка из 6 жетонов лицом вниз: 4 «Ценность», 1 «Пусто», 1 «Сирена» (перемешайте). <b>Взлом</b> — действие в зоне сейфа без зомби: 2 ⚡ и Шум 2, откройте верхний жетон. «Ценность» — возьмите карту Ценности в руку; «Пусто» — ничего; «Сирена» — дополнительно Шум 3, сейф заклинило: оставшиеся жетоны уходят из игры, а взломщик в панике роняет одну Ценность из руки (если есть) — она отлетает в соседнюю зону (выберите случайно). Там её может подобрать любой герой обычным действием — даже если в той зоне зомби. Ломать можно сколько угодно раз, пока есть жетоны и энергия — сколько жетонов осталось, видно всем: чем дольше грабите, тем ближе сирена.</p>
-    <p><b>Ценность</b> — груз: занимает место в руке, её нельзя сыграть или сбросить на блок; её можно передать. Она <b>звенит</b>: пока в руке есть Ценность, каждое ваше шумное действие — Шум +1 (несколько Ценностей не складываются). В кампании после миссии Ценность продаётся скупщику — цена неизвестна до продажи, от 2 до 8 🎫.</p>
+  <div class="box gold" id="safe"><h4>The safe and Valuables (some campaign missions)</h4>
+    <p>A stack of 6 tokens is placed face down on the safe: 4 “Valuable”, 1 “Empty”, 1 “Siren” (shuffle them). <b>Cracking</b> is an action in the safe's zone without zombies: 2 ⚡ and Noise 2, reveal the top token. “Valuable” — take a Valuable card into your hand; “Empty” — nothing; “Siren” — an extra Noise 3, the safe jams: the remaining tokens leave the game, and the panicked safecracker drops one Valuable from hand (if any) — it flies into an adjacent zone (choose at random). Any hero can pick it up there with the usual action — even if there are zombies in that zone. You can crack as many times as you like while there are tokens and energy — everyone can see how many tokens are left: the longer you loot, the closer the siren.</p>
+    <p>A <b>Valuable</b> is cargo: it takes up a place in your hand, it cannot be played or discarded to block; it can be given. It <b>jingles</b>: while you hold a Valuable, each of your noisy actions is Noise +1 (several Valuables do not stack). In the campaign, after the mission a Valuable is sold to the fence — the price is unknown until the sale, from 2 to 8 🎫.</p>
   </div>
-  <div class="box"><h4>↩ Отступление (кампания)</h4>На кампанию даётся <b>2 отступления</b>. В любой свой ход отряд может решить <b>отступить</b>: миссия сорвана, все герои на поле возвращаются в убежище (раны остаются), наград нет, все Ценности из этой миссии брошены, каждому из отряда −1 мораль, а миссию придётся переиграть. Проваленная миссия (время вышло или все пали) тоже тратит отступление и переигрывается. Когда отступлений не осталось, провал миссии — конец кампании.</div>
-  <div class="box red"><h4>Падение</h4>Когда у героя Ран и Заражений (во всей колоде, руке и сбросе) становится столько же, сколько его <b>Стойкость ♥</b>, герой падает: снимите фишку, его груз и 2 случайные <b>находки</b> (карты добычи, трофеи, карты кампании, Ценности — не базовые карты героя) остаются в зоне, а на его месте поднимается Шатун. То же при обращении. Если у героя ровно на одну Рану меньше Стойкости — он <b>«На грани»</b>: +1 ⚡ в начале хода.</div>
-  <p><b>Лечение</b> убирает карты Ран из игры (сначала из руки, потом из сброса и колоды). Обычное лечение Заражение не снимает — только аптечка, Марина и «Прижечь укус».</p>
+  <div class="box"><h4>↩ Retreat (campaign)</h4>A campaign gives you <b>2 retreats</b>. On any of its turns the squad can decide to <b>retreat</b>: the mission is aborted, all heroes on the board return to the shelter (wounds stay), there are no rewards, all Valuables from this mission are abandoned, each squad member gets −1 morale, and the mission must be replayed. A failed mission (time ran out or everyone fell) also uses up a retreat and is replayed. When no retreats are left, a failed mission ends the campaign.</div>
+  <div class="box red"><h4>Falling</h4>When a hero has as many Wounds and Infections (in the whole deck, hand and discard pile) as their <b>Grit ♥</b>, the hero falls: remove the pawn; their cargo and 2 random <b>finds</b> (loot cards, trophies, campaign cards, Valuables — not the hero's basic cards) stay in the zone, and a Shambler rises in their place. The same happens on turning. If a hero has exactly one Wound fewer than their Grit, they are <b>“On the Edge”</b>: +1 ⚡ at the start of the turn.</div>
+  <p><b>Healing</b> removes Wound cards from the game (first from the hand, then from the discard pile and the deck). Ordinary healing does not remove an Infection — only a medkit, Marina and “Cauterize a bite” do.</p>
 
-  <h2 id="s8"><span class="n">8</span>Фаза зомби</h2>
-  <p class="muted"><b>В режиме скрытности</b> (см. «🌙 Скрытность»): двигаются и атакуют только <b>охотники</b>; бродячие делают 1 шаг по кубику и не атакуют; пустой шум сам по себе не цель — его «слышат» (зомби получают след в зону шума).</p>
+  <h2 id="s8"><span class="n">8</span>Zombie phase</h2>
+  <p class="muted"><b>In stealth mode</b> (see “🌙 Stealth”): only <b>hunters</b> move and attack; wanderers take 1 step by the die and do not attack; empty noise by itself is not a target — it is “heard” (zombies get a trail to the noise zone).</p>
   <ol class="steps">
-    <li><b>Движение.</b> Каждый зомби проходит столько зон, какова его скорость, к <b>ближайшей цели</b> — герою, приманке или зоне с жетоном шума без героев (считайте шаги по кратчайшему пути). Если ближайших целей несколько: <b>приманка</b> важнее героя, герой важнее пустого шума; затем — где больше жетонов шума; затем — герой с меньшим числом Ран. Если кратчайших путей несколько — путь выбирают игроки. <b>Цель выбирается один раз — в начале фазы</b>, и зомби идёт к ней все свои шаги, даже если по пути что-то изменилось (например, открылась дверь укрытия). Новую цель он ищет, только дойдя до пустого шума. Дойдя до цели, зомби останавливается. «Прижатые» зомби не двигаются. Двигайте зомби <b>шагами</b>: сначала все делают по одному шагу, затем те, у кого скорость 2+, — второй, и т. д. (Бегун — 2 зоны, ночью все на 1 быстрее).</li>
-    <li><b>Баррикады.</b> Зомби идёт кратчайшим путём, не обращая внимания на баррикады (из равных путей выбирает свободный). Упёршись в баррикаду, он бьёт её (−прочность, равная его урону, минимум 1) вместо шага и до конца фазы стоит на месте.</li>
-    <li><b>Атака.</b> Каждый зомби в зоне с героем атакует один раз. Цель — герой с наименьшим числом Ран (Борис перехватывает атаки в своей зоне). Невидимых героев не атакуют. <b>Теснота:</b> одного героя за фазу кусают <b>не больше 3 зомби</b> — самые опасные (с большим уроном); остальные толкаются вокруг или идут к следующему герою в зоне.</li>
-    <li><b>Особые свойства.</b> <b>Орда:</b> если на поле 8+ зомби (Гнёзда и притаившиеся не считаются) — Тревога +1. Крикуны поднимают Тревогу, Гнёзда порождают зомби.</li>
-    <li><b>Появление.</b> Для каждого люка вытяните карту появления и выставьте зомби из строки текущей фазы суток.</li>
+    <li><b>Move.</b> Each zombie moves as many zones as its speed towards the <b>nearest target</b> — a hero, a lure or a zone with a noise token and no heroes (count steps along the shortest path). If several targets are equally near: a <b>lure</b> beats a hero, a hero beats empty noise; then — where there are more noise tokens; then — the hero with fewer Wounds. If there are several shortest paths, the players choose. <b>The target is chosen once — at the start of the phase</b>, and the zombie heads for it with all its steps, even if something changed on the way (for example, a cover door opened). It looks for a new target only on reaching an empty noise. On reaching its target, the zombie stops. “Pinned” zombies do not move. Move zombies <b>step by step</b>: first all take one step, then those with speed 2+ take a second, and so on (a Runner — 2 zones, at night everyone is 1 faster).</li>
+    <li><b>Barricades.</b> A zombie takes the shortest path, ignoring barricades (among equal paths it picks a clear one). Running into a barricade, it hits it (−durability equal to its damage, minimum 1) instead of stepping and stays in place until the end of the phase.</li>
+    <li><b>Attack.</b> Each zombie in a zone with a hero attacks once. The target is the hero with the fewest Wounds (Boris intercepts attacks in his zone). Invisible heroes are not attacked. <b>Crowding:</b> <b>no more than 3 zombies</b> bite one hero per phase — the most dangerous ones (with the most damage); the rest jostle around or go for the next hero in the zone.</li>
+    <li><b>Special abilities.</b> <b>Horde:</b> if there are 8+ zombies on the board (Nests and lurkers do not count) — Alarm +1. Screamers raise the Alarm, Nests spawn zombies.</li>
+    <li><b>Spawn.</b> For each manhole draw a spawn card and place the zombies from the row of the current time of night.</li>
   </ol>
-  <div class="box gold"><h4>Тревога и Волна</h4>Если в шаге «Появление» Тревога достигла порога (соло и двое — 5, трое — 6, четверо — 4), отнимите порог от Тревоги и для <b>каждого люка тяните на одну карту больше</b>. Шумите, только когда это того стоит.</div>
-  <p><b>Растяжка</b> взрывается, как только в её зону входит зомби: урон каждому зомби там, шум 2.</p>
-  <p><b>Жетоны кончились?</b> Если нужно выставить зомби, а таких жетонов не осталось (Шатунов 16, Бегунов 6, Толстяков 4, Крикунов 3, Громил 2), — вместо этого все зомби этого типа на поле делают один лишний шаг к цели (не больше одного раза за карту появления).</p>
+  <div class="box gold"><h4>Alarm and Wave</h4>If in the “Spawn” step the Alarm has reached the threshold (solo and two heroes — 5, three — 6, four — 4), subtract the threshold from the Alarm and <b>draw one more card for each manhole</b>. Make noise only when it is worth it.</div>
+  <p>A <b>Tripwire</b> explodes as soon as a zombie enters its zone: damage to each zombie there, noise 2.</p>
+  <p><b>Out of tokens?</b> If you need to place a zombie and there are no such tokens left (Shamblers 16, Runners 6, Bloaters 4, Screamers 3, Brutes 2), instead all zombies of that type on the board take one extra step towards their target (no more than once per spawn card).</p>
 
-  <h2 id="s9"><span class="n">9</span>Опыт и таланты</h2>
-  <p>Опыт (🎖) дают только опасные враги — сколько, указано на жетоне: Толстяк, Чумной, Хват, Громила, Ищейка, Гнездо, обращённые герои. Шатуны, Бегуны и Крикуны ходят толпой и опыта не дают. Вскрытый ящик тоже даёт 1 🎖. Некоторые уникальные карты героев дают <b>+1 🎖 за связку</b> — это написано в их эффекте связки. На <b>4 🎖</b> герой достигает 2-го уровня, на <b>10 🎖</b> — 3-го. На каждом уровне выберите один из двух талантов на планшете героя — он действует до конца партии.</p>
+  <h2 id="s9"><span class="n">9</span>Experience and talents</h2>
+  <p>Experience (🎖) comes only from dangerous enemies — how much is shown on the token: Bloater, Plaguebearer, Grabber, Brute, Hound, Nest, turned heroes. Shamblers, Runners and Screamers come in crowds and give no experience. An opened crate also gives 1 🎖. Some unique hero cards give <b>+1 🎖 for a chain</b> — it is written in their chain effect. At <b>4 🎖</b> a hero reaches level 2, at <b>10 🎖</b> — level 3. At each level choose one of the two talents on the hero board — it lasts until the end of the game.</p>
 
-  <h2 id="s10"><span class="n">10</span>Задания, победа и поражение</h2>
+  <h2 id="s10"><span class="n">10</span>Objectives, victory and defeat</h2>
   <div id="scenarios"></div>
-  <p><b>Эвакуация.</b> Когда цель выполнена, зона выхода открывается. Герой в ней может эвакуироваться (0 ⚡): он покидает поле и спасён. <b>Победа</b> — все выжившие герои эвакуированы. <b>Поражение</b> — все герои пали или закончился последний раунд.</p>
-  <p><b>Звёзды:</b> ★ — победа; ★ — никто не пал; ★ — выполнена <b>бонусная цель</b> (карта тянется при подготовке).</p>
+  <p><b>Evacuation.</b> When the goal is complete, the exit zone opens. A hero in it can evacuate (0 ⚡): they leave the board and are saved. <b>Victory</b> — all surviving heroes have evacuated. <b>Defeat</b> — all heroes have fallen or the last round has ended.</p>
+  <p><b>Stars:</b> ★ — victory; ★ — no one fell; ★ — the <b>bonus objective</b> was completed (the card is drawn during setup).</p>
   <div id="bonuses"></div>
-  <p>Для бонусных целей со счётом («Охотник», «Мародёр», «Слаженность», «Ни царапины», «Крупная дичь») используйте <b>счётчик бонуса</b> на планшете треков (0–24): двигайте маркер каждый раз, когда происходит указанное событие.</p>
-  <div class="box gold" id="missions"><h4>🂠 Секретные миссии</h4>
-    <p><b>Подготовка.</b> Перемешайте колоду миссий (обычные ×2, редкие ×1). Каждый игрок тайно берёт одну карту для своего героя. Если на карте пометка, которую нельзя выполнить в этой партии (<b>«нужен союзник»</b> в соло, «нужна скрытность» или «нужен туман», когда режим выключен), положите её под низ колоды и возьмите новую. <b>Смена миссии:</b> только сразу при получении — в начале своего первого хода, до любого действия, герой может один раз положить миссию под низ колоды и взять новую. После этого миссия остаётся с ним до конца.</p>
-    <p><b>Гонка.</b> Миссию держите в секрете и отмечайте прогресс на её карте. Выполнив, сразу раскройте карту. <b>Награду получает только тот, кто выполнил свою миссию первым</b> — остальные, выполнив позже, не получают ничего. Поэтому выгодно скрывать миссию: союзник может «перехватить» вашу цель (добить того самого Громилу, сделать нужный обыск).</p>
-    <p><b>Предатель</b> (редкая карта) добивается своего, подставляя товарищей под укусы зомби, которых он сам разбудил или отвлёк шумом. Раскрывается при выполнении — в кампании это не прощают: отношения предателя с каждым героем отряда −2. Общая победа отряда ему по-прежнему нужна — это пакость, а не предательство всей вылазки.</p>
+  <p>For bonus objectives with a count (“Hunter”, “Scavenger”, “Teamwork”, “Not a Scratch”, “Big Game”) use the <b>bonus counter</b> on the track board (0–24): move the marker each time the stated event happens.</p>
+  <div class="box gold" id="missions"><h4>🂠 Secret missions</h4>
+    <p><b>Setup.</b> Shuffle the mission deck (common ×2, rare ×1). Each player secretly takes one card for their hero. If a card has a mark that cannot be fulfilled in this game (<b>“needs an ally”</b> in solo, “needs stealth” or “needs fog” when that mode is off), put it at the bottom of the deck and take a new one. <b>Changing a mission:</b> only right when you get it — at the start of your first turn, before any action, a hero may once put the mission at the bottom of the deck and take a new one. After that the mission stays with them until the end.</p>
+    <p><b>The race.</b> Keep your mission secret and track progress on its card. Once you complete it, reveal the card immediately. <b>Only the one who completes their mission first gets the reward</b> — others who complete theirs later get nothing. So it pays to hide your mission: an ally may “steal” your goal (finish off that very Brute, make the needed search).</p>
+    <p>The <b>Traitor</b> (a rare card) gets their way by exposing comrades to bites from zombies they woke or lured with noise. It is revealed on completion — in the campaign this is not forgiven: the traitor's relations with each squad hero −2. The traitor still needs the squad's shared victory — this is a dirty trick, not a betrayal of the whole sortie.</p>
     <div id="missions-list"></div>
   </div>
-  <h3>События раунда (11 карт)</h3>
+  <h3>Round events (11 cards)</h3>
   <div id="events"></div>
-  <h3>Условия партии</h3>
+  <h3>Game conditions</h3>
   <div id="conditions"></div>
-  <h3>Сложность</h3>
+  <h3>Difficulty</h3>
   <div id="difficulty"></div>
 
-  <h2 id="s11"><span class="n">11</span>Враги и герои</h2>
+  <h2 id="s11"><span class="n">11</span>Enemies and heroes</h2>
   <div class="zgrid" id="zombies"></div>
-  <h3>Герои</h3>
+  <h3>Heroes</h3>
   <div class="hgrid" id="heroes"></div>
 
-  <h2 id="s12"><span class="n">12</span>Памятка</h2>
+  <h2 id="s12"><span class="n">12</span>Reference</h2>
   <div class="ref box">
-    <p><b>Начало раунда:</b> кубик; на 6 — карта события.</p>
-    <p><b>Ход героя:</b> добрать до лимита (макс. 3 карты) → 3 ⚡ → действовать → карты в руке = защита.</p>
-    <p><b>Связка:</b> та же масть, что у предыдущей карты → бонус. Эстафета: первая карта хода продолжает масть предыдущего героя.</p>
-    <p><b>Хватка:</b> выход из зоны с зомби +1 ⚡. Сквозь зомби не пройти.</p>
-    <p><b>Обыск:</b> 1 ⚡, без зомби в зоне; тяни 2 добычи, оставь 1.</p>
-    <p><b>Урон по зомби</b> держится до конца раунда (крупные цели — навсегда).</p>
-    <p><b>Фаза зомби:</b> движение → атака → свойства → появление.</p>
-    <p><b>Скрытность:</b> бродит / охотится («!»); притаившийся стоит на месте, пока не разбудят. Замечает: своя или соседняя зона, прямая до 4 зон. Слышит: 1 + шум зон. Не видит никого — идёт к следу «?», дошёл — снова бродит. Волна — орда видит всех до конца следующего раунда.</p>
-    <p><b>Цель зомби:</b> ближайший герой, приманка или жетон шума; ничья → приманка → герой → шум → меньше Ран. Герой в укрытии (двери закрыты, без шума) не виден дальше 1 зоны, кроме как из того же помещения.</p>
-    <p><b>Двери:</b> герой через закрытую — скрип (шум снаружи, без Тревоги); зомби — тратит 1 шаг, чтобы открыть. Закрыть двери помещения — 1 ⚡.</p>
-    <p><b>Атака:</b> не больше 3 зомби на героя; блок → снаряжение → сброс карт со щитом (в Изнеможение; 3+ — обессилен) → кубик за каждого укусившего: 1–2 Заражение (в руку), остальное — Раны (в сброс).</p>
-    <p><b>☣ Заражение в руке в конце хода</b> — обращение. Спасают: аптечка, Марина, «Прижечь укус» (2 ⚡).</p>
-    <p><b>Туман:</b> «Движение» в закрытый тайл — переверни; появление в тумане — 2 жетона за зомби, 50/50 пустышки; 8+ жетонов — прорыв.</p>
-    <p><b>Тревога ≥ порога:</b> Волна — по лишней карте появления на люк. Орда: 8+ зомби на поле (кроме притаившихся) — Тревога +1.</p>
-    <p><b>Глухая ночь:</b> зомби +1 к скорости.</p>
-    <p><b>Опыт:</b> 4 🎖 и 10 🎖 — новый талант.</p>
-    <p><b>На грани</b> (Ран = Стойкость − 1): +1 ⚡.</p>
+    <p><b>Start of round:</b> roll the die; on a 6 — an event card.</p>
+    <p><b>Hero turn:</b> draw up to the limit (max. 3 cards) → 3 ⚡ → act → cards in hand = defense.</p>
+    <p><b>Chain:</b> the same suit as the previous card → bonus. Relay: the first card of a turn continues the previous hero's suit.</p>
+    <p><b>Grip:</b> leaving a zone with zombies +1 ⚡. You cannot pass through zombies.</p>
+    <p><b>Search:</b> 1 ⚡, no zombies in the zone; draw 2 loot, keep 1.</p>
+    <p><b>Damage to zombies</b> lasts until the end of the round (large targets — permanently).</p>
+    <p><b>Zombie phase:</b> move → attack → abilities → spawn.</p>
+    <p><b>Stealth:</b> wandering / hunting (“!”); a lurker stays put until woken. Spots: own or adjacent zone, a straight line up to 4 zones. Hears: 1 + noise zones. Sees no one — goes to the “?” trail; once there — wanders again. Wave — the horde sees everyone until the end of the next round.</p>
+    <p><b>Zombie target:</b> the nearest hero, lure or noise token; tie → lure → hero → noise → fewer Wounds. A hero in cover (doors closed, no noise) is not visible beyond 1 zone, except from the same room.</p>
+    <p><b>Doors:</b> a hero through a closed one — a creak (noise outside, no Alarm); a zombie spends 1 step to open it. Closing a room's doors — 1 ⚡.</p>
+    <p><b>Attack:</b> no more than 3 zombies per hero; block → gear → discard shield cards (into Fatigue; 3+ — exhausted) → a die for each biter: 1–2 Infection (to hand), the rest — Wounds (to discard).</p>
+    <p><b>☣ An Infection in hand at the end of your turn</b> — turning. Saved by: a medkit, Marina, “Cauterize a bite” (2 ⚡).</p>
+    <p><b>Fog:</b> “Move” into a closed tile — flip it; spawning in the fog — 2 tokens per zombie, 50/50 decoys; 8+ tokens — a breakout.</p>
+    <p><b>Alarm ≥ threshold:</b> a Wave — an extra spawn card per manhole. Horde: 8+ zombies on the board (excluding lurkers) — Alarm +1.</p>
+    <p><b>Dead of Night:</b> zombies +1 speed.</p>
+    <p><b>Experience:</b> 4 🎖 and 10 🎖 — a new talent.</p>
+    <p><b>On the Edge</b> (Wounds = Grit − 1): +1 ⚡.</p>
   </div>
-  <p class="muted" style="color:#6a5a40">В цифровой версии: клик по карте — выбрать, затем клик по цели на поле (карту без цели — кликнуть ещё раз или Enter); ПКМ по карте — увеличить; <kbd>E</kbd> — конец хода; <kbd>H</kbd> — совет; <kbd>1</kbd>–<kbd>9</kbd> — карты руки; <kbd>Esc</kbd> — отмена.</p>
+  <p class="muted" style="color:#6a5a40">In the digital version: click a card to select it, then click a target on the board (for a card without a target — click it again or press Enter); right-click a card to enlarge it; <kbd>E</kbd> — end turn; <kbd>H</kbd> — hint; <kbd>1</kbd>–<kbd>9</kbd> — cards in hand; <kbd>Esc</kbd> — cancel.</p>
 </div>
 
 <script src="src/core/core.js"></script>
@@ -326,16 +326,16 @@
     document.getElementById('spawn-count').textContent = Object.values(lvl.spawnDeck).reduce((a, b) => a + b, 0);
     document.getElementById('anatomy-card').appendChild(CV.card('bat'));
     const sc = document.getElementById('scenarios');
-    sc.innerHTML = '<table><tr><th>Задание</th><th>Что сделать</th></tr>' + lvl.scenarios.map((id) => { const s = ZG.Scenarios.get(id); return `<tr><td><b>${s.name}</b></td><td>${s.brief}<br><i>${s.short}</i></td></tr>`; }).join('') + '</table>';
+    sc.innerHTML = '<table><tr><th>Objective</th><th>What to do</th></tr>' + lvl.scenarios.map((id) => { const s = ZG.Scenarios.get(id); return `<tr><td><b>${s.name}</b></td><td>${s.brief}<br><i>${s.short}</i></td></tr>`; }).join('') + '</table>';
     document.getElementById('conditions').innerHTML = '<table>' + lvl.conditions.map((id) => { const c = ZG.Conditions.get(id); return `<tr><td><b>${c.name}</b></td><td>${c.text}</td></tr>`; }).join('') + '</table>';
     document.getElementById('bonuses').innerHTML = '<table>' + lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); return `<tr><td><b>★ ${b.name}</b></td><td>${b.text}</td></tr>`; }).join('') + '</table>';
     document.getElementById('events').innerHTML = '<table>' + lvl.events.map((id) => { const e = ZG.Events.get(id); return `<tr><td><b>${e.name}</b></td><td>${e.text}</td></tr>`; }).join('') + '</table>';
-    document.getElementById('missions-list').innerHTML = '<table>' + ZG.Missions.all().map((m) => `<tr><td><b>${m.name}</b>${m.rarity === 'rare' ? ' <small>(редкая, ×1)</small>' : ' <small>(×2)</small>'}</td><td>${m.text}<br><small><b>Награда:</b> ${m.rewardText}</small></td></tr>`).join('') + '</table>';
+    document.getElementById('missions-list').innerHTML = '<table>' + ZG.Missions.all().map((m) => `<tr><td><b>${m.name}</b>${m.rarity === 'rare' ? ' <small>(rare, ×1)</small>' : ' <small>(×2)</small>'}</td><td>${m.text}<br><small><b>Reward:</b> ${m.rewardText}</small></td></tr>`).join('') + '</table>';
     document.getElementById('difficulty').innerHTML = '<table>' + ZG.Difficulties.all().map((d) => `<tr><td><b>${d.name}</b></td><td>${d.text}</td></tr>`).join('') + '</table>';
     const zw = document.getElementById('zombies');
     ZG.Zombies.all().forEach((z) => zw.appendChild(CV.zombieCard(z.id)));
     const hw = document.getElementById('heroes');
-    ZG.Heroes.visible().forEach((h) => hw.appendChild(CV.heroCard(h.id, { talents: true }))); // секретный герой кампании не раскрывается
+    ZG.Heroes.visible().forEach((h) => hw.appendChild(CV.heroCard(h.id, { talents: true }))); // the campaign's secret hero is not revealed
   })();
 </script>
 </body>

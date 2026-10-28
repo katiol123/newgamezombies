@@ -1,7 +1,7 @@
 {
   "name": "dead-quarter",
   "version": "1.0.0",
-  "description": "Мёртвый квартал — кооперативная настольная игра про зомби (цифровой прототип + Print & Play)",
+  "description": "Dead Block — a cooperative zombie board game (digital prototype + Print & Play)",
   "private": true,
   "scripts": {
     "sim": "node tools/sim.js",

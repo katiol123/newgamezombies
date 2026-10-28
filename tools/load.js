@@ -1,4 +1,4 @@
-// Загружает игровую логику в Node (без отрисовки). Порядок как в index.html.
+// Loads the game logic into Node (no rendering). Same order as in index.html.
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const FILES = [

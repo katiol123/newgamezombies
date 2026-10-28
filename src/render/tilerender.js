@@ -1,7 +1,7 @@
 /*
- * TileRender — рисует поле «как напечатанный картон»: асфальт, полы, стены,
- * двери, разметку зон, декор, швы между тайлами и подписи.
- * Используется и игрой, и страницей печати (print.html).
+ * TileRender — draws the board "like printed cardboard": asphalt, floors, walls,
+ * doors, zone markings, decor, seams between tiles and captions.
+ * Used by both the game and the print page (print.html).
  */
 (function (G) {
   'use strict';
@@ -48,7 +48,7 @@
         ctx.strokeRect(r.x + 0.5, r.y + 0.5, C / 2, C / 2); ctx.strokeRect(r.x + C / 2, r.y + C / 2, C / 2, C / 2);
       }
       noise(ctx, r.x, r.y, C, C, c.i * 31, 'rgba(0,0,0,.08)', 40, 2);
-      // мягкая тень у стен
+      // a soft shadow along the walls
       const gr = ctx.createRadialGradient(r.x + C / 2, r.y + C / 2, C * 0.2, r.x + C / 2, r.y + C / 2, C * 0.75);
       gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.28)');
       ctx.fillStyle = gr; ctx.fillRect(r.x, r.y, C, C);
@@ -62,7 +62,7 @@
       ctx.strokeStyle = 'rgba(120,160,70,.35)'; ctx.lineWidth = 1;
       for (let i = 0; i < 40; i++) { const px = r.x + hash(c.i + i) * C, py = r.y + hash(c.i * 2 + i) * C; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + 1, py - 4); ctx.stroke(); }
     } else if (c.ground !== 'dirt') {
-      // трещины
+      // cracks
       ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
       for (let k = 0; k < 2; k++) {
         if (hash(c.i * 5 + k) < 0.5) continue;
@@ -74,9 +74,9 @@
     }
   }
 
-  // ------------------------------------------------------------ декор
+  // ------------------------------------------------------------ decor
   const DECOR = {
-    // --- лес ---
+    // --- forest ---
     pine(ctx, C, x, y, r) {
       x = x || 0; y = y || 0; r = r || C * 0.22;
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(x + 4, y + 5, r, 0, TAU); ctx.fill();
@@ -115,37 +115,37 @@
       ctx.fillStyle = '#7a7470'; ctx.beginPath(); ctx.arc(0, 0, C * 0.26, 0, TAU); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
       for (let i = 0; i < 10; i++) { const a = (i / 10) * TAU; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.moveTo(Math.cos(a) * C * 0.18, Math.sin(a) * C * 0.18); ctx.lineTo(Math.cos(a) * C * 0.26, Math.sin(a) * C * 0.26); ctx.stroke(); }
       ctx.fillStyle = '#0c0a08'; ctx.beginPath(); ctx.arc(0, 0, C * 0.17, 0, TAU); ctx.fill();
-      ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-C * 0.3, -C * 0.05); ctx.lineTo(C * 0.3, -C * 0.05); ctx.stroke(); // ворот
+      ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-C * 0.3, -C * 0.05); ctx.lineTo(C * 0.3, -C * 0.05); ctx.stroke(); // windlass
     },
-    // --- Погост (миссия 6) ---
-    graves(ctx, C) { // два ряда холмиков с надгробиями
+    // --- Churchyard (mission 6) ---
+    graves(ctx, C) { // two rows of mounds with headstones
       [[-0.24, -0.2], [0.04, -0.22], [0.3, -0.18], [-0.26, 0.16], [0.02, 0.14], [0.28, 0.18]].forEach(([x, y], i) => {
         ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x * C + 2, y * C + C * 0.08 + 3, C * 0.08, C * 0.05, 0, 0, TAU); ctx.fill();
-        ctx.fillStyle = '#4a3a28'; ctx.beginPath(); ctx.ellipse(x * C, y * C + C * 0.08, C * 0.08, C * 0.05, 0, 0, TAU); ctx.fill(); // холмик
+        ctx.fillStyle = '#4a3a28'; ctx.beginPath(); ctx.ellipse(x * C, y * C + C * 0.08, C * 0.08, C * 0.05, 0, 0, TAU); ctx.fill(); // mound
         ctx.fillStyle = i % 3 === 1 ? '#5a5650' : '#8a867c'; ctx.strokeStyle = INK; ctx.lineWidth = 1.2;
-        if (i % 3 === 2) { ctx.fillRect(x * C - C * 0.012, y * C - C * 0.07, C * 0.024, C * 0.11); ctx.fillRect(x * C - C * 0.04, y * C - C * 0.045, C * 0.08, C * 0.022); } // крестик
-        else { Art.rr(ctx, x * C - C * 0.04, y * C - C * 0.07, C * 0.08, C * 0.09, C * 0.03); ctx.fill(); ctx.stroke(); } // плита
+        if (i % 3 === 2) { ctx.fillRect(x * C - C * 0.012, y * C - C * 0.07, C * 0.024, C * 0.11); ctx.fillRect(x * C - C * 0.04, y * C - C * 0.045, C * 0.08, C * 0.022); } // a small cross
+        else { Art.rr(ctx, x * C - C * 0.04, y * C - C * 0.07, C * 0.08, C * 0.09, C * 0.03); ctx.fill(); ctx.stroke(); } // a slab
       });
     },
-    fence(ctx, C) { // кованая оградка
+    fence(ctx, C) { // a wrought-iron grave fence
       ctx.strokeStyle = '#2a2826'; ctx.lineWidth = 2;
       ctx.strokeRect(-C * 0.22, -C * 0.2, C * 0.44, C * 0.34);
       for (let i = 0; i <= 8; i++) { const x = -C * 0.22 + i * C * 0.055; ctx.beginPath(); ctx.moveTo(x, -C * 0.24); ctx.lineTo(x, -C * 0.2); ctx.stroke(); }
       ctx.fillStyle = '#7a766c'; ctx.fillRect(-C * 0.03, -C * 0.12, C * 0.06, C * 0.16);
     },
-    crypt(ctx, C) { // каменный склеп: двускатная крыша, тёмная дверь
+    crypt(ctx, C) { // a stone crypt: gabled roof, dark door
       ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(-C * 0.34 + 5, -C * 0.34 + 6, C * 0.68, C * 0.68);
       ctx.fillStyle = '#6a665e'; ctx.fillRect(-C * 0.34, -C * 0.34, C * 0.68, C * 0.68);
       ctx.fillStyle = '#58544c'; ctx.beginPath(); ctx.moveTo(-C * 0.34, -C * 0.34); ctx.lineTo(0, 0); ctx.lineTo(-C * 0.34, C * 0.34); ctx.fill(); ctx.beginPath(); ctx.moveTo(C * 0.34, -C * 0.34); ctx.lineTo(0, 0); ctx.lineTo(C * 0.34, C * 0.34); ctx.fill();
       ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(-C * 0.34, -C * 0.34, C * 0.68, C * 0.68); ctx.beginPath(); ctx.moveTo(0, -C * 0.34); ctx.lineTo(0, C * 0.34); ctx.stroke();
-      ctx.fillStyle = '#c8c0b0'; ctx.fillRect(-C * 0.02, -C * 0.12, C * 0.04, C * 0.16); ctx.fillRect(-C * 0.07, -C * 0.07, C * 0.14, C * 0.04); // крест на крыше
+      ctx.fillStyle = '#c8c0b0'; ctx.fillRect(-C * 0.02, -C * 0.12, C * 0.04, C * 0.16); ctx.fillRect(-C * 0.07, -C * 0.07, C * 0.14, C * 0.04); // a cross on the roof
     },
     pews(ctx, C) { for (let i = 0; i < 3; i++) { ctx.fillStyle = '#5a3e24'; ctx.fillRect(-C * 0.32, -C * 0.28 + i * C * 0.2, C * 0.64, C * 0.08); ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.strokeRect(-C * 0.32, -C * 0.28 + i * C * 0.2, C * 0.64, C * 0.08); } },
     candles(ctx, C) {
       const g = ctx.createRadialGradient(0, 0, 0, 0, 0, C * 0.32); g.addColorStop(0, 'rgba(255,200,110,.45)'); g.addColorStop(1, 'rgba(255,200,110,0)'); ctx.fillStyle = g; ctx.fillRect(-C * 0.32, -C * 0.32, C * 0.64, C * 0.64);
       [[-0.1, 0], [0, -0.06], [0.1, 0.02], [0.03, 0.08]].forEach(([x, y]) => { ctx.fillStyle = '#e8e0c8'; ctx.fillRect(x * C - 2, y * C - 2, 4, 9); ctx.fillStyle = '#ffcc55'; ctx.beginPath(); ctx.arc(x * C, y * C - 4, 2.5, 0, TAU); ctx.fill(); });
     },
-    big_cross(ctx, C) { // огромный сияющий крест посреди погоста
+    big_cross(ctx, C) { // a huge shining cross in the middle of the churchyard
       const g = ctx.createRadialGradient(0, 0, 0, 0, 0, C * 0.95); g.addColorStop(0, 'rgba(255,250,215,.75)'); g.addColorStop(0.45, 'rgba(240,220,150,.28)'); g.addColorStop(1, 'rgba(240,220,150,0)');
       ctx.fillStyle = g; ctx.fillRect(-C * 0.95, -C * 0.95, C * 1.9, C * 1.9);
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-C * 0.06 + 4, -C * 0.4 + 5, C * 0.12, C * 0.8); ctx.fillRect(-C * 0.26 + 4, -C * 0.2 + 5, C * 0.52, C * 0.12);
@@ -153,7 +153,7 @@
       ctx.beginPath(); ctx.rect(-C * 0.06, -C * 0.4, C * 0.12, C * 0.8); ctx.rect(-C * 0.26, -C * 0.2, C * 0.52, C * 0.12); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#e0a83a'; ctx.beginPath(); ctx.arc(0, -C * 0.14, C * 0.05, 0, TAU); ctx.fill();
     },
-    // --- Мост (миссия 5) ---
+    // --- Bridge (mission 5) ---
     sandbags(ctx, C) {
       for (let row = 0; row < 2; row++) for (let i = 0; i < 4 - row; i++) {
         const x = -C * 0.27 + i * C * 0.18 + row * C * 0.09, y = C * 0.18 - row * C * 0.1;
@@ -165,14 +165,14 @@
       ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(-C * 0.26 + 5, -C * 0.26 + 6, C * 0.52, C * 0.52);
       ctx.strokeStyle = '#5a4a36'; ctx.lineWidth = 3; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(a * C * 0.3, b * C * 0.3); ctx.lineTo(a * C * 0.18, b * C * 0.18); ctx.stroke(); });
       Art.rr(ctx, -C * 0.2, -C * 0.2, C * 0.4, C * 0.4, 3); ctx.fillStyle = '#6a5038'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.fillStyle = '#3a2a1a'; ctx.beginPath(); ctx.moveTo(-C * 0.24, -C * 0.24); ctx.lineTo(0, -C * 0.34); ctx.lineTo(C * 0.24, -C * 0.24); ctx.closePath(); ctx.fill(); // навес
-      ctx.fillStyle = 'rgba(255,90,60,.8)'; ctx.beginPath(); ctx.arc(C * 0.06, -C * 0.02, C * 0.03, 0, TAU); ctx.fill(); // блик прицела
+      ctx.fillStyle = '#3a2a1a'; ctx.beginPath(); ctx.moveTo(-C * 0.24, -C * 0.24); ctx.lineTo(0, -C * 0.34); ctx.lineTo(C * 0.24, -C * 0.24); ctx.closePath(); ctx.fill(); // canopy
+      ctx.fillStyle = 'rgba(255,90,60,.8)'; ctx.beginPath(); ctx.arc(C * 0.06, -C * 0.02, C * 0.03, 0, TAU); ctx.fill(); // scope glint
     },
     barrier(ctx, C) {
       ctx.fillStyle = '#3a3a3a'; ctx.fillRect(-C * 0.36, -C * 0.06, C * 0.08, C * 0.12);
       for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#e8e0d0' : '#c0392b'; ctx.fillRect(-C * 0.28 + i * C * 0.11, -C * 0.03, C * 0.11, C * 0.06); }
       ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.strokeRect(-C * 0.28, -C * 0.03, C * 0.66, C * 0.06);
-      ctx.strokeStyle = 'rgba(200,200,210,.5)'; ctx.lineWidth = 2; [-0.38, 0.38].forEach((k) => { ctx.beginPath(); ctx.moveTo(C * 0.42, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // перила моста
+      ctx.strokeStyle = 'rgba(200,200,210,.5)'; ctx.lineWidth = 2; [-0.38, 0.38].forEach((k) => { ctx.beginPath(); ctx.moveTo(C * 0.42, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // bridge railings
     },
     blocks(ctx, C) {
       [[-0.18, -0.12], [0.16, -0.14], [0, 0.16]].forEach(([x, y], i) => {
@@ -193,7 +193,7 @@
       for (let i = 0; i <= 24; i++) { const a = (i / 24) * TAU, r = i % 2 ? C * 0.17 : C * 0.2; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
       ctx.closePath(); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.fillStyle = '#5a5048'; ctx.beginPath(); ctx.arc(0, 0, C * 0.05, 0, TAU); ctx.fill();
-      ctx.fillStyle = 'rgba(120,20,10,.55)'; ctx.beginPath(); ctx.ellipse(C * 0.12, C * 0.08, C * 0.08, C * 0.04, 0.4, 0, TAU); ctx.fill(); // пятно
+      ctx.fillStyle = 'rgba(120,20,10,.55)'; ctx.beginPath(); ctx.ellipse(C * 0.12, C * 0.08, C * 0.08, C * 0.04, 0.4, 0, TAU); ctx.fill(); // a stain
     },
     console(ctx, C) {
       Art.rr(ctx, -C * 0.12, -C * 0.14, C * 0.24, C * 0.28, 3); ctx.fillStyle = '#4a5a3a'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
@@ -210,7 +210,7 @@
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-C * 0.2 + 4, -C * 0.2 + 5, C * 0.4, C * 0.4);
       ctx.strokeStyle = '#8a9298'; ctx.lineWidth = 3; ctx.strokeRect(-C * 0.2, -C * 0.2, C * 0.4, C * 0.4);
       ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-C * 0.2, -C * 0.2); ctx.lineTo(C * 0.2, C * 0.2); ctx.moveTo(C * 0.2, -C * 0.2); ctx.lineTo(-C * 0.2, C * 0.2); ctx.stroke();
-      ctx.strokeStyle = 'rgba(30,30,30,.7)'; ctx.lineWidth = 1.5; [-0.12, 0.12].forEach((k) => { ctx.beginPath(); ctx.moveTo(-C * 0.5, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // провода над просекой
+      ctx.strokeStyle = 'rgba(30,30,30,.7)'; ctx.lineWidth = 1.5; [-0.12, 0.12].forEach((k) => { ctx.beginPath(); ctx.moveTo(-C * 0.5, k * C); ctx.lineTo(C * 0.5, k * C); ctx.stroke(); }); // wires over the clearing
     },
     bus(ctx, C) {
       Art.rr(ctx, -C * 0.24, -C * 0.46, C * 0.48, C * 0.92, 6); ctx.fillStyle = '#c99a1a'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
@@ -265,7 +265,7 @@
     cross(ctx, C) { ctx.fillStyle = '#2e8b57'; ctx.fillRect(-C * 0.05, -C * 0.15, C * 0.1, C * 0.3); ctx.fillRect(-C * 0.15, -C * 0.05, C * 0.3, C * 0.1); },
     desks(ctx, C) { for (let r = 0; r < 2; r++) for (let k = 0; k < 2; k++) { ctx.fillStyle = '#6b5233'; ctx.fillRect(-C * 0.32 + k * C * 0.36, -C * 0.28 + r * C * 0.34, C * 0.26, C * 0.14); ctx.fillStyle = '#3a2e22'; ctx.fillRect(-C * 0.26 + k * C * 0.36, -C * 0.1 + r * C * 0.34, C * 0.14, C * 0.06); } ctx.fillStyle = '#2f4a3a'; ctx.fillRect(-C * 0.36, -C * 0.44, C * 0.72, C * 0.07); },
     stall(ctx, C) {
-      // прилавок под полосатым навесом
+      // a stall under a striped awning
       for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#e8e2d4' : '#c0392b'; ctx.fillRect(-C * 0.42 + i * C * 0.14, -C * 0.42, C * 0.14, C * 0.3); }
       ctx.fillStyle = '#6b5233'; ctx.fillRect(-C * 0.4, -C * 0.08, C * 0.8, C * 0.36);
       ['#e0a83a', '#2e8b57', '#c0392b', '#e8701a'].forEach((col, i) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-C * 0.27 + i * C * 0.18, C * 0.08, C * 0.06, 0, TAU); ctx.fill(); });
@@ -303,7 +303,7 @@
           const nx = x + dx, ny = y + dy;
           const out = nx < 0 || ny < 0 || nx >= b.w || ny >= b.h;
           const n = out ? null : b.cells[ny * b.w + nx];
-          if (!out && (dx < 0 || dy < 0)) return; // каждое ребро один раз
+          if (!out && (dx < 0 || dy < 0)) return; // each edge once
           const x0 = pad + (x + (dx > 0 ? 1 : 0)) * C, y0 = pad + (y + (dy > 0 ? 1 : 0)) * C;
           const ex = dx !== 0 ? x0 : x0 + C, ey = dy !== 0 ? y0 : y0 + C;
           const sx = dx !== 0 ? x0 : pad + x * C, sy = dy !== 0 ? y0 : pad + y * C;
@@ -311,7 +311,7 @@
             if (c.type === 'building') {
               ctx.strokeStyle = INK; ctx.lineWidth = wallW;
               if (c.sideMid) {
-                // вход прямо с края тайла: проём в стене
+                // an entrance right from the tile edge: an opening in the wall
                 const L = C * 0.3, mx = (sx + ex) / 2, my = (sy + ey) / 2, ux = dx !== 0 ? 0 : 1, uy = dy !== 0 ? 0 : 1;
                 edgeLine(ctx, sx, sy, mx - ux * L, my - uy * L); edgeLine(ctx, mx + ux * L, my + uy * L, ex, ey);
               } else edgeLine(ctx, sx, sy, ex, ey);
@@ -334,7 +334,7 @@
               ctx.strokeStyle = INK; ctx.lineWidth = wallW;
               edgeLine(ctx, sx, sy, mx - ux * L, my - uy * L);
               edgeLine(ctx, mx + ux * L, my + uy * L, ex, ey);
-              // дверная створка
+              // the door leaf
               ctx.strokeStyle = '#a07a42'; ctx.lineWidth = Math.max(2, wallW * 0.5);
               const hx = mx - ux * L, hy = my - uy * L;
               const ang = dx !== 0 ? (dx > 0 ? -0.6 : 0.6) : (dy > 0 ? 0.6 : -0.6);
@@ -362,7 +362,7 @@
   }
 
   function drawBlocked(ctx, c, r, C) {
-    // непроходимая зона — штриховка опасности по краю
+    // an impassable zone — hazard hatching along the edge
     ctx.save();
     ctx.beginPath(); ctx.rect(r.x, r.y, C, C); ctx.clip();
     ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = C * 0.05;
@@ -376,7 +376,7 @@
     opts = opts || {};
     const b = g.board || g;
     const W = b.w * C + pad * 2, H = b.h * C + pad * 2;
-    // рамка картона
+    // the cardboard frame
     if (!opts.noFrame) {
       ctx.fillStyle = '#1a1410'; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#2a2018'; Art.rr(ctx, 2, 2, W - 4, H - 4, 8); ctx.fill();
@@ -385,7 +385,7 @@
     b.cells.forEach((c) => { if (c.type === 'blocked') drawBlocked(ctx, c, cellRect(pad, C, c), C); });
     drawDecor(ctx, b, pad, C);
     drawEdges(ctx, b, pad, C);
-    // спрайт тайла (ZG.Art.useImage('tile_<id>', ...)) рисуется поверх процедурного, с поворотом
+    // the tile sprite (ZG.Art.useImage('tile_<id>', ...)) is drawn over the procedural one, rotated
     b.tiles.forEach((p) => {
       const img = Art.image('tile_' + p.id);
       if (!img) return;
@@ -394,7 +394,7 @@
       ctx.drawImage(img, -T / 2, -T / 2, T, T);
       ctx.restore();
     });
-    // напечатанные значки люков и мест обыска
+    // printed manhole and search spot icons
     b.cells.forEach((c) => {
       const r = cellRect(pad, C, c);
       if (c.manhole) {
@@ -407,11 +407,11 @@
       }
       if (c.tileSearch && opts.printSearch) Art.draw(ctx, 'tok_search', r.x + C * 0.06, r.y + C * 0.06, C * 0.22, C * 0.22, { armory: c.tileSearch === 'armory' });
     });
-    // швы тайлов и подписи
+    // tile seams and captions
     b.tiles.forEach((p) => {
       const def = ZG.Tiles.get(p.id);
       const x = pad + p.tx * 3 * C, y = pad + p.ty * 3 * C;
-      // Стык тайлов — не преграда: тонкая светлая линия и уголки. Непроходимы только стены (чёрные).
+      // A tile seam is not a barrier: a thin light line and corners. Only walls (black) are impassable.
       ctx.strokeStyle = 'rgba(232,220,192,.10)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, 3 * C - 1, 3 * C - 1);
       ctx.strokeStyle = 'rgba(232,220,192,.45)'; ctx.lineWidth = 2;
       const L = C * 0.14;
@@ -429,7 +429,7 @@
         ctx.restore();
       }
     });
-    // общая виньетка печати
+    // the overall print vignette
     const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.8);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.25)');
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);

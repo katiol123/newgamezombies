@@ -1,39 +1,39 @@
 /*
- * Поле: процедурная сборка из тайлов, граф проходимости, пути и линия видимости.
- * Поле неизменно после генерации и разделяется между клонами состояния.
+ * The board: procedural assembly from tiles, the passability graph, paths and line of sight.
+ * The board is immutable after generation and is shared between state clones.
  */
 (function (G) {
   'use strict';
   const ZG = G.ZG;
   const Rng = ZG.Rng;
-  const T = 3; // размер тайла в зонах
+  const T = 3; // tile size in zones
 
   function rotPoint(x, y, r) {
     for (let i = 0; i < r; i++) { const nx = T - 1 - y; y = x; x = nx; }
     return [x, y];
   }
 
-  // g.tileRules (миссии кампании): { required: [{ id, tx?, ty? }], exclude: [id] }.
-  // Обязательные тайлы ставятся на заданное место или в средние столбцы (крайние — старт и выход, они открыты сразу),
-  // остальное добирается случайно из базового пула уровня.
+  // g.tileRules (campaign missions): { required: [{ id, tx?, ty? }], exclude: [id] }.
+  // Required tiles go to the given position or to the middle columns (the edge ones are the start and exit, open from the start),
+  // the rest is filled at random from the level's base pool.
   function build(level, g) {
     const { tw, th } = level.layout;
     const rules = g.tileRules || {};
-    const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : Object.assign({}, r))); // копия: данные миссии не меняются
+    const req = (rules.required || []).map((r) => (typeof r === 'string' ? { id: r } : Object.assign({}, r))); // a copy: mission data is not changed
     const skip = (rules.exclude || []).concat(req.map((r) => r.id));
     let pool = Rng.shuffle(g, level.tiles.filter((id) => !skip.includes(id)));
-    if (!pool.length) pool = Rng.shuffle(g, level.tiles.slice()); // исключили всё — берём базовый пул
+    if (!pool.length) pool = Rng.shuffle(g, level.tiles.slice()); // everything was excluded — take the base pool
     const grid = {};
     const key = (tx, ty) => tx + ',' + ty;
     req.filter((r) => r.tx != null).forEach((r) => {
-      // tx = -1 — крайний правый столбец; tx: [a, b] — случайный из этих столбцов; ty не задан — случайная строка этого столбца
+      // tx = -1 — the rightmost column; tx: [a, b] — a random one of these columns; ty not set — a random row of that column
       const col = (v) => (v < 0 ? tw + v : v);
       const hasRow = (x) => { for (let y = 0; y < th; y++) if (!grid[key(x, y)]) return true; return false; };
       const opts = Array.isArray(r.tx) ? Rng.shuffle(g, r.tx.map(col)) : [col(r.tx)];
-      const tx = opts.find(hasRow) != null ? opts.find(hasRow) : opts[0]; // занятый столбец пропускаем
+      const tx = opts.find(hasRow) != null ? opts.find(hasRow) : opts[0]; // skip an occupied column
       const rows = []; for (let ty = 0; ty < th; ty++) if (!grid[key(tx, ty)]) rows.push(ty);
       const ty = r.ty != null ? r.ty : rows.length ? Rng.pick(g, rows) : null;
-      if (ty != null && !grid[key(tx, ty)]) grid[key(tx, ty)] = r.id; else r.tx = null; // место занято — ставим как без позиции
+      if (ty != null && !grid[key(tx, ty)]) grid[key(tx, ty)] = r.id; else r.tx = null; // the spot is taken — place it as if no position were given
     });
     const free = (mid) => { const out = []; for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) if (!grid[key(tx, ty)] && (!mid || (tx > 0 && tx < tw - 1))) out.push(key(tx, ty)); return out; };
     req.filter((r) => r.tx == null).forEach((r) => {
@@ -51,7 +51,7 @@
     return fromPlaced(placed, tw, th);
   }
 
-  // собрать поле из уже разложенных тайлов (используется и для печати отдельных тайлов)
+  // build the board from already laid-out tiles (also used to print individual tiles)
   function fromPlaced(placed, tw, th) {
     const W = tw * T, H = th * T;
     const cells = [];
@@ -67,7 +67,7 @@
           const isB = ch !== '.' && ch !== '#';
           cells[y * W + x] = {
             i: y * W + x, x, y, tile: ti, lx, ly,
-            sideMid: (lx === 1) !== (ly === 1) && isB, // середина стороны тайла (помещение со входом наружу)
+            sideMid: (lx === 1) !== (ly === 1) && isB, // the middle of a tile side (an interior with an entrance from outside)
             type: ch === '.' ? 'street' : ch === '#' ? 'blocked' : 'building',
             bld: isB ? ti + ':' + ch : null,
             floor: isB ? def.buildings[ch].floor : null,
@@ -105,7 +105,7 @@
           if (a.type === 'street' && b.type === 'street') open = true;
           else if (a.bld && a.bld === b.bld) open = true;
           else if (a.tile !== b.tile && (a.type === 'street' || a.sideMid) && (b.type === 'street' || b.sideMid)) {
-            // помещение в середине стороны тайла имеет вход прямо с этой стороны
+            // an interior in the middle of a tile side has an entrance right from that side
             open = true;
             sideDoors.push([a.i, b.i]);
           } else open = doorSet.has(Math.min(a.i, b.i) + '-' + Math.max(a.i, b.i));
@@ -137,7 +137,7 @@
     throw new Error('board generation failed');
   }
 
-  // BFS. passable(a, b) -> стоимость шага (1) или false.
+  // BFS. passable(a, b) -> step cost (1) or false.
   function bfs(board, from, passable) {
     const dist = new Array(board.cells.length).fill(Infinity);
     const sources = Array.isArray(from) ? from : [from];
@@ -157,7 +157,7 @@
 
   function isAdj(board, a, b) { return board.adj[a].includes(b); }
 
-  // Линия видимости — по прямой (строка/столбец) через открытые проходы.
+  // Line of sight — in a straight line (row/column) through open passages.
   function lineCells(board, from, maxRange, stop) {
     const out = [{ cell: from, dist: 0 }];
     const c0 = board.cells[from];

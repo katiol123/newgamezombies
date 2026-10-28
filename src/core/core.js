@@ -1,7 +1,7 @@
 /*
- * МЁРТВЫЙ КВАРТАЛ — ядро.
- * Пространство имён ZG, реестры контента, детерминированный ГСЧ, модификаторы и хуки.
- * Файл работает и в браузере (<script>), и в Node (require) — без сборки.
+ * DEAD BLOCK — the core.
+ * The ZG namespace, content registries, deterministic RNG, modifiers and hooks.
+ * The file works both in the browser (<script>) and in Node (require) — no build step.
  */
 (function (G) {
   'use strict';
@@ -9,8 +9,8 @@
   ZG.VERSION = '1.0.0';
 
   // ---------------------------------------------------------------------------
-  // Реестры. Любой новый контент (герой, карта, враг, тайл, сценарий, уровень)
-  // добавляется вызовом ZG.<Реестр>.add({...}) — движок ничего не хардкодит.
+  // Registries. Any new content (hero, card, enemy, tile, scenario, level)
+  // is added with a ZG.<Registry>.add({...}) call — the engine hardcodes nothing.
   // ---------------------------------------------------------------------------
   function makeRegistry(kind) {
     const items = Object.create(null);
@@ -47,8 +47,8 @@
   ZG.Missions = makeRegistry('mission');
 
   // ---------------------------------------------------------------------------
-  // Детерминированный ГСЧ (mulberry32). Состояние лежит в объекте игры,
-  // поэтому партия полностью воспроизводима по сиду и клонируется вместе с ней.
+  // Deterministic RNG (mulberry32). Its state lives in the game object,
+  // so a game is fully reproducible from its seed and is cloned together with it.
   // ---------------------------------------------------------------------------
   const Rng = {
     seedFrom(str) {
@@ -78,11 +78,11 @@
   ZG.Rng = Rng;
 
   // ---------------------------------------------------------------------------
-  // Модификаторы и хуки.
-  // Источник (герой, талант, снаряжение, условие партии, сложность) может иметь:
+  // Modifiers and hooks.
+  // A source (hero, talent, gear, game condition, difficulty) may have:
   //   mods:  { handSize: 1, meleeBonus: (g, hero, ctx) => 1, ... }
   //   hooks: { turnStart(g, hero), kill(g, hero, ctx), ... }
-  // Новая механика = новый ключ модификатора/хука + чтение его в движке.
+  // A new mechanic = a new modifier/hook key + reading it in the engine.
   // ---------------------------------------------------------------------------
   const Mods = {
     sources(g, hero) {
@@ -90,14 +90,14 @@
       if (hero) {
         list.push(ZG.Heroes.get(hero.id));
         hero.talents.forEach((t) => list.push(ZG.Talents.get(t)));
-        (hero.perks || []).forEach((id) => list.push(ZG.Missions.get(id).perk)); // пассивки за секретные миссии
-        const seen = new Set(); // одинаковое снаряжение не складывается: два противогаза — как один
+        (hero.perks || []).forEach((id) => list.push(ZG.Missions.get(id).perk)); // passives from secret missions
+        const seen = new Set(); // identical gear does not stack: two gas masks act as one
         hero.equip.forEach((uid) => { const id = g.cards[uid]; if (seen.has(id)) return; seen.add(id); list.push(ZG.Cards.get(id)); });
       }
       if (g.conditionId) list.push(ZG.Conditions.get(g.conditionId));
       if (g.difficultyId) list.push(ZG.Difficulties.get(g.difficultyId));
       if (g.scenarioId) list.push(ZG.Scenarios.get(g.scenarioId));
-      if (g.event) list.push(ZG.Events.get(g.event)); // событие раунда
+      if (g.event) list.push(ZG.Events.get(g.event)); // the round event
       return list;
     },
     value(g, hero, key, base, ctx) {
@@ -121,12 +121,8 @@
 
   ZG.util = {
     clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
-    plural(n, one, few, many) {
-      const m10 = n % 10, m100 = n % 100;
-      if (m10 === 1 && m100 !== 11) return one;
-      if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
-      return many;
-    },
+    // English plural: "1 zombie", "2 zombies" (the few/many forms are kept in the signature for compatibility)
+    plural(n, one, few, many) { return Math.abs(n) === 1 ? one : (many || few); },
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = ZG;

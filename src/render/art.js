@@ -1,10 +1,10 @@
 /*
- * ZG.Art — вся графика, нарисованная кодом.
+ * ZG.Art — all the graphics drawn in code.
  *
- * Каждый рисунок — функция draw(ctx, w, h, opts), рисующая в прямоугольнике (0,0,w,h).
- * Чтобы заменить рисунок на спрайт:
+ * Each drawing is a draw(ctx, w, h, opts) function that draws in the rectangle (0,0,w,h).
+ * To replace a drawing with a sprite:
  *     ZG.Art.useImage('z_walker', 'img/zombies/walker.png');
- * После загрузки изображение автоматически используется вместо кода.
+ * Once loaded, the image is automatically used instead of the code.
  */
 (function (G) {
   'use strict';
@@ -30,7 +30,7 @@
       else draws._missing(ctx, w, h, { key });
       ctx.restore();
     },
-    // рисует в 100×100 единицах
+    // draws in 100×100 units
     unit(ctx, w, h, fn) {
       ctx.save();
       ctx.scale(w / 100, h / 100);
@@ -50,7 +50,7 @@
   };
   ZG.Art = Art;
 
-  // ---------------------------------------------------------- утилиты ---
+  // ---------------------------------------------------------- utilities ---
   const INK = '#15110e';
   function rr(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -71,11 +71,11 @@
   function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); }
   function fillInk(ctx, color) { ctx.fillStyle = color || INK; ctx.fill(); }
   function strokeInk(ctx, w, color) { ctx.lineWidth = w; ctx.strokeStyle = color || INK; ctx.stroke(); }
-  // детерминированный шум для текстур
+  // deterministic noise for textures
   function hash(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
   Art.hash = hash;
 
-  // фон карточной иллюстрации: градиент масти + полутон + виньетка
+  // card illustration background: suit gradient + halftone + vignette
   function cardBg(ctx, w, h, color, dark) {
     const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 2, w * 0.5, h * 0.5, Math.max(w, h) * 0.75);
     g.addColorStop(0, color);
@@ -90,7 +90,7 @@
         circle(ctx, x, y, r); ctx.fill();
       }
     }
-    // лучи
+    // rays
     ctx.save();
     ctx.globalAlpha = 0.08;
     ctx.fillStyle = '#fff';
@@ -113,7 +113,7 @@
       ctx.save();
       ctx.translate((w - size) / 2, (h - size) / 2);
       Art.unit(ctx, size, size, (c) => {
-        // тень-подложка
+        // backing shadow
         c.save();
         c.translate(2.5, 3);
         c.globalAlpha = 0.35;
@@ -125,7 +125,7 @@
     };
   }
 
-  // ------------------------------------------------------- иконки карт ---
+  // ------------------------------------------------------- card icons ---
   const ICONS = {
     fist(c, o) {
       rr(c, 28, 34, 46, 38, 10); fillInk(c, o.ink);
@@ -214,7 +214,7 @@
       for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(84, 22, 8 + i * 7, 0.6, 2.4); strokeInk(c, 2.5, o.shadow ? o.ink : '#e0a83a'); }
     },
     lurk(c, o) {
-      // закрытый глаз под капюшоном
+      // a closed eye under a hood
       c.beginPath(); c.moveTo(14, 70); c.quadraticCurveTo(14, 16, 50, 12); c.quadraticCurveTo(86, 16, 86, 70); c.quadraticCurveTo(70, 50, 50, 46); c.quadraticCurveTo(30, 50, 14, 70); fillInk(c, o.shadow ? o.ink : '#2a2438'); strokeInk(c, 3, o.ink);
       c.beginPath(); c.moveTo(30, 62); c.quadraticCurveTo(50, 74, 70, 62); strokeInk(c, 4, o.shadow ? o.ink : '#e8dcc0');
       if (!o.shadow) for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(36 + i * 9, 67 + (i % 3 ? 2 : 0)); c.lineTo(34 + i * 9, 74); strokeInk(c, 2, '#e8dcc0'); }
@@ -257,7 +257,7 @@
     canned(c, o) {
       rr(c, 26, 34, 48, 50, 6); fillInk(c, o.shadow ? o.ink : '#9aa4aa'); strokeInk(c, 3, o.ink);
       c.beginPath(); c.ellipse(50, 34, 24, 6, 0, 0, 7); fillInk(c, o.shadow ? o.ink : '#c0c6ca'); strokeInk(c, 2.5, o.ink);
-      if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(26, 48, 48, 18); c.fillStyle = '#e8dcc0'; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.fillText('ГОСТ', 50, 61); }
+      if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(26, 48, 48, 18); c.fillStyle = '#e8dcc0'; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.fillText('BEEF', 50, 61); }
     },
     jackhammer(c, o) {
       rr(c, 40, 20, 20, 50, 4); fillInk(c, o.shadow ? o.ink : '#e0a83a'); strokeInk(c, 3, o.ink);
@@ -429,14 +429,14 @@
       if (!o.shadow) { c.fillStyle = '#ffd36b'; c.font = 'bold 34px sans-serif'; c.textAlign = 'center'; c.fillText('!', 84, 30); }
     },
     despair(c, o) {
-      // тучка с дождём и опущенный уголок рта
+      // a little rain cloud and a downturned corner of the mouth
       const ink = o.shadow ? o.ink : '#6f7d8c';
       c.beginPath(); c.arc(38, 40, 14, Math.PI * 0.9, Math.PI * 2); c.arc(58, 36, 18, Math.PI, Math.PI * 2.1); c.arc(72, 46, 11, Math.PI * 1.4, Math.PI * 0.5); c.lineTo(30, 54); c.closePath(); fillInk(c, ink);
       if (!o.shadow) for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(34 + i * 7, 62); c.lineTo(31 + i * 7, 74); strokeInk(c, 2.5, '#5aa6d6'); }
       c.beginPath(); c.arc(50, 92, 10, Math.PI * 1.15, Math.PI * 1.85); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
     },
     courage(c, o) {
-      // поднятый кулак в лучах
+      // a raised fist in rays of light
       if (!o.shadow) for (let i = 0; i < 10; i++) { c.save(); c.translate(50, 55); c.rotate(i * Math.PI / 5); c.fillStyle = 'rgba(240,192,64,.55)'; c.fillRect(-2, -44, 4, 14); c.restore(); }
       rr(c, 34, 36, 32, 30, 8); fillInk(c, o.shadow ? o.ink : '#e0a070');
       for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(38 + i * 7, 38); c.lineTo(38 + i * 7, 50); strokeInk(c, 2, o.shadow ? o.ink : '#8a5a3a'); }
@@ -448,7 +448,7 @@
       if (!o.shadow) for (let i = 0; i < 9; i++) { circle(c, 20 + hash(i) * 60, 30 + hash(i + 9) * 50, 2 + hash(i + 3) * 4); fillInk(c, '#8e140c'); }
     },
     infection(c, o) {
-      // знак биоопасности: три серпа вокруг кольца
+      // a biohazard sign: three sickles around a ring
       const col = o.shadow ? o.ink : '#9be04a';
       for (let i = 0; i < 3; i++) {
         c.save(); c.translate(50, 52); c.rotate(i * Math.PI * 2 / 3);
@@ -478,28 +478,28 @@
       }
     },
     rig(c, o) {
-      // тактическая разгрузка: жилет с подсумками
+      // a tactical load-bearing vest with pouches
       c.beginPath(); c.moveTo(28, 12); c.lineTo(40, 12); c.lineTo(46, 30); c.lineTo(54, 30); c.lineTo(60, 12); c.lineTo(72, 12); c.lineTo(80, 36); c.lineTo(78, 90); c.lineTo(22, 90); c.lineTo(20, 36); c.closePath(); fillInk(c, o.shadow ? o.ink : '#5a6a3a');
       if (!o.shadow) {
         c.fillStyle = '#3e4a28'; [[24, 46], [40, 46], [56, 46], [24, 66], [62, 66]].forEach(([x, y]) => { rr(c, x, y, 14, 16, 2); c.fill(); });
         c.fillStyle = 'rgba(255,255,255,.25)'; [[24, 46], [40, 46], [56, 46], [24, 66], [62, 66]].forEach(([x, y]) => c.fillRect(x + 2, y + 2, 10, 3));
-        c.fillStyle = '#c8a24a'; c.fillRect(42, 66, 16, 18); // фонарь/рация в центре
+        c.fillStyle = '#c8a24a'; c.fillRect(42, 66, 16, 18); // a flashlight/radio in the center
       }
     },
     bandit_tt(c, o) {
-      // ТТ в потёртой кобуре
-      rr(c, 18, 40, 46, 46, 8); fillInk(c, o.shadow ? o.ink : '#6a4226'); // кобура
+      // a TT pistol in a worn holster
+      rr(c, 18, 40, 46, 46, 8); fillInk(c, o.shadow ? o.ink : '#6a4226'); // holster
       c.save(); c.translate(50, 44); c.rotate(-0.25); c.translate(-50, -44);
-      rr(c, 30, 22, 58, 16, 3); fillInk(c, o.shadow ? o.ink : '#3a3e44'); // затвор
-      poly(c, [34, 36, 52, 36, 48, 62, 34, 62]); fillInk(c, o.shadow ? o.ink : '#2a2c30'); // рукоять
-      if (!o.shadow) { c.fillStyle = '#7a1a10'; c.beginPath(); c.arc(41, 48, 3.5, 0, 7); c.fill(); /* звёздочка на щёчке */ c.fillStyle = 'rgba(255,255,255,.3)'; c.fillRect(34, 25, 50, 3); }
+      rr(c, 30, 22, 58, 16, 3); fillInk(c, o.shadow ? o.ink : '#3a3e44'); // slide
+      poly(c, [34, 36, 52, 36, 48, 62, 34, 62]); fillInk(c, o.shadow ? o.ink : '#2a2c30'); // grip
+      if (!o.shadow) { c.fillStyle = '#7a1a10'; c.beginPath(); c.arc(41, 48, 3.5, 0, 7); c.fill(); /* a star on the grip panel */ c.fillStyle = 'rgba(255,255,255,.3)'; c.fillRect(34, 25, 50, 3); }
       c.restore();
       if (!o.shadow) { c.strokeStyle = '#3a2412'; c.lineWidth = 2; c.setLineDash([3, 3]); rr(c, 22, 44, 38, 38, 6); c.stroke(); c.setLineDash([]); }
     },
     forester_axe(c, o) {
       c.save(); c.translate(50, 50); c.rotate(-0.6); c.translate(-50, -50);
-      rr(c, 46, 14, 9, 78, 3); fillInk(c, o.shadow ? o.ink : '#8a6034'); // топорище
-      c.beginPath(); c.moveTo(42, 14); c.lineTo(80, 8); c.quadraticCurveTo(88, 26, 80, 42); c.lineTo(42, 34); c.closePath(); fillInk(c, o.shadow ? o.ink : '#9aa0a6'); // лезвие
+      rr(c, 46, 14, 9, 78, 3); fillInk(c, o.shadow ? o.ink : '#8a6034'); // the axe handle
+      c.beginPath(); c.moveTo(42, 14); c.lineTo(80, 8); c.quadraticCurveTo(88, 26, 80, 42); c.lineTo(42, 34); c.closePath(); fillInk(c, o.shadow ? o.ink : '#9aa0a6'); // the blade
       if (!o.shadow) { c.fillStyle = 'rgba(140,20,10,.7)'; c.beginPath(); c.ellipse(76, 26, 5, 12, 0.2, 0, 7); c.fill(); c.strokeStyle = '#4a3424'; c.lineWidth = 3; c.beginPath(); c.moveTo(47, 70); c.lineTo(54, 74); c.moveTo(47, 76); c.lineTo(54, 80); c.stroke(); }
       c.restore();
     },
@@ -508,27 +508,27 @@
       if (!o.shadow) { c.fillStyle = '#1d1611'; circle(c, 32, 50, 8); c.fill(); }
       rr(c, 46, 45, 42, 10, 2); fillInk(c, o.shadow ? o.ink : '#e0a83a');
       c.fillRect(70, 55, 7, 12); c.fillRect(80, 55, 7, 9);
-      if (!o.shadow) { c.fillStyle = '#c0392b'; rr(c, 10, 22, 20, 12, 3); c.fill(); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('КПП', 11, 31); }
+      if (!o.shadow) { c.fillStyle = '#c0392b'; rr(c, 10, 22, 20, 12, 3); c.fill(); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('CHK', 11, 31); }
     },
     garrote(c, o) {
-      // струна с двумя деревянными ручками
+      // a wire with two wooden handles
       c.beginPath(); c.moveTo(24, 30); c.bezierCurveTo(30, 86, 70, 86, 76, 30); strokeInk(c, o.shadow ? 5 : 3, o.shadow ? o.ink : '#c8ccd0');
       [[24, 26], [76, 26]].forEach(([x, y]) => { rr(c, x - 7, y - 16, 14, 26, 4); fillInk(c, o.shadow ? o.ink : '#8a6034'); });
     },
     grenade(c, o) {
-      // жестяная банка тушёнки с фитилём
+      // a tin can of stew with a fuse
       rr(c, 26, 34, 48, 52, 6); fillInk(c, o.shadow ? o.ink : '#9aa0a6');
-      if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(26, 50, 48, 16); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('ТУШЁНКА', 29, 61); c.strokeStyle = '#6a6e72'; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(26, 40 + i * 4); c.lineTo(74, 40 + i * 4); c.stroke(); } }
+      if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(26, 50, 48, 16); c.fillStyle = '#fff'; c.font = 'bold 9px sans-serif'; c.fillText('STEW', 37, 61); c.strokeStyle = '#6a6e72'; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(26, 40 + i * 4); c.lineTo(74, 40 + i * 4); c.stroke(); } }
       c.beginPath(); c.moveTo(50, 34); c.quadraticCurveTo(58, 16, 70, 18); strokeInk(c, 3, o.shadow ? o.ink : '#2a2a2a');
       if (!o.shadow) { c.fillStyle = '#ffb030'; circle(c, 72, 17, 5); c.fill(); c.fillStyle = '#fff3a0'; circle(c, 72, 17, 2.5); c.fill(); }
     },
-    valuable(c, o) { // ценность: золотые часы на цепочке и перстень
+    valuable(c, o) { // a valuable: a gold pocket watch on a chain and a signet ring
       c.strokeStyle = o.shadow ? o.ink : '#e0b040'; c.lineWidth = 4; c.beginPath(); c.moveTo(50, 22); c.quadraticCurveTo(20, 10, 18, 40); c.quadraticCurveTo(16, 70, 34, 80); c.stroke();
       circle(c, 56, 56, 26); fillInk(c, o.shadow ? o.ink : '#e8c050'); strokeInk(c, 4, o.ink);
       if (!o.shadow) { circle(c, 56, 56, 19); c.fillStyle = '#f8f0d8'; c.fill(); c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(56, 56); c.lineTo(56, 43); c.moveTo(56, 56); c.lineTo(66, 60); c.stroke(); c.fillStyle = '#c0392b'; circle(c, 26, 82, 6); c.fill(); }
       rr(c, 52, 24, 8, 8, 2); fillInk(c, o.shadow ? o.ink : '#c8a030');
     },
-    gasmask(c, o) { // противогаз ГП-5: резиновая маска, два окуляра, фильтр-коробка
+    gasmask(c, o) { // a GP-5 gas mask: a rubber mask, two eyepieces, a filter canister
       c.beginPath(); c.ellipse(50, 44, 30, 34, 0, 0, Math.PI * 2); fillInk(c, o.shadow ? o.ink : '#4a5a48');
       rr(c, 38, 68, 24, 24, 5); fillInk(c, o.shadow ? o.ink : '#5a5e62');
       if (!o.shadow) {
@@ -537,23 +537,23 @@
         c.strokeStyle = 'rgba(0,0,0,.4)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(40, 74 + i * 6); c.lineTo(60, 74 + i * 6); c.stroke(); }
       }
     },
-    binoculars(c, o) { // полевой бинокль: два тубуса и перемычка
+    binoculars(c, o) { // field binoculars: two tubes and a bridge
       rr(c, 18, 34, 26, 46, 8); fillInk(c, o.ink); rr(c, 56, 34, 26, 46, 8); fillInk(c, o.ink);
       rr(c, 40, 42, 20, 14, 3); fillInk(c, o.ink);
       if (!o.shadow) { c.fillStyle = '#7ab8d8'; circle(c, 31, 76, 9); c.fill(); circle(c, 69, 76, 9); c.fill(); c.fillStyle = 'rgba(255,255,255,.6)'; circle(c, 28, 73, 3); c.fill(); circle(c, 66, 73, 3); c.fill(); }
     },
-    medbag(c, o) { // сумка санитара: брезент, ремень, красный крест
+    medbag(c, o) { // a medic's bag: canvas, a strap, a red cross
       c.strokeStyle = o.ink; c.lineWidth = 5; c.beginPath(); c.moveTo(24, 40); c.quadraticCurveTo(50, 2, 76, 40); c.stroke();
       rr(c, 16, 36, 68, 50, 8); fillInk(c, o.shadow ? o.ink : '#6a6a48');
       if (!o.shadow) { c.fillStyle = '#e8e4d8'; circle(c, 50, 61, 15); c.fill(); c.fillStyle = '#c0392b'; c.fillRect(46, 51, 8, 20); c.fillRect(40, 57, 20, 8); }
     },
     butcher_hook(c, o) {
-      c.strokeStyle = o.ink; c.lineWidth = 5; c.setLineDash([6, 4]); c.beginPath(); c.moveTo(50, 6); c.lineTo(50, 46); c.stroke(); c.setLineDash([]); // цепь
+      c.strokeStyle = o.ink; c.lineWidth = 5; c.setLineDash([6, 4]); c.beginPath(); c.moveTo(50, 6); c.lineTo(50, 46); c.stroke(); c.setLineDash([]); // the chain
       c.beginPath(); c.moveTo(50, 46); c.lineTo(50, 60); c.arc(38, 62, 12, 0, Math.PI * 0.9); c.lineWidth = 9; c.strokeStyle = o.shadow ? o.ink : '#9aa0a6'; c.stroke();
       if (!o.shadow) { c.fillStyle = '#7a120c'; circle(c, 30, 70, 4); c.fill(); c.fillRect(29, 72, 2, 10); }
     },
     bearfat(c, o) {
-      // банка с жиром и отпечатком лапы
+      // a jar of fat with a paw print
       rr(c, 26, 26, 48, 60, 8); fillInk(c, o.shadow ? o.ink : '#e8d8a0');
       if (!o.shadow) {
         c.fillStyle = '#7a5a36'; c.fillRect(24, 20, 52, 10);
@@ -568,7 +568,7 @@
     },
   };
 
-  // декоративные помощники
+  // decorative helpers
   function speedLines(c, o, x, y) { c.globalAlpha = o.shadow ? 0 : 0.6; for (let i = 0; i < 3; i++) { c.fillStyle = o.ink; c.fillRect(x, y + i * 12, 16 - i * 3, 3); } c.globalAlpha = 1; }
   function impact(c, o, x, y) { if (o.shadow) return; c.fillStyle = '#ffd36b'; c.save(); c.translate(x, y); for (let i = 0; i < 8; i++) { c.rotate(Math.PI / 4); c.fillRect(-1.5, 6, 3, 9); } c.restore(); }
   function zap(c, o, x, y) { if (o.shadow) return; c.fillStyle = '#ffd36b'; poly(c, [x, y - 14, x - 8, y + 2, x - 1, y + 2, x - 5, y + 16, x + 7, y - 2, x, y - 2]); c.fill(); }
@@ -593,7 +593,7 @@
 
   Object.keys(ICONS).forEach((k) => Art.define(k, iconArt(ICONS[k])));
 
-  // ------------------------------------------- значки базовых действий ---
+  // ------------------------------------------- basic action icons ---
   const ACT = {
     search(c, o) { circle(c, 44, 42, 20); strokeInk(c, 9, o.ink); c.beginPath(); c.moveTo(58, 56); c.lineTo(78, 76); strokeInk(c, 13, o.ink); if (!o.shadow) { circle(c, 44, 42, 14); c.fillStyle = 'rgba(200,230,255,.35)'; c.fill(); } },
     punch: ICONS.fist,
@@ -605,7 +605,7 @@
     rest(c, o) { c.beginPath(); c.moveTo(50, 84); c.bezierCurveTo(10, 56, 14, 22, 36, 22); c.bezierCurveTo(44, 22, 50, 30, 50, 34); c.bezierCurveTo(50, 30, 56, 22, 64, 22); c.bezierCurveTo(86, 22, 90, 56, 50, 84); fillInk(c, o.shadow ? o.ink : '#c0392b'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.moveTo(24, 50); c.lineTo(38, 50); c.lineTo(44, 40); c.lineTo(52, 62); c.lineTo(58, 50); c.lineTo(76, 50); c.stroke(); } },
     heal(c, o) { rr(c, 38, 14, 24, 72, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); rr(c, 14, 38, 72, 24, 4); fillInk(c, o.shadow ? o.ink : '#e8e8e8'); strokeInk(c, 4, o.ink); if (!o.shadow) { c.fillStyle = '#c0392b'; c.fillRect(41, 17, 18, 66); c.fillRect(17, 41, 66, 18); } },
     cleanse(c, o) {
-      // шприц с антидотом
+      // a syringe with an antidote
       c.save(); c.translate(50, 50); c.rotate(-Math.PI / 4);
       rr(c, -10, -34, 20, 52, 4); fillInk(c, o.shadow ? o.ink : '#dfe9ee'); strokeInk(c, 4, o.ink);
       if (!o.shadow) { c.fillStyle = '#9be04a'; c.fillRect(-7, -8, 14, 23); }
@@ -639,7 +639,7 @@
     ctx.fillStyle = '#fff'; ctx.font = `${Math.round(h / 8)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(o.key || '?', w / 2, h / 2);
   });
 
-  // ------------------------------------------------------------ масти ---
+  // ------------------------------------------------------------ suits ---
   Art.define('suit_rage', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
     poly(c, [50, 6, 62, 36, 94, 38, 68, 58, 78, 92, 50, 72, 22, 92, 32, 58, 6, 38, 38, 36]); c.fillStyle = ZG.SUITS.rage.color; c.fill(); strokeInk(c, 5);
   }));
@@ -661,12 +661,12 @@
     poly(c, [10, 38, 30, 38, 54, 16, 54, 84, 30, 62, 10, 62]); c.fillStyle = '#e0a83a'; c.fill(); strokeInk(c, 5);
     for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(56, 50, 16 + i * 14, -0.8, 0.8); strokeInk(c, 6, '#e0a83a'); }
   }));
-  // ------------------------------------------------- постройки убежища ---
-  // Сцены 100×100: стена-фон, пол и предметы; o.off — ещё не построено (силуэт).
+  // ------------------------------------------------- shelter buildings ---
+  // 100×100 scenes: a background wall, a floor and objects; o.off — not built yet (a silhouette).
   function bldBase(c, wall, floor) {
     const g = c.createLinearGradient(0, 0, 0, 70); g.addColorStop(0, wall[0]); g.addColorStop(1, wall[1]);
     c.fillStyle = g; c.fillRect(0, 0, 100, 72);
-    c.fillStyle = 'rgba(0,0,0,.18)'; for (let i = 0; i < 6; i++) c.fillRect(0, 10 + i * 11, 100, 1.2); // доски/кирпич
+    c.fillStyle = 'rgba(0,0,0,.18)'; for (let i = 0; i < 6; i++) c.fillRect(0, 10 + i * 11, 100, 1.2); // boards/bricks
     const f = c.createLinearGradient(0, 72, 0, 100); f.addColorStop(0, floor[0]); f.addColorStop(1, floor[1]);
     c.fillStyle = f; c.fillRect(0, 72, 100, 28);
     c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, 71, 100, 2);
@@ -674,30 +674,30 @@
   const BLD = {
     infirmary(c) {
       bldBase(c, ['#4a5a5e', '#2c3638'], ['#5a5048', '#3a332c']);
-      // флаг с красным крестом
+      // a flag with a red cross
       c.fillStyle = '#e8e4d8'; c.fillRect(12, 10, 26, 18); strokeInk(c, 1.5);
       c.fillStyle = '#c0392b'; c.fillRect(22, 12, 6, 14); c.fillRect(16, 16, 18, 6);
-      // койка
+      // a cot
       rr(c, 30, 56, 58, 10, 3); fillInk(c, '#d8d0c0'); strokeInk(c, 1.5);
-      rr(c, 30, 52, 16, 8, 3); fillInk(c, '#f2ece0'); strokeInk(c, 1.2); // подушка
-      rr(c, 46, 54, 42, 8, 2); fillInk(c, '#6f8fa8'); // одеяло
+      rr(c, 30, 52, 16, 8, 3); fillInk(c, '#f2ece0'); strokeInk(c, 1.2); // pillow
+      rr(c, 46, 54, 42, 8, 2); fillInk(c, '#6f8fa8'); // blanket
       c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(33, 66); c.lineTo(33, 80); c.moveTo(85, 66); c.lineTo(85, 80); c.stroke();
-      // капельница
+      // an IV drip
       c.beginPath(); c.moveTo(20, 34); c.lineTo(20, 82); c.moveTo(14, 82); c.lineTo(26, 82); strokeInk(c, 2);
       rr(c, 15, 32, 10, 13, 3); fillInk(c, 'rgba(180,220,255,.85)'); strokeInk(c, 1.2);
       c.beginPath(); c.moveTo(20, 45); c.quadraticCurveTo(24, 58, 34, 58); strokeInk(c, 1, '#7a9aaa');
     },
     storage(c) {
       bldBase(c, ['#5a4a38', '#33291e'], ['#4a4036', '#2c251e']);
-      // стеллаж
+      // a shelving unit
       c.fillStyle = '#7a5a36'; [18, 40, 62].forEach((y) => { c.fillRect(8, y, 60, 4); });
       c.fillRect(8, 14, 4, 62); c.fillRect(64, 14, 4, 62);
-      // коробки на полках
+      // boxes on the shelves
       [[14, 8, 14, 10], [30, 6, 12, 12], [46, 9, 14, 9], [14, 30, 18, 10], [36, 28, 10, 12], [50, 31, 12, 9], [16, 52, 14, 10], [34, 51, 24, 11]].forEach(([x, y, w, h], i) => {
         rr(c, x, y, w, h, 1.5); fillInk(c, ['#c8a060', '#a8804a', '#d8b878'][i % 3]); strokeInk(c, 1.2);
         c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(x + w / 2 - 1, y, 2, h);
       });
-      // бочка и ящик у стены
+      // a barrel and a crate by the wall
       rr(c, 74, 52, 18, 26, 6); fillInk(c, '#3f6a4a'); strokeInk(c, 1.5);
       c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(74, 58, 18, 2); c.fillRect(74, 70, 18, 2);
       rr(c, 70, 78, 26, 14, 2); fillInk(c, '#9a7040'); strokeInk(c, 1.5);
@@ -705,58 +705,58 @@
     },
     workshop(c) {
       bldBase(c, ['#3e4248', '#24272b'], ['#4a4440', '#2a2622']);
-      // инструменты на стене
+      // tools on the wall
       c.strokeStyle = '#9aa4ac'; c.lineWidth = 3; c.beginPath(); c.moveTo(16, 14); c.lineTo(16, 34); c.stroke();
       circle(c, 16, 14, 5); strokeInk(c, 3, '#9aa4ac');
       rr(c, 30, 12, 6, 22, 2); fillInk(c, '#c0392b'); c.fillStyle = '#9aa4ac'; c.fillRect(31.5, 30, 3, 10);
       c.beginPath(); c.moveTo(48, 14); c.lineTo(58, 30); c.moveTo(58, 14); c.lineTo(48, 30); strokeInk(c, 2.5, '#9aa4ac');
-      // верстак
+      // a workbench
       rr(c, 8, 52, 84, 8, 2); fillInk(c, '#8a6038'); strokeInk(c, 1.5);
       c.fillStyle = '#5a3a1a'; c.fillRect(12, 60, 5, 26); c.fillRect(83, 60, 5, 26);
-      // тиски и деталь
+      // a vise and a part
       rr(c, 60, 42, 16, 10, 2); fillInk(c, '#4a5560'); strokeInk(c, 1.2);
       rr(c, 64, 36, 8, 7, 1); fillInk(c, '#c8ccd0');
-      // искры
+      // sparks
       for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i - 4) * 0.28; c.beginPath(); c.moveTo(68 + Math.cos(a) * 5, 36 + Math.sin(a) * 5); c.lineTo(68 + Math.cos(a) * (12 + hash(i) * 10), 36 + Math.sin(a) * (12 + hash(i) * 10)); strokeInk(c, 1.4, i % 2 ? '#ffd36b' : '#ff9a3a'); }
-      // гаечный ключ на верстаке
+      // a wrench on the workbench
       c.beginPath(); c.moveTo(22, 48); c.lineTo(46, 48); strokeInk(c, 3, '#9aa4ac'); circle(c, 20, 48, 3.5); strokeInk(c, 2.5, '#9aa4ac');
     },
     redcorner(c) {
       bldBase(c, ['#7a2a22', '#4a1712'], ['#5a4a3a', '#3a2e24']);
-      // знамя со звездой
+      // a banner with a star
       c.fillStyle = '#c0392b'; poly(c, [36, 8, 64, 8, 64, 40, 50, 34, 36, 40]); c.fill(); strokeInk(c, 1.5);
       c.fillStyle = '#f0c040';
       c.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(50 + Math.cos(a) * r, 21 + Math.sin(a) * r); } c.closePath(); c.fill();
-      // стенгазета
+      // a wall newspaper
       rr(c, 8, 14, 22, 28, 1); fillInk(c, '#e8dcc0'); strokeInk(c, 1.2);
       c.fillStyle = 'rgba(0,0,0,.35)'; for (let i = 0; i < 6; i++) c.fillRect(11, 18 + i * 4, 16 - (i % 2) * 5, 1.5);
-      // книжная полка
+      // a bookshelf
       c.fillStyle = '#6a4a2a'; c.fillRect(70, 30, 24, 3);
       ['#2d6fb5', '#c0392b', '#3f6a4a', '#d4a017', '#6b5b95'].forEach((col, i) => { c.fillStyle = col; c.fillRect(71 + i * 4.5, 18 + (i % 2) * 2, 4, 12 - (i % 2) * 2); });
-      // стол с шахматами и чайником
+      // a table with chess and a kettle
       rr(c, 22, 60, 56, 6, 2); fillInk(c, '#8a6038'); c.fillStyle = '#5a3a1a'; c.fillRect(28, 66, 4, 18); c.fillRect(68, 66, 4, 18);
       for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? '#e8dcc0' : '#2a2018'; c.fillRect(30 + i * 4, 54 + j * 3, 4, 3); }
       rr(c, 56, 50, 12, 10, 4); fillInk(c, '#9aa4ac'); strokeInk(c, 1.2);
     },
     bath(c) {
       bldBase(c, ['#6a4a2a', '#3e2a16'], ['#5a4030', '#3a2a1e']);
-      // бревенчатая стена
+      // a log wall
       for (let i = 0; i < 6; i++) { rr(c, 0, 4 + i * 11, 100, 9, 4.5); fillInk(c, i % 2 ? '#8a6038' : '#7a5230'); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.stroke(); }
-      // полок и печь-каменка
+      // a bench and a stone stove
       rr(c, 52, 56, 42, 7, 2); fillInk(c, '#c89a60'); strokeInk(c, 1.2);
       c.fillStyle = '#7a5230'; c.fillRect(56, 63, 4, 18); c.fillRect(86, 63, 4, 18);
       rr(c, 10, 50, 30, 32, 3); fillInk(c, '#4a4440'); strokeInk(c, 1.5);
       for (let i = 0; i < 7; i++) { circle(c, 14 + (i % 4) * 7 + (i > 3 ? 3 : 0), 48 - (i > 3 ? 5 : 0), 4); fillInk(c, ['#8a8478', '#6a645c', '#9a948a'][i % 3]); }
       rr(c, 18, 62, 14, 10, 2); fillInk(c, '#ff7a2a'); c.fillStyle = 'rgba(255,220,120,.7)'; c.fillRect(21, 66, 8, 4);
-      // ушат и веник
+      // a tub and a birch broom
       rr(c, 44, 74, 14, 12, 3); fillInk(c, '#a8804a'); strokeInk(c, 1.2);
       c.beginPath(); c.moveTo(74, 46); c.lineTo(80, 30); strokeInk(c, 2, '#6a4a2a');
       for (let i = 0; i < 7; i++) { c.beginPath(); c.ellipse(76 + (i - 3) * 2.5, 42 + hash(i) * 6, 2.5, 5, (i - 3) * 0.3, 0, 7); fillInk(c, i % 2 ? '#5a8a3a' : '#4a7a2e'); }
-      // пар
+      // steam
       for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(20 + i * 6, 34 - i * 7, 7 + i * 2, 5 + i, 0, 0, 7); c.fillStyle = 'rgba(240,240,240,' + (0.35 - i * 0.06) + ')'; c.fill(); }
     },
   };
-  // Тир: мишени на стене, стойка с винтовкой
+  // Shooting Range: targets on the wall, a rack with a rifle
   BLD.range = function (c) {
     bldBase(c, ['#4a4a3a', '#2a2a20'], ['#5a4a36', '#3a2e22']);
     [[26, 30], [58, 26], [84, 34]].forEach(([x, y], i) => {
@@ -764,19 +764,19 @@
       c.strokeStyle = INK; c.lineWidth = 1.2; circle(c, x, y, 13 - (i === 2 ? 3 : 0)); c.stroke();
     });
     c.fillStyle = INK; [[24, 28], [29, 33], [57, 27]].forEach(([x, y]) => { circle(c, x, y, 1.6); c.fill(); });
-    rr(c, 8, 60, 84, 7, 2); fillInk(c, '#8a6038'); strokeInk(c, 1.5); // стойка
+    rr(c, 8, 60, 84, 7, 2); fillInk(c, '#8a6038'); strokeInk(c, 1.5); // rack
     c.save(); c.translate(48, 56); c.rotate(-0.06); rr(c, -30, -3, 46, 5, 2); fillInk(c, '#3a3a3a'); rr(c, 10, -4, 22, 8, 3); fillInk(c, '#7a5230'); c.restore();
-    c.fillStyle = '#c8a040'; for (let i = 0; i < 5; i++) c.fillRect(14 + i * 5, 74 + (i % 2) * 3, 2, 5); // гильзы
+    c.fillStyle = '#c8a040'; for (let i = 0; i < 5; i++) c.fillRect(14 + i * 5, 74 + (i % 2) * 3, 2, 5); // spent cartridges
   };
-  // Схрон: ящики и банки под брезентом
+  // Stash: crates and tins under a tarp
   BLD.stash = function (c) {
     bldBase(c, ['#3a3328', '#221d16'], ['#4a4034', '#2c261e']);
     rr(c, 10, 46, 40, 34, 2); fillInk(c, '#7a5a2a'); strokeInk(c, 1.5);
     c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(10, 63); c.lineTo(50, 63); c.stroke();
     rr(c, 54, 56, 34, 24, 2); fillInk(c, '#4a5a3a'); strokeInk(c, 1.5);
-    c.fillStyle = '#e8dcc0'; c.fillRect(64, 64, 14, 8); c.fillStyle = '#c0392b'; c.fillRect(70, 65, 2, 6); c.fillRect(68, 67, 6, 2); // аптечка
-    [[18, 36], [30, 36], [42, 38]].forEach(([x, y]) => { rr(c, x - 5, y - 8, 10, 12, 2); fillInk(c, '#9aa4ac'); strokeInk(c, 1); c.fillStyle = '#c0392b'; c.fillRect(x - 5, y - 4, 10, 3); }); // тушёнка
-    c.fillStyle = 'rgba(90,110,70,.85)'; poly(c, [6, 44, 50, 30, 94, 48, 92, 54, 50, 40, 8, 52]); c.fill(); strokeInk(c, 1.2); // брезент
+    c.fillStyle = '#e8dcc0'; c.fillRect(64, 64, 14, 8); c.fillStyle = '#c0392b'; c.fillRect(70, 65, 2, 6); c.fillRect(68, 67, 6, 2); // a medkit
+    [[18, 36], [30, 36], [42, 38]].forEach(([x, y]) => { rr(c, x - 5, y - 8, 10, 12, 2); fillInk(c, '#9aa4ac'); strokeInk(c, 1); c.fillStyle = '#c0392b'; c.fillRect(x - 5, y - 4, 10, 3); }); // stew tins
+    c.fillStyle = 'rgba(90,110,70,.85)'; poly(c, [6, 44, 50, 30, 94, 48, 92, 54, 50, 40, 8, 52]); c.fill(); strokeInk(c, 1.2); // a tarp
   };
   Object.keys(BLD).forEach((k) => Art.define('bld_' + k, (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.save();
@@ -795,15 +795,15 @@
     poly(c, [50, 4, 62, 36, 96, 38, 70, 58, 80, 94, 50, 74, 20, 94, 30, 58, 4, 38, 38, 36]); c.fillStyle = o.off ? '#3a332c' : '#f0c040'; c.fill(); strokeInk(c, 4);
   }));
 
-  // ------------------------------------------------------- портреты ---
+  // ------------------------------------------------------- portraits ---
   function bust(c, skin, body, extra) {
-    // плечи
+    // shoulders
     c.beginPath(); c.moveTo(8, 100); c.quadraticCurveTo(12, 70, 34, 66); c.lineTo(66, 66); c.quadraticCurveTo(88, 70, 92, 100); c.closePath(); c.fillStyle = body; c.fill(); strokeInk(c, 2.5);
-    // шея
+    // neck
     c.fillStyle = skin; c.fillRect(42, 56, 16, 14);
-    // голова
+    // head
     c.beginPath(); c.ellipse(50, 42, 19, 23, 0, 0, 7); c.fillStyle = skin; c.fill(); strokeInk(c, 2.5);
-    // тени лица
+    // face shadows
     c.fillStyle = 'rgba(0,0,0,.15)'; c.beginPath(); c.ellipse(57, 46, 10, 18, 0, -1.4, 1.6); c.fill();
     if (extra) extra(c);
   }
@@ -824,107 +824,107 @@
   const PORTRAITS = {
     boris: (c) => bust(c, '#c49470', '#a8341e', (c) => {
       eyes(c, '#3a2a1a', 44);
-      // щетина и густые тёмные усы подковой
+      // stubble and a thick dark horseshoe mustache
       c.fillStyle = 'rgba(50,30,20,.3)'; c.beginPath(); c.ellipse(50, 58, 16, 10, 0, 0, Math.PI); c.fill();
       c.fillStyle = '#2e1e14'; c.beginPath(); c.moveTo(37, 62); c.quadraticCurveTo(38, 51, 50, 51); c.quadraticCurveTo(62, 51, 63, 62); c.lineTo(59, 62); c.quadraticCurveTo(57, 55, 50, 55); c.quadraticCurveTo(43, 55, 41, 62); c.closePath(); c.fill();
-      // каска
+      // a hard hat
       c.beginPath(); c.arc(50, 34, 23, Math.PI, 0); c.fillStyle = '#b8352a'; c.fill(); strokeInk(c, 2.5);
       c.fillStyle = '#b8352a'; rr(c, 22, 31, 56, 6, 2); c.fill(); strokeInk(c, 2);
       c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(46, 13, 8, 18);
-      // светоотражающие полосы
+      // reflective stripes
       c.fillStyle = '#e8e8e8'; c.fillRect(20, 80, 60, 5);
     }),
     marina: (c) => bust(c, '#e6c3a5', '#e9e9e9', (c) => {
       eyes(c, '#2d6fb5', 41);
-      // шапочка
+      // a cap
       c.beginPath(); c.arc(50, 34, 21, Math.PI * 1.02, -0.02); c.quadraticCurveTo(70, 28, 30, 28); c.fillStyle = '#a8cfd0'; c.fill(); strokeInk(c, 2);
-      // волосы
+      // hair
       c.fillStyle = '#3a2418'; c.beginPath(); c.moveTo(30, 34); c.quadraticCurveTo(26, 56, 32, 62); c.lineTo(34, 38); c.fill(); c.beginPath(); c.moveTo(70, 34); c.quadraticCurveTo(74, 56, 68, 62); c.lineTo(66, 38); c.fill();
-      // медицинская маска на носу и рту
+      // a medical mask over the nose and mouth
       c.fillStyle = '#9fd0d8'; rr(c, 33, 47, 34, 18, 6); c.fill(); strokeInk(c, 1.5);
       c.strokeStyle = 'rgba(40,70,80,.45)'; c.lineWidth = 1; [52, 56, 60].forEach((y) => { c.beginPath(); c.moveTo(36, y); c.lineTo(64, y); c.stroke(); });
-      // халат и стетоскоп
+      // a coat and a stethoscope
       c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(50, 70); c.lineTo(42, 100); c.moveTo(50, 70); c.lineTo(58, 100); c.stroke();
       c.strokeStyle = '#333'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(36, 68); c.quadraticCurveTo(40, 90, 52, 88); c.stroke();
       c.fillStyle = '#c0392b'; c.fillRect(64, 78, 8, 3); c.fillRect(66.5, 75.5, 3, 8);
     }),
     lisa: (c) => bust(c, '#c99a72', '#4a6658', (c) => {
       eyes(c, '#4e7a3a', 43);
-      // капюшон
+      // a hood
       c.beginPath(); c.moveTo(24, 66); c.quadraticCurveTo(20, 18, 50, 14); c.quadraticCurveTo(80, 18, 76, 66); c.quadraticCurveTo(70, 40, 50, 28); c.quadraticCurveTo(30, 40, 24, 66); c.fillStyle = '#4f6e60'; c.fill(); strokeInk(c, 2.5);
-      // бандана
+      // a bandana
       c.beginPath(); c.moveTo(31, 50); c.lineTo(69, 50); c.lineTo(64, 64); c.lineTo(50, 70); c.lineTo(36, 64); c.closePath(); c.fillStyle = '#8f8a5c'; c.fill(); strokeInk(c, 1.5);
       c.fillStyle = 'rgba(60,60,30,.45)'; [[38, 56, 5], [50, 60, 4], [60, 55, 4], [45, 65, 3]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); });
-      // чёлка
+      // bangs
       c.fillStyle = '#4a2c18'; poly(c, [34, 30, 56, 26, 46, 36, 40, 34]); c.fill(); poly(c, [32, 34, 36, 33, 33, 52]); c.fill(); poly(c, [68, 34, 64, 33, 67, 52]); c.fill();
     }),
     sava: (c) => bust(c, '#bf9474', '#34484a', (c) => {
       c.fillStyle = '#5a3a78'; poly(c, [30, 68, 50, 80, 70, 68, 66, 74, 50, 86, 34, 74]); c.fill();
       eyes(c, '#9ab0c0', 43);
-      // глубокий капюшон и тень на лице
+      // a deep hood and a shadow on the face
       c.beginPath(); c.moveTo(22, 70); c.quadraticCurveTo(16, 14, 50, 10); c.quadraticCurveTo(84, 14, 78, 70); c.quadraticCurveTo(72, 34, 50, 24); c.quadraticCurveTo(28, 34, 22, 70); c.fillStyle = '#2c4442'; c.fill(); strokeInk(c, 2.5);
       c.fillStyle = 'rgba(10,8,20,.35)'; c.fillRect(30, 28, 40, 12);
-      // шарф до носа
+      // a scarf up to the nose
       c.beginPath(); c.moveTo(30, 48); c.lineTo(70, 48); c.lineTo(68, 66); c.lineTo(32, 66); c.closePath(); c.fillStyle = '#3c5650'; c.fill(); strokeInk(c, 1.5);
       c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1.2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(33, 53 + i * 4); c.lineTo(67, 53 + i * 4); c.stroke(); }
-      // перо за шарфом (сыч)
+      // a feather behind the scarf (the owl)
       c.fillStyle = '#c9b78f'; poly(c, [34, 60, 20, 50, 24, 56, 36, 64]); c.fill();
     }),
     gosha: (c) => bust(c, '#d8a882', '#b8d02a', (c) => {
       eyes(c, '#5a3a1a', 44);
-      // синяя кепка козырьком назад
+      // a blue cap with the visor turned back
       c.beginPath(); c.arc(50, 33, 22, Math.PI, 0); c.closePath(); c.fillStyle = '#2d5fa0'; c.fill(); strokeInk(c, 2.5);
       c.fillStyle = '#1f4a80'; c.fillRect(64, 28, 16, 6);
-      // наушники-противошумы висят на шее
+      // ear defenders hang around the neck
       c.strokeStyle = '#222'; c.lineWidth = 3; c.beginPath(); c.arc(50, 62, 20, 0.15, Math.PI - 0.15); c.stroke();
       [[30, 70], [70, 70]].forEach(([x, y]) => { rr(c, x - 7, y - 8, 14, 16, 5); c.fillStyle = '#e8701a'; c.fill(); strokeInk(c, 2); });
       c.fillStyle = '#5a3a20'; poly(c, [30, 36, 34, 46, 32, 50]); c.fill(); poly(c, [70, 36, 66, 46, 68, 50]); c.fill();
-      // щетина и широкая горластая ухмылка с щербинкой (без усов — усы у Виктора)
+      // stubble and a wide loud grin with a gap in the teeth (no mustache — the mustache is Viktor's)
       c.fillStyle = 'rgba(60,40,30,.22)'; c.beginPath(); c.ellipse(50, 60, 15, 8, 0, 0, Math.PI); c.fill();
       c.fillStyle = '#5a1a14'; c.beginPath(); c.moveTo(39, 54); c.quadraticCurveTo(50, 66, 61, 54); c.closePath(); c.fill(); strokeInk(c, 1.5);
       c.fillStyle = '#f2ead8'; c.beginPath(); c.moveTo(41, 55); c.lineTo(59, 55); c.quadraticCurveTo(50, 59, 41, 55); c.fill();
       c.fillStyle = '#5a1a14'; c.fillRect(49, 55, 2, 2.5);
-      // светоотражающие полосы на жилете
+      // reflective stripes on the vest
       c.fillStyle = '#e8e8d0'; c.fillRect(26, 82, 48, 4); c.fillRect(30, 90, 40, 4);
     }),
     gleb: (c) => bust(c, '#c89a74', '#4f5a36', (c) => {
       eyes(c, '#4a5a3a', 44);
-      // взъерошенные тёмные волосы
+      // tousled dark hair
       c.fillStyle = '#2e2a24'; c.beginPath(); c.moveTo(27, 40); c.quadraticCurveTo(26, 16, 50, 14); c.quadraticCurveTo(76, 16, 73, 40); c.lineTo(68, 30); c.lineTo(62, 34); c.lineTo(56, 26); c.lineTo(48, 32); c.lineTo(42, 26); c.lineTo(36, 34); c.closePath(); c.fill(); strokeInk(c, 1.5);
-      // нахмуренные брови и щетина, шрам через бровь
+      // frowning brows and stubble, a scar through the brow
       c.strokeStyle = '#2e2a24'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(36, 37); c.lineTo(46, 39); c.moveTo(64, 37); c.lineTo(54, 39); c.stroke();
       c.strokeStyle = 'rgba(120,40,30,.7)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(60, 33); c.lineTo(63, 47); c.stroke();
       c.fillStyle = 'rgba(50,40,30,.25)'; c.beginPath(); c.ellipse(50, 60, 15, 8, 0, 0, Math.PI); c.fill();
-      c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(44, 58); c.lineTo(56, 57); c.stroke(); // сжатые губы
-      // два пистолета крест-накрест у плеч
+      c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(44, 58); c.lineTo(56, 57); c.stroke(); // pressed lips
+      // two pistols crossed at the shoulders
       [[-1, 22], [1, 78]].forEach(([dir, x]) => { c.save(); c.translate(x, 84); c.rotate(dir * -0.55); c.fillStyle = '#5a6066'; rr(c, -4, -22, 8, 20, 2); c.fill(); strokeInk(c, 1.4); c.fillStyle = '#3a2a1e'; rr(c, -4, -4, 8, 11, 2); c.fill(); strokeInk(c, 1.2); c.restore(); });
     }),
     viktor: (c) => bust(c, '#cfa07e', '#6f8ea6', (c) => {
       eyes(c, '#3a2a1a', 44);
-      // усы
+      // a mustache
       c.fillStyle = '#9a9488'; c.beginPath(); c.moveTo(34, 60); c.quadraticCurveTo(38, 49, 50, 51); c.quadraticCurveTo(62, 49, 66, 60); c.quadraticCurveTo(58, 56, 50, 57); c.quadraticCurveTo(42, 56, 34, 60); c.fill(); strokeInk(c, 1.2);
-      // фуражка
+      // a peaked cap
       c.fillStyle = '#7f9fb6'; c.beginPath(); c.ellipse(50, 24, 26, 9, 0, 0, 7); c.fill(); strokeInk(c, 2);
       c.fillStyle = '#4a6478'; rr(c, 30, 24, 40, 10, 2); c.fill();
       c.fillStyle = INK; c.beginPath(); c.ellipse(50, 35, 20, 4, 0, 0, Math.PI); c.fill();
       c.fillStyle = '#2a3a48'; c.fillRect(30, 30, 40, 3);
       c.fillStyle = '#e0a83a'; circle(c, 50, 26, 3.5); c.fill();
-      // погоны
+      // shoulder boards
       c.fillStyle = '#e0a83a'; c.fillRect(16, 76, 14, 3); c.fillRect(70, 76, 14, 3);
     }),
     kira: (c) => bust(c, '#e2b896', '#6f7448', (c) => {
-      // ухмылка
+      // a grin
       c.fillStyle = '#f2ead8'; c.beginPath(); c.moveTo(42, 55); c.quadraticCurveTo(50, 62, 58, 55); c.closePath(); c.fill(); strokeInk(c, 1.3);
-      // волосы с хвостом
+      // hair in a ponytail
       c.fillStyle = '#3a2618'; c.beginPath(); c.arc(50, 34, 21, Math.PI, 0); c.fill();
       c.beginPath(); c.moveTo(68, 30); c.quadraticCurveTo(90, 40, 82, 70); c.quadraticCurveTo(78, 50, 66, 40); c.fill();
-      // очки-гогглы
+      // goggles
       c.fillStyle = '#333'; c.fillRect(28, 40, 44, 6);
       c.fillStyle = '#5fb0b8'; rr(c, 32, 36, 16, 12, 5); c.fill(); strokeInk(c, 2.5); rr(c, 52, 36, 16, 12, 5); c.fill(); strokeInk(c, 2.5);
       c.fillStyle = 'rgba(255,255,255,.45)'; c.fillRect(35, 38, 4, 3); c.fillRect(55, 38, 4, 3);
-      // масло на щеке
+      // oil on the cheek
       c.fillStyle = 'rgba(30,20,10,.5)'; c.fillRect(56, 50, 8, 3);
-      // комбинезон
+      // overalls
       c.fillStyle = '#8a7a40'; c.fillRect(34, 76, 6, 24); c.fillRect(60, 76, 6, 24);
     }),
   };
@@ -940,8 +940,8 @@
     });
   });
 
-  // --------------------------------- обращённые герои (оборот фишки героя) ---
-  // портрет героя, «отравленный» трупной зеленью: светящиеся глаза, вены, кровь у рта
+  // --------------------------------- turned heroes (the back of the hero piece) ---
+  // a hero portrait "poisoned" with corpse green: glowing eyes, veins, blood at the mouth
   function turnedFace(c, id) {
     PORTRAITS[id](c);
     c.save();
@@ -977,11 +977,11 @@
       ctx.translate(-r * 0.9, -r * 0.88);
       Art.unit(ctx, r * 1.8, r * 1.8, (c) => turnedFace(c, id));
       ctx.restore();
-      // двойной обод: цвет героя, поверх — рваная трупная зелень
+      // a double rim: the hero's color, over it — ragged corpse green
       ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.14; ctx.strokeStyle = def ? def.color : TURNED_RING; ctx.stroke();
       ctx.setLineDash([r * 0.22, r * 0.14]); ctx.lineWidth = r * 0.08; ctx.strokeStyle = TURNED_RING; ctx.stroke(); ctx.setLineDash([]);
       ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
-      // значок биоопасности сверху справа
+      // a biohazard icon at the top right
       ctx.save(); ctx.translate(r * 0.42, -r * 0.84);
       ctx.beginPath(); ctx.arc(r * 0.17, r * 0.17, r * 0.2, 0, 7); ctx.fillStyle = INK; ctx.fill();
       Art.unit(ctx, r * 0.34, r * 0.34, (c) => ICONS.infection(c, { ink: INK }));
@@ -990,30 +990,30 @@
     });
   });
 
-  // ------------------------------------------------- зомби (жетоны-лица) ---
+  // ------------------------------------------------- zombies (face tokens) ---
   function zBust(c, p) {
-    // плечи
+    // shoulders
     c.beginPath(); c.moveTo(4, 100); c.quadraticCurveTo(10, 70, 32, 66); c.lineTo(68, 66); c.quadraticCurveTo(90, 70, 96, 100); c.closePath();
     c.fillStyle = p.cloth; c.fill(); strokeInk(c, 2.5);
     if (p.rips) { c.fillStyle = p.skin; poly(c, [30, 78, 36, 72, 40, 84]); c.fill(); poly(c, [62, 80, 70, 74, 66, 90]); c.fill(); }
     c.fillStyle = p.skin; c.fillRect(42, 54, 16, 16);
-    // голова
+    // head
     c.save();
     c.translate(50, 42); c.rotate(p.tilt || 0); c.translate(-50, -42);
     c.beginPath(); c.ellipse(50, 42, p.hw || 20, p.hh || 23, 0, 0, 7); c.fillStyle = p.skin; c.fill(); strokeInk(c, 2.5);
     c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(58, 46, (p.hw || 20) * 0.5, (p.hh || 23) * 0.8, 0, -1.4, 1.6); c.fill();
-    // глаза
+    // eyes
     const ey = p.eyeY || 40;
     c.fillStyle = INK; c.beginPath(); c.ellipse(41, ey, 6, 5, 0, 0, 7); c.fill(); c.beginPath(); c.ellipse(59, ey, 6, 5, 0, 0, 7); c.fill();
     c.fillStyle = p.eye || '#e5d34d'; circle(c, 41, ey, p.pupil || 2.4); c.fill(); circle(c, 59, ey, p.pupil || 2.4); c.fill();
     if (p.deadEye) { c.fillStyle = '#e8e4d8'; circle(c, 59, ey, 4.5); c.fill(); }
-    // рот
+    // mouth
     c.fillStyle = '#2a0a06';
     c.beginPath(); c.ellipse(50, p.mouthY || 56, p.mw || 9, p.mh || 4, 0, 0, 7); c.fill();
     c.fillStyle = '#e8dcc0';
     const mw = p.mw || 9, my = p.mouthY || 56, mh = p.mh || 4;
     for (let i = 0; i < 5; i++) { c.fillRect(50 - mw * 0.8 + i * mw * 0.38, my - mh, mw * 0.18, mh * 0.6); c.fillRect(50 - mw * 0.7 + i * mw * 0.36, my + mh * 0.45, mw * 0.16, mh * 0.55); }
-    // раны, вены
+    // wounds, veins
     c.strokeStyle = 'rgba(60,20,10,.6)'; c.lineWidth = 1.5;
     c.beginPath(); c.moveTo(34, 30); c.lineTo(40, 34); c.lineTo(37, 37); c.stroke();
     c.fillStyle = '#7a120c'; circle(c, 64, 50, 2.5); c.fill(); c.fillRect(63, 50, 1.5, 7);
@@ -1037,14 +1037,14 @@
       } } },
     plague: { ring: '#7fae3a', p: { skin: '#9fb06a', cloth: '#4a5a2a', hw: 19, eye: '#d8ff4a', mw: 10, mh: 5,
       extra: (c) => {
-        // гнойники и капающая слизь
+        // boils and dripping slime
         c.fillStyle = '#c8e05a'; [[38, 32, 3.5], [62, 30, 2.8], [56, 50, 3], [36, 48, 2.4]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); });
         c.fillStyle = '#6a8a20'; c.fillRect(47, 60, 2.5, 10); c.fillRect(53, 60, 2, 7);
         c.strokeStyle = 'rgba(200,255,80,.6)'; c.lineWidth = 2; c.beginPath(); c.arc(50, 42, 30, 0.3, 1.2); c.stroke(); c.beginPath(); c.arc(50, 42, 30, 2.0, 2.8); c.stroke();
       } } },
     grabber: { ring: '#8a5a9a', p: { skin: '#a8a090', cloth: '#3a2e40', hw: 18, hh: 25, eye: '#ff8a3a', mw: 8,
       extra: (c) => {
-        // длинные руки, тянущиеся вперёд
+        // long arms reaching forward
         c.strokeStyle = '#a8a090'; c.lineWidth = 6; c.lineCap = 'round';
         c.beginPath(); c.moveTo(22, 78); c.quadraticCurveTo(8, 50, 18, 26); c.stroke();
         c.beginPath(); c.moveTo(78, 78); c.quadraticCurveTo(92, 50, 82, 26); c.stroke();
@@ -1053,7 +1053,7 @@
   };
   Art.ZSTYLE = ZSTYLE;
   Object.keys(ZSTYLE).forEach((type) => {
-    // портрет (для карт и подсказок)
+    // portrait (for cards and tooltips)
     Art.define('zp_' + type, (ctx, w, h) => {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, ZSTYLE[type].ring); g.addColorStop(1, '#0d0a08');
@@ -1061,7 +1061,7 @@
       const s = Math.min(w, h);
       ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, (c) => zBust(c, ZSTYLE[type].p)); ctx.restore();
     });
-    // жетон на поле
+    // a token on the board
     Art.define('z_' + type, (ctx, w, h, o) => {
       const st = ZSTYLE[type];
       const r = Math.min(w, h) / 2;
@@ -1083,17 +1083,17 @@
       ctx.restore();
     });
   });
-  // Ищейка — мёртвый пёс (отдельный рисунок, не человеческий бюст)
+  // The Hound — a dead dog (a separate drawing, not a human bust)
   function houndHead(c) {
     c.fillStyle = '#5a4a3a'; c.beginPath(); c.ellipse(50, 56, 26, 22, 0, 0, 7); c.fill(); strokeInk(c, 2.5);
-    // уши
+    // ears
     c.fillStyle = '#4a3a2a'; poly(c, [28, 44, 22, 14, 42, 36]); c.fill(); strokeInk(c, 2); poly(c, [72, 44, 78, 14, 58, 36]); c.fill(); strokeInk(c, 2);
-    // морда
+    // muzzle
     c.fillStyle = '#6a5a48'; c.beginPath(); c.ellipse(50, 70, 15, 11, 0, 0, 7); c.fill(); strokeInk(c, 2);
     c.fillStyle = INK; c.beginPath(); c.ellipse(50, 64, 5, 3.5, 0, 0, 7); c.fill();
     c.fillStyle = '#2a0a06'; c.beginPath(); c.ellipse(50, 76, 10, 4, 0, 0, 7); c.fill();
     c.fillStyle = '#e8dcc0'; for (let i = 0; i < 5; i++) { poly(c, [42 + i * 4, 74, 44 + i * 4, 79, 46 + i * 4, 74]); c.fill(); }
-    // глаза и рёбра
+    // eyes and ribs
     c.fillStyle = '#ff3a1a'; circle(c, 40, 50, 3.2); c.fill(); circle(c, 60, 50, 3.2); c.fill();
     c.strokeStyle = 'rgba(232,220,192,.5)'; c.lineWidth = 1.5; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(50, 98, 18 + i * 5, 3.6, 5.8); c.stroke(); }
   }
@@ -1113,31 +1113,31 @@
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
   });
-  // Бандит — человек в балаклаве (третья сторона)
+  // A Bandit — a man in a balaclava (a third side)
   function banditHead(c) {
-    c.fillStyle = '#3a3a3a'; c.beginPath(); c.moveTo(18, 100); c.quadraticCurveTo(22, 76, 50, 74); c.quadraticCurveTo(78, 76, 82, 100); c.fill(); strokeInk(c, 2.5); // куртка
-    c.fillStyle = '#5a4a2a'; poly(c, [40, 78, 50, 92, 60, 78]); c.fill(); // ворот
-    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 46, 24, 29, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // балаклава
-    c.fillStyle = '#c8956a'; rr(c, 30, 38, 40, 13, 5); c.fill(); // прорезь для глаз
+    c.fillStyle = '#3a3a3a'; c.beginPath(); c.moveTo(18, 100); c.quadraticCurveTo(22, 76, 50, 74); c.quadraticCurveTo(78, 76, 82, 100); c.fill(); strokeInk(c, 2.5); // jacket
+    c.fillStyle = '#5a4a2a'; poly(c, [40, 78, 50, 92, 60, 78]); c.fill(); // collar
+    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 46, 24, 29, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // balaclava
+    c.fillStyle = '#c8956a'; rr(c, 30, 38, 40, 13, 5); c.fill(); // eye slit
     c.fillStyle = '#f4f0e0'; circle(c, 40, 44.5, 3.6); c.fill(); circle(c, 60, 44.5, 3.6); c.fill();
     c.fillStyle = INK; circle(c, 41, 44.5, 1.8); c.fill(); circle(c, 59, 44.5, 1.8); c.fill();
-    c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(33, 37); c.lineTo(46, 40); c.moveTo(67, 37); c.lineTo(54, 40); c.stroke(); // злые брови
-    c.fillStyle = '#c8956a'; c.beginPath(); c.ellipse(50, 62, 7, 3, 0, 0, 7); c.fill(); // прорезь рта
-    c.fillStyle = '#7a1a10'; c.fillRect(24, 22, 52, 5); // красная полоса
+    c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(33, 37); c.lineTo(46, 40); c.moveTo(67, 37); c.lineTo(54, 40); c.stroke(); // angry brows
+    c.fillStyle = '#c8956a'; c.beginPath(); c.ellipse(50, 62, 7, 3, 0, 0, 7); c.fill(); // mouth slit
+    c.fillStyle = '#7a1a10'; c.fillRect(24, 22, 52, 5); // a red stripe
   }
   Art.define('zp_bandit', (ctx, w, h) => {
     const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3a4a5a'); g.addColorStop(1, '#0d0a08');
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, banditHead); ctx.restore();
   });
-  // перевёрнутый горящий бензовоз (миссия «Трасса»), пламя анимируется по o.t
+  // an overturned burning fuel tanker (mission "Highway"), the flames are animated by o.t
   Art.define('tanker_fire', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     const t = (o && o.t) || 0;
     c.save(); c.translate(50, 54); c.rotate(-0.35);
     c.fillStyle = 'rgba(0,0,0,.4)'; rr(c, -40, -12, 84, 30, 10); c.fill();
-    rr(c, -38, -16, 58, 28, 12); c.fillStyle = '#8a8e92'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke(); // цистерна
+    rr(c, -38, -16, 58, 28, 12); c.fillStyle = '#8a8e92'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke(); // the tank
     c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(-30, -6, 44, 4);
-    rr(c, 20, -14, 20, 24, 4); c.fillStyle = '#b03a2e'; c.fill(); c.stroke(); // кабина
+    rr(c, 20, -14, 20, 24, 4); c.fillStyle = '#b03a2e'; c.fill(); c.stroke(); // the cab
     c.fillStyle = '#1a2230'; c.fillRect(30, -10, 8, 8);
     c.restore();
     for (let i = 0; i < 7; i++) {
@@ -1146,9 +1146,9 @@
       c.fillStyle = i % 2 ? 'rgba(255,170,40,.9)' : 'rgba(255,90,30,.9)'; c.fill();
       c.beginPath(); c.moveTo(x - 3, 52); c.quadraticCurveTo(x, 52 - hgt * 0.45, x + 3, 52); c.closePath(); c.fillStyle = 'rgba(255,240,160,.9)'; c.fill();
     }
-    c.fillStyle = 'rgba(40,30,30,.45)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(40 + i * 12 + Math.sin(t + i) * 3, 14 - ((t * 10 + i * 9) % 14), 7 + i * 2, 0, 7); c.fill(); } // дым
+    c.fillStyle = 'rgba(40,30,30,.45)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(40 + i * 12 + Math.sin(t + i) * 3, 14 - ((t * 10 + i * 9) % 14), 7 + i * 2, 0, 7); c.fill(); } // smoke
   }));
-  // фишка бандитов — квадратная (не путать с круглыми зомби), красная кайма; у главаря — золотая
+  // the bandits' piece is square (not to be confused with round zombies), a red border; the boss's is gold
   function banditToken(ctx, w, h, bg, ring, head) {
     const r = Math.min(w, h) / 2;
     ctx.save(); ctx.translate(w / 2, h / 2);
@@ -1162,30 +1162,30 @@
   }
   Art.banditToken = banditToken;
   Art.define('z_bandit', (ctx, w, h) => banditToken(ctx, w, h, '#5a6a7a', '#c0392b', banditHead));
-  Art.define('z_guard', (ctx, w, h) => banditToken(ctx, w, h, '#6a5a3a', '#c0392b', banditHead)); // часовой — та же балаклава, другой фон
+  Art.define('z_guard', (ctx, w, h) => banditToken(ctx, w, h, '#6a5a3a', '#c0392b', banditHead)); // the sentry — the same balaclava, a different background
   Art.define('zp_guard', (ctx, w, h) => { const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#6a5a3a'); g.addColorStop(1, '#0d0a08'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, banditHead); ctx.restore(); });
 
-  // Снайпер — бандит в капюшоне с оптикой; Лесник — главарь в медвежьей шкуре
+  // The Sniper — a bandit in a hood with a scope; the Forester — the boss in a bearskin
   function sniperHead(c) {
     c.fillStyle = '#3a4030'; c.beginPath(); c.moveTo(16, 100); c.quadraticCurveTo(20, 74, 50, 72); c.quadraticCurveTo(80, 74, 84, 100); c.fill(); strokeInk(c, 2.5);
-    c.fillStyle = '#4a5238'; c.beginPath(); c.moveTo(20, 60); c.quadraticCurveTo(22, 14, 50, 14); c.quadraticCurveTo(78, 14, 80, 60); c.quadraticCurveTo(50, 72, 20, 60); c.fill(); strokeInk(c, 2.5); // капюшон
+    c.fillStyle = '#4a5238'; c.beginPath(); c.moveTo(20, 60); c.quadraticCurveTo(22, 14, 50, 14); c.quadraticCurveTo(78, 14, 80, 60); c.quadraticCurveTo(50, 72, 20, 60); c.fill(); strokeInk(c, 2.5); // hood
     c.fillStyle = '#c8956a'; c.beginPath(); c.ellipse(50, 50, 18, 20, 0, 0, 7); c.fill(); strokeInk(c, 2);
-    c.fillStyle = '#2a2e24'; c.fillRect(32, 50, 36, 14); // шарф
-    c.fillStyle = '#1a1a1e'; rr(c, 24, 38, 30, 11, 4); c.fill(); // прицел у глаза
+    c.fillStyle = '#2a2e24'; c.fillRect(32, 50, 36, 14); // scarf
+    c.fillStyle = '#1a1a1e'; rr(c, 24, 38, 30, 11, 4); c.fill(); // a scope at the eye
     c.fillStyle = '#ff5a3c'; circle(c, 28, 43.5, 3.5); c.fill();
     c.fillStyle = '#f4f0e0'; circle(c, 61, 44, 3); c.fill(); c.fillStyle = INK; circle(c, 61, 44, 1.6); c.fill();
   }
   function foresterHead(c) {
-    c.fillStyle = '#4a3424'; c.beginPath(); c.moveTo(8, 100); c.quadraticCurveTo(10, 66, 50, 64); c.quadraticCurveTo(90, 66, 92, 100); c.fill(); strokeInk(c, 2.5); // шкура на плечах
-    c.fillStyle = '#5a4030'; c.beginPath(); c.ellipse(50, 24, 30, 16, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // медвежья голова-капюшон
+    c.fillStyle = '#4a3424'; c.beginPath(); c.moveTo(8, 100); c.quadraticCurveTo(10, 66, 50, 64); c.quadraticCurveTo(90, 66, 92, 100); c.fill(); strokeInk(c, 2.5); // the skin on the shoulders
+    c.fillStyle = '#5a4030'; c.beginPath(); c.ellipse(50, 24, 30, 16, 0, 0, 7); c.fill(); strokeInk(c, 2.5); // the bear-head hood
     c.fillStyle = '#4a3424'; circle(c, 26, 14, 7); c.fill(); strokeInk(c, 2); circle(c, 74, 14, 7); c.fill(); strokeInk(c, 2);
-    c.fillStyle = '#e8dcc0'; poly(c, [34, 34, 37, 42, 40, 34]); c.fill(); poly(c, [60, 34, 63, 42, 66, 34]); c.fill(); // клыки шкуры
+    c.fillStyle = '#e8dcc0'; poly(c, [34, 34, 37, 42, 40, 34]); c.fill(); poly(c, [60, 34, 63, 42, 66, 34]); c.fill(); // the skin's fangs
     c.fillStyle = '#b07a52'; c.beginPath(); c.ellipse(50, 54, 19, 20, 0, 0, 7); c.fill(); strokeInk(c, 2);
-    c.fillStyle = '#8a8478'; c.beginPath(); c.moveTo(32, 56); c.quadraticCurveTo(50, 92, 68, 56); c.quadraticCurveTo(50, 66, 32, 56); c.fill(); strokeInk(c, 1.5); // седая борода
+    c.fillStyle = '#8a8478'; c.beginPath(); c.moveTo(32, 56); c.quadraticCurveTo(50, 92, 68, 56); c.quadraticCurveTo(50, 66, 32, 56); c.fill(); strokeInk(c, 1.5); // a gray beard
     c.fillStyle = '#f4f0e0'; circle(c, 42, 48, 3.2); c.fill(); circle(c, 58, 48, 3.2); c.fill();
     c.fillStyle = INK; circle(c, 42, 48, 1.7); c.fill(); circle(c, 58, 48, 1.7); c.fill();
     c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(35, 41); c.lineTo(47, 44); c.moveTo(65, 41); c.lineTo(53, 44); c.stroke();
-    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(56, 40); c.lineTo(64, 58); c.stroke(); // шрам
+    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(56, 40); c.lineTo(64, 58); c.stroke(); // a scar
   }
   [['sniper', sniperHead, '#3a4a30', '#c0392b'], ['forester', foresterHead, '#6a4a2a', '#d4a017']].forEach(([id, head, bg, ring]) => {
     Art.define('zp_' + id, (ctx, w, h) => {
@@ -1193,20 +1193,20 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, head); ctx.restore();
     });
-    Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, id === 'forester' ? '#d4a017' : '#c0392b', head)); // квадратная фишка банды
+    Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, id === 'forester' ? '#d4a017' : '#c0392b', head)); // a square gang piece
   });
-  // Медведь-шатун — мини-босс леса (отдельный рисунок)
+  // The Rogue Bear — the forest mini-boss (a separate drawing)
   function bearHead(c) {
-    c.fillStyle = '#4a3424'; circle(c, 28, 30, 10); c.fill(); strokeInk(c, 2); circle(c, 72, 30, 10); c.fill(); strokeInk(c, 2); // уши
+    c.fillStyle = '#4a3424'; circle(c, 28, 30, 10); c.fill(); strokeInk(c, 2); circle(c, 72, 30, 10); c.fill(); strokeInk(c, 2); // ears
     c.fillStyle = '#6a8a50'; circle(c, 72, 30, 4); c.fill();
     c.fillStyle = '#5a4030'; c.beginPath(); c.ellipse(50, 54, 30, 27, 0, 0, 7); c.fill(); strokeInk(c, 2.5);
-    c.fillStyle = 'rgba(120,150,90,.55)'; [[34, 44, 7], [64, 62, 6], [42, 70, 4]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); }); // проплешины-гниль
-    c.fillStyle = '#8a6a50'; c.beginPath(); c.ellipse(50, 66, 15, 12, 0, 0, 7); c.fill(); strokeInk(c, 2); // морда
+    c.fillStyle = 'rgba(120,150,90,.55)'; [[34, 44, 7], [64, 62, 6], [42, 70, 4]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); }); // rotting bald patches
+    c.fillStyle = '#8a6a50'; c.beginPath(); c.ellipse(50, 66, 15, 12, 0, 0, 7); c.fill(); strokeInk(c, 2); // muzzle
     c.fillStyle = INK; c.beginPath(); c.ellipse(50, 60, 6, 4, 0, 0, 7); c.fill();
     c.fillStyle = '#2a0a06'; c.beginPath(); c.ellipse(50, 73, 10, 5, 0, 0, 7); c.fill();
     c.fillStyle = '#e8dcc0'; poly(c, [42, 70, 44, 77, 46, 70]); c.fill(); poly(c, [54, 70, 56, 77, 58, 70]); c.fill();
     c.fillStyle = '#d8ff4a'; circle(c, 38, 46, 3.4); c.fill(); circle(c, 62, 46, 3.4); c.fill();
-    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(60, 36); c.lineTo(68, 52); c.stroke(); // шрам
+    c.strokeStyle = '#7a1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(60, 36); c.lineTo(68, 52); c.stroke(); // a scar
   }
   Art.define('zp_bear', (ctx, w, h) => {
     const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#6a4a2a'); g.addColorStop(1, '#0d0a08');
@@ -1220,45 +1220,45 @@
     const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, '#8a6a3a'); gr.addColorStop(1, '#0d0a08');
     ctx.fillStyle = gr; ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, bearHead); ctx.restore();
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = '#d4a017'; ctx.stroke(); // золотое кольцо мини-босса
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = '#d4a017'; ctx.stroke(); // the mini-boss's gold ring
     ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
     ctx.restore();
   });
-  // Укушенная невеста (босс миссии 7): фата, белое платье, укус на шее, злые глаза
+  // The Bitten Bride (mission 7 boss): a veil, a white dress, a bite on the neck, evil eyes
   function brideHead(c) {
-    c.fillStyle = '#ece6dc'; c.beginPath(); c.moveTo(10, 100); c.quadraticCurveTo(14, 70, 50, 68); c.quadraticCurveTo(86, 70, 90, 100); c.fill(); strokeInk(c, 2.5); // платье
-    c.fillStyle = 'rgba(150,20,14,.8)'; c.beginPath(); c.ellipse(38, 82, 9, 6, -0.3, 0, 7); c.fill(); c.fillRect(36, 84, 3, 12); // кровь на платье
-    c.fillStyle = 'rgba(240,236,228,.85)'; c.beginPath(); c.moveTo(18, 92); c.quadraticCurveTo(10, 30, 50, 12); c.quadraticCurveTo(90, 30, 82, 92); c.lineTo(72, 92); c.quadraticCurveTo(76, 40, 50, 30); c.quadraticCurveTo(24, 40, 28, 92); c.fill(); strokeInk(c, 1.6); // фата
-    c.fillStyle = '#b8c2a8'; c.beginPath(); c.ellipse(50, 50, 17, 20, 0, 0, 7); c.fill(); strokeInk(c, 2); // мёртвое лицо
-    c.fillStyle = '#4a3a2a'; c.beginPath(); c.ellipse(50, 33, 18, 8, 0, Math.PI, 0); c.fill(); // волосы под фатой
-    c.fillStyle = '#e8d070'; [[36, 26], [44, 22], [50, 21], [56, 22], [64, 26]].forEach(([x, y]) => { circle(c, x, y, 2.2); c.fill(); }); // венок
+    c.fillStyle = '#ece6dc'; c.beginPath(); c.moveTo(10, 100); c.quadraticCurveTo(14, 70, 50, 68); c.quadraticCurveTo(86, 70, 90, 100); c.fill(); strokeInk(c, 2.5); // the dress
+    c.fillStyle = 'rgba(150,20,14,.8)'; c.beginPath(); c.ellipse(38, 82, 9, 6, -0.3, 0, 7); c.fill(); c.fillRect(36, 84, 3, 12); // blood on the dress
+    c.fillStyle = 'rgba(240,236,228,.85)'; c.beginPath(); c.moveTo(18, 92); c.quadraticCurveTo(10, 30, 50, 12); c.quadraticCurveTo(90, 30, 82, 92); c.lineTo(72, 92); c.quadraticCurveTo(76, 40, 50, 30); c.quadraticCurveTo(24, 40, 28, 92); c.fill(); strokeInk(c, 1.6); // the veil
+    c.fillStyle = '#b8c2a8'; c.beginPath(); c.ellipse(50, 50, 17, 20, 0, 0, 7); c.fill(); strokeInk(c, 2); // a dead face
+    c.fillStyle = '#4a3a2a'; c.beginPath(); c.ellipse(50, 33, 18, 8, 0, Math.PI, 0); c.fill(); // hair under the veil
+    c.fillStyle = '#e8d070'; [[36, 26], [44, 22], [50, 21], [56, 22], [64, 26]].forEach(([x, y]) => { circle(c, x, y, 2.2); c.fill(); }); // the wreath
     c.fillStyle = '#ff3a2a'; c.shadowColor = '#ff3a2a'; c.shadowBlur = 5; circle(c, 43, 47, 2.6); c.fill(); circle(c, 57, 47, 2.6); c.fill(); c.shadowBlur = 0;
-    c.fillStyle = '#3a0a08'; c.beginPath(); c.ellipse(50, 60, 5, 6, 0, 0, 7); c.fill(); // открытый в крике рот
-    c.fillStyle = '#7a120c'; c.beginPath(); c.ellipse(62, 66, 6, 4, 0.4, 0, 7); c.fill(); // укус на шее
+    c.fillStyle = '#3a0a08'; c.beginPath(); c.ellipse(50, 60, 5, 6, 0, 0, 7); c.fill(); // a mouth open in a scream
+    c.fillStyle = '#7a120c'; c.beginPath(); c.ellipse(62, 66, 6, 4, 0.4, 0, 7); c.fill(); // a bite on the neck
     c.strokeStyle = '#7a120c'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(60, 70); c.lineTo(59, 78); c.stroke();
   }
-  // Головорез «Волков»: балаклава с черепом, разгрузка
+  // A Wolves Cutthroat: a balaclava with a skull, a load-bearing vest
   function raiderHead(c) {
     c.fillStyle = '#3a3a30'; c.beginPath(); c.moveTo(12, 100); c.quadraticCurveTo(16, 72, 50, 70); c.quadraticCurveTo(84, 72, 88, 100); c.fill(); strokeInk(c, 2.5);
-    c.fillStyle = '#5a5a40'; rr(c, 28, 80, 44, 14, 3); c.fill(); strokeInk(c, 1.5); // разгрузка
-    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 48, 21, 25, 0, 0, 7); c.fill(); strokeInk(c, 2); // балаклава
-    c.fillStyle = '#d8d0c0'; c.beginPath(); c.ellipse(50, 52, 13, 15, 0, 0, 7); c.fill(); // череп-принт
+    c.fillStyle = '#5a5a40'; rr(c, 28, 80, 44, 14, 3); c.fill(); strokeInk(c, 1.5); // the vest
+    c.fillStyle = '#1e1e22'; c.beginPath(); c.ellipse(50, 48, 21, 25, 0, 0, 7); c.fill(); strokeInk(c, 2); // balaclava
+    c.fillStyle = '#d8d0c0'; c.beginPath(); c.ellipse(50, 52, 13, 15, 0, 0, 7); c.fill(); // a skull print
     c.fillStyle = '#1e1e22'; circle(c, 44, 48, 4); c.fill(); circle(c, 56, 48, 4); c.fill(); c.fillRect(45, 60, 10, 4);
     c.fillStyle = '#ff5a3c'; circle(c, 44, 48, 1.6); c.fill(); circle(c, 56, 48, 1.6); c.fill();
-    c.fillStyle = '#8a1a14'; poly(c, [28, 30, 50, 22, 72, 30, 72, 34, 28, 34]); c.fill(); // красная повязка
+    c.fillStyle = '#8a1a14'; poly(c, [28, 30, 50, 22, 72, 30, 72, 34, 28, 34]); c.fill(); // a red headband
   }
-  // Мясник (босс миссии 8): лысая голова, резиновый фартук в крови, крюк на цепи
+  // The Butcher (mission 8 boss): a bald head, a bloody rubber apron, a hook on a chain
   function butcherHead(c) {
-    c.fillStyle = '#d8d0b8'; c.beginPath(); c.moveTo(6, 100); c.quadraticCurveTo(10, 62, 50, 60); c.quadraticCurveTo(90, 62, 94, 100); c.fill(); strokeInk(c, 2.5); // плечи
-    c.fillStyle = '#e8e2d0'; rr(c, 26, 66, 48, 34, 4); c.fill(); strokeInk(c, 2); // фартук
+    c.fillStyle = '#d8d0b8'; c.beginPath(); c.moveTo(6, 100); c.quadraticCurveTo(10, 62, 50, 60); c.quadraticCurveTo(90, 62, 94, 100); c.fill(); strokeInk(c, 2.5); // shoulders
+    c.fillStyle = '#e8e2d0'; rr(c, 26, 66, 48, 34, 4); c.fill(); strokeInk(c, 2); // the apron
     c.fillStyle = 'rgba(150,20,14,.85)'; [[36, 78, 7], [58, 86, 9], [46, 94, 5]].forEach(([x, y, r]) => { circle(c, x, y, r); c.fill(); });
-    c.fillStyle = '#9aa58a'; c.beginPath(); c.ellipse(50, 42, 22, 24, 0, 0, 7); c.fill(); strokeInk(c, 2.2); // лысая голова
-    c.fillStyle = 'rgba(70,90,50,.4)'; circle(c, 40, 30, 5); c.fill(); circle(c, 60, 52, 4); c.fill(); // трупные пятна
+    c.fillStyle = '#9aa58a'; c.beginPath(); c.ellipse(50, 42, 22, 24, 0, 0, 7); c.fill(); strokeInk(c, 2.2); // a bald head
+    c.fillStyle = 'rgba(70,90,50,.4)'; circle(c, 40, 30, 5); c.fill(); circle(c, 60, 52, 4); c.fill(); // livor mortis spots
     c.fillStyle = '#ff4a2a'; circle(c, 42, 42, 3); c.fill(); circle(c, 58, 42, 3); c.fill();
     c.strokeStyle = INK; c.lineWidth = 2.5; c.beginPath(); c.moveTo(35, 36); c.lineTo(46, 39); c.moveTo(65, 36); c.lineTo(54, 39); c.stroke();
-    c.fillStyle = '#2a0806'; rr(c, 40, 52, 20, 7, 2); c.fill(); c.fillStyle = '#e8dcc0'; for (let i = 0; i < 4; i++) c.fillRect(42 + i * 4.5, 52, 2.5, 3); // оскал
-    c.strokeStyle = '#8a9096'; c.lineWidth = 3; c.beginPath(); c.moveTo(84, 96); c.lineTo(84, 40); c.stroke(); // цепь
-    c.lineWidth = 4.5; c.beginPath(); c.arc(78, 36, 8, -0.3, Math.PI * 1.1); c.stroke(); // крюк
+    c.fillStyle = '#2a0806'; rr(c, 40, 52, 20, 7, 2); c.fill(); c.fillStyle = '#e8dcc0'; for (let i = 0; i < 4; i++) c.fillRect(42 + i * 4.5, 52, 2.5, 3); // a snarl
+    c.strokeStyle = '#8a9096'; c.lineWidth = 3; c.beginPath(); c.moveTo(84, 96); c.lineTo(84, 40); c.stroke(); // the chain
+    c.lineWidth = 4.5; c.beginPath(); c.arc(78, 36, 8, -0.3, Math.PI * 1.1); c.stroke(); // the hook
   }
   [['bride', brideHead, '#8a7a8a', '#d4a017', true], ['raider', raiderHead, '#4a4a3a', '#8a1a14', false], ['butcher', butcherHead, '#8a4a3a', '#d4a017', true]].forEach(([id, head, bg, ring, round]) => {
     Art.define('zp_' + id, (ctx, w, h) => {
@@ -1266,7 +1266,7 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       const s = Math.min(w, h); ctx.save(); ctx.translate((w - s) / 2, h - s); Art.unit(ctx, s, s, head); ctx.restore();
     });
-    if (!round) { Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, ring, head)); return; } // квадратная фишка банды
+    if (!round) { Art.define('z_' + id, (ctx, w, h) => banditToken(ctx, w, h, bg, ring, head)); return; } // a square gang piece
     Art.define('z_' + id, (ctx, w, h) => {
       const r = Math.min(w, h) / 2;
       ctx.save(); ctx.translate(w / 2, h / 2);
@@ -1274,7 +1274,7 @@
       const gr = ctx.createRadialGradient(0, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, bg); gr.addColorStop(1, '#0d0a08');
       ctx.fillStyle = gr; ctx.fill();
       ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, 7); ctx.clip(); ctx.translate(-r * 0.86, -r * 0.92); Art.unit(ctx, r * 1.72, r * 1.72, head); ctx.restore();
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = ring; ctx.stroke(); // золотое кольцо босса
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, 7); ctx.lineWidth = r * 0.18; ctx.strokeStyle = ring; ctx.stroke(); // the boss's gold ring
       ctx.lineWidth = Math.max(1, r * 0.04); ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, r * 0.96, 0, 7); ctx.stroke();
       ctx.restore();
     });
@@ -1303,7 +1303,7 @@
     ctx.restore();
   });
 
-  // ------------------------------------------------------ жетоны поля ---
+  // ------------------------------------------------------ board tokens ---
   Art.define('tok_crate', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.save(); c.translate(3, 4); rr(c, 12, 12, 76, 76, 6); c.fillStyle = 'rgba(0,0,0,.45)'; c.fill(); c.restore();
     rr(c, 12, 12, 76, 76, 6); c.fillStyle = o.opened ? '#5a4a34' : '#9a6a32'; c.fill(); strokeInk(c, 4);
@@ -1315,7 +1315,7 @@
       c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 50, 52);
     }
   }));
-  // сейф: стальной ящик с кодовым диском; заклинило — красный крест; пуст — тёмный
+  // a safe: a steel box with a combination dial; jammed — a red cross; empty — dark
   Art.define('tok_safe', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     c.save(); c.translate(3, 4); rr(c, 10, 10, 80, 80, 8); c.fillStyle = 'rgba(0,0,0,.45)'; c.fill(); c.restore();
     rr(c, 10, 10, 80, 80, 8); c.fillStyle = o.dead ? '#3a3e44' : '#6a7078'; c.fill(); strokeInk(c, 4);
@@ -1369,23 +1369,23 @@
     c.strokeStyle = '#e0a83a'; c.lineWidth = 7; c.beginPath(); c.moveTo(20, 20); c.lineTo(80, 80); c.moveTo(80, 20); c.lineTo(20, 80); c.stroke();
     if (o.n) { circle(c, 76, 24, 16); c.fillStyle = '#e0a83a'; c.fill(); strokeInk(c, 3); c.fillStyle = INK; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(o.n, 76, 26); }
   }));
-  // пустышки (лицевая сторона; рубашка — как у зомби, tok_zback)
+  // decoys (the face side; the back — like a zombie's, tok_zback)
   Art.define('tok_decoy', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     circle(c, 50, 50, 46); c.fillStyle = { gone: '#4a4038', lair: '#8a6a32', ambush: '#7a1f1f', tracks: '#3a4a5a' }[o.kind || 'gone']; c.fill(); c.lineWidth = 4; c.strokeStyle = '#1a1410'; c.stroke();
     c.fillStyle = '#e8dcc0'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.font = 'bold 15px sans-serif';
-    c.fillText({ gone: 'УШЛИ', lair: 'ЛОГОВО', ambush: 'ЗАСАДА', tracks: 'СЛЕДЫ' }[o.kind || 'gone'], 50, 74);
+    c.fillText({ gone: 'GONE', lair: 'LAIR', ambush: 'AMBUSH', tracks: 'TRACKS' }[o.kind || 'gone'], 50, 74);
     c.font = 'bold 34px sans-serif';
     c.fillText({ gone: '∅', lair: '⌂', ambush: '!', tracks: '👣' }[o.kind || 'gone'], 50, 42);
   }));
   Art.define('tok_door', (ctx, w, h, o) => Art.unit(ctx, w, h, (c) => {
     rr(c, 8, 8, 84, 84, 10); c.fillStyle = o.open ? '#3a2e22' : '#5a3e20'; c.fill(); strokeInk(c, 4);
-    if (o.open) { c.save(); c.translate(26, 20); c.rotate(-0.5); rr(c, 0, 0, 22, 62, 2); c.fillStyle = '#7a542c'; c.fill(); strokeInk(c, 3); c.restore(); c.fillStyle = '#e8dcc0'; c.font = 'bold 14px sans-serif'; c.textAlign = 'center'; c.fillText('ОТКР', 64, 86); }
+    if (o.open) { c.save(); c.translate(26, 20); c.rotate(-0.5); rr(c, 0, 0, 22, 62, 2); c.fillStyle = '#7a542c'; c.fill(); strokeInk(c, 3); c.restore(); c.fillStyle = '#e8dcc0'; c.font = 'bold 14px sans-serif'; c.textAlign = 'center'; c.fillText('OPEN', 64, 86); }
     else { rr(c, 30, 14, 40, 72, 3); c.fillStyle = '#7a542c'; c.fill(); strokeInk(c, 3); circle(c, 62, 52, 4); c.fillStyle = '#e0c070'; c.fill(); }
   }));
-  Art.define('tok_round', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 5); c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Р', 50, 54); }));
+  Art.define('tok_round', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#f0c040'; c.fill(); strokeInk(c, 5); c.fillStyle = INK; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('R', 50, 54); }));
   Art.define('tok_alarm', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#e0602a'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 40px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', 50, 54); }));
-  Art.define('tok_start', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#2e8b57'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('СТАРТ', 50, 54); }));
+  Art.define('tok_start', (ctx, w, h) => Art.unit(ctx, w, h, (c) => { circle(c, 50, 50, 44); c.fillStyle = '#2e8b57'; c.fill(); strokeInk(c, 5); c.fillStyle = '#fff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('START', 50, 54); }));
   Art.define('tok_zback', (ctx, w, h) => Art.unit(ctx, w, h, (c) => {
     circle(c, 50, 50, 46); c.fillStyle = '#2b211a'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#7a0c06'; c.stroke();
     c.fillStyle = 'rgba(232,220,192,.35)'; c.font = 'bold 48px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 50, 54);
@@ -1409,7 +1409,7 @@
     if (extra) extra(c);
   }
   Art.define('exit_car', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#3d6e8f', '#4f87ab')));
-  Art.define('exit_van', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#5a6e3a', '#7a9450'))); // УАЗ-«буханка» с автобазы
+  Art.define('exit_van', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#5a6e3a', '#7a9450'))); // the UAZ "Loaf" van from the motor depot
   Art.define('exit_ambulance', (ctx, w, h) => Art.unit(ctx, w, h, (c) => vehicle(c, '#eeeeee', '#ffffff', (c) => {
     c.fillStyle = '#c0392b'; c.fillRect(44, 44, 8, 20); c.fillRect(38, 50, 20, 8); c.fillStyle = '#2d6fb5'; c.fillRect(30, 40, 8, 4); c.fillStyle = '#c0392b'; c.fillRect(58, 40, 8, 4);
   })));
@@ -1424,9 +1424,9 @@
     }
   }));
 
-  // ---------------------------------------------------- условия партии ---
+  // ---------------------------------------------------- game conditions ---
   Art.define('cond_calm', (ctx, w, h) => { cardBg(ctx, w, h, '#4a5a6a', '#1c2228'); Art.unit(ctx, w, h, (c) => { circle(c, 50, 46, 22); c.fillStyle = '#e8d8a0'; c.fill(); c.fillStyle = '#1c2228'; circle(c, 60, 40, 20); c.fill(); }); });
-  Art.define('cond_noon', (ctx, w, h) => { cardBg(ctx, w, h, '#b89a5a', '#3a2e18'); Art.unit(ctx, w, h, (c) => { c.strokeStyle = '#f8e8a0'; c.lineWidth = 4; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(50 + Math.cos(a) * 28, 46 + Math.sin(a) * 28); c.lineTo(50 + Math.cos(a) * 40, 46 + Math.sin(a) * 40); c.stroke(); } circle(c, 50, 46, 22); c.fillStyle = '#fff4c0'; c.fill(); }); }); // солнце в зените
+  Art.define('cond_noon', (ctx, w, h) => { cardBg(ctx, w, h, '#b89a5a', '#3a2e18'); Art.unit(ctx, w, h, (c) => { c.strokeStyle = '#f8e8a0'; c.lineWidth = 4; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(50 + Math.cos(a) * 28, 46 + Math.sin(a) * 28); c.lineTo(50 + Math.cos(a) * 40, 46 + Math.sin(a) * 40); c.stroke(); } circle(c, 50, 46, 22); c.fillStyle = '#fff4c0'; c.fill(); }); }); // the sun at its zenith
   Art.define('cond_fog', (ctx, w, h) => { cardBg(ctx, w, h, '#7a8a8a', '#2a3232'); Art.unit(ctx, w, h, (c) => { c.fillStyle = 'rgba(230,235,235,.55)'; for (let i = 0; i < 5; i++) { rr(c, 6 + (i % 2) * 14, 18 + i * 14, 80, 8, 4); c.fill(); } }); });
   Art.define('cond_rain', (ctx, w, h) => { cardBg(ctx, w, h, '#3a5a7a', '#141e2a'); Art.unit(ctx, w, h, (c) => { c.strokeStyle = 'rgba(200,220,255,.7)'; c.lineWidth = 2; for (let i = 0; i < 30; i++) { const x = hash(i) * 110 - 5, y = hash(i + 50) * 100; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 5, y + 14); c.stroke(); } }); });
   Art.define('cond_moon', (ctx, w, h) => { cardBg(ctx, w, h, '#5a3a6a', '#1a1022'); Art.unit(ctx, w, h, (c) => { circle(c, 50, 44, 26); c.fillStyle = '#f2e6c0'; c.fill(); c.fillStyle = 'rgba(0,0,0,.12)'; circle(c, 42, 38, 6); c.fill(); circle(c, 58, 52, 8); c.fill(); c.fillStyle = INK; poly(c, [0, 100, 0, 80, 20, 72, 34, 84, 50, 70, 70, 82, 86, 74, 100, 84, 100, 100]); c.fill(); }); });
@@ -1434,20 +1434,20 @@
   Art.define('cond_swarm', (ctx, w, h) => { cardBg(ctx, w, h, '#5a6a3a', '#1a2210'); Art.unit(ctx, w, h, (c) => { for (let i = 0; i < 6; i++) zombieHead(c, {}, 18 + (i % 3) * 32, 34 + Math.floor(i / 3) * 34, 13); }); });
   Art.define('cond_stash', (ctx, w, h) => { cardBg(ctx, w, h, '#7a5a2a', '#2a1e0e'); Art.unit(ctx, w, h, (c) => { ZG.Art.draw(c, 'tok_crate', 22, 22, 56, 56, {}); }); });
 
-  // ------------------------------------------------------ титульный арт ---
+  // ------------------------------------------------------ title art ---
   Art.define('title', (ctx, w, h, o) => {
     const t = o.t || 0;
     const sky = ctx.createLinearGradient(0, 0, 0, h);
     sky.addColorStop(0, '#120b10'); sky.addColorStop(0.55, '#4a1a14'); sky.addColorStop(1, '#0b0807');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
-    // луна
+    // the moon
     const mx = w * 0.72, my = h * 0.3, mr = Math.min(w, h) * 0.13;
     const mg = ctx.createRadialGradient(mx, my, mr * 0.2, mx, my, mr * 3);
     mg.addColorStop(0, 'rgba(240,200,140,.35)'); mg.addColorStop(1, 'rgba(240,200,140,0)');
     ctx.fillStyle = mg; ctx.fillRect(0, 0, w, h);
     ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.fillStyle = '#f0d8a8'; ctx.fill();
     ctx.fillStyle = 'rgba(120,60,40,.25)'; ctx.beginPath(); ctx.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.25, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(mx + mr * 0.35, my + mr * 0.3, mr * 0.18, 0, 7); ctx.fill();
-    // силуэт города (3 слоя параллакса)
+    // the city silhouette (3 parallax layers)
     [[0.62, '#1d0f0d', 0.12, 0.1], [0.7, '#140a09', 0.18, 0.2], [0.8, '#0a0605', 0.25, 0.35]].forEach(([base, col, var_, sp], li) => {
       ctx.fillStyle = col;
       ctx.beginPath(); ctx.moveTo(0, h);
@@ -1460,7 +1460,7 @@
         x += bw; i++;
       }
       ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
-      // окна
+      // windows
       if (li === 1) {
         for (let k = 0; k < 40; k++) {
           const wx = hash(k + 100) * w, wy = h * (0.5 + hash(k + 200) * 0.18);
@@ -1470,7 +1470,7 @@
         }
       }
     });
-    // орда силуэтов
+    // a horde of silhouettes
     for (let k = 0; k < 26; k++) {
       const zx = ((hash(k) * w * 1.2 + t * (8 + hash(k + 3) * 10)) % (w * 1.2)) - w * 0.1;
       const zy = h * (0.84 + hash(k + 5) * 0.1);
@@ -1485,7 +1485,7 @@
       ctx.fillRect(-8, -12, 7, 26 + Math.sin(t * 3 + k) * 4); ctx.fillRect(2, -12, 7, 26 - Math.sin(t * 3 + k) * 4);
       ctx.restore();
     }
-    // туман
+    // fog
     for (let k = 0; k < 4; k++) {
       const fx = ((t * 15 * (k + 1)) % (w * 1.5)) - w * 0.25;
       const fg = ctx.createRadialGradient(fx, h * 0.85, 10, fx, h * 0.85, w * 0.35);

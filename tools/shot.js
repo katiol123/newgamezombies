@@ -1,4 +1,4 @@
-// Скриншоты интерфейса: node tools/shot.js <out-dir> [scenario]
+// UI screenshots: node tools/shot.js <out-dir> [scenario]
 const { chromium } = require('playwright');
 const path = require('path');
 const out = process.argv[2] || '.';
@@ -22,14 +22,14 @@ const out = process.argv[2] || '.';
   await page.click('#modal .btn.primary').catch(() => {});
   await page.waitForTimeout(2500);
   await page.screenshot({ path: out + '/05-game.png' });
-  // начать ход первым героем
+  // start the turn with the first hero
   await page.click('#actions .act.big').catch(() => {});
   await page.waitForTimeout(1200);
   await page.screenshot({ path: out + '/06-turn.png' });
   await page.hover('#hand .card:nth-child(1)').catch(() => {});
   await page.waitForTimeout(500);
   await page.screenshot({ path: out + '/07-hover.png' });
-  // автоходы на несколько ходов (модалки закрываем «как игрок»)
+  // auto-turns for a few turns (modals are closed “like a player”)
   for (let i = 0; i < 8; i++) {
     await page.evaluate(() => {
       window.__done = false;

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Печатает журнал одной партии ИИ: node tools/trace.js [seed] [heroes] [scenario]
+// Prints the log of one AI game: node tools/trace.js [seed] [heroes] [scenario]
 const ZG = require('./load');
 const seed = process.argv[2] || 't1';
 const heroes = (process.argv[3] || 'boris,lisa').split(',');

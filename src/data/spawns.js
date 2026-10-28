@@ -1,7 +1,7 @@
 /*
- * Карты появления. Каждая карта — три строки: Сумерки / Ночь / Глухая ночь.
- * Строка — список врагов, которые выходят из точки появления.
- * Особые карты (event) срабатывают вместо обычного появления.
+ * Spawn cards. Each card has three rows: Dusk / Night / Dead of Night.
+ * A row is the list of enemies that come out of the spawn point.
+ * Special cards (event) trigger instead of a normal spawn.
  */
 (function (G) {
   'use strict';
@@ -25,8 +25,8 @@
     { id: 'sp_pl', rows: [[], [P], [P, W]] },
     { id: 'sp_gr', rows: [[], [H], [H, W]] },
     {
-      id: 'sp_sewer', name: 'Канализация', event: true,
-      text: 'Из этого люка и из случайного другого выходит по Шатуну.',
+      id: 'sp_sewer', name: 'Sewer', event: true,
+      text: 'A Shambler comes out of this manhole and out of another random one.',
       run(g, E, point) {
         E.spawnZombie(g, W, point);
         const others = g.spawnPoints.filter((p) => p !== point);
@@ -34,9 +34,9 @@
       },
     },
     {
-      id: 'sp_siren', name: 'Сирена', event: true,
-      text: 'Где-то воет сигнализация. Тревога +2.',
-      run(g, E) { E.raiseAlarm(g, 2, 'Сирена'); },
+      id: 'sp_siren', name: 'Car Alarm', event: true,
+      text: 'Somewhere a car alarm is wailing. Alarm +2.',
+      run(g, E) { E.raiseAlarm(g, 2, 'Car alarm'); },
     },
   ]);
 

@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Print &amp; Play — Мёртвый квартал</title>
+  <title>Print &amp; Play — Dead Block</title>
   <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -37,7 +37,7 @@
     .tracks .row div { width: 13mm; height: 15mm; display: flex; align-items: center; justify-content: center; font-size: 14pt; border: 2px solid #1d1712; border-radius: 2mm; }
     .wide-cards { display: flex; flex-wrap: wrap; gap: 4mm; }
     .wide-cards .cond-card, .wide-cards .scen-card { width: 88mm; }
-    /* широкие текстовые карты — светлые: экономят краску и читаются на бумаге */
+    /* wide text cards are light: they save ink and read well on paper */
     .wide-cards .scen-card { background: #f4ecd8 !important; border-color: #8a6a2a; color: #1d1712; }
     .wide-cards .scen-card .scen-kicker { color: #8a4a10; }
     .wide-cards .scen-card .scen-name { color: #1d1712; }
@@ -54,7 +54,7 @@
   </style>
 </head>
 <body>
-  <div class="toolbar"><b>МЁРТВЫЙ КВАРТАЛ · Print &amp; Play</b><span>A4, масштаб 100%, без полей. Карты 63×88 мм, тайлы 150×150 мм, жетоны 22 мм.</span><button class="btn" onclick="print()">Печать</button></div>
+  <div class="toolbar"><b>DEAD BLOCK · Print &amp; Play</b><span>A4, 100% scale, no margins. Cards 63×88 mm, tiles 150×150 mm, tokens 22 mm.</span><button class="btn" onclick="print()">Print</button></div>
   <div id="out"></div>
 
 <script src="src/core/core.js"></script>
@@ -86,13 +86,13 @@
     out.appendChild(s);
     return s;
   }
-  // карты по 9 на лист
-  // каждая копия печатается отдельно
+  // cards, 9 per sheet
+  // each copy is printed separately
   function cardSheets(title, list) {
     const items = [];
     list.forEach((it) => { for (let k = 0; k < (it.count || 1); k++) items.push({ el: k ? it.el.cloneNode(true) : it.el }); });
     for (let i = 0; i < items.length; i += 9) {
-      const s = sheet(title + (items.length > 9 ? ` (${i / 9 + 1})` : ''), 'Вырежьте по пунктиру. Рубашки — на последних листах.');
+      const s = sheet(title + (items.length > 9 ? ` (${i / 9 + 1})` : ''), 'Cut along the dashed lines. Card backs are on the last sheets.');
       const grid = document.createElement('div'); grid.className = 'grid';
       items.slice(i, i + 9).forEach((it) => {
         const slot = document.createElement('div'); slot.className = 'slot';
@@ -109,23 +109,23 @@
     return c;
   }
 
-  // ---------------------------------------------- стартовые и именные карты
+  // ---------------------------------------------- starter and signature cards
   const starter = {};
   ZG.Heroes.visible()[0].deck.slice(0, 6).forEach((id) => { starter[id] = (starter[id] || 0) + 1; });
   const nHeroes = ZG.Heroes.visible().length;
-  cardSheets('Стартовые карты (общие)', Object.entries(starter).map(([id, n]) => ({ el: CV.card(id), count: n * nHeroes })));
+  cardSheets('Starter cards (shared)', Object.entries(starter).map(([id, n]) => ({ el: CV.card(id), count: n * nHeroes })));
   const heroCards = [];
   ZG.Heroes.visible().forEach((h) => h.deck.slice(6).forEach((id) => heroCards.push({ el: CV.card(id), count: 1 })));
-  cardSheets('Именные карты героев', heroCards);
-  cardSheets('Колода добычи', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
-  cardSheets('Раны, Заражения и грузы', [
+  cardSheets('Hero signature cards', heroCards);
+  cardSheets('Loot deck', Object.entries(lvl.loot).map(([id, n]) => ({ el: CV.card(id), count: n })));
+  cardSheets('Wounds, Infections and cargo', [
     { el: CV.card('wound'), count: 30 }, { el: CV.card('infection'), count: 12 },
     { el: CV.card('cargo_fuel'), count: 2 }, { el: CV.card('cargo_meds'), count: 4 }, { el: CV.card('cargo_radio'), count: 1 },
   ]);
-  cardSheets('Карты появления', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
+  cardSheets('Spawn cards', Object.entries(lvl.spawnDeck).map(([id, n]) => ({ el: CV.spawnCard(id), count: n })));
 
-  // ------------------------------------------------- задания и условия
-  // широкие карты (88 мм) — по 6 на лист
+  // ------------------------------------------------- objectives and conditions
+  // wide cards (88 mm), 6 per sheet
   const wideSheets = (title, els) => {
     for (let i = 0; i < els.length; i += 6) {
       const sc = sheet(title + (els.length > 6 ? ` (${i / 6 + 1})` : ''));
@@ -134,29 +134,29 @@
       sc.appendChild(wc);
     }
   };
-  wideSheets('Задания', lvl.scenarios.map((id) => CV.scenarioCard(id)));
-  wideSheets('Условия партии', lvl.conditions.map((id) => CV.conditionCard(id)));
-  wideSheets('События раунда', lvl.events.map((id) => CV.eventCard(id)));
-  wideSheets('Секретные миссии', ZG.MISSION_DECK.map((id) => CV.missionCard(id)));
-  wideSheets('Бонусные цели', lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">БОНУСНАЯ ЦЕЛЬ ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; return d; }));
+  wideSheets('Objectives', lvl.scenarios.map((id) => CV.scenarioCard(id)));
+  wideSheets('Game conditions', lvl.conditions.map((id) => CV.conditionCard(id)));
+  wideSheets('Round events', lvl.events.map((id) => CV.eventCard(id)));
+  wideSheets('Secret missions', ZG.MISSION_DECK.map((id) => CV.missionCard(id)));
+  wideSheets('Bonus objectives', lvl.bonuses.map((id) => { const b = ZG.Bonuses.get(id); const d = document.createElement('div'); d.className = 'scen-card'; d.innerHTML = `<div class="scen-kicker">BONUS OBJECTIVE ★</div><div class="scen-name">${b.name}</div><div class="scen-brief">${b.text}</div>${b.track ? `<div class="scen-setup">${b.track}</div>` : ''}`; return d; }));
 
-  // события убежища (кампания): 8 событий + 8 пустых, перемешать и тянуть по карте после каждой миссии
+  // shelter events (campaign): 8 events + 8 blanks; shuffle and draw one card after each mission
   if (ZG.SHELTER_EVENTS) {
-    const evEls = ZG.SHELTER_EVENTS.map((d) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">СОБЫТИЕ УБЕЖИЩА</div><div class="scen-name">${d.name}</div><div class="scen-brief">${d.text}</div>`; return e; })
-      .concat((ZG.SHELTER_BLANKS || []).map((t) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">СОБЫТИЕ УБЕЖИЩА</div><div class="scen-name">Тихая ночь</div><div class="scen-brief">${t}</div><div class="scen-setup">Ничего не происходит.</div>`; return e; }));
-    wideSheets('Кампания: события убежища (перемешайте; после каждой миссии — 1 карта)', evEls);
+    const evEls = ZG.SHELTER_EVENTS.map((d) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">SHELTER EVENT</div><div class="scen-name">${d.name}</div><div class="scen-brief">${d.text}</div>`; return e; })
+      .concat((ZG.SHELTER_BLANKS || []).map((t) => { const e = document.createElement('div'); e.className = 'scen-card'; e.innerHTML = `<div class="scen-kicker">SHELTER EVENT</div><div class="scen-name">A quiet night</div><div class="scen-brief">${t}</div><div class="scen-setup">Nothing happens.</div>`; return e; }));
+    wideSheets('Campaign: shelter events (shuffle; 1 card after each mission)', evEls);
   }
-  // сюжетные события кампании: режьте, переворачивайте и не читайте заранее — тянутся по условию на карте
+  // campaign story events: cut, turn face down and do not read ahead — they are drawn when the condition on the card is met
   const plots = ZG.Scenarios.all().filter((d) => d.plotCard).map((d) => CV.plotCard(d.id));
   if (plots.length) {
-    const sp = sheet('Кампания: сюжетные события', 'НЕ ЧИТАЙТЕ ЗАРАНЕЕ. Вырежьте и сложите лицом вниз — карту тянут, когда выполнено условие «Когда».');
+    const sp = sheet('Campaign: story events', 'DO NOT READ AHEAD. Cut out and stack face down — a card is drawn when its “When” condition is met.');
     const wc = document.createElement('div'); wc.className = 'wide-cards'; plots.forEach((e) => wc.appendChild(e)); sp.appendChild(wc);
   }
 
-  // ---------------------------------------------------- планшеты героев
+  // ---------------------------------------------------- hero boards
   const heroes = ZG.Heroes.visible();
   for (let i = 0; i < heroes.length; i += 2) {
-    const s = sheet('Планшеты героев', 'Отмечайте опыт и Раны кубиком или жетоном.');
+    const s = sheet('Hero boards', 'Track experience and Wounds with a die or a token.');
     heroes.slice(i, i + 2).forEach((h) => {
       const b = document.createElement('div'); b.className = 'hero-board';
       b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
@@ -164,34 +164,34 @@
       s.appendChild(b);
     });
   }
-  // треки опыта и Ран рядом с картой героя
+  // experience and Wound tracks next to the hero card
   function boardTracks(h) {
       const tr = document.createElement('div'); tr.className = 'hb-tracks';
-      let xp = '<div><b>Опыт 🎖</b></div><div class="tr">';
+      let xp = '<div><b>Experience 🎖</b></div><div class="tr">';
       for (let k = 0; k <= 12; k++) xp += `<span class="${k === 4 || k === 10 ? 'lv' : ''}">${k}</span>`;
-      xp += '</div><div><b>Раны (Стойкость ' + h.hp + ')</b></div><div class="tr">';
+      xp += '</div><div><b>Wounds (Grit ' + h.hp + ')</b></div><div class="tr">';
       for (let k = 1; k <= h.hp + (h.talents.flat().includes('thick_skin') ? 2 : 0); k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
-      xp += `</div><div style="font-size:9pt">Жёлтые клетки — новый уровень: выберите талант.${h.talents.flat().includes('thick_skin') ? ' Клетки сверх Стойкости — для таланта «Толстая шкура».' : ''}</div>`;
+      xp += `</div><div style="font-size:9pt">Yellow boxes mean a new level: choose a talent.${h.talents.flat().includes('thick_skin') ? ' Boxes beyond Grit are for the “Thick Skin” talent.' : ''}</div>`;
       tr.innerHTML = xp;
       return tr;
   }
 
-  // -------------------------------------------- рубашка тайлов (туман)
-  const tb = sheet('Рубашка тайлов (печатайте на обороте каждого тайла)', '150×150 мм. Для режима «Туман войны».');
+  // -------------------------------------------- tile back (fog)
+  const tb = sheet('Tile back (print on the reverse of each tile)', '150×150 mm. For “Fog of War” mode.');
   const backC = document.createElement('canvas'); const BS = Math.round(150 * MM * 2); backC.width = BS; backC.height = BS;
   (function (c) {
     const gr = c.createLinearGradient(0, 0, BS, BS); gr.addColorStop(0, '#2b211a'); gr.addColorStop(1, '#1a1410'); c.fillStyle = gr; c.fillRect(0, 0, BS, BS);
     c.strokeStyle = 'rgba(224,168,58,.08)'; c.lineWidth = BS / 40; for (let i = -BS; i < BS * 2; i += BS / 9) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i - BS, BS); c.stroke(); }
     c.strokeStyle = 'rgba(224,168,58,.5)'; c.lineWidth = 4; c.setLineDash([24, 14]); c.strokeRect(20, 20, BS - 40, BS - 40); c.setLineDash([]);
     c.fillStyle = 'rgba(232,220,192,.25)'; c.font = `${BS / 3}px 'Russo One', sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', BS / 2, BS / 2 - BS / 20);
-    c.fillStyle = 'rgba(232,220,192,.7)'; c.font = `${BS / 22}px 'Russo One', sans-serif`; c.fillText('НЕ РАЗВЕДАНО', BS / 2, BS * 0.78);
+    c.fillStyle = 'rgba(232,220,192,.7)'; c.font = `${BS / 22}px 'Russo One', sans-serif`; c.fillText('UNEXPLORED', BS / 2, BS * 0.78);
   })(backC.getContext('2d'));
   const tbs = document.createElement('div'); tbs.className = 'tile-slot'; tbs.appendChild(backC); tb.appendChild(tbs);
 
-  // ----------------------------------------------------------- тайлы
+  // ----------------------------------------------------------- tiles
   lvl.tiles.forEach((id) => {
     const def = ZG.Tiles.get(id);
-    const s = sheet(`Тайл ${def.num} — ${def.name}`, '150×150 мм. Можно наклеить на картон 2 мм.');
+    const s = sheet(`Tile ${def.num} — ${def.name}`, '150×150 mm. Can be glued onto 2 mm card stock.');
     const board = ZG.Board.fromPlaced([{ id, rot: 0, tx: 0, ty: 0 }], 1, 1);
     const C = 50 * MM * 2;
     const cv = document.createElement('canvas');
@@ -202,13 +202,13 @@
     slot.appendChild(cv); s.appendChild(slot);
   });
 
-  // ---------------------------------------------------------- жетоны
-  // жетоны переносятся на новый лист, когда текущий заполнен (оценка по площади)
+  // ---------------------------------------------------------- tokens
+  // tokens move to a new sheet when the current one is full (estimated by area)
   let tw = null, used = 0, tokSheets = 0;
   const CAP = 52;
   const newTokSheet = () => {
     tokSheets++;
-    const ts = sheet('Жетоны' + (tokSheets > 1 ? ` (${tokSheets})` : ''), 'Вырежьте по контуру. Числа — сколько штук нужно.');
+    const ts = sheet('Tokens' + (tokSheets > 1 ? ` (${tokSheets})` : ''), 'Cut along the outline. Numbers show how many you need.');
     tw = document.createElement('div'); tw.className = 'tokens'; ts.appendChild(tw); used = 0;
   };
   newTokSheet();
@@ -224,32 +224,32 @@
     }
   };
   const pool = lvl.pool || {};
-  tok('z_walker', pool.walker || 24, 'Шатун'); tok('z_runner', pool.runner || 8, 'Бегун'); tok('z_fatso', pool.fatso || 5, 'Толстяк'); tok('z_screamer', pool.screamer || 4, 'Крикун');
-  tok('z_brute', pool.brute || 2, 'Громила', 'big'); tok('z_plague', pool.plague || 3, 'Чумной'); tok('z_grabber', pool.grabber || 3, 'Хват'); tok('z_hound', 1, 'Ищейка', 'big'); tok('tok_zback', 1, 'Оборот жетонов зомби (печатайте на обороте всех)'); tok('z_nest', 3, 'Гнездо', 'big', { t: 0 });
-  // фишка героя: лицо — герой, оборот — он же, обращённый (печатайте двусторонней)
-  ZG.Heroes.visible().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (оборот фишки)`, 'big'); });
-  tok('tok_spawn', 4, 'Люк'); tok('tok_crate', 5, 'Ящик'); tok('tok_search', 12, 'Обыск', 'small'); tok('tok_search', 1, 'Оружейка', 'small', { armory: true });
-  tok('tok_trap', 3, 'Растяжка', 'small'); tok('tok_lure', 2, 'Приманка', 'small'); tok('noiseIcon', 8, 'Шум', 'small'); tok('shieldIcon', 8, 'Блок', 'small');
-  tok('energy', 6, 'Адреналин', 'small'); tok('skull', 8, 'Урон (крупные цели)', 'small', { color: '#e8a090' });
-  tok('tok_crate', 5, 'Ящик (рубашка)');
-  tok('cargo_fuel', 2, 'Ящик: канистра', '', { noBg: true }); tok('cargo_meds', 4, 'Ящик: медикаменты', '', { noBg: true }); tok('cargo_radio', 1, 'Ящик: рация', '', { noBg: true }); tok('tok_crate', 3, 'Ящик: пусто', '', { opened: true });
-tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 'Оборот: открыто (печатайте на обороте)', 'small', { open: true });
-  tok('tok_plug', 4, 'Заглушка люка', 'small', { n: 2 }); tok('tok_decoy', 17, 'Пустышка «Ушли»', 'small', { kind: 'gone' }); tok('tok_decoy', 1, '«Логово»', 'small', { kind: 'lair' }); tok('tok_decoy', 1, '«Засада сверху»', 'small', { kind: 'ambush' }); tok('tok_decoy', 1, '«Следы»', 'small', { kind: 'tracks' });
-    tok('tok_hunt', 20, 'Охотится («!»)', 'small'); tok('tok_trail', 10, 'Последний след («?»)', 'small');
-  tok('tok_barricade', 4, 'Баррикада', 'big'); tok('tok_round', 1, 'Маркер раунда', 'small'); tok('tok_alarm', 1, 'Маркер Тревоги', 'small'); tok('tok_start', 1, 'Старт', 'small');
-  tok('exit_car', 1, 'Машина', 'big'); tok('exit_ambulance', 1, 'Скорая', 'big'); tok('exit_heli', 1, 'Вертолёт', 'big'); tok('tok_tower', 1, 'Вышка', 'big');
+  tok('z_walker', pool.walker || 24, 'Shambler'); tok('z_runner', pool.runner || 8, 'Runner'); tok('z_fatso', pool.fatso || 5, 'Bloater'); tok('z_screamer', pool.screamer || 4, 'Screamer');
+  tok('z_brute', pool.brute || 2, 'Brute', 'big'); tok('z_plague', pool.plague || 3, 'Plaguebearer'); tok('z_grabber', pool.grabber || 3, 'Grabber'); tok('z_hound', 1, 'Hound', 'big'); tok('tok_zback', 1, 'Zombie token back (print on the reverse of all)'); tok('z_nest', 3, 'Nest', 'big', { t: 0 });
+  // hero pawn: the front is the hero, the back is the same hero turned (print double-sided)
+  ZG.Heroes.visible().forEach((h) => { tok(h.art, 1, h.name); tok('z_turned_' + h.id, 1, `${ZG.Zombies.get('turned_' + h.id).name} (pawn back)`, 'big'); });
+  tok('tok_spawn', 4, 'Manhole'); tok('tok_crate', 5, 'Crate'); tok('tok_search', 12, 'Search', 'small'); tok('tok_search', 1, 'Armory', 'small', { armory: true });
+  tok('tok_trap', 3, 'Tripwire', 'small'); tok('tok_lure', 2, 'Lure', 'small'); tok('noiseIcon', 8, 'Noise', 'small'); tok('shieldIcon', 8, 'Block', 'small');
+  tok('energy', 6, 'Adrenaline', 'small'); tok('skull', 8, 'Damage (large targets)', 'small', { color: '#e8a090' });
+  tok('tok_crate', 5, 'Crate (back)');
+  tok('cargo_fuel', 2, 'Crate: jerrycan', '', { noBg: true }); tok('cargo_meds', 4, 'Crate: medicine', '', { noBg: true }); tok('cargo_radio', 1, 'Crate: radio', '', { noBg: true }); tok('tok_crate', 3, 'Crate: empty', '', { opened: true });
+tok('tok_door', 18, 'Door (closed)', 'small'); tok('tok_door', 1, 'Back: open (print on the reverse)', 'small', { open: true });
+  tok('tok_plug', 4, 'Manhole plug', 'small', { n: 2 }); tok('tok_decoy', 17, 'Decoy “Gone”', 'small', { kind: 'gone' }); tok('tok_decoy', 1, '“Lair”', 'small', { kind: 'lair' }); tok('tok_decoy', 1, '“Ambush from above”', 'small', { kind: 'ambush' }); tok('tok_decoy', 1, '“Tracks”', 'small', { kind: 'tracks' });
+    tok('tok_hunt', 20, 'Hunting (“!”)', 'small'); tok('tok_trail', 10, 'Last trail (“?”)', 'small');
+  tok('tok_barricade', 4, 'Barricade', 'big'); tok('tok_round', 1, 'Round marker', 'small'); tok('tok_alarm', 1, 'Alarm marker', 'small'); tok('tok_start', 1, 'Start', 'small');
+  tok('exit_car', 1, 'Car', 'big'); tok('exit_ambulance', 1, 'Ambulance', 'big'); tok('exit_heli', 1, 'Helicopter', 'big'); tok('tok_tower', 1, 'Tower', 'big');
 
-  // ------------------------------------------------ кампания: жетоны врагов, сейф, выходы
+  // ------------------------------------------------ campaign: enemy tokens, safe, exits
   const campZ = ['bear', 'forester', 'guard', 'sniper', 'bandit', 'raider', 'bride', 'butcher'].filter((id) => ZG.Zombies.has(id));
   const campN = { bandit: 4, raider: 10, sniper: 2, guard: 1 };
-  campZ.forEach((id) => { const d = ZG.Zombies.get(id); tok(d.art, campN[id] || 1, `Кампания: ${d.name}`, d.big || d.boss ? 'big' : ''); });
-  tok('tok_safe', 1, 'Кампания: сейф', 'big');
-  tok('valuable', 4, 'Стопка сейфа: «Ценность» (лицом вниз)', 'small'); tok('tok_decoy', 1, 'Стопка сейфа: «Пусто»', 'small', { kind: 'gone' }); tok('noiseIcon', 1, 'Стопка сейфа: «Сирена» (Шум 3)', 'small');
-  ['exit_van'].forEach((k) => tok(k, 1, 'Кампания: «буханка» / фургон', 'big'));
+  campZ.forEach((id) => { const d = ZG.Zombies.get(id); tok(d.art, campN[id] || 1, `Campaign: ${d.name}`, d.big || d.boss ? 'big' : ''); });
+  tok('tok_safe', 1, 'Campaign: safe', 'big');
+  tok('valuable', 4, 'Safe stack: “Valuable” (face down)', 'small'); tok('tok_decoy', 1, 'Safe stack: “Empty”', 'small', { kind: 'gone' }); tok('noiseIcon', 1, 'Safe stack: “Siren” (Noise 3)', 'small');
+  ['exit_van'].forEach((k) => tok(k, 1, 'Campaign: the van', 'big'));
 
-  // ---------------------------------------------------- кампания: тайлы
+  // ---------------------------------------------------- campaign: tiles
   ZG.Tiles.all().filter((t) => t.unique).forEach((def) => {
-    const s = sheet(`Кампания · тайл ${def.num} — ${def.name}`, '150×150 мм. Уникальный тайл кампании: в общий пул не входит, его ставит миссия.');
+    const s = sheet(`Campaign · tile ${def.num} — ${def.name}`, '150×150 mm. A unique campaign tile: not part of the shared pool; the mission places it.');
     const board = ZG.Board.fromPlaced([{ id: def.id, rot: 0, tx: 0, ty: 0 }], 1, 1);
     const C = 50 * MM * 2;
     const cv = document.createElement('canvas');
@@ -259,66 +259,66 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
     slot.appendChild(cv); s.appendChild(slot);
   });
 
-  // ---------------------------------------------------- кампания: карты
+  // ---------------------------------------------------- campaign: cards
   const inBase = new Set(Object.keys(lvl.loot));
-  const campCount = { valuable: 12, bride_wail: 8, despair: 8, courage: 4, hunt_double: 2 }; // Ценности — до 4 из сейфа, по сейфу в M2, M7, M8
+  const campCount = { valuable: 12, bride_wail: 8, despair: 8, courage: 4, hunt_double: 2 }; // Valuables: up to 4 per safe, one safe each in M2, M7, M8
   const campCards = ZG.Cards.all().filter((d) => !inBase.has(d.id) && d.kind !== 'wound' && d.kind !== 'infection' && !['cargo_fuel', 'cargo_meds', 'cargo_radio'].includes(d.id)
     && (d.campaignOnly || d.kind === 'cargo' || d.kind === 'junk' || d.kind === 'temp' || d.trophy || d.loot || d.trader) && !ZG.Heroes.all().some((h) => h.deck.includes(d.id)));
-  cardSheets('Кампания: карты (грузы, трофеи, находки миссий, товар торговца, Ценности)', campCards.map((d) => ({ el: CV.card(d.id), count: campCount[d.id] || (d.trader ? 3 : 1) })));
-  // задания миссий кампании — с особыми условиями из цепочки
+  cardSheets('Campaign: cards (cargo, trophies, mission finds, trader goods, Valuables)', campCards.map((d) => ({ el: CV.card(d.id), count: campCount[d.id] || (d.trader ? 3 : 1) })));
+  // campaign mission objectives, with the special rules from the chain
   const chainCards = ZG.CAMPAIGN.chain.map((m, i) => ({ m, i })).filter(({ m }) => m.scenarioId && ZG.Scenarios.get(m.scenarioId).campaignOnly).map(({ m, i }) => {
     const el = CV.scenarioCard(m.scenarioId);
-    el.querySelector('.scen-kicker').textContent = `МИССИЯ ${i + 1} · ${m.name.toUpperCase()}`;
-    if (m.special && m.special.length) { const d = document.createElement('div'); d.className = 'scen-setup'; d.innerHTML = '<b>⚠ Особые условия:</b> ' + m.special.join(' ') ; el.appendChild(d); }
+    el.querySelector('.scen-kicker').textContent = `MISSION ${i + 1} · ${m.name.toUpperCase()}`;
+    if (m.special && m.special.length) { const d = document.createElement('div'); d.className = 'scen-setup'; d.innerHTML = '<b>⚠ Special rules:</b> ' + m.special.join(' ') ; el.appendChild(d); }
     return el;
   });
-  if (chainCards.length) { for (let i = 0; i < chainCards.length; i += 2) { const sc = sheet('Кампания: задания миссий', 'Широкие карты: по 2 на лист — у кампании длинные тексты подготовки.'); const wc = document.createElement('div'); wc.className = 'wide-cards'; chainCards.slice(i, i + 2).forEach((e) => wc.appendChild(e)); sc.appendChild(wc); } }
-  // секретный герой — отдельный лист: не открывайте, пока не спасёте
+  if (chainCards.length) { for (let i = 0; i < chainCards.length; i += 2) { const sc = sheet('Campaign: mission objectives', 'Wide cards, 2 per sheet: the campaign has long setup texts.'); const wc = document.createElement('div'); wc.className = 'wide-cards'; chainCards.slice(i, i + 2).forEach((e) => wc.appendChild(e)); sc.appendChild(wc); } }
+  // the secret hero gets a separate sheet: do not open until rescued
   const secret = ZG.Heroes.all().filter((h) => h.secret);
   secret.forEach((h) => {
-    const s2 = sheet(`Кампания: секретный герой — ${h.name} (не открывайте, пока не спасёте)`, 'Планшет, фишка, оборот фишки и именные карты.');
+    const s2 = sheet(`Campaign: secret hero — ${h.name} (do not open until rescued)`, 'Board, pawn, pawn back and signature cards.');
     const b = document.createElement('div'); b.className = 'hero-board';
     b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
     const tw2 = document.createElement('div'); tw2.className = 'tokens';
-    [[h.art, h.name], ['z_turned_' + h.id, (ZG.Zombies.has('turned_' + h.id) ? ZG.Zombies.get('turned_' + h.id).name : 'Обращённый') + ' (оборот)']].forEach(([k, label]) => { const d = document.createElement('div'); d.className = 'tok big'; d.appendChild(canvasOf(k, 30)); d.appendChild(Object.assign(document.createElement('span'), { textContent: label })); tw2.appendChild(d); });
+    [[h.art, h.name], ['z_turned_' + h.id, (ZG.Zombies.has('turned_' + h.id) ? ZG.Zombies.get('turned_' + h.id).name : 'Turned') + ' (back)']].forEach(([k, label]) => { const d = document.createElement('div'); d.className = 'tok big'; d.appendChild(canvasOf(k, 30)); d.appendChild(Object.assign(document.createElement('span'), { textContent: label })); tw2.appendChild(d); });
     const side = boardTracks(h); side.appendChild(tw2); b.appendChild(side); s2.appendChild(b);
-    cardSheets(`Кампания: именные карты — ${h.name}`, h.deck.slice(6).map((id) => ({ el: CV.card(id), count: 1 })));
+    cardSheets(`Campaign: signature cards — ${h.name}`, h.deck.slice(6).map((id) => ({ el: CV.card(id), count: 1 })));
   });
   const campSpawn = Array.from(new Set(ZG.Levels.all().filter((l) => l.campaignOnly).flatMap((l) => Object.keys(l.spawnDeck || {})))).filter((id) => !lvl.spawnDeck[id]);
-  if (campSpawn.length) cardSheets('Кампания: карты появления миссий', campSpawn.map((id) => ({ el: CV.spawnCard(id), count: 1 })));
+  if (campSpawn.length) cardSheets('Campaign: mission spawn cards', campSpawn.map((id) => ({ el: CV.spawnCard(id), count: 1 })));
 
-  // ----------------------------------------------------- планшет треков
-  const tk = sheet('Планшет треков');
+  // ----------------------------------------------------- track board
+  const tk = sheet('Track board');
   const trk = document.createElement('div'); trk.className = 'tracks';
-  let html = '<div>РАУНД</div><div class="row">';
+  let html = '<div>ROUND</div><div class="row">';
   for (let r = 1; r <= lvl.rounds; r++) { const ph = r >= lvl.phaseStarts[2] ? 2 : r >= lvl.phaseStarts[1] ? 1 : 0; html += `<div style="background:${ZG.PHASES[ph].color}">${r}</div>`; }
-  html += '</div><div style="font: 11pt var(--font-t)">Сумерки → Ночь → Глухая ночь (зомби +1 к скорости). После последнего раунда — поражение.</div>';
-  html += '<div>ТРЕВОГА</div><div class="row">';
+  html += '</div><div style="font: 11pt var(--font-t)">Dusk → Night → Dead of Night (zombies +1 speed). After the last round — defeat.</div>';
+  html += '<div>ALARM</div><div class="row">';
   for (let a = 0; a <= 11; a++) html += `<div style="background:${a >= 6 ? '#f2b0a0' : a >= 3 ? '#f8dccf' : '#fff'}">${a}</div>`;
-  html += `</div><div style="font: 11pt var(--font-t)">Порог Волны: соло и двое — 5, трое — 6, четверо — 4. В шаге «Появление»: отнимите порог и тяните по лишней карте на каждый люк.</div>`;
-  html += '<div>СЧЁТЧИК БОНУСНОЙ ЦЕЛИ</div><div class="row" style="flex-wrap:wrap">';
+  html += `</div><div style="font: 11pt var(--font-t)">Wave threshold: solo and two heroes — 5, three — 6, four — 4. In the “Spawn” step: subtract the threshold and draw an extra card for each manhole.</div>`;
+  html += '<div>BONUS OBJECTIVE COUNTER</div><div class="row" style="flex-wrap:wrap">';
   for (let a = 0; a <= 24; a++) html += `<div style="width:7mm;height:10mm;font-size:10pt">${a}</div>`;
   html += '</div>';
-  html += '<div>ПОРЯДОК ФАЗЫ ЗОМБИ</div><div style="font: 12pt var(--font-t)">1. Движение → 2. Атака → 3. Особые свойства → 4. Появление (+Волна) → 5. Конец раунда</div>';
+  html += '<div>ZOMBIE PHASE ORDER</div><div style="font: 12pt var(--font-t)">1. Move → 2. Attack → 3. Special abilities → 4. Spawn (+Wave) → 5. End of round</div>';
   trk.innerHTML = html;
   tk.appendChild(trk);
 
-  // ------------------------------------------------------------ памятка
-  const ref = sheet('Памятка (2 копии)');
+  // ------------------------------------------------------------ reference card
+  const ref = sheet('Reference card (2 copies)');
   for (let k = 0; k < 2; k++) {
     const d = document.createElement('div');
     d.style.cssText = 'border:1px dashed #aaa;padding:5mm;margin-bottom:5mm;font:11pt var(--font-t);color:#1d1712;columns:2;column-gap:8mm';
-    d.innerHTML = `<b style="font:13pt var(--font-d)">РАУНД</b><br>1. Ходы героев (порядок любой)<br>2. Фаза зомби: движение → атака → свойства (Орда: +1 Тревога за 8 зомби) → появление (+Волна)<br>3. Конец раунда: убрать урон, шум, приманки; сдвинуть раунд<br><br>
-      <b style="font:13pt var(--font-d)">ХОД ГЕРОЯ</b><br>Добери до лимита (макс. 3) → 3 ⚡ → действуй. Карты в руке — щиты.<br>Связка: та же масть подряд. Эстафета: первая карта продолжает масть прошлого героя.<br>Хватка: выход из зоны с зомби +1 ⚡.<br><br>
-      <b style="font:13pt var(--font-d)">БАЗОВЫЕ ДЕЙСТВИЯ</b><br>Ход 1 · Обыск 1 (2 добычи, 1 оставь) · Кулак 1 · Баррикада 2 · Подобрать 1 · Передать 0 · Отдышаться 3<br><br>
-      <b style="font:13pt var(--font-d)">ЗОМБИ</b><br>Идут к ближайшей цели: приманка → шум → меньше Ран. Атака: блок → снаряжение → щиты → Раны в сброс.<br>Глухая ночь: +1 к скорости. Опыт: 4 🎖 и 10 🎖 — талант.`;
+    d.innerHTML = `<b style="font:13pt var(--font-d)">ROUND</b><br>1. Hero turns (any order)<br>2. Zombie phase: move → attack → abilities (Horde: +1 Alarm per 8 zombies) → spawn (+Wave)<br>3. End of round: clear damage, noise, lures; advance the round<br><br>
+      <b style="font:13pt var(--font-d)">HERO TURN</b><br>Draw up to the limit (max. 3) → 3 ⚡ → act. Cards in hand are shields.<br>Chain: the same suit in a row. Relay: the first card continues the previous hero's suit.<br>Grip: leaving a zone with zombies +1 ⚡.<br><br>
+      <b style="font:13pt var(--font-d)">BASIC ACTIONS</b><br>Move 1 · Search 1 (2 loot, keep 1) · Punch 1 · Barricade 2 · Pick Up 1 · Give 0 · Catch Breath 3<br><br>
+      <b style="font:13pt var(--font-d)">ZOMBIES</b><br>Head for the nearest target: lure → noise → fewest Wounds. Attack: block → gear → shields → Wounds to discard.<br>Dead of Night: +1 speed. Experience: 4 🎖 and 10 🎖 — a talent.`;
     ref.appendChild(d);
   }
 
-  // ---------------------------------------------------------- рубашки
-  cardSheets('Рубашки: действия', Array.from({ length: 9 }, () => ({ el: CV.cardBack('hero') })));
-  cardSheets('Рубашки: добыча', Array.from({ length: 9 }, () => ({ el: CV.cardBack('loot') })));
-  cardSheets('Рубашки: появление', Array.from({ length: 9 }, () => ({ el: CV.cardBack('spawn') })));
+  // ---------------------------------------------------------- card backs
+  cardSheets('Card backs: actions', Array.from({ length: 9 }, () => ({ el: CV.cardBack('hero') })));
+  cardSheets('Card backs: loot', Array.from({ length: 9 }, () => ({ el: CV.cardBack('loot') })));
+  cardSheets('Card backs: spawn', Array.from({ length: 9 }, () => ({ el: CV.cardBack('spawn') })));
   requestAnimationFrame(() => document.querySelectorAll('.slot .card').forEach((c) => CV.fit(c)));
 })();
 </script>

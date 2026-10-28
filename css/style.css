@@ -1,5 +1,5 @@
 /* =====================================================================
-   МЁРТВЫЙ КВАРТАЛ — стили. Эстетика: грязный картон, трафарет, неон тревоги.
+   DEAD BLOCK — styles. Aesthetic: grimy cardboard, stencil, alarm neon.
    ===================================================================== */
 :root {
   --bg: #0d0a08;
@@ -36,14 +36,14 @@ body {
 }
 body.busy .hand .card, body.busy .actions button, body.busy #btn-end { pointer-events: none; }
 button { font-family: inherit; cursor: pointer; }
-/* игровые элементы — не текст: без курсора-«I» и без выделения */
+/* game elements are not text: no I-beam cursor and no selection */
 .screen, .modal, .banner, .tooltip, .toast, .shutter, .chain-pop { cursor: default; user-select: none; -webkit-user-select: none; }
 .screen input, .rules-overlay { cursor: auto; user-select: text; }
 #board { cursor: pointer; }
 small { opacity: .75; }
 .muted { color: var(--muted); }
 
-/* ---------------------------------------------------------- кнопки */
+/* ---------------------------------------------------------- buttons */
 .btn {
   font-family: var(--font-d); font-size: 16px; letter-spacing: .04em;
   padding: 11px 22px; border-radius: 4px; color: var(--paper);
@@ -73,13 +73,13 @@ small { opacity: .75; }
 .chip.on { background: linear-gradient(#3a2a12, #2a1e0e); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(240,192,64,.2); }
 .chip small { display: block; font-size: 12px; color: var(--muted); }
 
-/* ---------------------------------------------------------- экраны */
+/* ---------------------------------------------------------- screens */
 .screen { position: fixed; inset: 0; display: none; opacity: 0; transition: opacity .38s, transform .38s; }
 .screen.active { display: block; opacity: 1; }
 .screen.entering { opacity: 0; transform: scale(1.02); }
 .screen.leaving { opacity: 0; transform: scale(.98); }
 
-/* шторка перехода */
+/* transition shutter */
 .shutter { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
 .shutter .sh-top, .shutter .sh-bot {
   position: absolute; left: 0; right: 0; height: 50.5%;
@@ -95,7 +95,7 @@ small { opacity: .75; }
 .shutter.opening .sh-top { transform: translateY(-101%); }
 .shutter.opening .sh-bot { transform: translateY(101%); }
 
-/* ------------------------------------------------------------ меню */
+/* ------------------------------------------------------------ menu */
 #title-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .menu-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 8vw; gap: 34px; }
 .logo h1 {
@@ -115,7 +115,7 @@ small { opacity: .75; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes flicker { 0%, 92%, 96%, 100% { opacity: 1; } 94% { opacity: .3; } 95% { opacity: .9; } 97% { opacity: .5; } }
 
-/* ------------------------------------------------------- подготовка */
+/* ------------------------------------------------------- setup */
 .setup { height: 100%; overflow-y: auto; padding: 18px 4vw 40px; }
 .setup-head { display: flex; align-items: center; gap: 20px; }
 .setup-head h2 { font-family: var(--font-d); margin: 0; flex: 1; font-size: 28px; }
@@ -138,7 +138,7 @@ small { opacity: .75; }
 .setup-go { position: sticky; bottom: 0; margin: 40px -4vw -40px; padding: 18px 0 18px; text-align: center; background: linear-gradient(rgba(0,0,0,0), var(--bg) 30%); z-index: 3; pointer-events: none; }
 .setup-go > * { pointer-events: auto; }
 
-/* ---------------------------------------------------- карта героя */
+/* ---------------------------------------------------- hero card */
 .hero-card {
   position: relative; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
   background: linear-gradient(160deg, #2a2119, #18120e); border: 2px solid #3a2e24;
@@ -176,7 +176,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .hero-card.picked .pick-badge { opacity: 1; transform: none; }
 .hero-card.p2 .pick-badge { background: var(--blue); }
 
-/* =========================================================== ПАРТИЯ */
+/* =========================================================== GAME */
 .game {
   height: 100%; display: grid;
   grid-template-columns: 1fr 300px;
@@ -254,7 +254,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .log::-webkit-scrollbar, .setup::-webkit-scrollbar { width: 6px; }
 .log::-webkit-scrollbar-thumb, .setup::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
-/* ------------------------------------------------------------ рука */
+/* ------------------------------------------------------------ hand */
 .handbar {
   grid-area: hand; display: grid; grid-template-columns: 210px 1fr 330px; gap: 10px; padding: 8px 14px;
   background: linear-gradient(#15100c, #0d0a08); border-top: 1px solid var(--line); position: relative;
@@ -296,7 +296,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 
 .hand { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 26px; perspective: 900px; min-width: 0; }
 .hand-slot { position: relative; flex: none; margin: 0 -14px; transition: margin .2s; }
-/* слот не двигается — наведение «держится» за него, поэтому поднятая карта не дёргается */
+/* the slot does not move — hover “holds on” to it, so the raised card does not jitter */
 .hand-slot:hover { margin: 0 6px; z-index: 10; }
 .hand-slot.sel { z-index: 11; }
 .hand .card {
@@ -339,7 +339,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .act .cost { margin-left: 6px; color: var(--amber); font-family: var(--font-d); font-size: 12px; }
 #btn-end small { font-size: 11px; }
 
-/* ============================================================ КАРТА */
+/* ============================================================ CARD */
 .card {
   --suit-c: #6b6258; --suit-d: #3a342e;
   position: relative; width: var(--card-w); height: var(--card-h); flex: none;
@@ -410,7 +410,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .back-logo { font-family: var(--font-d); color: var(--paper); text-align: center; font-size: 18px; line-height: 1; }
 .back-sub { font-family: var(--font-t); color: var(--amber); letter-spacing: .3em; font-size: 11px; }
 
-/* карты появления / зомби / условия / сценарии / таланты */
+/* spawn / zombie / condition / scenario / talent cards */
 .spawn-card { background: linear-gradient(160deg, #3a2a20, #1a120c); padding: 8px; gap: 5px; }
 .spawn-card::before { display: none; }
 .spawn-title { font-family: var(--font-d); color: var(--paper); text-align: center; letter-spacing: .2em; font-size: 12px; }
@@ -450,7 +450,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .talent-text { font-family: var(--font-t); font-size: 15px; color: var(--paper); }
 @keyframes talentIn { from { opacity: 0; transform: translateY(30px) rotateY(90deg); } }
 
-/* ========================================================= МОДАЛКИ */
+/* ========================================================= MODALS */
 .modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(5,4,3,.8); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .25s; }
 .modal.show { opacity: 1; pointer-events: auto; }
 .modal-box { max-width: min(560px, 92vw); max-height: 90vh; overflow-y: auto; padding: 22px 24px; border-radius: 10px; background: linear-gradient(160deg, #241c15, #15100c); border: 1px solid #4a3a2a; box-shadow: 0 30px 80px rgba(0,0,0,.8); transform: scale(.9) translateY(20px); transition: transform .3s cubic-bezier(.3,1.4,.5,1); font-family: var(--font-t); font-size: 16px; }
@@ -476,7 +476,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .pile-item .card { cursor: zoom-in; }
 .pile-count { position: absolute; top: -8px; right: -8px; z-index: 5; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 14px; background: var(--gold); color: var(--ink); font-family: var(--font-d); font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.6); }
 
-/* ======================================================== БАННЕРЫ */
+/* ======================================================== BANNERS */
 .banner { position: fixed; inset: 0; z-index: 50; pointer-events: none; display: flex; align-items: center; justify-content: center; }
 .banner-band { width: 100%; padding: 26px 0 22px; text-align: center; background: linear-gradient(90deg, transparent, rgba(10,8,6,.92) 20%, rgba(10,8,6,.92) 80%, transparent); transform: scaleY(0); opacity: 0; border-top: 2px solid var(--amber); border-bottom: 2px solid var(--amber); }
 #banner-title { font-family: var(--font-d); font-size: clamp(36px, 6vw, 76px); letter-spacing: .08em; color: var(--paper); text-shadow: 0 4px 0 #000, 0 0 30px rgba(224,168,58,.5); transform: translateX(-60px); opacity: 0; }
@@ -501,7 +501,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .chain-pop.go { animation: chainPop 1.9s cubic-bezier(.2,.9,.3,1); }
 @keyframes chainPop { 0% { opacity: 0; transform: translateX(-50%) scale(.3) rotate(-10deg); } 25% { opacity: 1; transform: translateX(-50%) scale(1.15) rotate(-4deg); } 70% { opacity: 1; transform: translateX(-50%) scale(1) translateY(-20px); } 100% { opacity: 0; transform: translateX(-50%) translateY(-60px); } }
 
-/* =========================================================== ИТОГ */
+/* =========================================================== RESULT */
 .end { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; }
 #screen-end.win { background: radial-gradient(ellipse at center, rgba(240,192,64,.15), transparent 60%), var(--bg); }
 #screen-end.lose { background: radial-gradient(ellipse at center, rgba(160,20,10,.25), transparent 60%), var(--bg); }
@@ -522,7 +522,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .end-seed { color: var(--muted); font-family: var(--font-t); animation: fadeUp .6s 1.8s both; }
 .end-buttons { display: flex; gap: 12px; animation: fadeUp .6s 2s both; }
 
-/* ======================================================== ПРОЧЕЕ */
+/* ======================================================== MISC */
 .tooltip { position: fixed; z-index: 65; max-width: 280px; padding: 8px 10px; border-radius: 6px; background: rgba(13,10,8,.95); border: 1px solid #4a3a2a; font-family: var(--font-t); font-size: 14px; pointer-events: none; opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
 .tooltip.show { opacity: 1; transform: none; }
 .tt-head { font-family: var(--font-d); font-size: 12px; letter-spacing: .15em; color: var(--muted); margin-bottom: 4px; }
@@ -536,7 +536,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .rules-frame iframe { width: 100%; height: 100%; border: 0; background: #f0e6cf; }
 #rules-close { position: absolute; top: 16px; right: 16px; z-index: 2; }
 
-/* ------------------------------------------------ узкие экраны */
+/* ------------------------------------------------ narrow screens */
 @media screen and (min-width: 1700px) {
   .hand-slot { zoom: 1.16; }
   .game { grid-template-rows: 54px 1fr 296px; }
@@ -564,7 +564,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
   .menu-content { padding: 0 16px; }
   .screen.active { overflow-y: auto; }
 }
-/* заражение */
+/* infection */
 .hp-pips i.inf { background: #7fae3a; box-shadow: inset 0 0 0 1px #c8ff6a, 0 0 6px #9be04a; }
 .hp-pips .inf-mark { margin-left: 4px; font-size: 11px; color: #9be04a; }
 .hp-pips .inf-warn { margin-left: 4px; font-size: 11px; color: #111; background: #9be04a; padding: 0 4px; border-radius: 3px; animation: infPulse 1s ease-in-out infinite; }
@@ -573,7 +573,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .chain-pop small { display: block; font-family: var(--font-t, sans-serif); font-size: 18px; letter-spacing: .02em; text-align: center; max-width: 520px; text-shadow: 0 0 10px var(--suit), 0 2px 0 #000; }
 .banner.turned .banner-title { color: #9be04a; }
 
-/* узкие экраны (телефон) */
+/* narrow screens (phone) */
 @media screen and (max-width: 480px) {
   .setup-head { flex-wrap: wrap; gap: 10px; }
   .setup-head h2 { flex-basis: 100%; font-size: 22px; }
@@ -587,12 +587,12 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 }
 .setup-modes { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.03); }
 .setup-modes .fog-toggle { margin-top: 0; }
-/* редкость находок */
+/* find rarity */
 .card.r-rare { box-shadow: 0 0 0 2px #4aa3df, 0 0 14px rgba(74,163,223,.45); }
 .card.r-unique { box-shadow: 0 0 0 2px #f0c040, 0 0 18px rgba(240,192,64,.6); }
 .card.r-rare .card-type { color: #2d6fb5; font-weight: bold; }
 .card.r-unique .card-type { color: #b07a10; font-weight: bold; }
-/* секретные миссии */
+/* secret missions */
 .hp-mission { font-size: 12px; margin-top: 2px; color: var(--muted); }
 .hp-mission.mine { color: #c9b78f; }
 .hp-mission.won { color: #f0c040; font-weight: bold; }
@@ -608,7 +608,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @media print { .card .rarity-gem { box-shadow: 0 0 0 2px #15110e; } }
 .setup-heroes { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .setup-grid { padding-bottom: 70px; }
-/* ===== карточка героя: картон, полоса цвета героя, треки ===== */
+/* ===== hero card: cardboard, hero colour stripe, tracks ===== */
 .hp-card {
   background:
     repeating-linear-gradient(115deg, rgba(255,255,255,.018) 0 2px, transparent 2px 6px),
@@ -647,7 +647,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .hp-card.shake { animation: cardShake .6s cubic-bezier(.36,.07,.19,.97); }
 @keyframes cardShake { 10%, 90% { transform: translate(-2px, 1px) rotate(-.6deg); } 20%, 80% { transform: translate(4px, -1px) rotate(.8deg); } 30%, 50%, 70% { transform: translate(-6px, 2px) rotate(-1.2deg); box-shadow: 0 0 0 2px #c0392b, 0 0 24px rgba(192,57,43,.7); } 40%, 60% { transform: translate(6px, -2px) rotate(1.2deg); } }
 .hp-card.fallen .hp-portrait { filter: grayscale(1) sepia(.4) hue-rotate(50deg); }
-/* ===== режим «стол»: поле под углом на деревянном столе ===== */
+/* ===== table mode: the board at an angle on a wooden table ===== */
 .board-wrap.table {
   perspective: 1500px; perspective-origin: 50% 50%;
   background:
@@ -665,19 +665,19 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .board-wrap #board { transition: transform .6s cubic-bezier(.3,1.2,.5,1); }
 #btn-table.on { background: var(--gold); color: #15110e; }
 
-/* пульс «на грани» поверх наклонённого поля */
+/* the “on the edge” pulse over the tilted board */
 #vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 3;
   background: radial-gradient(ellipse at center, rgba(120,0,0,0) 45%, rgba(150,0,0,.55) 100%); }
-/* на узких экранах «стол» превращает поле в полоску — кнопку прячем */
+/* on narrow screens table mode turns the board into a strip — hide the button */
 @media (max-width: 899px) { #btn-table { display: none; } }
-/* уважение к настройке «меньше движения» */
+/* respect the “reduce motion” setting */
 @media (prefers-reduced-motion: reduce) {
   .hp-card.shake, .trk .tok.lose, .trk .tok.gain { animation-duration: 1ms !important; }
   .xp-tok { transition: none; }
   #vignette { display: none; }
 }
 
-/* обращение героя: живой портрет перетекает в обращённого */
+/* hero turning: the living portrait flows into the turned one */
 .turn-reveal { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;
   background: radial-gradient(ellipse at center, rgba(20,40,10,.55), rgba(0,0,0,.85)); opacity: 0; transition: opacity calc(.35s * var(--sp, 1)); }
 .turn-reveal.go { opacity: 1; }
@@ -702,7 +702,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @keyframes trTitle { 0%, 44% { opacity: 0; transform: translateY(10px) scale(1.3); } 54% { opacity: 1; transform: none; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .turn-reveal.go .tr-card { animation: none; } }
 
-/* ================================================================ КАМПАНИЯ */
+/* ================================================================ CAMPAIGN */
 #screen-setup.camp .setup-modes, #screen-setup.camp .setup-grid > div:nth-child(1), #screen-setup.camp .setup-grid > div:nth-child(2) { display: none; }
 .btn.small { font-size: 13px; padding: 6px 12px; }
 .muted { color: var(--paper2); opacity: .7; }
@@ -772,7 +772,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .bld-list { display: grid; gap: 8px; text-align: left; }
 .bld-row { padding: 8px 12px; border-radius: 5px; background: rgba(255,255,255,.04); }
 .bld-row.have { border-left: 3px solid var(--gold); }
-.bld-row.have b::after { content: ' ✓ построено'; color: var(--gold); font-weight: normal; font-size: 12px; }
+.bld-row.have b::after { content: ' ✓ built'; color: var(--gold); font-weight: normal; font-size: 12px; }
 .shelter-hire { margin-top: 22px; }
 .hire-h small { display: block; color: var(--paper2); margin-top: 4px; }
 .hire-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
@@ -795,7 +795,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .camp-sum { margin-top: 4px; color: var(--paper); }
 .end-camp { margin-top: 8px; color: var(--gold); }
 
-/* убежище: вкладки героев, один герой, постройки и зоны карт */
+/* shelter: hero tabs, one hero, buildings and card zones */
 .sh-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .sh-tab { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 30px; cursor: pointer; color: var(--paper);
   background: var(--panel2); border: 1px solid rgba(232,220,192,.15); box-shadow: inset 0 -3px 0 var(--hero); font: 14px var(--font-b), sans-serif; text-align: left; }
@@ -852,7 +852,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .special-box b { color: #ff9a8a; letter-spacing: .04em; }
 .special-box ul { margin: 4px 0 0; padding-left: 20px; }
 
-/* окно задач */
+/* objectives window */
 .goals .goal-title { font-family: var(--font-d); font-size: 16px; color: var(--gold); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(240,192,64,.25); }
 .goals .goal-title span { display: block; font: 10px var(--font-t); letter-spacing: .25em; text-transform: uppercase; color: var(--paper2); opacity: .7; }
 .goal { position: relative; display: flex; gap: 8px; align-items: flex-start; font-family: var(--font-t); font-size: 14px; margin: 6px 0; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,.03); border: 1px solid rgba(232,220,192,.08); transition: all .4s; }
@@ -869,7 +869,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .goal.new i { background: var(--gold); color: var(--ink); box-shadow: 0 0 8px var(--gold); }
 .goal-tag { justify-self: start; font: 10px var(--font-d); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); background: var(--gold); padding: 1px 6px; border-radius: 3px; }
 @keyframes newGoal { 0%, 100% { box-shadow: 0 0 10px rgba(240,192,64,.2); } 50% { box-shadow: 0 0 22px rgba(240,192,64,.55); } }
-/* поворот сюжета: записка и новая задача */
+/* story twist: a note and a new objective */
 .modal-box.twist { max-width: min(560px, 92vw); text-align: center; }
 .twist-stamp { display: inline-block; margin: 4px 0 14px; padding: 6px 18px; font: 24px var(--font-d); letter-spacing: .08em; text-transform: uppercase; color: #ff6a5a; border: 3px solid #ff6a5a; border-radius: 6px; transform: rotate(-3deg); box-shadow: 0 0 18px rgba(255,90,70,.3); animation: stampIn .5s cubic-bezier(.3,1.6,.5,1); }
 @keyframes stampIn { 0% { transform: rotate(-3deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-3deg) scale(1); opacity: 1; } }
@@ -880,7 +880,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .twist-task { display: inline-block; padding: 10px 16px; border-radius: 8px; font: 17px var(--font-t); color: #fff3d0; background: linear-gradient(120deg, rgba(240,192,64,.22), rgba(240,192,64,.06)); border: 1px solid rgba(240,192,64,.7); box-shadow: 0 0 20px rgba(240,192,64,.3); }
 .twist-task span { display: block; font: 11px var(--font-d); letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
 
-/* --- Сюжетные вставки кампании --- */
+/* --- campaign story scenes --- */
 .modal-box.story { max-width: min(640px, 94vw); padding-top: 0; overflow: hidden; }
 .story-art { position: relative; margin: 0 -24px 14px; aspect-ratio: 16 / 9; background:
   radial-gradient(ellipse at 50% 120%, rgba(150,20,10,.45), transparent 60%),
@@ -897,7 +897,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 @keyframes storyIn { from { opacity: 0; transform: scale(1.06); filter: brightness(.3); } to { opacity: 1; transform: none; filter: none; } }
 @media (prefers-reduced-motion: reduce) { .story-art img { animation: none; } }
 
-/* блок «Поведение» в подсказке зоны */
+/* the “Behavior” block in the zone tooltip */
 .tt-behav { margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(232,220,192,.25); }
 .tt-behav-head { font: 11px var(--font-d); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 .tt-behav > div:not(.tt-behav-head) { margin-bottom: 5px; } .tt-behav small { color: var(--paper2); } .tt-behav small b { color: var(--gold); }
@@ -906,20 +906,20 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .tt-st { padding: 0 6px; border-radius: 8px; font-size: 12px; } .tt-st-calm { background: #4a5560; color: #fff; } .tt-st-hot { background: #c0392b; color: #fff; }
 .epi-facts { margin: 12px 0 0; padding-left: 18px; text-align: left; color: #e8dcc0; font-size: 14px; line-height: 1.5; } .epi-facts li { margin: 3px 0; }
 
-/* убежище: свёрнутый отчёт, липкие вкладки героев */
+/* shelter: collapsed report, sticky hero tabs */
 .shelter-report.collapsed > :not(:first-child) { display: none; }
 .rep-toggle { margin-left: 10px; padding: 2px 10px; border-radius: 12px; border: 1px solid rgba(240,192,64,.5); background: rgba(240,192,64,.12); color: var(--gold); font: 12px var(--font-t); cursor: pointer; }
 .rep-toggle:hover { background: rgba(240,192,64,.25); }
 .sh-tabs { position: sticky; top: -22px; z-index: 5; padding: 8px 0; background: linear-gradient(180deg, #15100c 80%, rgba(21,16,12,0)); }
-/* подготовка кампании: сложности в ряд (столбец один — не уходят под кнопку «Начать») */
+/* campaign setup: difficulties in a row (a single column — they do not slide under the “Start” button) */
 #screen-setup.camp .chips.diff { flex-direction: row; flex-wrap: wrap; }
 #screen-setup.camp .setup-grid { grid-template-columns: 1fr; }
 #screen-setup.camp .chips.diff > * { flex: 1 1 0; min-width: 0; }
 
-/* --- сюжетная сцена в окне вставки: анимация (canvas) и картинка поверх, если есть --- */
+/* --- the story scene in the scene window: animation (canvas) with an image on top, if present --- */
 .story-art canvas, .story-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .story-art::after { z-index: 1; }
-/* --- галерея сюжетных вставок --- */
+/* --- story scene gallery --- */
 .gallery { max-width: 1240px; margin: 0 auto; padding: 22px 24px 60px; height: 100%; overflow-y: auto; box-sizing: border-box; }
 .gal-mission { margin-top: 18px; }
 .gal-mission h3 { margin: 0 0 10px; font: 12px var(--font-d); letter-spacing: .2em; text-transform: uppercase; color: #c0392b; }
@@ -935,7 +935,7 @@ body.ai-turn .actions .act-icon { pointer-events: none; opacity: .7; }
 .gv-inner canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; background: #000; }
 .gv-text { padding: 12px 4px 0; }
 
-/* событие убежища: карта переворачивается из колоды */
+/* shelter event: the card flips out of the deck */
 .modal-box.event { max-width: 560px; }
 .ev-card { position: relative; margin: 10px auto 4px; width: 100%; max-width: 480px; perspective: 900px; }
 .ev-card .ev-face { position: relative; padding: 16px 18px; border-radius: 10px; background: linear-gradient(160deg, #3a2c20, #221811); border: 2px solid #8a6a3a; box-shadow: 0 6px 18px rgba(0,0,0,.5); animation: evFlip .6s ease-out both; transform-origin: center; backface-visibility: hidden; }

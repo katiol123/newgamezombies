@@ -1,16 +1,16 @@
 /*
- * BoardView — отрисовка поля на canvas и проигрывание анимаций.
+ * BoardView — draws the board on a canvas and plays animations.
  *
- * Слои: статичное поле (тайлы, «печать на картоне») → следы (кровь, копоть) →
- * жетоны → подсветка целей → фишки → эффекты → освещение (ночь, фонари) → погода.
+ * Layers: the static board (tiles, "print on cardboard") → marks (blood, soot) →
+ * tokens → target highlights → pieces → effects → lighting (night, lamps) → weather.
  *
- * Модель (g) — источник истины. Фишки имеют «отображаемое» состояние, которое
- * догоняет модель через очередь fx-событий (многошаговые анимации).
+ * The model (g) is the source of truth. Pieces have a "displayed" state that
+ * catches up with the model through a queue of fx events (multi-step animations).
  */
 (function (G) {
   'use strict';
-  const TABLE_TILT = 34, TABLE_PERSP = 1500; // режим «стол»: наклон поля и перспектива (совпадает с css .board-wrap.table)
-  // событие поля → мелкий звук (ZG.Sound.sfx)
+  const TABLE_TILT = 34, TABLE_PERSP = 1500; // "table" mode: board tilt and perspective (matches css .board-wrap.table)
+  // board event → a small sound (ZG.Sound.sfx)
   const SFX_MAP = { safe: 'bash', hmove: 'hstep', shot: 'shot', kill: 'kill', explode: 'blast', blocked: 'block', blockcard: 'block', heal: 'heal', rested: 'heal', tired: 'bash', infect: 'infect', barricade: 'wood', bash: 'bash', crate: 'search', loot: 'search', give: 'pickup', adrenaline: 'energy', energy: 'energy', trap: 'click', suppress: 'shot', levelup: 'chain', door: 'door' };
   const ZG = G.ZG;
   const Art = ZG.Art;
@@ -80,7 +80,7 @@
     resize() {
       if (!this.g) return;
       const wrap = this.canvas.parentElement;
-      // на столе поле наклонено — по высоте помещается больше (≈ 1/cos), ширину чуть ужимаем под ближний край
+      // on the table the board is tilted — more fits vertically (≈ 1/cos), the width is squeezed a little for the near edge
       const W = wrap.clientWidth * (this.table ? 0.84 : 1), H = wrap.clientHeight * (this.table ? 1.18 : 1);
       const b = this.g.board;
       this.cell = Math.max(40, Math.floor(Math.min((W - this.pad * 2) / b.w, (H - this.pad * 2) / b.h)));
@@ -114,7 +114,7 @@
       return y * b.w + x;
     }
 
-    // ------------------------------------------------------ сущности
+    // ------------------------------------------------------ entities
     _addZombie(uid, type, cell, scale) {
       const p = this.cellXY(cell);
       const zm = this.g && this.g.zombies.find((q) => q.uid === uid);
@@ -125,13 +125,13 @@
       this.heroes.set(idx, { idx, cell, x: p.x, y: p.y, scale: 1, alpha: 1, flash: 0, flashColor: '#c0392b', hop: 0, gone: false });
     }
 
-    // раскладка фишек внутри зоны
+    // piece layout within a zone
     _layout(snap) {
       if (!this.g) return;
       const groups = new Map();
       const push = (cell, e) => { if (!groups.has(cell)) groups.set(cell, []); groups.get(cell).push(e); };
       this.heroes.forEach((e) => { if (!e.gone) push(e.cell, e); });
-      this.zombies.forEach((e) => push(e.cell, e)); // умирающий держит место, пока не исчезнет, — соседи не наезжают на него
+      this.zombies.forEach((e) => push(e.cell, e)); // a dying piece keeps its spot until it disappears — neighbors do not run over it
       const extras = new Set();
       this.g.crates.forEach((c) => { if (!c.opened) extras.add(c.pos); });
       (this.g.safes || []).forEach((sf) => extras.add(sf.pos));
@@ -139,7 +139,7 @@
       this.overflow = new Map();
       groups.forEach((list, cell) => {
         const c = this.cellXY(cell);
-        // не больше 9 мест в зоне: герои, затем самые опасные зомби; остальные — «+N» в последнем месте
+        // no more than 9 spots in a zone: heroes, then the most dangerous zombies; the rest — "+N" in the last spot
         list.sort((a, b) => (a.uid ? 1 : 0) - (b.uid ? 1 : 0) || (b.uid ? ZG.Zombies.get(b.type).threat : 0) - (a.uid ? ZG.Zombies.get(a.type).threat : 0));
         const n = Math.min(9, list.length);
         const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
@@ -150,9 +150,9 @@
           const slot = Math.min(k, 8);
           const cx = cols === 1 ? 0 : ((slot % cols) / (cols - 1) - 0.5) * span;
           const cy = rows === 1 ? 0 : (Math.floor(slot / cols) / (rows - 1) - 0.5) * span;
-          // не у самого края поля (фишки не обрезаются)
+          // not at the very edge of the board (pieces are not clipped)
           e.tx = Math.max(this.pad + r * 1.2, Math.min(this.W - this.pad - r * 1.2, c.x + cx));
-          e.ty = Math.max(this.pad + r * 1.2, Math.min(this.H - this.pad - r * 1.9, c.y + cy + (n === 1 && extras.has(cell) ? this.cell * 0.08 : 0))); // снизу — место под подпись
+          e.ty = Math.max(this.pad + r * 1.2, Math.min(this.H - this.pad - r * 1.9, c.y + cy + (n === 1 && extras.has(cell) ? this.cell * 0.08 : 0))); // below — room for the caption
           e.r = r * (e.uid && ZG.Zombies.get(e.type).big ? (n > 4 ? 1.15 : 1.35) : 1);
           e.over = list.length > 9 && k > 8;
           e.crowd = list.filter((q) => q.uid).length; e.slot = k;
@@ -164,16 +164,16 @@
 
     _darkFor() {
       if (!this.g) return 0;
-      if (ZG.Levels.get(this.g.levelId).dayOnly) return 0.02; // день: поле светлое
+      if (ZG.Levels.get(this.g.levelId).dayOnly) return 0.02; // day: the board is bright
       const ph = ZG.Engine.phase(this.g);
       return [0.2, 0.42, 0.58][ph] || 0.2;
     }
 
-    // ------------------------------------------------------------ ввод
+    // ------------------------------------------------------------ input
     _bind() {
       const pos = (ev) => {
         if (this.table) {
-          // обратная перспективная проекция: поле повёрнуто rotateX(TILT) в перспективе PERSP вокруг своего центра
+          // inverse perspective projection: the board is rotated rotateX(TILT) in PERSP perspective around its center
           const wr = this.canvas.parentElement.getBoundingClientRect();
           const X = ev.clientX - (wr.left + wr.width / 2), Y = ev.clientY - (wr.top + wr.height / 2);
           const a = TABLE_TILT * Math.PI / 180, P = TABLE_PERSP;
@@ -213,7 +213,7 @@
 
     setHighlights(h) { this.highlights = h; }
 
-    // =============================================== очередь анимаций
+    // =============================================== animation queue
     play(events) {
       if (!events || !events.length) return Promise.resolve();
       return new Promise((resolve) => {
@@ -222,7 +222,7 @@
       });
     }
     get busy() { return this.playing || this.queue.length > 0; }
-    // выход из партии: очередь анимаций обрывается, ожидающие получают resolve, звуки больше не запускаются
+    // leaving the game: the animation queue is cut, waiters get resolve, no more sounds are started
     abort() {
       this.aborted = true;
       this.hold = false;
@@ -248,8 +248,8 @@
     }
     _wait(ms) { return new Promise((r) => setTimeout(r, ms / this.speed)); }
 
-    // привести отображение в соответствие с моделью
-    // переворот жетона к нужной стороне; если переворот уже идёт — доводим его и крутим заново
+    // bring the display in line with the model
+    // flip a token to the right side; if a flip is already in progress — finish it and spin again
     _flipTo(e, to) {
       if (e.flip) { e.awake = e.flip.to; e.flip = null; }
       if ((e.awake !== false) !== to) e.flip = { t0: this.time, to };
@@ -258,8 +258,8 @@
     _sync(force) {
       const g = this.g;
       if (!g) return;
-      // пока интерфейс проигрывает очередь событий, модель уже «впереди» — не прыгаем к её итогу,
-      // иначе ещё не показанные шаги зомби выглядят как телепорт (полная сверка — в конце очереди)
+      // while the interface plays the event queue, the model is already "ahead" — do not jump to its result,
+      // otherwise zombie steps not yet shown would look like teleporting (a full sync — at the end of the queue)
       if (this.hold && !force) return;
       if (g.revealed) this.shown = g.revealed.slice();
       const alive = new Set(g.zombies.map((z) => z.uid));
@@ -298,7 +298,7 @@
       }
       switch (ev.t) {
         case 'zmove': {
-          // все шаги одной волны идут разом; между волнами — пауза (событие zwave)
+          // all steps of one wave go at once; between waves — a pause (the zwave event)
           const e = this.zombies.get(ev.zombie);
           if (!e) return 0;
           e.cell = ev.to; e.hop = 1;
@@ -365,8 +365,8 @@
           const e = this.zombies.get(ev.zombie);
           if (e) { e.dying = { t0: this.time }; this._splat(e.x, e.y, e.r * 1.4); this._blood({ x: e.x, y: e.y }, 14); }
           const p = e ? e : this.cellXY(ev.pos);
-          this._float(p.x, p.y, '☠', '#b8d890', 1.2, 0.65); // череп — на самом зомби (не на лице героя рядом) и не «✝», как у павшего героя
-          // душа уходит лёгкой дымкой: коротко и прозрачно, чтобы не застилать фишки соседей
+          this._float(p.x, p.y, '☠', '#b8d890', 1.2, 0.65); // a skull — on the zombie itself (not on the face of a hero nearby) and not "✝" as for a fallen hero
+          // the soul leaves as a light haze: short and transparent so as not to cover neighboring pieces
           for (let i = 0; i < 5; i++) this.particles.push({ x: p.x + (Math.random() - 0.5) * C * 0.2, y: p.y, vx: (Math.random() - 0.5) * 10, vy: -22 - Math.random() * 14, life: 0.8, t: 0, size: C * (0.035 + Math.random() * 0.03), color: 'rgba(190,200,190,.28)', shape: 'puff' });
           return 220;
         }
@@ -418,19 +418,19 @@
           const h = this.heroes.get(ev.hero);
           const p = h || this.cellXY(ev.pos);
           this.effects.push({ type: 'bubble', ent: h, x: p.x, y: p.y, t0: this.time, dur: 0.7, color: '#8fc3ff' });
-          this._float(p.x, p.y - C * 0.42, 'блок ' + ev.n, '#9fd0ff', 1);
+          this._float(p.x, p.y - C * 0.42, 'block ' + ev.n, '#9fd0ff', 1);
           return 320;
         }
         case 'tired': {
           const h = this.heroes.get(ev.hero);
           const p = h || this.cellXY(ev.pos);
-          this._float(p.x, p.y - C * 0.5, 'ОБЕССИЛЕН', '#c8a0ff', 1.3);
+          this._float(p.x, p.y - C * 0.5, 'EXHAUSTED', '#c8a0ff', 1.3);
           return 500;
         }
         case 'rested': {
           const h = this.heroes.get(ev.hero);
           const p = h || this.cellXY(ev.pos);
-          this._float(p.x, p.y - C * 0.35, 'отдышался', '#6fe08a', 1.1);
+          this._float(p.x, p.y - C * 0.35, 'caught breath', '#6fe08a', 1.1);
           return 350;
         }
         case 'heal': {
@@ -519,7 +519,7 @@
           return 300;
         }
         case 'turn_hero': {
-          // многошаговое обращение: зелёная вспышка → судороги → фишка «переворачивается»
+          // a multi-step turning: a green flash → convulsions → the piece "flips"
           const h = this.heroes.get(ev.hero);
           const p = h || this.cellXY(ev.pos);
           if (ZG.Sound) ZG.Sound.play('growl', { rate: 0.8 });
@@ -527,18 +527,18 @@
           this._ring(p, '#9be04a', C * 0.9, 900);
           this.flash = { color: 'rgba(80,140,30,0.35)', t0: this.time, dur: 0.6 };
           setTimeout(() => {
-            if (h) h.flipT = this.time; // фишка героя переворачивается: на обороте — обращённый
+            if (h) h.flipT = this.time; // the hero's piece flips: the turned one is on the back
             this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1.1, color: '#9be04a' });
             this._spark(p, 26, '#c8ff6a');
             this.addShake(12);
           }, 450 / this.speed);
           return 1000;
         }
-        case 'safe': { // взлом сейфа: ценность — золотая вспышка, пусто — пыль, сирена — красные кольца и тряска
+        case 'safe': { // cracking a safe: a valuable — a golden flash, empty — dust, siren — red rings and shaking
           const p = this.cellXY(ev.pos);
-          if (ev.result === 'valuable') { this._spark(p, 30, '#f0c040'); this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1, color: '#f0c040' }); this._float(p.x, p.y - C * 0.5, 'ЦЕННОСТЬ', '#ffd36b', 1.2); return 500; }
-          if (ev.result === 'empty') { this._spark(p, 10, '#8a8e92'); this._float(p.x, p.y - C * 0.5, 'ПУСТО', '#c8ccd0', 1); return 300; }
-          this._ring(p, '#ff3a2a', C * 0.9, 700); this._ring(p, '#ff3a2a', C * 1.4, 900); this._float(p.x, p.y - C * 0.5, 'СИРЕНА!', '#ff5a4a', 1.5); this.addShake(10);
+          if (ev.result === 'valuable') { this._spark(p, 30, '#f0c040'); this.effects.push({ type: 'pillar', x: p.x, y: p.y, t0: this.time, dur: 1, color: '#f0c040' }); this._float(p.x, p.y - C * 0.5, 'VALUABLE', '#ffd36b', 1.2); return 500; }
+          if (ev.result === 'empty') { this._spark(p, 10, '#8a8e92'); this._float(p.x, p.y - C * 0.5, 'EMPTY', '#c8ccd0', 1); return 300; }
+          this._ring(p, '#ff3a2a', C * 0.9, 700); this._ring(p, '#ff3a2a', C * 1.4, 900); this._float(p.x, p.y - C * 0.5, 'SIREN!', '#ff5a4a', 1.5); this.addShake(10);
           return 700;
         }
         case 'crate': {
@@ -555,7 +555,7 @@
         case 'ambush': {
           if (ZG.Sound) ZG.Sound.play('growl', { rate: 1.15 });
           const p = this.cellXY(ev.pos);
-          this._float(p.x, p.y - C * 0.45, 'ЗАСАДА!', '#ff4a3a', 1.5);
+          this._float(p.x, p.y - C * 0.45, 'AMBUSH!', '#ff4a3a', 1.5);
           this.flash = { color: 'rgba(160,0,0,0.3)', t0: this.time, dur: 0.4 };
           this.addShake(8);
           return 400;
@@ -579,7 +579,7 @@
         case 'dayphase': this.targetDark = this._darkFor(); return 0;
         case 'reveal': {
           if (ZG.Sound) ZG.Sound.play('reveal');
-          // многошаговый переворот тайла: подъём → поворот ребром → открытие с пылью
+          // a multi-step tile flip: lift → turn on edge → reveal with dust
           this.flips[ev.tile] = this.time;
           const t = this.g.board.tiles[ev.tile];
           const cx = this.pad + (t.tx * 3 + 1.5) * C, cy = this.pad + (t.ty * 3 + 1.5) * C;
@@ -594,46 +594,46 @@
         case 'bump': {
           const h = this.heroes.get(ev.hero), to = this.cellXY(ev.to);
           if (h) { h.lunge = { t0: this.time, tx: to.x, ty: to.y }; }
-          this._float(to.x, to.y - C * 0.2, 'стена!', '#e8dcc0', 1);
+          this._float(to.x, to.y - C * 0.2, 'wall!', '#e8dcc0', 1);
           this.addShake(3);
           return 300;
         }
         case 'swing': {
-          // «Размах крюком»: красная дуга по всей зоне
+          // "Hook Swing": a red arc across the whole zone
           const p = this.cellXY(ev.pos);
           if (ZG.Sound) ZG.Sound.play('growl', { rate: 0.7 });
           this.effects.push({ type: 'ring', x: p.x, y: p.y, color: '#ff4a3a', r: C * 0.6, t0: this.time, dur: 0.45 });
           this._spark(p, 14, '#c0392b');
-          this._float(p.x, p.y - C * 0.45, 'РАЗМАХ ' + ev.n, '#ff6a4a', 1.2);
+          this._float(p.x, p.y - C * 0.45, 'SWING ' + ev.n, '#ff6a4a', 1.2);
           this.addShake(5);
           return 380;
         }
         case 'chain': {
-          // цепь: искры по линии от зоны жертвы к Мяснику
+          // chain: sparks along the line from the victim's zone to the Butcher
           const a = this.cellXY(ev.from), b = this.cellXY(ev.pos);
           for (let i = 0; i <= 6; i++) this._spark({ x: a.x + (b.x - a.x) * i / 6, y: a.y + (b.y - a.y) * i / 6 }, 3, '#c8ccd0');
           if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('bash');
           return 250;
         }
-        case 'frenzy': { // «Буйство» у Креста: белые вспышки на буйных мертвецах перед их вторым ходом
+        case 'frenzy': { // "Frenzy" by the Cross: white flashes on the frenzied dead before their second turn
           (ev.zombies || []).forEach((uid) => { const e = this.zombies.get(uid); if (e) this._ring(e, '#fff6d0', C * 0.45, 500); });
           const p = this.cellXY(ev.pos);
-          this._float(p.x, p.y - C * 0.5, 'БУЙСТВО', '#fff2b0', 1.3);
+          this._float(p.x, p.y - C * 0.5, 'FRENZY', '#fff2b0', 1.3);
           return 450;
         }
         case 'blood': {
           const e = this.zombies.get(ev.zombie);
           const p = e || this.cellXY(ev.pos);
           this._ring(p, '#c0392b', C * 0.5, 600);
-          this._float(p.x, p.y - C * 0.5, 'КРОВЬ ' + ev.n, '#ff4a3a', 1.3);
+          this._float(p.x, p.y - C * 0.5, 'BLOOD ' + ev.n, '#ff4a3a', 1.3);
           return 300;
         }
         case 'scream': {
-          // вопль невесты: расходящиеся фиолетовые кольца и надпись
+          // the bride's wail: spreading purple rings and a caption
           const p = this.cellXY(ev.pos);
           if (ZG.Sound) ZG.Sound.play('growl', { rate: 1.4 });
           for (let i = 0; i < 3; i++) setTimeout(() => this._ring(p, '#c88aff', C * (1 + i * 0.6), 700), i * 120 / this.speed);
-          this._float(p.x, p.y - C * 0.45, 'ВОПЛЬ!', '#d8a8ff', 1.4);
+          this._float(p.x, p.y - C * 0.45, 'WAIL!', '#d8a8ff', 1.4);
           this.addShake(4);
           return 450;
         }
@@ -642,7 +642,7 @@
       }
     }
 
-    // --------------------------------------------------------- частицы
+    // --------------------------------------------------------- particles
     addShake(n) { if (ZG.reducedMotion) return; this.shake = Math.min(22, this.shake + n); }
     _float(x, y, text, color, scale, life) { this.floats.push({ x, y, text, color, scale: scale || 1, t: 0, life: life || 1.3 }); }
     _ring(p, color, r, ms) { this.effects.push({ type: 'ring', x: p.x, y: p.y, color, r, t0: this.time, dur: ms / 1000 }); }
@@ -683,7 +683,7 @@
       c.restore();
     }
 
-    // ============================================================ кадр
+    // ============================================================ frame
     _loop(ts) {
       const now = ts / 1000;
       const dt = Math.min(0.05, now - (this._last || now));
@@ -698,13 +698,13 @@
       const g = this.g;
       ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       ctx.clearRect(0, 0, this.W, this.H);
-      // тряска
+      // shaking
       this.shake = Math.max(0, this.shake - dt * 40);
       const sx = (Math.random() - 0.5) * this.shake, sy = (Math.random() - 0.5) * this.shake;
       ctx.save();
       ctx.translate(sx, sy);
 
-      // вступление: тайлы падают по одному
+      // intro: tiles fall one by one
       const intro = this.intro;
       if (intro) {
         const k = (performance.now() - intro.t0) / intro.dur;
@@ -718,7 +718,7 @@
       this._drawFog(ctx);
       this._drawHighlights(ctx);
 
-      // движение фишек
+      // piece movement
       const k = 1 - Math.pow(0.0005, dt);
       const ents = [];
       this.zombies.forEach((e) => ents.push(e));
@@ -731,19 +731,19 @@
         e.flash = Math.max(0, (e.flash || 0) - dt * 3);
         if (e.scale < 1 && !e.dying && !e.fallT && !e.evacT) e.scale = Math.min(1, e.scale + dt * 3.5);
       });
-      // зомби снизу вверх по экрану, герои — всегда поверх зомби
+      // zombies from bottom to top of the screen, heroes always above zombies
       ents.sort((a, b) => (a.uid ? 0 : 1) - (b.uid ? 0 : 1) || a.y - b.y);
       ents.forEach((e) => (e.uid ? this._drawZombie(ctx, e) : this._drawHero(ctx, e)));
-      // подпись выхода — поверх фишек, если в зоне выхода кто-то стоит (иначе её не прочесть)
+      // the exit caption — above the pieces if someone stands in the exit zone (otherwise it cannot be read)
       const g0 = this.g;
       if (g0 && g0.exit != null && !this.hiddenCell(g0.exit) && (g0.zombies.some((z) => z.pos === g0.exit) || g0.heroes.some((h) => h.onBoard && h.pos === g0.exit))) {
         const ex = this.cellXY(g0.exit), sc0 = ZG.Scenarios.get(g0.scenarioId);
-        this._label(ctx, ex.x, ex.y - this.cell * 0.44, (sc0.exitLabel || 'Выход').toUpperCase(), ZG.Engine.isComplete(g0) ? '#7dffa0' : '#e8dcc0');
+        this._label(ctx, ex.x, ex.y - this.cell * 0.44, (sc0.exitLabel || 'Exit').toUpperCase(), ZG.Engine.isComplete(g0) ? '#7dffa0' : '#e8dcc0');
       }
-      // удалить умерших
+      // remove the dead
       let gone = false;
       this.zombies.forEach((e, uid) => { if (e.dying && this.time - e.dying.t0 > 0.6) { this.zombies.delete(uid); gone = true; } });
-      if (gone) this._layout(false); // место освободилось — фишки плавно сдвигаются
+      if (gone) this._layout(false); // a spot freed up — pieces shift smoothly
 
       (this.overflow || new Map()).forEach((o, cell) => {
         if (this.hiddenCell(cell)) return;
@@ -769,18 +769,18 @@
       this._moodFx(ctx);
     }
 
-    // настроение: пульс «на грани» у героя, который ходит, и молнии в грозу
+    // mood: an "on the edge" pulse on the hero whose turn it is, and lightning in a thunderstorm
     _moodFx(ctx) {
       const g = this.g, E = ZG.Engine;
       const h = g.active != null ? g.heroes[g.active] : null;
       if (h && h.onBoard && E.hurtCount(g, h) >= E.maxHp(g, h) - 1) {
-        // двойной удар сердца: тум-тум … пауза
+        // a double heartbeat: thump-thump … pause
         const ph = (this.time * 1.1) % 1;
         const beat = Math.max(0, Math.sin(ph * Math.PI * 6)) * (ph < 0.34 ? 1 : 0);
         const vg = ctx.createRadialGradient(this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.35, this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.7);
         vg.addColorStop(0, 'rgba(120,0,0,0)'); vg.addColorStop(1, `rgba(150,0,0,${0.18 + beat * 0.3})`);
         ctx.fillStyle = vg; ctx.fillRect(0, 0, this.W, this.H);
-        // виньетка поверх всего экрана (в режиме «стол» поле наклонено — нужна ещё и плоская) + звук сердца
+        // a vignette over the whole screen (in "table" mode the board is tilted — a flat one is needed too) + the heartbeat sound
         if (this.vignette) this.vignette.style.opacity = (0.35 + beat * 0.65).toFixed(2);
         const cyc = Math.floor(this.time * 1.1);
         if (cyc !== this.beatCyc) { this.beatCyc = cyc; if (ZG.Sound && ZG.Sound.sfx) ZG.Sound.sfx('heart', { soft: true }); }
@@ -812,7 +812,7 @@
         ctx.rotate((1 - e) * (i % 2 ? 0.25 : -0.25));
         ctx.scale(0.8 + e * 0.2, 0.8 + e * 0.2);
         ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 30 * (1 - p) + 4; ctx.shadowOffsetY = 12 * (1 - p);
-        // закрытые туманом тайлы падают рубашкой вверх — содержимое не мелькает
+        // fog-covered tiles fall face down — the contents do not flash
         if (this.shown && !this.shown[i]) this._fogFace(ctx, i, 0);
         else ctx.drawImage(this.staticLayer, sxp * this.dpr, syp * this.dpr, T * this.dpr, T * this.dpr, -T / 2, -T / 2, T, T);
         ctx.restore();
@@ -825,10 +825,10 @@
       }
     }
 
-    // ---------------------------------------------------------- жетоны
+    // ---------------------------------------------------------- tokens
     _drawTokens(ctx) {
       const g = this.g, C = this.cell, t = this.time;
-      // точки появления
+      // spawn points
       g.spawnPoints.forEach((p, i) => {
         const c = this.cellXY(p);
         const x = c.x + C * 0.22, y = c.y - C * 0.22, s = C * 0.42;
@@ -839,7 +839,7 @@
         Art.draw(ctx, 'tok_spawn', x - s / 2, y - s / 2, s, s, {});
         if (ZG.Engine.plugged(g, p)) Art.draw(ctx, 'tok_plug', x - s * 0.55, y - s * 0.55, s * 1.1, s * 1.1, { n: g.plugs[p] - g.round + 1 });
       });
-      // выход
+      // exit
       const sc = ZG.Scenarios.get(g.scenarioId);
       const ex = this.cellXY(g.exit);
       const open = ZG.Engine.isComplete(g);
@@ -853,29 +853,29 @@
       ctx.globalAlpha = open ? 1 : 0.85;
       Art.draw(ctx, sc.exitArt || 'exit_car', ex.x - C * 0.32, ex.y - C * 0.42, C * 0.64, C * 0.84, { arrived: open, t });
       ctx.restore();
-      this._label(ctx, ex.x, ex.y - C * 0.44, (sc.exitLabel || 'Выход').toUpperCase(), open ? '#7dffa0' : '#e8dcc0');
-      // горящий бензовоз (миссия «Трасса»): источник зарева
+      this._label(ctx, ex.x, ex.y - C * 0.44, (sc.exitLabel || 'Exit').toUpperCase(), open ? '#7dffa0' : '#e8dcc0');
+      // the burning fuel tanker (mission "Highway"): the source of the glow
       if (g.fire != null) {
         const fc = this.cellXY(g.fire);
-        Art.draw(ctx, 'tanker_fire', fc.x - C * 0.48, fc.y - C * 0.48, C * 0.96, C * 0.96, { t }); // подпись — в подсказке зоны
+        Art.draw(ctx, 'tanker_fire', fc.x - C * 0.48, fc.y - C * 0.48, C * 0.96, C * 0.96, { t }); // the caption — in the zone tooltip
       }
-      // вышка
+      // tower
       if (g.tower != null) {
         const c = this.cellXY(g.tower);
         Art.draw(ctx, 'tok_tower', c.x - C * 0.4, c.y - C * 0.45, C * 0.5, C * 0.6, { on: g.obj.on });
-        this._label(ctx, c.x, c.y + C * 0.42, g.towerLabel || 'ВЫШКА', g.obj.on ? '#ff8a7a' : '#e8dcc0');
+        this._label(ctx, c.x, c.y + C * 0.42, g.towerLabel || 'TOWER', g.obj.on ? '#ff8a7a' : '#e8dcc0');
       }
-      // ящики и обыск
+      // crates and searching
       g.crates.forEach((cr) => {
         const c = this.cellXY(cr.pos);
         const s = C * 0.36;
         const bob = cr.opened ? 0 : Math.sin(t * 2 + cr.pos) * 1.5;
         Art.draw(ctx, 'tok_crate', c.x - s / 2 - C * 0.24, c.y - s / 2 - C * 0.24 + bob, s, s, { opened: cr.opened });
       });
-      (g.safes || []).forEach((sf) => { // сейф: сколько жетонов осталось в стопке
+      (g.safes || []).forEach((sf) => { // a safe: how many tokens are left in the stack
         const c = this.cellXY(sf.pos);
         const s = C * 0.34, dead = sf.jammed || !sf.deck.length;
-        Art.draw(ctx, 'tok_safe', c.x - s / 2 + C * 0.26, c.y - s / 2 - C * 0.26, s, s, { jammed: sf.jammed, dead }); // правый верхний угол: не закрывает подпись тайла
+        Art.draw(ctx, 'tok_safe', c.x - s / 2 + C * 0.26, c.y - s / 2 - C * 0.26, s, s, { jammed: sf.jammed, dead }); // the top right corner: does not cover the tile caption
         if (!dead) this._label(ctx, c.x + C * 0.26, c.y - C * 0.02, `×${sf.deck.length}`, '#e8dcc0');
       });
       g.search.forEach((s) => {
@@ -895,7 +895,7 @@
         const c = this.cellXY(l.pos);
         Art.draw(ctx, 'tok_lure', c.x - C * 0.3, c.y - C * 0.3, C * 0.6, C * 0.6, { t });
       });
-      // последний след: охотники, которые никого не видят, идут сюда
+      // the last trail: hunters who see nobody go here
       if (g.stealth) {
         const trails = new Set();
         g.zombies.forEach((z) => { if (z.awake && z.trail != null && z.trail !== z.pos && !g.heroes.some((hh) => hh.onBoard && hh.pos === z.trail)) trails.add(z.trail); });
@@ -907,7 +907,7 @@
           ctx.restore();
         });
       }
-      // помещения-укрытия с героями: зелёный контур и подпись
+      // shelter interiors with heroes: a green outline and a caption
       if (g.doors) {
         const done = new Set();
         g.heroes.forEach((hh) => {
@@ -921,13 +921,13 @@
           ctx.setLineDash([]);
           const p0 = this.cellXY(cells[0].i);
           ctx.font = `bold ${Math.max(10, Math.round(C * 0.13))}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-          const tw = ctx.measureText('УКРЫТИЕ').width + 10;
+          const tw = ctx.measureText('COVER').width + 10;
           ctx.fillStyle = 'rgba(10,30,15,.85)'; Art.rr(ctx, p0.x - tw / 2, p0.y - C / 2 + 6, tw, C * 0.17, 4); ctx.fill();
-          ctx.fillStyle = '#8ff0a6'; ctx.fillText('УКРЫТИЕ', p0.x, p0.y - C / 2 + 8);
+          ctx.fillStyle = '#8ff0a6'; ctx.fillText('COVER', p0.x, p0.y - C / 2 + 8);
           ctx.restore();
         });
       }
-      // двери на входах в помещения: закрытая — створка поперёк прохода, открытая — распахнута
+      // doors at building entrances: closed — a leaf across the passage, open — flung open
       if (g.doors) {
         if (!this.entranceList || this.entranceBoard !== g.board) {
           const seen = new Set(); this.entranceList = []; this.entranceBoard = g.board;
@@ -937,14 +937,14 @@
           if (ZG.Engine.hidden(g, ia) && ZG.Engine.hidden(g, ib)) return;
           const a = this.cellXY(ia), b = this.cellXY(ib);
           const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-          const horiz = Math.abs(a.x - b.x) > 1; // соседи по горизонтали — дверь вертикальная
+          const horiz = Math.abs(a.x - b.x) > 1; // horizontal neighbors — the door is vertical
           const open = !!g.doors[k];
           ctx.save();
           ctx.translate(mx, my);
           if (horiz) ctx.rotate(Math.PI / 2);
           const L = C * 0.5, T = C * 0.12;
           if (open) {
-            // открытый проём: пунктир + распахнутая створка
+            // an open doorway: a dotted line + a flung-open leaf
             ctx.setLineDash([C * 0.05, C * 0.04]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(168,200,190,.7)';
             ctx.beginPath(); ctx.moveTo(-L / 2, 0); ctx.lineTo(L / 2, 0); ctx.stroke(); ctx.setLineDash([]);
             ctx.save(); ctx.translate(-L / 2, 0); ctx.rotate(-1.2);
@@ -952,7 +952,7 @@
             ctx.lineWidth = 1.2; ctx.strokeStyle = '#0d1412'; ctx.stroke();
             ctx.restore();
           } else {
-            // закрытая: стальная створка с обводкой и ручкой
+            // closed: a steel leaf with an outline and a handle
             Art.rr(ctx, -L / 2, -T / 2, L, T, 3); ctx.fillStyle = '#5f8079'; ctx.fill();
             ctx.lineWidth = 2; ctx.strokeStyle = '#0d1412'; ctx.stroke();
             ctx.strokeStyle = 'rgba(220,240,230,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-L / 2 + 3, -T * 0.18); ctx.lineTo(L / 2 - 3, -T * 0.18); ctx.stroke();
@@ -961,7 +961,7 @@
           ctx.restore();
         });
       }
-      // баррикады — на границе зон
+      // barricades — on zone borders
       g.barricades.forEach((bz) => {
         const a = this.cellXY(bz.a), b = this.cellXY(bz.b);
         const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -981,14 +981,14 @@
         for (let i = 0; i < bz.hp; i++) { ctx.beginPath(); ctx.arc(-C * 0.3 + i * C * 0.1, -C * 0.12, C * 0.03, 0, TAU); ctx.fill(); }
         ctx.restore();
       });
-      // события: газ, выживший, помеченный ящик
+      // events: gas, a survivor, a marked crate
       if (g.hazard) {
         const c = this.cellXY(g.hazard.pos);
         const pulse = 0.5 + Math.sin(t * 5) * 0.5;
         const gr = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, C * 0.5);
         gr.addColorStop(0, `rgba(140,220,60,${0.35 + pulse * 0.25})`); gr.addColorStop(1, 'rgba(140,220,60,0)');
         ctx.fillStyle = gr; ctx.fillRect(c.x - C / 2, c.y - C / 2, C, C);
-        this._label(ctx, c.x, c.y - C * 0.4, '☢ ГАЗ', '#c8ff7a');
+        this._label(ctx, c.x, c.y - C * 0.4, '☢ GAS', '#c8ff7a');
       }
       if (g.survivor) {
         const c = this.cellXY(g.survivor.pos);
@@ -996,14 +996,14 @@
         ctx.save(); ctx.beginPath(); ctx.arc(c.x + C * 0.24, c.y + C * 0.22, s / 2, 0, TAU); ctx.fillStyle = '#e8e8e8'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f0c040'; ctx.stroke();
         ctx.fillStyle = '#c0392b'; ctx.font = `bold ${Math.round(C * 0.11)}px 'Russo One', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOS', c.x + C * 0.24, c.y + C * 0.23); ctx.restore();
       }
-      // миссия 7: жетон события у костра «Волков» — «?», пока пленника не заметили; потом — связанный человек
+      // mission 7: the event token by the Wolves' campfire — "?" until the prisoner is noticed; then — a bound man
       if (g.scenarioId === 'wedding' && g.obj && g.obj.camp != null && !g.obj.rescued && !g.obj.executed && !this.hiddenCell(g.obj.camp)) {
         const c = this.cellXY(g.obj.camp), x = c.x - C * 0.3, y = c.y + C * 0.3, r = C * 0.17 * (1 + Math.sin(t * 4) * 0.05);
         ctx.save();
         ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g.obj.known ? '#5a3a2a' : '#2a2018'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f0c040'; ctx.stroke();
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         if (!g.obj.known) { ctx.fillStyle = '#f0c040'; ctx.font = `bold ${Math.round(C * 0.2)}px 'Russo One', sans-serif`; ctx.fillText('?', x, y + 1); }
-        else { // фигурка у столба, обмотанная проволокой
+        else { // a figure at a post, wrapped in wire
           ctx.fillStyle = '#c8a080'; ctx.beginPath(); ctx.arc(x, y - r * 0.45, r * 0.25, 0, TAU); ctx.fill();
           ctx.fillRect(x - r * 0.18, y - r * 0.2, r * 0.36, r * 0.75);
           ctx.strokeStyle = '#c0c4c8'; ctx.lineWidth = 1.5; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x - r * 0.3, y - r * 0.05 + i * r * 0.22); ctx.lineTo(x + r * 0.3, y + r * 0.05 + i * r * 0.22); ctx.stroke(); }
@@ -1016,7 +1016,7 @@
         ctx.strokeStyle = `rgba(240,192,64,${0.6 + Math.sin(t * 4) * 0.4})`; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(c.x - C * 0.24, c.y - C * 0.24, C * 0.24, 0, TAU); ctx.stroke();
       });
-      // шум
+      // noise
       Object.keys(g.noise).forEach((cell) => {
         const c = this.cellXY(+cell);
         Art.draw(ctx, 'noiseIcon', c.x + C * 0.22, c.y - C * 0.46, C * 0.22, C * 0.22);
@@ -1062,7 +1062,7 @@
           ctx.globalAlpha = 0.55 + pulse * 0.4;
           ctx.fillStyle = '#ffd36b'; ctx.fillText('?', c.x, c.y);
           ctx.font = `bold ${Math.round(C * 0.1)}px 'Russo One', sans-serif`;
-          ctx.fillText('РАЗВЕДКА', c.x, c.y + C * 0.28);
+          ctx.fillText('SCOUT', c.x, c.y + C * 0.28);
           ctx.restore();
         }
         if (h.costs && h.costs[cell] != null) {
@@ -1077,7 +1077,7 @@
         if (!e) return;
         ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (1.15 + pulse * 0.1), 0, TAU);
         ctx.strokeStyle = h.zstroke || '#ff5040'; ctx.lineWidth = 3; ctx.stroke();
-        // прицел
+        // a scope reticle
         ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(t);
         ctx.strokeStyle = 'rgba(255,80,64,.8)'; ctx.lineWidth = 2;
         for (let i = 0; i < 4; i++) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(e.r * 1.3, 0); ctx.lineTo(e.r * 1.6, 0); ctx.stroke(); }
@@ -1091,20 +1091,20 @@
       }
     }
 
-    // ---------------------------------------------------------- фишки
+    // ---------------------------------------------------------- pieces
     hiddenCell(cell) {
       if (!this.shown) return false;
       return !this.shown[this.g.board.cells[cell].tile];
     }
 
-    // рубашки закрытых тайлов: что известно — люки, ящики, вышка; скопление зомби — числом
+    // backs of closed tiles: what is known — manholes, crates, the tower; a pile of zombies — as a number
     _drawFog(ctx) {
       if (!this.shown) return;
       const g = this.g, b = g.board, C = this.cell, T = 3 * C, t = this.time;
       b.tiles.forEach((tile, ti) => {
         const flip = this.flips[ti];
         if (this.shown[ti] && (flip == null || t - flip > 0.75)) {
-          // открытый тайл с картой «Стая/Пусто» (миссия без тумана): карта лежит рубашкой вверх в углу тайла
+          // an open tile with a "Pack/Empty" card (a mission without fog): the card lies face down in the tile corner
           if (g.stackTiles && g.stackTiles.includes(ti)) {
             const x = this.pad + tile.tx * T + T - C * 0.42, y = this.pad + tile.ty * T + C * 0.5;
             const bob = Math.sin(t * 2 + ti) * 1.5;
@@ -1134,7 +1134,7 @@
       });
     }
 
-    // рубашка закрытого тайла (рисуется вокруг текущего начала координат — центра тайла)
+    // the back of a closed tile (drawn around the current origin — the tile center)
     _fogFace(ctx, ti, lift) {
       const g = this.g, b = g.board, C = this.cell, T = 3 * C, t = this.time;
       ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 10 + lift; ctx.shadowOffsetY = 4 + lift;
@@ -1146,7 +1146,7 @@
       ctx.beginPath(); ctx.rect(-T / 2 + 2, -T / 2 + 2, T - 4, T - 4); ctx.clip();
       ctx.strokeStyle = 'rgba(224,168,58,.06)'; ctx.lineWidth = C * 0.12;
       for (let i = -T; i < T * 2; i += C * 0.35) { ctx.beginPath(); ctx.moveTo(-T / 2 + i, -T / 2); ctx.lineTo(-T / 2 + i - T, T / 2); ctx.stroke(); }
-      // клубящийся туман
+      // swirling fog
       for (let i = 0; i < 5; i++) {
         const fx = Math.sin(t * 0.3 + i * 1.7 + ti) * T * 0.3, fy = Math.cos(t * 0.25 + i * 2.1 + ti) * T * 0.3;
         const fg = ctx.createRadialGradient(fx, fy, 2, fx, fy, T * 0.45);
@@ -1159,19 +1159,19 @@
       const tdef = ZG.Tiles.get(b.tiles[ti].id);
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (tdef.unique) {
-        // уникальный тайл миссии: место известно (особая рубашка), содержимое — нет
+        // the mission's unique tile: its position is known (a special back), its contents are not
         if (g.exit != null && b.cells[g.exit].tile === ti) Art.draw(ctx, (ZG.Engine.scenario(g).exitArt || 'exit_car'), -C * 0.32, -C * 0.75, C * 0.64, C * 0.84, {});
         ctx.fillStyle = '#f0c040'; ctx.font = `${Math.round(C * 0.2)}px 'Russo One', sans-serif`;
         ctx.fillText(tdef.name.toUpperCase(), 0, C * 0.4);
         ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
-        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.65);
+        ctx.fillText('UNSCOUTED', 0, C * 0.65);
       } else {
         ctx.fillStyle = 'rgba(232,220,192,.18)'; ctx.font = `${Math.round(C * 1.1)}px 'Russo One', sans-serif`;
         ctx.fillText('?', 0, -C * 0.1);
         ctx.fillStyle = 'rgba(232,220,192,.55)'; ctx.font = `${Math.round(C * 0.12)}px 'Russo One', sans-serif`;
-        ctx.fillText('НЕ РАЗВЕДАНО', 0, C * 0.55);
+        ctx.fillText('UNSCOUTED', 0, C * 0.55);
       }
-      // карта «Стая/Пусто» рубашкой вверх (миссии с притаившимися стаями)
+      // a "Pack/Empty" card face down (missions with lurking packs)
       if (g.stackTiles && g.stackTiles.includes(ti)) {
         ctx.save(); ctx.translate(C * 0.95, -C * 0.85); ctx.rotate(0.12);
         Art.rr(ctx, -C * 0.22, -C * 0.3, C * 0.44, C * 0.6, 5); ctx.fillStyle = '#5a1f18'; ctx.fill();
@@ -1179,14 +1179,14 @@
         ctx.fillStyle = '#e0a83a'; ctx.font = `${Math.round(C * 0.32)}px 'Russo One', sans-serif`; ctx.fillText('?', 0, C * 0.02);
         ctx.restore();
       }
-      // известные объекты
+      // known objects
       const icons = [];
       g.spawnPoints.forEach((p) => { if (b.cells[p].tile === ti) icons.push('tok_spawn'); });
       g.crates.forEach((c) => { if (!c.opened && b.cells[c.pos].tile === ti) icons.push('tok_crate'); });
       if (g.tower != null && b.cells[g.tower].tile === ti) icons.push('tok_tower');
       const s = C * 0.42;
       icons.forEach((k, i) => Art.draw(ctx, k, -((icons.length - 1) * s * 1.1) / 2 + i * s * 1.1 - s / 2, C * 0.8, s, s, {}));
-      const n = g.hideFogCounts ? 0 : ZG.Engine.fogTokens(g, ti); // жетонов в стопке (зомби и пустышки неотличимы)
+      const n = g.hideFogCounts ? 0 : ZG.Engine.fogTokens(g, ti); // tokens in the stack (zombies and decoys are indistinguishable)
       if (n) {
         const pulse = 1 + Math.sin(t * 4 + ti) * 0.06;
         ctx.save(); ctx.translate(0, -C * 0.85); ctx.scale(pulse, pulse);
@@ -1198,14 +1198,14 @@
       }
     }
 
-    // тень фишки; в режиме «стол» — длинная мягкая тень от лампы и толщина картона
+    // the piece's shadow; in "table" mode — a long soft lamp shadow and cardboard thickness
     _tokShadow(ctx, x, y, rx, ry, a, lift) {
       if (!this.table) {
         ctx.fillStyle = 'rgba(0,0,0,' + a + ')';
         ctx.beginPath(); ctx.ellipse(x + 2, y + 2, rx, ry, 0, 0, TAU); ctx.fill();
         return;
       }
-      // мягкая тень радиальным градиентом (фильтр blur на каждую фишку слишком дорог)
+      // a soft shadow with a radial gradient (a blur filter on each piece is too expensive)
       const off = 4 + (lift || 0) * 0.6;
       ctx.save();
       ctx.translate(x + off * 1.3, y + off); ctx.scale(rx * 1.25, ry * 1.3);
@@ -1213,7 +1213,7 @@
       gr.addColorStop(0, 'rgba(0,0,0,' + (a * 0.95) + ')'); gr.addColorStop(0.6, 'rgba(0,0,0,' + (a * 0.6) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 1, 0, TAU); ctx.fill();
       ctx.restore();
-      // ребро картонной фишки
+      // the edge of the cardboard piece
       ctx.fillStyle = 'rgba(60,42,24,.85)';
       ctx.beginPath(); ctx.ellipse(x, y - ry * 0.55 + 3, rx * 0.98, ry * 1.6, 0, 0, Math.PI); ctx.fill();
     }
@@ -1227,11 +1227,11 @@
       let x = e.x, y = e.y;
       const r = e.r || this.cell * 0.2;
       let scale = e.scale, alpha = 1, rot = 0;
-      // лицом к ближайшему герою
+      // facing the nearest hero
       let best = null, bd = Infinity;
       this.heroes.forEach((h) => { if (!h.gone) { const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h; } } });
       if (best && bd > 1) rot = Math.atan2(best.y - y, best.x - x) + Math.PI / 2;
-      // рывок атаки
+      // the attack lunge
       if (e.lunge) {
         const lt = (this.time - e.lunge.t0) / 0.38;
         if (lt >= 1) e.lunge = null;
@@ -1242,19 +1242,19 @@
         alpha = 1 - dt; scale *= 1 - dt * 0.4; rot += dt * 2;
       }
       if (e.shakeT && this.time - e.shakeT < 0.25) x += Math.sin((this.time - e.shakeT) * 80) * 3;
-      // шатание
+      // swaying
       if (!e.dying && !def.immobile) rot += Math.sin(this.time * 2.2 + hash(e.uid.length + e.uid.charCodeAt(1))) * 0.12;
       const hop = Math.sin((e.hop || 0) * Math.PI) * r * 0.5;
       ctx.save();
       ctx.globalAlpha = alpha;
-      // переворот жетона «бродит ↔ охотится»: сжатие по ширине, подскок, смена стороны на середине
+      // flipping a "wandering ↔ hunting" token: squeezed in width, a hop, side change in the middle
       let fx = 1, fhop = 0, awakeNow = e.awake;
       if (e.flip) {
         const k = (this.time - e.flip.t0) / 0.5;
         if (k >= 1) { e.awake = e.flip.to; awakeNow = e.awake; e.flip = null; }
         else { fx = Math.max(0.05, Math.abs(Math.cos(k * Math.PI))); fhop = Math.sin(k * Math.PI) * r * 0.8; awakeNow = k < 0.5 ? !e.flip.to : e.flip.to; }
       }
-      // тень (сужается вместе с жетоном при перевороте)
+      // the shadow (narrows together with the token when flipped)
       this._tokShadow(ctx, x, y + r * 0.35, r * scale * Math.max(fx, 0.3), r * 0.55 * scale, 0.45, hop + fhop);
       if (fx !== 1) { ctx.translate(x, y - hop - fhop); ctx.scale(fx, 1); ctx.translate(-x, -(y - hop - fhop)); }
       if (fhop) ctx.translate(0, -fhop);
@@ -1264,15 +1264,15 @@
       Art.draw(ctx, 'z_' + e.type, x - s / 2, y - s / 2 - hop, s, s, { rot, t: this.time });
       ctx.globalAlpha = alpha;
       const real = g.zombies.find((q) => q.uid === e.uid);
-      const lurking = sleeping && real && real.lurk; // притаился (спит): стоит, пока не разбудят
+      const lurking = sleeping && real && real.lurk; // lurking (asleep): stays put until woken
       if (sleeping && !e.dying) {
-        // не охотится: светлый пунктирный ободок (без ctx.filter — он не везде работает)
+        // not hunting: a light dotted rim (without ctx.filter — it does not work everywhere)
         ctx.save(); ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(200,215,230,.85)';
         ctx.beginPath(); ctx.arc(x, y - hop, s * 0.52, 0, TAU); ctx.stroke(); ctx.restore();
       }
       const zz = def.faction && g.zombies.find((q) => q.uid === e.uid);
       if (zz && zz.bag && zz.bag.length && !e.dying) {
-        // мешок бандита: сколько добычи внутри (золотой — там груз задания)
+        // a bandit's bag: how much loot is inside (gold — mission cargo is there)
         const cargo = zz.bag.some((id) => ZG.Cards.get(id).kind === 'cargo');
         const bx = x - s * 0.36, by = y + s * 0.32 - hop, br = Math.max(5, s * 0.17);
         ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU);
@@ -1281,7 +1281,7 @@
         ctx.fillText(String(zz.bag.length), bx, by + 1);
       }
       if (g.stealth && !def.immobile && !e.dying && (e.crowd || 0) >= 5) {
-        // толпа: один общий значок на зону — «!×N» охотников; если охотников нет — «z×N» притаившихся и «…×N» бродячих
+        // a crowd: one shared icon per zone — "!×N" hunters; if there are no hunters — "z×N" lurking and "…×N" wandering
         if (e.slot === 0) {
           let hunt = 0, lurk = 0, wander = 0;
           this.zombies.forEach((q) => { if (q.cell !== e.cell || q.dying || ZG.Zombies.get(q.type).immobile) return; const rz = g.zombies.find((x) => x.uid === q.uid); if (q.awake !== false) hunt++; else if (rz && rz.lurk) lurk++; else wander++; });
@@ -1294,12 +1294,12 @@
           ctx.fillStyle = '#fff'; ctx.fillText(label, c.x, c.y - C * 0.37);
         }
       } else if (g.stealth && !def.immobile && !e.dying) {
-        // значок состояния: «…» — бродит, «z» — притаился (спит), «!» — охотится
+        // state icon: "…" — wandering, "z" — lurking (asleep), "!" — hunting
         const bx = x + s * 0.36, by = y - s * 0.36 - hop, br = Math.max(5, s * 0.17);
         ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU);
         ctx.fillStyle = !sleeping ? '#c0392b' : lurking ? '#2a4a7a' : '#4a5560'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#0d0a08'; ctx.stroke();
         ctx.fillStyle = '#fff';
-        if (sleeping && !lurking) { const d = br * 0.42; [-d, 0, d].forEach((dx) => { ctx.beginPath(); ctx.arc(bx + dx, by, Math.max(1.2, br * 0.16), 0, TAU); ctx.fill(); }); } // «…» — бродит
+        if (sleeping && !lurking) { const d = br * 0.42; [-d, 0, d].forEach((dx) => { ctx.beginPath(); ctx.arc(bx + dx, by, Math.max(1.2, br * 0.16), 0, TAU); ctx.fill(); }); } // "…" — wandering
         else { ctx.font = `bold ${Math.round(br * 1.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(sleeping ? 'z' : '!', bx, by + 1); }
       }
       if (e.flash > 0) {
@@ -1309,7 +1309,7 @@
         ctx.globalCompositeOperation = 'source-over';
       }
       ctx.globalAlpha = alpha;
-      // здоровье
+      // health
       if (z && !e.dying) {
         const left = def.hp - z.dmg;
         if (def.hp > 1) {
@@ -1335,11 +1335,11 @@
       let x = e.x, y = e.y, alpha = h.hidden ? 0.45 : 1, scale = e.scale;
       if (e.evacT) { const k = (this.time - e.evacT) / 0.9; if (k > 1) return; y -= k * this.cell * 0.6; alpha = 1 - k; }
       if (e.fallT) { const k = (this.time - e.fallT) / 1; if (k > 1) return; scale *= 1 - k * 0.5; alpha = 1 - k; }
-      // переворот фишки (обращение): сплющивается по ширине, на середине — оборот; держится, пока не встанет жетон зомби
+      // flipping the piece (turning): it flattens in width, the back shows in the middle; holds until a zombie token stands there
       let flipX = 1, showTurned = false;
       if (e.flipT) {
         const k = (this.time - e.flipT) / 0.7;
-        // оборот держится, пока на клетке не встанет жетон обращённого (но не дольше ~5 с)
+        // the back holds until the turned one's token stands on the cell (but no longer than ~5 s)
         let zIn = false;
         this.zombies.forEach((z) => { if (z.type === 'turned_' + h.id && z.cell === e.cell && z.scale >= 0.9 && !z.dying) zIn = true; });
         if (k > 1 && !e.fadeT && (zIn || k > 7)) e.fadeT = this.time;
@@ -1373,7 +1373,7 @@
         ctx.restore();
         return;
       }
-      // база
+      // base
       ctx.beginPath(); ctx.arc(x, y, R, 0, TAU);
       ctx.fillStyle = '#1a1512'; ctx.fill();
       ctx.lineWidth = R * 0.2; ctx.strokeStyle = h.player === 2 ? '#3fa7d6' : '#f0c040'; ctx.stroke();
@@ -1387,17 +1387,17 @@
         ctx.fillStyle = e.flashColor || '#c0392b'; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill();
         ctx.globalAlpha = alpha;
       }
-      // блок
+      // block
       if (h.block > 0) {
         const bx = x + R * 0.8, by = y - R * 0.8;
         Art.draw(ctx, 'shieldIcon', bx - R * 0.35, by - R * 0.35, R * 0.7, R * 0.7);
         ctx.fillStyle = '#111'; ctx.font = `bold ${Math.round(R * 0.4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(h.block, bx, by + 1);
       }
-      // имя
+      // name
       ctx.font = `bold ${Math.round(Math.max(9, R * 0.32))}px 'Russo One', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      // укрытие: значок домика над фишкой
+      // cover: a little house icon above the piece
       const hh = this.g.heroes[e.idx];
       if (hh && ZG.Engine.sheltered(this.g, hh)) {
         ctx.save(); ctx.translate(x - R * 0.85, y - R * 0.95);
@@ -1406,7 +1406,7 @@
         ctx.fillStyle = '#6fbf73'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#111'; ctx.stroke();
         ctx.restore();
       }
-      // в тесной зоне — короткое имя, чтобы подписи соседей не налезали
+      // in a crowded zone — a short name so the neighbors' captions do not overlap
       let crowd = 0; this.heroes.forEach((o) => { if (!o.gone && o.cell === e.cell) crowd++; }); this.zombies.forEach((o) => { if (!o.dying && o.cell === e.cell) crowd++; });
       const label = crowd > 1 ? def.name.slice(0, 3) : def.name;
       const nw = ctx.measureText(label).width + 8, nh = Math.max(11, R * 0.4);
@@ -1415,7 +1415,7 @@
       ctx.restore();
     }
 
-    // -------------------------------------------------------- эффекты
+    // -------------------------------------------------------- effects
     _drawEffects(ctx) {
       const t = this.time;
       this.effects = this.effects.filter((f) => t - f.t0 < f.dur);
@@ -1468,18 +1468,18 @@
             break;
           }
           case 'pillar': {
-            // световой столб с мягкими краями: несколько полос, к краям прозрачнее (раньше — жёсткий прямоугольник)
+            // a light pillar with soft edges: several bands, more transparent toward the edges (formerly — a hard rectangle)
             const w = this.cell * 0.5 * (1 - k * 0.5), hgt = Math.min(this.cell * 2, f.y);
             const gr = ctx.createLinearGradient(f.x, f.y - hgt, f.x, f.y);
             gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, f.color);
             ctx.fillStyle = gr;
             const base = Math.sin(k * Math.PI) * 0.7;
             for (let i = 0; i < 4; i++) { const ww = w * (1 - i * 0.22); ctx.globalAlpha = base * 0.3; ctx.fillRect(f.x - ww / 2, f.y - hgt, ww, hgt); }
-            ctx.globalAlpha = base * 0.5; ctx.beginPath(); ctx.ellipse(f.x, f.y, w * 0.9, w * 0.3, 0, 0, TAU); ctx.fill(); // пятно света у основания
+            ctx.globalAlpha = base * 0.5; ctx.beginPath(); ctx.ellipse(f.x, f.y, w * 0.9, w * 0.3, 0, 0, TAU); ctx.fill(); // a pool of light at the base
             break;
           }
           case 'beacon': {
-            // проблесковый маячок тревоги: два вращающихся луча из центра поля
+            // an alarm beacon: two rotating beams from the board center
             const cx = this.W / 2, cy = this.H / 2, R = Math.max(this.W, this.H);
             const a0 = k * Math.PI * 4;
             ctx.globalCompositeOperation = 'lighter';
@@ -1536,7 +1536,7 @@
         ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
         const fs = Math.round(this.cell * 0.2);
         ctx.font = `bold ${fs}px 'Russo One', sans-serif`;
-        // надпись не уходит за край поля (герои в верхнем ряду, длинные надписи у края)
+        // a caption does not go past the board edge (heroes in the top row, long captions at the edge)
         const half = (ctx.measureText(f.text).width / 2 + 4) * f.scale, top = fs * f.scale * 0.7 + 4;
         const fx = Math.max(half, Math.min(this.W - half, f.x)), fy = Math.max(top, f.y - k * this.cell * 0.45);
         ctx.translate(fx, fy);
@@ -1549,7 +1549,7 @@
       });
     }
 
-    // ночь: тёмный слой с «дырами» света вокруг героев и огня
+    // night: a dark layer with "holes" of light around heroes and fire
     _drawLighting(ctx, dt) {
       this.darkness += (this.targetDark - this.darkness) * Math.min(1, dt * 1.5);
       if (this.darkness < 0.02) return;
@@ -1575,7 +1575,7 @@
       if (fire) light(fire.x, fire.y, this.cell * 4.5 * flick, 0.85);
       ctx.drawImage(lc, 0, 0, this.W, this.H);
       if (fire) {
-        // зарево: тёплый мерцающий свет по всему полю
+        // glow: a warm flickering light across the whole board
         const fl = 0.8 + Math.sin(this.time * 9) * 0.1 + Math.sin(this.time * 23) * 0.06;
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         const gl = ctx.createRadialGradient(fire.x, fire.y, this.cell * 0.3, fire.x, fire.y, this.cell * 7);
@@ -1584,7 +1584,7 @@
         ctx.restore();
         ctx.fillStyle = `rgba(255,110,30,${0.05 * fl})`; ctx.fillRect(0, 0, this.W, this.H);
       }
-      // виньетка
+      // vignette
       const vg = ctx.createRadialGradient(this.W / 2, this.H / 2, Math.min(this.W, this.H) * 0.35, this.W / 2, this.H / 2, Math.max(this.W, this.H) * 0.75);
       vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${0.25 + this.darkness * 0.5})`);
       ctx.fillStyle = vg; ctx.fillRect(0, 0, this.W, this.H);
@@ -1615,7 +1615,7 @@
         gr.addColorStop(0, 'rgba(255,220,180,.18)'); gr.addColorStop(1, 'rgba(255,220,180,0)');
         ctx.fillStyle = gr; ctx.fillRect(0, 0, this.W, this.H);
       }
-      // пепел/пыль в воздухе
+      // ash/dust in the air
       ctx.fillStyle = 'rgba(230,220,200,.25)';
       for (let i = 0; i < 30; i++) {
         const x = (hash(i + 900) * this.W + Math.sin(t * 0.3 + i) * 40 + t * 6) % this.W;
@@ -1624,7 +1624,7 @@
       }
     }
 
-    // ================================================ статичное поле
+    // ================================================ the static board
     _renderStatic() {
       const g = this.g, b = g.board, C = this.cell;
       const cv = document.createElement('canvas');

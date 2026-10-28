@@ -1,6 +1,6 @@
 /*
- * Уровни. Уровень = набор тайлов + колоды + сценарии + параметры давления.
- * Новый уровень (новая локация) добавляется одним объектом.
+ * Levels. A level = a set of tiles + decks + scenarios + pressure parameters.
+ * A new level (a new location) is added as a single object.
  */
 (function (G) {
   'use strict';
@@ -9,12 +9,12 @@
   ZG.Levels.add({
     id: 'outskirts',
     num: 1,
-    name: 'Окраина',
-    subtitle: 'Уровень 1',
-    text: 'Спальный район на краю города. Первая ночь после падения.',
-    layout: { tw: 4, th: 2 }, // 4×2 тайла = поле 12×6 зон
+    name: 'Outskirts',
+    subtitle: 'Level 1',
+    text: 'A bedroom district on the edge of town. The first night after the fall.',
+    layout: { tw: 4, th: 2 }, // 4×2 tiles = a 12×6 zone board
     tiles: ['crossroad', 'shop', 'house', 'gas', 'pharmacy', 'park', 'garages', 'police', 'construction', 'school', 'market'],
-    // колода добычи по редкости: обычная ×4, редкая ×2, уникальная ×1 (+ Засады)
+    // loot deck by rarity: common ×4, rare ×2, unique ×1 (+ Ambushes)
     loot: {
       spear: 4, crowbar: 4, medkit: 4, energy: 4, chocolate: 4, brick: 4, bandage_roll: 4, whistle: 4, canned: 4, garrote: 4, grenade: 4,
       bat: 2, machete: 2, pistol: 2, molotov: 2, firecracker: 2, sneakers: 2, backpack: 2, vest: 2, flashlight: 2, smoke: 2, nailgun: 2, rope: 2,
@@ -26,53 +26,53 @@
     conditions: ['calm', 'fog', 'rain', 'fullmoon', 'convoy', 'swarm', 'stash'],
     bonuses: ['quiet', 'hunter', 'scavenger', 'blitz', 'combo', 'unscathed', 'biggame'],
     rounds: 14,
-    phaseStarts: [1, 4, 7], // Сумерки с 1-го, Ночь с 4-го, Глухая ночь с 7-го раунда
-    hunger: { 2: 1 }, // Глухая ночь: зомби +1 к скорости
-    alarmThreshold: { 1: 4, 2: 5, 3: 6, 4: 4 }, // порог Волны по размеру отряда: большой отряд шумит больше
-    roundsBonus: { 3: 2, 4: 2 }, // у большого отряда цели больше — и раунд в запасе
-    startAlarm: { 3: 1, 4: 1 }, // большой отряд шумит: стартовая Тревога (ниже порога Волны)
+    phaseStarts: [1, 4, 7], // Dusk from round 1, Night from round 4, Dead of Night from round 7
+    hunger: { 2: 1 }, // Dead of Night: zombies +1 speed
+    alarmThreshold: { 1: 4, 2: 5, 3: 6, 4: 4 }, // Wave threshold by squad size: a big squad makes more noise
+    roundsBonus: { 3: 2, 4: 2 }, // a big squad has more goals — and a spare round
+    startAlarm: { 3: 1, 4: 1 }, // a big squad is noisy: starting Alarm (below the Wave threshold)
     spawnPoints: { 1: 2, 2: 3, 3: 4, 4: 4 },
     events: ['ev_radio', 'ev_airdrop', 'ev_blackout', 'ev_silence', 'ev_gas', 'ev_survivor', 'ev_rush', 'ev_frenzy', 'ev_storm', 'ev_howl', 'ev_hound'],
-    eventChance: 1 / 6, // в начале раунда (со 2-го) кубик: на 6 — событие, иначе затишье
-    // укус: d6 ≤ die — Заражение (hand: сразу в руку; иначе в верхние top карт колоды), иначе Рана;
-    // Заражение — тоже Рана (hurts); обращение, когда Заражение «досидело» в руке до конца хода turnAt раз
+    eventChance: 1 / 6, // at the start of a round (from the 2nd) a die: on a 6 — an event, otherwise a lull
+    // bite: d6 ≤ die — Infection (hand: straight to hand; otherwise into the top `top` cards of the deck), otherwise a Wound;
+    // an Infection is also a Wound (hurts); turning happens when an Infection has "sat" in hand until the end of a turn turnAt times
     infection: { die: 2, turnAt: 1, hand: true, hurts: true },
-    maxAttackers: 3, // Теснота: героя за фазу кусают не больше 3 зомби (самые опасные)
-    stealth: true, // скрытность: зомби бродят, пока не заметят героев (Тревога на максимуме выдаёт всех)
-    doors: true, // двери на входах в помещения: закрыты в начале, укрытие от дальних зомби
-    fog: true, // «Туман войны»: тайлы, кроме стартового и тайла выхода, закрыты до разведки
-    fogBreak: 8, // столько жетонов в стопке закрытого тайла (зомби + пустышки) — и он открывается сам
-    decoys: true, // пустышки: в тумане за каждого зомби 2 жетона, каждый 50/50 зомби или пустышка
-    drawMax: 3, // добор в начале хода — до размера руки, но не больше 3 карт
-    hordeAlarm: 8, // в шаге «Особые свойства»: Тревога +1 за каждые 8 зомби на поле
-    pool: { walker: 16, runner: 6, fatso: 4, screamer: 3, brute: 2, plague: 3, grabber: 3, hound: 1 }, // жетонов в коробке
+    maxAttackers: 3, // Crowding: no more than 3 zombies bite a hero per phase (the most dangerous ones)
+    stealth: true, // stealth: zombies wander until they notice heroes (maximum Alarm gives everyone away)
+    doors: true, // doors on building entrances: closed at the start, cover from distant zombies
+    fog: true, // "Fog of War": tiles other than the start and exit tiles stay closed until scouted
+    fogBreak: 8, // this many tokens in a closed tile's stack (zombies + decoys) — and it opens by itself
+    decoys: true, // decoys: in the fog each zombie gets 2 tokens, each a 50/50 zombie or decoy
+    drawMax: 3, // draw at the start of the turn — up to hand size, but no more than 3 cards
+    hordeAlarm: 8, // in the "Special abilities" step: Alarm +1 for every 8 zombies on the board
+    pool: { walker: 16, runner: 6, fatso: 4, screamer: 3, brute: 2, plague: 3, grabber: 3, hound: 1 }, // tokens in the box
   });
 
-  // Кампания, миссия 1: облегчённая Окраина — поле 3×2 тайла, только Шатуны и Бегуны, у люка появляется 1 зомби
+  // Campaign, mission 1: an easier Outskirts — a 3×2 tile board, only Shamblers and Runners, 1 zombie appears per manhole
   const base = ZG.Levels.get('outskirts');
   ZG.Levels.add(Object.assign({}, base, {
     id: 'camp_m1', campaignOnly: true,
-    text: 'Первая вылазка: несколько кварталов, слабые мертвецы.',
+    text: 'First sortie: a few blocks, weak dead.',
     layout: { tw: 3, th: 2 },
     zombieTypes: ['walker', 'runner'],
     spawnPerCard: 1,
-    rounds: base.rounds + 2, // +2 раунда: учебная миссия должна проходиться почти всегда
-    spawnPoints: { 1: 2, 2: 1, 3: 2, 4: 3 }, // учебная: люков меньше, чем на Окраине (2/3/4/4)
-    infection: Object.assign({}, base.infection, { die: 1 }), // учебная: Заражение только на «1»
-    alarmThreshold: { 1: 6, 2: 7, 3: 8, 4: 6 }, // и Волна позже (у Окраины 4/5/6/4)
-    medsNeed: { 1: 3, 2: 3, 3: 3, 4: 3 }, // учебная: 3 медикамента при любом отряде (на Окраине 3–4 героям нужно 4)
+    rounds: base.rounds + 2, // +2 rounds: the training mission should almost always be beatable
+    spawnPoints: { 1: 2, 2: 1, 3: 2, 4: 3 }, // training: fewer manholes than on the Outskirts (2/3/4/4)
+    infection: Object.assign({}, base.infection, { die: 1 }), // training: Infection only on a "1"
+    alarmThreshold: { 1: 6, 2: 7, 3: 8, 4: 6 }, // and the Wave comes later (Outskirts: 4/5/6/4)
+    medsNeed: { 1: 3, 2: 3, 3: 3, 4: 3 }, // training: 3 medicine for any squad (on the Outskirts 3–4 heroes need 4)
     startAlarm: {},
-    roundsBonus: { 1: -2, 2: 2, 3: 1, 4: 0 }, // подгонка под ~80% побед при любом размере отряда
+    roundsBonus: { 1: -2, 2: 2, 3: 1, 4: 0 }, // tuned for ~80% wins at any squad size
     events: base.events.filter((id) => id !== 'ev_hound'),
-    scenarios: ['meds'], // сюжет: медикаменты для «скорой» (без вертолёта и гнёзд — они ломают историю)
-    bonuses: base.bonuses.filter((id) => id !== 'biggame'), // Толстяков и Громил здесь нет
+    scenarios: ['meds'], // story: medicine for the ambulance (no helicopter and nests — they break the story)
+    bonuses: base.bonuses.filter((id) => id !== 'biggame'), // no Bloaters or Brutes here
   }));
 
-  // Кампания, миссия 3 «Лес»: 6 особых тайлов (кордон, бор ×3, просека ×2), один люк — колодец на кордоне,
-  // особая колода появления (с Ночи по одному: Шатун/Бегун по очереди)
+  // Campaign, mission 3 "Forest": 6 special tiles (ranger station, pine forest ×3, clearing ×2), one manhole — the well at the station,
+  // a special spawn deck (from Night, one at a time: Shambler/Runner alternating)
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m3', campaignOnly: true, num: 3, name: 'Лес',
-    text: 'Лес за городом: кордон лесника, сосновый бор, просека ЛЭП.',
+    id: 'camp_m3', campaignOnly: true, num: 3, name: 'Forest',
+    text: 'The forest outside town: a ranger station, pine woods, a power line clearing.',
     layout: { tw: 3, th: 2 },
     scenarios: ['forest'],
     bonuses: base.bonuses.filter((id) => id !== 'biggame'),
@@ -84,89 +84,89 @@
     decoys: false,
     fogBreak: 0,
     rounds: 12,
-    roundsBonus: { 1: 3 }, // соло — 15 раундов
+    roundsBonus: { 1: 3 }, // solo — 15 rounds
   }));
 
-  // Кампания, миссия 4 «Трасса»: 8 обычных тайлов, 2 люка (с Ночи по 2 Шатуна), 2 притаившиеся стаи, бродячие бандиты
+  // Campaign, mission 4 "Highway": 8 ordinary tiles, 2 manholes (from Night 2 Shamblers each), 2 lurking packs, wandering bandits
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m4', campaignOnly: true, num: 4, name: 'Трасса',
-    text: 'Заправка у трассы: бандиты, стаи и люки, из которых ночью лезут мертвецы.',
+    id: 'camp_m4', campaignOnly: true, num: 4, name: 'Highway',
+    text: 'A gas station by the highway: bandits, packs and manholes the dead crawl out of at night.',
     scenarios: ['highway'],
     bonuses: base.bonuses.filter((id) => id !== 'biggame'),
     conditions: ['calm'],
     spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 },
     spawnDeck: { sp_chaos: 1 },
-    loot: Object.assign({}, base.loot, { rig: 1, bandit_tt: 1 }), // сюрприз: 2 редких снаряжения, только здесь
+    loot: Object.assign({}, base.loot, { rig: 1, bandit_tt: 1 }), // a surprise: 2 rare pieces of gear, only here
     zombieTypes: ['walker', 'runner'],
     events: [],
     decoys: false,
     fogBreak: 0,
     rounds: 13,
-    roundsBonus: { 1: -1 }, // соло — 12
+    roundsBonus: { 1: -1 }, // solo — 12
   }));
 
-  // Кампания, миссия 5 «Мост»: только банда Лесника (бандиты, 2 снайпера, Лесник), зомби нет
+  // Campaign, mission 5 "Bridge": only the Forester's gang (bandits, 2 snipers, the Forester), no zombies
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m5', campaignOnly: true, num: 5, name: 'Мост',
-    text: 'Блокпост у моста и лесопилка: банда Лесника.',
+    id: 'camp_m5', campaignOnly: true, num: 5, name: 'Bridge',
+    text: "The bridge checkpoint and the sawmill: the Forester's gang.",
     scenarios: ['bridge'],
-    bonuses: base.bonuses.filter((id) => id !== 'biggame' && id !== 'quiet'), // зомби нет: Волна ничего не приводит
+    bonuses: base.bonuses.filter((id) => id !== 'biggame' && id !== 'quiet'), // no zombies: a Wave brings nothing
     conditions: ['calm'],
     spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 },
-    loot: Object.assign({}, base.loot, { ambush: 0 }), // засад нет: зомби в этой миссии не появляются
+    loot: Object.assign({}, base.loot, { ambush: 0 }), // no ambushes: no zombies appear in this mission
     events: [],
     decoys: false,
     fogBreak: 0,
     rounds: 11,
-    roundsBonus: { 1: 1, 3: -2, 4: -3 }, // соло 12, пара 11, трое 9, четверо 8: большой отряд быстрее, но банда больше
+    roundsBonus: { 1: 1, 3: -2, 4: -3 }, // solo 12, duo 11, trio 9, four 8: a big squad is faster, but the gang is bigger
   }));
 
-  // Кампания, миссия 6 «За рекой»: обычный пригород, без вертолётного задания (герои уезжают на «буханке» — так и в эпилоге)
-  // Кампания, миссия 6 «Погост»: лес (2 левых столбца) и старое кладбище (2 правых) с Сияющим крестом
+  // Campaign, mission 6 "Across the River": an ordinary suburb, no helicopter task (the heroes leave in the van — as in the epilogue)
+  // Campaign, mission 6 "Churchyard": forest (2 left columns) and an old cemetery (2 right ones) with the Shining Cross
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m6', campaignOnly: true, num: 6, name: 'Погост',
-    text: 'Лесная дорога за рекой и старое кладбище, над которым светится крест.',
+    id: 'camp_m6', campaignOnly: true, num: 6, name: 'Churchyard',
+    text: 'A forest road across the river and an old cemetery with a cross glowing above it.',
     scenarios: ['pogost'],
     conditions: ['calm'],
-    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // расставляет задание: 2 люка в случайных тайлах
+    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // placed by the mission: 2 manholes in random tiles
     spawnDeck: { sp_pogost: 1 },
-    zombieTypes: ['walker', 'runner', 'brute', 'grabber', 'screamer'], // засады погоста
+    zombieTypes: ['walker', 'runner', 'brute', 'grabber', 'screamer'], // churchyard ambushes
     events: [],
     rounds: 14,
-    roundsBonus: { 2: -2, 3: -2, 4: -3 }, // большой отряд дольше идёт к выходу — ему меньше времени
+    roundsBonus: { 2: -2, 3: -2, 4: -3 }, // a big squad takes longer to reach the exit — it gets less time
     startAlarm: { 3: 1, 4: 1 },
-    alarmThreshold: { 1: 5, 2: 5, 3: 4, 4: 3 }, // большой отряд шумит — Волна у Креста приходит чаще
+    alarmThreshold: { 1: 5, 2: 5, 3: 4, 4: 3 }, // a big squad is noisy — the Wave at the Cross comes more often
   }));
 
-  // Кампания, миссия 7 «Белый лебедь»: невеста со свитой, банда «Волки», два люка (2-й и 3-й столбцы)
+  // Campaign, mission 7 "White Swan": the bride and her retinue, the Wolves gang, two manholes (2nd and 3rd columns)
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m7', campaignOnly: true, num: 7, name: 'Белый лебедь',
-    text: 'Пригород за рекой: ресторан, где играли свадьбу, и стоянка банды «Волки».',
+    id: 'camp_m7', campaignOnly: true, num: 7, name: 'White Swan',
+    text: 'A suburb across the river: the restaurant where a wedding was held, and the Wolves gang camp.',
     scenarios: ['wedding'],
     bonuses: base.bonuses.filter((id) => id !== 'biggame'),
     conditions: ['calm'],
-    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // расставляет задание: 2-й и 3-й столбцы
+    spawnPoints: { 1: 2, 2: 2, 3: 2, 4: 2 }, // placed by the mission: 2nd and 3rd columns
     spawnDeck: { sp_wedding: 1 },
-    loot: Object.assign({}, base.loot, { hunt_double: 2, silver_knife: 1 }), // находки только этой миссии: редкая ×2, уникальная ×1
+    loot: Object.assign({}, base.loot, { hunt_double: 2, silver_knife: 1 }), // finds unique to this mission: rare ×2, unique ×1
     zombieTypes: ['walker', 'runner', 'fatso'],
     events: [],
     rounds: 16,
-    roundsBonus: { 1: 3, 4: 1 }, // одиночке дольше добивать невесту и стаю; четвёрке — дольше идти всем к выходу
-    alarmThreshold: { 1: 7, 2: 6, 3: 6, 4: 6 }, // ровная сложность для 1–4 героев (у базы у четвёрки порог 4)
+    roundsBonus: { 1: 3, 4: 1 }, // a loner needs longer to finish off the bride and the pack; four need longer to all reach the exit
+    alarmThreshold: { 1: 7, 2: 6, 3: 6, 4: 6 }, // even difficulty for 1–4 heroes (the base level gives four a threshold of 4)
   }));
 
-  // Кампания, миссия 8 «Полдень»: колхозный рынок днём — тумана, люков и сумерек нет, всё на поле с начала.
-  // Поле 5×2: рынок в центре, по бокам нейтральные полосы (вариант 4×2 проверен: сложность сильнее зависит от размера отряда).
+  // Campaign, mission 8 "High Noon": the farmers market by day — no fog, no manholes, no dusk, everything is on the board from the start.
+  // 5×2 board: the market in the center, neutral strips on the sides (the 4×2 variant was tested: difficulty depends more on squad size).
   const m8 = {
-    campaignOnly: true, num: 8, name: 'Полдень',
-    text: 'Колхозный рынок в полдень: Мясник в мясном ряду, у дороги — «Волки».',
+    campaignOnly: true, num: 8, name: 'High Noon',
+    text: 'The farmers market at noon: the Butcher in the meat row, the Wolves by the road.',
     scenarios: ['market'],
     conditions: ['noon'],
-    bonuses: base.bonuses.filter((id) => id !== 'blitz'), // «до Глухой ночи» — днём бессмысленно
-    dayOnly: true, // ни сумерек, ни ночи: весь бой — при свете дня
+    bonuses: base.bonuses.filter((id) => id !== 'blitz'), // "before Dead of Night" — meaningless by day
+    dayOnly: true, // no dusk, no night: the whole fight is in daylight
     phaseStarts: [1, 999, 999],
     fog: false,
-    spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 }, // люков нет: Волна — это подмога «Волков»
+    spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 }, // no manholes: the Wave is Wolves reinforcements
     events: [],
     decoys: false,
     fogBreak: 0,
@@ -177,19 +177,19 @@
   };
   ZG.Levels.add(Object.assign({}, base, m8, { id: 'camp_m8', layout: { tw: 5, th: 2 } }));
 
-  // Кампания, миссия 2 «Автобаза №3»: поле 3×2, люков нет (никто не появляется), стаи и Толстяки расставлены заданием
+  // Campaign, mission 2 "Motor Depot No. 3": 3×2 board, no manholes (nothing spawns), packs and Bloaters placed by the mission
   ZG.Levels.add(Object.assign({}, base, {
-    id: 'camp_m2', campaignOnly: true, num: 2, name: 'Автобаза',
-    text: 'Автобаза на краю района: притаившиеся мертвецы и фургон во дворе.',
+    id: 'camp_m2', campaignOnly: true, num: 2, name: 'Motor Depot',
+    text: 'A motor depot on the edge of the district: lurking dead and a van in the yard.',
     layout: { tw: 3, th: 2 },
     scenarios: ['autobase'],
     conditions: ['calm'],
     spawnPoints: { 1: 0, 2: 0, 3: 0, 4: 0 },
-    events: [], // без событий: только то, что расставлено заранее
+    events: [], // no events: only what is placed in advance
     decoys: false,
-    fogBreak: 0, // стопок в тумане нет — прорыв не нужен
+    fogBreak: 0, // no stacks in the fog — no breakout needed
     rounds: 10,
-    roundsBonus: { 1: 5, 4: -2 }, // соло: +5 раундов (одному долго добивать двух Толстяков, а драка будит всех); четвёрка: −2 (быстро прочёсывает район)
-    infection: Object.assign({}, base.infection, { die: 1 }), // учебная: Заражение только на «1»
+    roundsBonus: { 1: 5, 4: -2 }, // solo: +5 rounds (one hero needs long to finish two Bloaters, and the fight wakes everyone); four: −2 (sweeps the district fast)
+    infection: Object.assign({}, base.infection, { die: 1 }), // training: Infection only on a "1"
   }));
 })(typeof globalThis !== 'undefined' ? globalThis : window);

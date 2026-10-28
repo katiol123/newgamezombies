@@ -1,48 +1,48 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Мёртвый квартал</title>
+  <title>Dead Block</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=PT+Sans+Narrow:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- ===================================================== МЕНЮ -->
+  <!-- ===================================================== MENU -->
   <section id="screen-menu" class="screen">
     <canvas id="title-canvas"></canvas>
     <div class="menu-content">
       <div class="logo">
-        <div class="logo-kicker">кооперативная настольная игра</div>
-        <h1>МЁРТВЫЙ<br><span>КВАРТАЛ</span></h1>
-        <div class="logo-sub">Уровень 1 · Окраина</div>
+        <div class="logo-kicker">a cooperative board game</div>
+        <h1>DEAD<br><span>BLOCK</span></h1>
+        <div class="logo-sub">Level 1 · The Outskirts</div>
       </div>
       <div class="menu-buttons">
-        <button class="btn primary" id="btn-new">Новая партия</button>
-        <button class="btn primary" id="btn-campaign">Кампания</button>
-        <button class="btn" id="btn-continue">Продолжить</button>
-        <button class="btn" id="btn-rules">Правила</button>
-        <button class="btn" id="btn-gallery">Галерея</button>
-        <button class="btn ghost" id="btn-print">Печать (Print &amp; Play)</button>
+        <button class="btn primary" id="btn-new">New game</button>
+        <button class="btn primary" id="btn-campaign">Campaign</button>
+        <button class="btn" id="btn-continue">Continue</button>
+        <button class="btn" id="btn-rules">Rules</button>
+        <button class="btn" id="btn-gallery">Gallery</button>
+        <button class="btn ghost" id="btn-print">Print &amp; Play</button>
       </div>
-      <div class="menu-foot">1–4 героя · соло или вдвоём за одним экраном · 40–60 минут</div>
+      <div class="menu-foot">1–4 heroes · solo or two players at one screen · 40–60 minutes</div>
     </div>
   </section>
 
-  <!-- ============================================ КАМПАНИЯ: СЛОТЫ -->
-  <!-- ============================================ ГАЛЕРЕЯ СЮЖЕТНЫХ ВСТАВОК -->
+  <!-- ============================================ CAMPAIGN: SLOTS -->
+  <!-- ============================================ STORY SCENE GALLERY -->
   <section id="screen-gallery" class="screen">
     <div class="gallery">
       <header class="setup-head">
-        <button class="btn ghost" id="btn-gallery-back">← Меню</button>
-        <h2>Галерея</h2>
+        <button class="btn ghost" id="btn-gallery-back">← Menu</button>
+        <h2>Gallery</h2>
       </header>
-      <p class="slots-intro">Сюжетные вставки кампании. Нажмите на сцену, чтобы посмотреть её во весь экран вместе с текстом.</p>
+      <p class="slots-intro">The campaign's story scenes. Click a scene to view it full screen with its text.</p>
       <div id="gallery-list"></div>
     </div>
-    <div id="gallery-view" class="gallery-view" role="dialog" aria-modal="true" aria-label="Сцена">
-      <button class="btn ghost" id="gallery-close">Закрыть ✕</button>
+    <div id="gallery-view" class="gallery-view" role="dialog" aria-modal="true" aria-label="Scene">
+      <button class="btn ghost" id="gallery-close">Close ✕</button>
       <div class="gv-inner"><canvas class="story-scene" id="gallery-big" width="1600" height="900"></canvas><div id="gallery-text" class="gv-text"></div></div>
     </div>
   </section>
@@ -50,21 +50,21 @@
   <section id="screen-slots" class="screen">
     <div class="camp-slots">
       <header class="setup-head">
-        <button class="btn ghost" id="btn-slots-back">← Меню</button>
-        <h2>Кампания</h2>
+        <button class="btn ghost" id="btn-slots-back">← Menu</button>
+        <h2>Campaign</h2>
       </header>
-      <p class="slots-intro">Цепочка миссий: герои переносят уровень, таланты, раны и добычу. Провал миссии или невозможность собрать отряд — конец кампании; павший герой выбывает навсегда.</p>
+      <p class="slots-intro">A chain of missions: heroes carry over their level, talents, wounds and loot. A failed mission or being unable to field a squad ends the campaign; a fallen hero is gone for good.</p>
       <div id="slot-list" class="slot-list"></div>
     </div>
   </section>
 
-  <!-- ============================================ КАМПАНИЯ: УБЕЖИЩЕ -->
+  <!-- ============================================ CAMPAIGN: SHELTER -->
   <section id="screen-shelter" class="screen">
     <div class="shelter">
       <header class="shelter-head">
-        <button class="btn ghost" id="btn-shelter-menu">← Меню</button>
-        <div class="shelter-title"><h2>Убежище</h2><div id="shelter-sub"></div></div>
-        <button class="btn primary big" id="btn-shelter-go">В поход ▶</button>
+        <button class="btn ghost" id="btn-shelter-menu">← Menu</button>
+        <div class="shelter-title"><h2>Shelter</h2><div id="shelter-sub"></div></div>
+        <button class="btn primary big" id="btn-shelter-go">Head out ▶</button>
       </header>
       <div id="shelter-report" class="shelter-report"></div>
       <div id="shelter-heroes" class="shelter-heroes"></div>
@@ -72,97 +72,97 @@
     </div>
   </section>
 
-  <!-- =============================================== ПОДГОТОВКА -->
+  <!-- =============================================== SETUP -->
   <section id="screen-setup" class="screen">
     <div class="setup">
       <header class="setup-head">
-        <button class="btn ghost" id="btn-setup-back">← Меню</button>
-        <h2>Подготовка к вылазке</h2>
+        <button class="btn ghost" id="btn-setup-back">← Menu</button>
+        <h2>Preparing the sortie</h2>
         <div id="setup-players" class="seg">
-          <button data-p="1">1 игрок</button>
-          <button data-p="2">2 игрока</button>
+          <button data-p="1">1 player</button>
+          <button data-p="2">2 players</button>
         </div>
       </header>
       <div class="setup-modes">
-        <label class="fog-toggle"><input type="checkbox" id="setup-fog" checked> <b>Туман войны</b> — тайлы открываются по мере разведки</label>
-        <label class="fog-toggle"><input type="checkbox" id="setup-stealth" checked> <b>Скрытность</b> — зомби бродят, пока не заметят вас</label>
-        <label class="fog-toggle"><input type="checkbox" id="setup-missions" checked> <b>Секретные миссии</b> — награда первому, кто выполнит свою</label>
+        <label class="fog-toggle"><input type="checkbox" id="setup-fog" checked> <b>Fog of war</b> — tiles are revealed as you scout</label>
+        <label class="fog-toggle"><input type="checkbox" id="setup-stealth" checked> <b>Stealth</b> — zombies wander until they notice you</label>
+        <label class="fog-toggle"><input type="checkbox" id="setup-missions" checked> <b>Secret missions</b> — a reward for whoever completes theirs first</label>
       </div>
-      <div class="setup-step"><span class="step-num">1</span> Отряд <small>(клик — взять; ПКМ — подробнее)</small></div>
+      <div class="setup-step"><span class="step-num">1</span> Squad <small>(click — take; right-click — details)</small></div>
       <div id="setup-heroes" class="setup-heroes"></div>
       <div id="setup-hint" class="setup-hint"></div>
       <div class="setup-grid">
         <div>
-          <div class="setup-step"><span class="step-num">2</span> Задание</div>
+          <div class="setup-step"><span class="step-num">2</span> Objective</div>
           <div id="setup-scenario" class="chips"></div>
           <div id="setup-scen-desc" class="desc"></div>
         </div>
         <div>
-          <div class="setup-step"><span class="step-num">3</span> Условие</div>
+          <div class="setup-step"><span class="step-num">3</span> Condition</div>
           <div id="setup-condition" class="chips"></div>
           <div id="setup-cond-desc" class="desc"></div>
         </div>
         <div>
-          <div class="setup-step"><span class="step-num">4</span> Сложность</div>
+          <div class="setup-step"><span class="step-num">4</span> Difficulty</div>
           <div id="setup-difficulty" class="chips diff"></div>
-          <label class="seed">Сид карты (необязательно): <input id="setup-seed" placeholder="случайный" maxlength="24"></label>
+          <label class="seed">Map seed (optional): <input id="setup-seed" placeholder="random" maxlength="24"></label>
         </div>
       </div>
-      <div class="setup-go"><button class="btn primary big" id="btn-start">Начать вылазку</button></div>
+      <div class="setup-go"><button class="btn primary big" id="btn-start">Start the sortie</button></div>
     </div>
   </section>
 
-  <!-- =================================================== ПАРТИЯ -->
+  <!-- =================================================== GAME -->
   <section id="screen-game" class="screen">
     <div class="game">
       <header class="topbar">
-        <button class="icon-btn" id="btn-menu" title="Меню">☰</button>
+        <button class="icon-btn" id="btn-menu" title="Menu">☰</button>
         <div class="track-box">
-          <div class="track-label">РАУНД · <span id="phase-name"></span></div>
+          <div class="track-label">ROUND · <span id="phase-name"></span></div>
           <div id="round-track" class="round-track"></div>
         </div>
         <div class="track-box">
-          <div class="track-label">ТРЕВОГА <span id="alarm-val"></span></div>
+          <div class="track-label">ALARM <span id="alarm-val"></span></div>
           <div id="alarm-track" class="alarm-track"></div>
         </div>
-        <div class="zcount" title="Зомби на поле">☠ <span id="zcount">0</span></div>
+        <div class="zcount" title="Zombies on the board">☠ <span id="zcount">0</span></div>
         <div id="help-line" class="help-line"></div>
-        <button class="icon-btn" id="btn-hint" title="Совет (H)">💡</button>
-        <button class="icon-btn" id="btn-auto" title="Сходить за меня">🤖</button>
-        <button class="icon-btn" id="btn-speed" title="Скорость анимаций">×1</button>
-        <button class="icon-btn" id="btn-table" title="Режим «стол»: поле под углом, как коробка на столе">🎲</button>
-        <button class="icon-btn" id="btn-sound" title="Звук">🔊</button>
-        <button class="icon-btn" id="btn-pause" title="Пауза ИИ" style="display:none">⏸</button>
-        <button class="icon-btn" id="btn-rules-in" title="Правила">?</button>
+        <button class="icon-btn" id="btn-hint" title="Hint (H)">💡</button>
+        <button class="icon-btn" id="btn-auto" title="Take my turn">🤖</button>
+        <button class="icon-btn" id="btn-speed" title="Animation speed">×1</button>
+        <button class="icon-btn" id="btn-table" title="Table mode: the board at an angle, like a box on a table">🎲</button>
+        <button class="icon-btn" id="btn-sound" title="Sound">🔊</button>
+        <button class="icon-btn" id="btn-pause" title="Pause AI" style="display:none">⏸</button>
+        <button class="icon-btn" id="btn-rules-in" title="Rules">?</button>
       </header>
       <main class="board-wrap"><canvas id="board"></canvas><div id="vignette"></div></main>
       <aside class="side">
         <div id="heroes" class="heroes"></div>
         <div class="panel"><div id="goals" class="goals"></div></div>
         <div class="panel cond" id="cond"></div>
-        <div class="panel log-panel"><div class="panel-title">Журнал</div><div id="log" class="log"></div></div>
+        <div class="panel log-panel"><div class="panel-title">Log</div><div id="log" class="log"></div></div>
       </aside>
       <footer class="handbar">
         <div class="hand-left">
           <div id="hand-owner" class="hand-owner"></div>
           <div id="energy" class="energy"></div>
           <div class="piles">
-            <div class="pile" id="deck-pile" title="Колода"><div class="pile-card"></div><span id="deck-count">0</span><small>колода</small></div>
-            <div class="pile discard" id="discard-pile" title="Сброс"><div class="pile-card"></div><span id="discard-count">0</span><small>сброс</small></div>
-            <div class="pile exhaust" id="exhaust-pile" title="Изнеможение: карты, сброшенные на блок. 3+ — герой обессилен. Вернуть — «Отдышаться»"><div class="pile-card"></div><span id="exhaust-count">0</span><small>изнеможение</small></div>
+            <div class="pile" id="deck-pile" title="Deck"><div class="pile-card"></div><span id="deck-count">0</span><small>deck</small></div>
+            <div class="pile discard" id="discard-pile" title="Discard"><div class="pile-card"></div><span id="discard-count">0</span><small>discard</small></div>
+            <div class="pile exhaust" id="exhaust-pile" title="Fatigue: cards discarded to block. 3+ — the hero is exhausted. Recover with “Catch Breath”"><div class="pile-card"></div><span id="exhaust-count">0</span><small>fatigue</small></div>
           </div>
           <div id="equip" class="equip"></div>
         </div>
         <div id="hand" class="hand"></div>
         <div class="hand-right">
           <div id="actions" class="actions"></div>
-          <button class="btn primary" id="btn-end">Конец хода <small>(E)</small></button>
+          <button class="btn primary" id="btn-end">End turn <small>(E)</small></button>
         </div>
       </footer>
     </div>
   </section>
 
-  <!-- ===================================================== ИТОГ -->
+  <!-- ===================================================== RESULT -->
   <section id="screen-end" class="screen">
     <div class="end">
       <h1 id="end-title"></h1>
@@ -171,21 +171,21 @@
       <div id="end-stats" class="end-stats"></div>
       <div id="end-seed" class="end-seed"></div>
       <div class="end-buttons">
-        <button class="btn primary" id="btn-again">Новая карта</button>
-        <button class="btn" id="btn-replay">Переиграть эту</button>
-        <button class="btn ghost" id="btn-end-menu">Меню</button>
+        <button class="btn primary" id="btn-again">New map</button>
+        <button class="btn" id="btn-replay">Replay this one</button>
+        <button class="btn ghost" id="btn-end-menu">Menu</button>
       </div>
     </div>
   </section>
 
-  <!-- ================================================ оверлеи -->
+  <!-- ================================================ overlays -->
   <div id="banner" class="banner"><div class="banner-band"><div id="banner-title"></div><div id="banner-sub"></div></div></div>
-  <div id="chain-pop" class="chain-pop">СВЯЗКА!</div>
+  <div id="chain-pop" class="chain-pop">CHAIN!</div>
   <div id="modal" class="modal"><div id="modal-box" class="modal-box"></div></div>
   <div id="rules" class="rules-overlay"><button id="rules-close" class="icon-btn">✕</button><div class="rules-frame"></div></div>
   <div id="tooltip" class="tooltip"></div>
   <div id="toast" class="toast"></div>
-  <div id="shutter" class="shutter"><div class="sh-top"></div><div class="sh-bot"></div><div class="sh-logo">МЁРТВЫЙ КВАРТАЛ</div></div>
+  <div id="shutter" class="shutter"><div class="sh-top"></div><div class="sh-bot"></div><div class="sh-logo">DEAD BLOCK</div></div>
 
   <script src="src/core/core.js"></script>
   <script src="src/data/base.js"></script>

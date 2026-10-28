@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Симулятор баланса: прогоняет партии ИИ и печатает статистику.
+ * Balance simulator: runs AI games and prints statistics.
  *
  *   node tools/sim.js [--games N] [--heroes boris,lisa] [--scenario fuel] [--condition fog]
  *                     [--difficulty survivor] [--level camp_m1] [--all-pairs] [--solo] [--fast] [--seed S] [--json] [--set '{"rounds":11}']
@@ -26,7 +26,7 @@ function parseArgs() {
     else if (k === '--level') o.level = a[++i];
     else if (k === '--nofog') o.fog = false;
     else if (k === '--nostealth') o.stealth = false;
-    else if (k === '--set') Object.assign(ZG.Levels.get('outskirts'), JSON.parse(a[++i])); // проба параметров уровня
+    else if (k === '--set') Object.assign(ZG.Levels.get('outskirts'), JSON.parse(a[++i])); // try out level parameters
   }
   return o;
 }
@@ -79,8 +79,8 @@ function main() {
   else {
     const per = {};
     out.forEach((r) => r.heroes.forEach((h) => { per[h] = per[h] || { g: 0, w: 0 }; per[h].g += r.games; per[h].w += r.wins; }));
-    console.log('\nПо героям: ' + Object.entries(per).map(([h, v]) => `${h} ${((100 * v.w) / v.g).toFixed(0)}%`).join('  '));
-    console.log(`Итого: ${tot.w}/${tot.g} = ${((100 * tot.w) / tot.g).toFixed(1)}%  (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+    console.log('\nBy hero: ' + Object.entries(per).map(([h, v]) => `${h} ${((100 * v.w) / v.g).toFixed(0)}%`).join('  '));
+    console.log(`Total: ${tot.w}/${tot.g} = ${((100 * tot.w) / tot.g).toFixed(1)}%  (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   }
 }
 main();
