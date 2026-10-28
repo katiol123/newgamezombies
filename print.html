@@ -21,7 +21,7 @@
     .tile-slot canvas { width: 100%; height: 100%; display: block; }
     .hero-board { width: 194mm; height: 120mm; border: 1px dashed #aaa; margin-bottom: 6mm; display: grid; grid-template-columns: 1fr 70mm; gap: 3mm; padding: 3mm; }
     .hero-board .hero-card { height: 100%; flex-direction: row; }
-    .hero-board .hero-card .hero-portrait { width: 55mm; height: auto; border-bottom: 0; border-right: 3px solid var(--hero); }
+    .hero-board .hero-card .hero-portrait { width: 48mm; height: auto; border-bottom: 0; border-right: 3px solid var(--hero); }
     .hb-tracks { font-family: var(--font-t); color: #1d1712; display: flex; flex-direction: column; gap: 3mm; }
     .hb-tracks .tr { display: flex; flex-wrap: wrap; gap: 1mm; }
     .hb-tracks .tr span { width: 8mm; height: 8mm; border: 1px solid #1d1712; display: flex; align-items: center; justify-content: center; font: 9pt var(--font-d); }
@@ -37,6 +37,13 @@
     .tracks .row div { width: 13mm; height: 15mm; display: flex; align-items: center; justify-content: center; font-size: 14pt; border: 2px solid #1d1712; border-radius: 2mm; }
     .wide-cards { display: flex; flex-wrap: wrap; gap: 4mm; }
     .wide-cards .cond-card, .wide-cards .scen-card { width: 88mm; }
+    /* широкие текстовые карты — светлые: экономят краску и читаются на бумаге */
+    .wide-cards .scen-card { background: #f4ecd8 !important; border-color: #8a6a2a; color: #1d1712; }
+    .wide-cards .scen-card .scen-kicker { color: #8a4a10; }
+    .wide-cards .scen-card .scen-name { color: #1d1712; }
+    .wide-cards .scen-card .scen-brief, .wide-cards .scen-card .scen-short { color: #2a2018; }
+    .wide-cards .scen-card .scen-setup { background: rgba(120,90,40,.12); color: #1d1712; }
+    .wide-cards .scen-card b { color: inherit; }
     @media print {
       html, body { background: #fff !important; padding: 0; }
       .sheet { break-inside: avoid; page-break-inside: avoid; height: 297mm; overflow: hidden; }
@@ -153,6 +160,12 @@
     heroes.slice(i, i + 2).forEach((h) => {
       const b = document.createElement('div'); b.className = 'hero-board';
       b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
+      b.appendChild(boardTracks(h));
+      s.appendChild(b);
+    });
+  }
+  // треки опыта и Ран рядом с картой героя
+  function boardTracks(h) {
       const tr = document.createElement('div'); tr.className = 'hb-tracks';
       let xp = '<div><b>Опыт 🎖</b></div><div class="tr">';
       for (let k = 0; k <= 12; k++) xp += `<span class="${k === 4 || k === 10 ? 'lv' : ''}">${k}</span>`;
@@ -160,9 +173,7 @@
       for (let k = 1; k <= h.hp + (h.talents.flat().includes('thick_skin') ? 2 : 0); k++) xp += `<span class="${k <= h.hp ? 'w' : ''}">${k}</span>`;
       xp += `</div><div style="font-size:9pt">Жёлтые клетки — новый уровень: выберите талант.${h.talents.flat().includes('thick_skin') ? ' Клетки сверх Стойкости — для таланта «Толстая шкура».' : ''}</div>`;
       tr.innerHTML = xp;
-      b.appendChild(tr);
-      s.appendChild(b);
-    });
+      return tr;
   }
 
   // -------------------------------------------- рубашка тайлов (туман)
@@ -270,7 +281,7 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
     b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
     const tw2 = document.createElement('div'); tw2.className = 'tokens';
     [[h.art, h.name], ['z_turned_' + h.id, (ZG.Zombies.has('turned_' + h.id) ? ZG.Zombies.get('turned_' + h.id).name : 'Обращённый') + ' (оборот)']].forEach(([k, label]) => { const d = document.createElement('div'); d.className = 'tok big'; d.appendChild(canvasOf(k, 30)); d.appendChild(Object.assign(document.createElement('span'), { textContent: label })); tw2.appendChild(d); });
-    b.appendChild(tw2); s2.appendChild(b);
+    const side = boardTracks(h); side.appendChild(tw2); b.appendChild(side); s2.appendChild(b);
     cardSheets(`Кампания: именные карты — ${h.name}`, h.deck.slice(6).map((id) => ({ el: CV.card(id), count: 1 })));
   });
   const campSpawn = Array.from(new Set(ZG.Levels.all().filter((l) => l.campaignOnly).flatMap((l) => Object.keys(l.spawnDeck || {})))).filter((id) => !lvl.spawnDeck[id]);

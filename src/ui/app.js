@@ -1910,7 +1910,7 @@
       $('#btn-shelter-go').style.display = '';
       $('#btn-shelter-go').onclick = done ? () => App.newCampaign(App.campaign.slot) : () => this.go();
       $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
-      if (done) $('#shelter-sub').insertAdjacentHTML('beforeend', `<div class="camp-sum">Пройдено миссий: <b>${c.missionNo - (c.status === 'over' ? 1 : 0)} из ${c.chainLength}</b>${c.fallen.length ? ` · выбыли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}` : ''}${c.roster.length ? ` · выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ')}` : ''}</div>`);
+      if (done) $('#shelter-sub').insertAdjacentHTML('beforeend', `<div class="camp-sum">Пройдено миссий: <b>${c.missionNo - (c.status === 'over' ? 1 : 0)} из ${c.chainLength}</b>${c.fallen.length ? ` · выбыли: ${c.fallen.map((id) => '✝ ' + esc(ZG.Heroes.get(id).name)).join(', ')}` : ''}${c.roster.length ? ` · выжили: ${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} (ур. ${h.level})`).join(', ')}` : ''}${c.roster.length ? `<br>Капитал выживших: <b>${c.roster.reduce((n, h) => n + h.talons, 0)} 🎫</b> (${c.roster.map((h) => `${esc(ZG.Heroes.get(h.id).name)} ${h.talons}`).join(', ')})` : ''}${c.haul ? ` · Ценности из сейфов принесли за кампанию: <b>${c.haul} 🎫</b>` : ''}</div>`);
       this.renderReport(c);
       if (c.status === 'won' && c.epilogueSeen) { const eb = el('button', 'rep-toggle', '📜 Эпилог'); eb.onclick = () => this.epilogue(c); $('#shelter-sub').appendChild(eb); }
       if (c.status === 'won' && !c.epilogueSeen) { c.epilogueSeen = true; this.save(); setTimeout(() => this.epilogue(c), 300); }

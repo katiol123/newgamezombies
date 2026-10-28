@@ -82,7 +82,7 @@
     c.lastJunkSale = [];
     c.roster.forEach((h) => {
       h.junk.forEach((it) => {
-        if (C.isValuable$(it.id)) { const p = C.appraise(c); h.talons += p; c.lastJunkSale.push({ hero: h.id, price: p }); }
+        if (C.isValuable$(it.id)) { const p = C.appraise(c); h.talons += p; c.haul = (c.haul || 0) + p; c.lastJunkSale.push({ hero: h.id, price: p }); }
         else h.talons += C.price(it.id) || 0;
       });
       h.junk = h.junk.filter((it) => C.price(it.id) == null && !C.isValuable$(it.id)); // уникальные карты кампании не продаются — остаются
@@ -279,7 +279,7 @@
       c.status = 'won'; c.endReason = 'Кампания пройдена!';
       // последний визит скупщика: Ценности, вынесенные из последней миссии, не пропадают
       rep.finalSale = [];
-      c.roster.forEach((h) => { h.junk.concat(h.chest).filter((it) => C.isValuable$(it.id)).forEach(() => { const p = C.appraise(c); h.talons += p; rep.finalSale.push({ hero: h.id, price: p }); }); h.junk = h.junk.filter((it) => !C.isValuable$(it.id)); h.chest = h.chest.filter((it) => !C.isValuable$(it.id)); });
+      c.roster.forEach((h) => { h.junk.concat(h.chest).filter((it) => C.isValuable$(it.id)).forEach(() => { const p = C.appraise(c); h.talons += p; c.haul = (c.haul || 0) + p; rep.finalSale.push({ hero: h.id, price: p }); }); h.junk = h.junk.filter((it) => !C.isValuable$(it.id)); h.chest = h.chest.filter((it) => !C.isValuable$(it.id)); });
     }
     else {
       c.status = 'ready';
