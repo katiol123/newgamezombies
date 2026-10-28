@@ -41,6 +41,11 @@
   function item(c, id, worn) { return { key: 'k' + c.nextKey++, id, worn: !!worn }; }
 
   C.retreatsLeft = (c) => (c.retreats == null ? CFG().retreats || 0 : c.retreats); // старые сохранения — с полным запасом
+  // Отряд на миссию: от minSquad до 4 героев; сложность миссии считается по числу вышедших.
+  // c.squad — размер отряда на старте кампании: меньше него брать нельзя, пока в убежище хватает героев на ногах (Стойкость 2+).
+  C.MAX_SQUAD = 4;
+  C.minSquad = (c) => Math.min(c.squad, c.roster.filter((h) => C.hp(h) >= 2).length) || 1;
+  C.rosterCap = (c) => Math.max(c.squad + 2, C.MAX_SQUAD); // убежище: можно дорасти до полного отряда из 4
   C.hero = (c, id) => c.roster.find((h) => h.id === id);
   C.has = (h, talentId) => h.talents.includes(talentId);
   C.built = (h, b) => h.buildings.includes(b);
@@ -77,8 +82,9 @@
     if (c.status !== 'ready') return { error: 'Кампания не готова к миссии.' };
     if (c.eventDraw && !c.eventDraw.done) C.resolveEvent(c, C.eventAI(c)); // нерешённое событие убежища решается «по-ИИ»
     const ids = squadIds || c.roster.slice(0, c.squad).map((h) => h.id);
-    // героев можно взять меньше размера отряда (например, после потерь), но миссия считается на полный отряд
-    if (!ids.length || ids.length > c.squad) return { error: `Нужно выбрать от 1 до ${c.squad} ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}.` };
+    // героев — от minSquad (стартовый размер, если на ногах хватает) до 4; миссия рассчитывается на фактический отряд
+    const lo = C.minSquad(c), hi = Math.min(C.MAX_SQUAD, c.roster.length);
+    if (ids.length < lo || ids.length > hi) return { error: lo === hi ? `Нужно выбрать ${lo} ${ZG.util.plural(lo, 'героя', 'героев', 'героев')}.` : `Нужно выбрать от ${lo} до ${hi} героев.` };
     if (ids.some((id) => !C.hero(c, id))) return { error: 'Этого героя нет в убежище.' };
     // хлам при выходе продаётся автоматически
     c.lastJunkSale = [];
@@ -96,7 +102,7 @@
     const M = CFG().morale;
     const md = C.missionDef(c);
     return {
-      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true, partySize: c.squad, retreats: C.retreatsLeft(c),
+      seed: c.current.seed, difficultyId: c.difficultyId, fog: true, missions: true, partySize: ids.length, retreats: C.retreatsLeft(c),
       campaign: true, xpLevels: CFG().xpLevels.slice(),
       scenarioId: md.scenarioId, conditionId: md.conditionId, tileRules: md.tiles || null, levelId: md.levelId, special: md.special || null, stories: md.stories || null, missionTitle: md.name ? `Миссия ${c.missionNo + 1}: ${md.name}` : null,
       bonds: C.bonds(c).filter(([a, b]) => ids.includes(a) && ids.includes(b)),
@@ -519,7 +525,7 @@
     if (c.status !== 'ready') return 'Кампания не в убежище.';
     if (!payer) return 'Нет такого героя.';
     if (!C.hireable(c).includes(newId)) return 'Этого героя нельзя нанять.';
-    if (c.roster.length >= c.squad + 2) return 'Убежище переполнено (не больше размера отряда +2).';
+    if (c.roster.length >= C.rosterCap(c)) return `Убежище переполнено (не больше ${C.rosterCap(c)} героев).`;
     if (payer.talons < P.hire) return 'Не хватает талонов.';
     payer.talons -= P.hire;
     const h = newHero(c, newId, payer.player, payer.ai);

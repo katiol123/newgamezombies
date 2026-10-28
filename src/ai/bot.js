@@ -317,14 +317,14 @@
     return true;
   }
 
-  // Отступление (кампания): решают только боты, когда в живых одни боты. Задание не выполнено, а половина отряда пала —
-  // дальше будет только хуже: уводим выживших и переиграем миссию.
+  // Отступление (кампания): решают только боты, когда в живых одни боты. Задание не выполнено, а на ногах остался один —
+  // дальше будет только хуже: уводим выжившего и переиграем миссию.
   function wantRetreat(g) {
     if (!g.campaign || !(g.retreats > 0) || E.isComplete(g) || !E.legal(g).some((a) => a.t === 'retreat')) return false;
     const live = g.heroes.filter((h) => !h.fallen && !h.evacuated);
     if (!live.length || live.some((h) => !h.ai)) return false;
     const fell = g.heroes.filter((h) => h.fallen).length;
-    return g.heroes.length >= 2 && fell * 2 >= g.heroes.length; // половина отряда пала — уводим остальных
+    return g.heroes.length >= 2 && fell > 0 && live.length <= 1; // на ногах остался один — уводим его (раньше отступать — терять выигрышные партии)
   }
 
   function bestAction(g, opts) {

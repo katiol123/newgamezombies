@@ -399,5 +399,20 @@ const ok = (cond, msg) => { if (!cond) { fails++; console.log('FAIL', msg); } el
   ok(c.status === 'over', 'провал без запаса отступлений — конец кампании');
 }
 
+// 25) Отряд по факту: стартовали вдвоём, наняли третьего — можно идти втроём, сложность по вышедшим; меньше стартового — только если людей нет
+{
+  const c = C.create({ heroes: [{ id: 'boris' }, { id: 'kira' }], seed: 't25' });
+  C.hero(c, 'boris').talons = 30;
+  ok(!C.hire(c, 'boris', 'viktor') && c.roster.length === 3, 'наняли третьего героя');
+  const o3 = C.startMission(c, ['boris', 'kira', 'viktor']);
+  ok(!o3.error && o3.partySize === 3, 'втроём можно, миссия на 3 героя');
+  c.status = 'ready'; c.current = null;
+  ok(!!C.startMission(c, ['boris']).error, 'одного взять нельзя, пока на ногах есть двое');
+  c.roster = c.roster.filter((h) => h.id === 'boris'); c.fallen.push('kira', 'viktor');
+  const o1 = C.startMission(c, ['boris']);
+  ok(!o1.error && o1.partySize === 1, 'остался один — идёт один, миссия на 1 героя');
+  ok(C.rosterCap({ squad: 2 }) === 4 && C.rosterCap({ squad: 4 }) === 6, 'убежище: до 4 героев (или стартовый отряд +2)');
+}
+
 console.log(fails ? `\n${fails} проверок не прошло` : '\nВсе проверки пройдены');
 process.exit(fails ? 1 : 0);

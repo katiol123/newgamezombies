@@ -1840,8 +1840,10 @@
     async go() {
       const c = App.campaign.c;
       if (!this.squad.length) return toast('Выберите хотя бы одного героя в отряд.');
+      const lo = CMP.minSquad(c);
+      if (this.squad.length < lo) return toast(`Нужно взять не меньше ${lo} ${ZG.util.plural(lo, 'героя', 'героев', 'героев')}: столько начинало кампанию, и на ногах они есть.`);
       if (this.squad.length < c.squad) {
-        const v = await Modal.show(`<h2>Неполный отряд</h2><p>В поход идут ${this.squad.length} из ${c.squad}. Миссия всё равно рассчитана на <b>${c.squad}</b> ${ZG.util.plural(c.squad, 'героя', 'героев', 'героев')}: врагов и задач будет как на полный отряд.</p>`, [{ label: 'Идти так', value: 'go' }, { label: 'Отмена', cls: 'primary' }]);
+        const v = await Modal.show(`<h2>Неполный отряд</h2><p>В поход идут ${this.squad.length} из ${c.squad}: героев на ногах больше нет. Миссия будет рассчитана на <b>${this.squad.length}</b> ${ZG.util.plural(this.squad.length, 'героя', 'героев', 'героев')}.</p>`, [{ label: 'Идти так', value: 'go' }, { label: 'Отмена', cls: 'primary' }]);
         if (v !== 'go') return;
       }
       if (c.players === 2) {
@@ -1922,7 +1924,7 @@
       const done = c.status === 'over' || c.status === 'won';
       $('#shelter-sub').innerHTML = done
         ? `<b class="${c.status}">${c.status === 'won' ? 'КАМПАНИЯ ПРОЙДЕНА' : 'КАМПАНИЯ ОКОНЧЕНА'}</b> — ${esc(c.endReason || '')}`
-        : `${c.report && c.report.retreat ? 'Повтор: ' : ''}Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${c.squad} · ${esc(ZG.Difficulties.get(c.difficultyId).name)} · отступлений: ${CMP.retreatsLeft(c)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
+        : `${c.report && c.report.retreat ? 'Повтор: ' : ''}Впереди миссия ${c.missionNo + 1} из ${c.chainLength}${CMP.missionDef(c).name ? ': <b>' + esc(CMP.missionDef(c).name) + '</b>' : ' (случайная)'} · отряд: ${CMP.minSquad(c) < CMP.MAX_SQUAD ? `${CMP.minSquad(c)}–${Math.min(CMP.MAX_SQUAD, c.roster.length)}` : CMP.MAX_SQUAD} (сложность — по числу вышедших) · ${esc(ZG.Difficulties.get(c.difficultyId).name)} · отступлений: ${CMP.retreatsLeft(c)}${c.wanderers.length ? ` · <span class="bad">бродят: ${c.wanderers.map((id) => esc(ZG.Zombies.get('turned_' + id).name)).join(', ')}</span>` : ''}`;
       $('#btn-shelter-go').style.display = '';
       $('#btn-shelter-go').onclick = done ? () => App.newCampaign(App.campaign.slot) : () => this.go();
       $('#btn-shelter-go').textContent = done ? 'Новая кампания в этом слоте' : `В поход: миссия ${c.missionNo + 1} ▶`;
@@ -2014,7 +2016,7 @@
         const inSq = this.squad.includes(h.id);
         add(inSq ? '✓ В отряде' : 'В отряд', () => {
           if (inSq) this.squad = this.squad.filter((x) => x !== h.id);
-          else if (this.squad.length >= c.squad) return toast(`В поход идут не больше ${c.squad}. Сначала уберите кого-то из отряда.`);
+          else if (this.squad.length >= CMP.MAX_SQUAD) return toast(`В поход идут не больше ${CMP.MAX_SQUAD} героев. Сначала уберите кого-то из отряда.`);
           else this.squad.push(h.id);
           this.render();
         }, inSq ? 'primary' : '');
@@ -2193,8 +2195,8 @@
       const list = CMP.hireable(c);
       const P = ZG.CAMPAIGN.prices;
       if (done || !list.length) { box.innerHTML = ''; return; }
-      const full = c.roster.length >= c.squad + 2;
-      box.innerHTML = `<div class="hire-h"><b>Нанять героя — ${P.hire} 🎫</b> <small>Платит один герой: ему — уникальная карта-подарок новичка и долг (половина талонов новичка за звёзды в его первых 3 миссиях). Новичок приходит на 1-м уровне с обычной картой добычи. В убежище — не больше ${c.squad + 2} героев${full ? ' (сейчас полно)' : ''}.</small></div>`;
+      const full = c.roster.length >= CMP.rosterCap(c);
+      box.innerHTML = `<div class="hire-h"><b>Нанять героя — ${P.hire} 🎫</b> <small>Платит один герой: ему — уникальная карта-подарок новичка и долг (половина талонов новичка за звёзды в его первых 3 миссиях). Новичок приходит на 1-м уровне с обычной картой добычи. В убежище — не больше ${CMP.rosterCap(c)} героев${full ? ' (сейчас полно)' : ''}.</small></div>`;
       const row = el('div', 'hire-list');
       list.forEach((id) => {
         const def = ZG.Heroes.get(id);
