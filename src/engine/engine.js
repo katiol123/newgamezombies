@@ -75,7 +75,7 @@
     g.relWhy[k + '#' + why] = 1;
     g.relDelta = g.relDelta || {};
     (g.relDelta[k] = g.relDelta[k] || []).push({ d, why: text });
-    E.log(g, `Отношения ${E.heroName(a)} и ${E.heroName(b)}: ${d > 0 ? '+' : ''}${d} — ${text}.`, d > 0 ? 'good' : 'warn');
+    E.log(g, `Отношения ${E.heroName(a)} и ${E.heroName(b)}: ${d > 0 ? '+' : '−'}${Math.abs(d)} — ${text}.`, d > 0 ? 'good' : 'warn');
   };
   // Узы (кампания): напарник закончил ход в твоём тайле — первая карта твоего следующего хода срабатывает со Связкой
   E.bondPartners = (g, h) => (g.bonds || []).filter((p) => p.includes(h.id)).map((p) => g.heroes.find((o) => o.id === (p[0] === h.id ? p[1] : p[0]))).filter((o) => o && o.onBoard);
@@ -1482,7 +1482,7 @@
       if (z.bitPhase !== g.zphase) { z.bitPhase = g.zphase; z.bitHeroes = []; }
       if (!z.bitHeroes.includes(h.idx)) z.bitHeroes.push(h.idx);
       // отношения: укусил зомби, которого разбудил или привёл другой герой
-      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy]) E.relBump(g, g.heroes[z.wokenBy], h, -1, 'lured', `укус от зомби, которого разбудил(а) ${E.heroName(g.heroes[z.wokenBy])}`);
+      if (z.wokenBy != null && z.wokenBy !== h.idx && g.heroes[z.wokenBy]) E.relBump(g, g.heroes[z.wokenBy], h, -1, 'lured', `укус от зомби, которого ${E.g(g.heroes[z.wokenBy], 'разбудил', 'разбудила')} ${E.heroName(g.heroes[z.wokenBy])}`);
     });
     bite(g, h, taken, entry.attackers);
     if (h.onBoard && h.thorns) {
@@ -1918,7 +1918,7 @@
         g.turn.healUsed++;
         const n = healWounds(g, o, 1 + Mods.value(g, h, 'healBonus', 0));
         if (o !== h) { ms(h, 'helps'); if (n) E.relBump(g, h, o, 1, 'healed', `лечение: ${E.heroName(h)} → ${E.heroName(o)}`); }
-        E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} — минус ${n} ${ZG.util.plural(n, 'Рана', 'Раны', 'Ран')}.`, 'good');
+        E.log(g, `${E.heroName(h)} обрабатывает раны: ${E.heroName(o)} −${n} ${ZG.util.plural(n, 'Рана', 'Раны', 'Ран')}.`, 'good');
         return true;
       }
       case 'cleanse': {
@@ -2042,7 +2042,7 @@
       case 'evac': {
         if (!E.isComplete(g) || h.pos !== g.exit) return fail(g, 'Эвакуация ещё не готова.');
         if (!E.canEvac(g, h)) return fail(g, E.scenario(g).evacBlockedText || 'Сейчас уйти нельзя.');
-        E.leftBehind(g, h).forEach((o) => E.relBump(g, h, o, -1, 'left', `эвакуация без товарища: ${E.heroName(o)} был(а) у самого выхода`));
+        E.leftBehind(g, h).forEach((o) => E.relBump(g, h, o, -1, 'left', `эвакуация без товарища: ${E.heroName(o)} ${E.g(o, 'был', 'была')} у самого выхода`));
         if (E.scenario(g).onEvac) E.scenario(g).onEvac(g, h, E); // задание отмечает, что унесли (например, рацию)
         h.onBoard = false; h.evacuated = true;
         E.log(g, `${E.heroName(h)} эвакуируется!`, 'good');

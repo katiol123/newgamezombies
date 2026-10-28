@@ -180,9 +180,9 @@
         if (key && carriedItems[key]) {
           const it = carriedItems[key];
           delete carriedItems[key];
-          if (!it.worn) { it.worn = true; line(h.id, `«${d.name}» на грани поломки`); found.push(it); }
-          else if (Rng.next(rng) < breakChance([carriedBy[key] && carriedBy[key].id, h.id].concat((g.carriedHolders && g.carriedHolders[u]) || []).filter(Boolean))) { line(h.id, `«${d.name}» сломалась`); moraleAdd(h, -1, `сломалась «${d.name}»`); }
-          else { line(h.id, `«${d.name}» уцелела (всё ещё на грани)`); found.push(it); }
+          if (!it.worn) { it.worn = true; line(h.id, `карта «${d.name}» на грани поломки`); found.push(it); }
+          else if (Rng.next(rng) < breakChance([carriedBy[key] && carriedBy[key].id, h.id].concat((g.carriedHolders && g.carriedHolders[u]) || []).filter(Boolean))) { line(h.id, `карта «${d.name}» сломалась`); moraleAdd(h, -1, `сломалась карта «${d.name}»`); }
+          else { line(h.id, `карта «${d.name}» уцелела (всё ещё на грани)`); found.push(it); }
         } else found.push(item(c, id));
       });
       h.equip = [];
@@ -275,7 +275,12 @@
     c.report = rep;
     c.updated = Date.now();
     if (!rep.win) { c.status = 'over'; c.endReason = 'Миссия провалена: ' + (rep.reason || ''); }
-    else if (c.missionNo >= c.chainLength) { c.status = 'won'; c.endReason = 'Кампания пройдена!'; }
+    else if (c.missionNo >= c.chainLength) {
+      c.status = 'won'; c.endReason = 'Кампания пройдена!';
+      // последний визит скупщика: Ценности, вынесенные из последней миссии, не пропадают
+      rep.finalSale = [];
+      c.roster.forEach((h) => { h.junk.concat(h.chest).filter((it) => C.isValuable$(it.id)).forEach(() => { const p = C.appraise(c); h.talons += p; rep.finalSale.push({ hero: h.id, price: p }); }); h.junk = h.junk.filter((it) => !C.isValuable$(it.id)); h.chest = h.chest.filter((it) => !C.isValuable$(it.id)); });
+    }
     else {
       c.status = 'ready';
       rep.hint = C.personaHint(c, g); // иногда — намёк на скрытый характер кого-то из отряда

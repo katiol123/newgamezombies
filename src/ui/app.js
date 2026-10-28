@@ -324,6 +324,8 @@
       const camp = App.campaign;
       const opts = CMP.startMission(camp.c, squad);
       if (opts.error) { toast(opts.error); return false; }
+      const sold = camp.c.lastJunkSale || [];
+      if (sold.length) toast('Скупщик забрал Ценности: ' + Object.entries(sold.reduce((m, x) => ((m[x.hero] = (m[x.hero] || []).concat(x.price)), m), {})).map(([id, ps]) => `${ZG.Heroes.get(id).name} — ${ps.join(' и ')} 🎫`).join('; '), 6000);
       opts.players = camp.c.players;
       CMP.save(camp.c, camp.slot);
       this.start(opts);
@@ -839,7 +841,7 @@
       }).join('') +
         (E.isComplete(g) ? (g.heroes.some((h) => h.onBoard && E.canEvac(g, h))
           ? `<div class="goal-evac">Эвакуация открыта: «${esc(E.scenario(g).exitLabel)}» — действие «Эвакуация» в этой зоне.</div>`
-          : `<div class="goal-evac blocked">Эвакуация закрыта: ${esc(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя.')}</div>`) : '');
+          : `<div class="goal-evac blocked">Эвакуация закрыта: ${esc(lcFirst(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя.'))}</div>`) : '');
       const cond = ZG.Conditions.get(g.conditionId);
       const bonus = g.bonusId ? ZG.Bonuses.get(g.bonusId) : null;
       $('#cond').innerHTML = `<b>${esc(cond.name)}.</b> <span class="cond-full">${esc(cond.text)}</span>` + (bonus ? `<div class="bonus-line">★ <b>${esc(bonus.name)}:</b> <span class="cond-full">${esc(bonus.text)}</span> <span class="${bonus.check(g) ? 'ok' : ''}">(${esc(bonus.progress(g))})</span></div>` : '');
@@ -1518,7 +1520,7 @@
     }
     if (cell === g.exit) parts.push(!E.isComplete(g) ? `<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} — закрыта, пока не выполнена цель</div>`
       : g.heroes.some((h) => h.onBoard && E.canEvac(g, h)) ? `<div class="tt-gold">Эвакуация: ${esc(E.scenario(g).exitLabel)} — ОТКРЫТА</div>`
-        : `<div class="tt-red">Эвакуация: ${esc(E.scenario(g).exitLabel)} — закрыта: ${esc(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя')}</div>`);
+        : `<div class="tt-red">Эвакуация: ${esc(E.scenario(g).exitLabel)} — закрыта: ${esc(lcFirst(E.scenario(g).evacBlockedText || 'сейчас уйти нельзя'))}</div>`);
     if (g.frenzyTiles && g.frenzyTiles.includes(g.board.cells[cell].tile)) parts.push('<div class="tt-red">Сияющий крест — «Буйство»: мертвецы на этом тайле в фазу зомби действуют дважды</div>');
     if (g.obj && g.obj.camp === cell && g.scenarioId === 'wedding' && !g.obj.known) parts.push('<div class="tt-gold">У костра что-то лежит — подойдите ближе (на 2 зоны), чтобы разглядеть</div>');
     if (cell === g.tower) parts.push('<div class="tt-gold">Радиовышка</div>');
@@ -1955,6 +1957,7 @@
         ${r.joined ? `<div class="rep-bond">🔓 ${name(r.joined)} «${esc(ZG.Heroes.get(r.joined).nick)}» спасён и присоединяется к отряду — новый герой в убежище.</div>` : ''}
         ${(r.rel || []).filter((x) => CMP.hero(c, x.a) && CMP.hero(c, x.b)).map((x) => `<div class="rep-bond${x.to < x.from ? ' down' : ''}">${x.to >= 3 && x.from < 3 ? '🤝' : x.to <= -3 && x.from > -3 ? '⚔' : x.to > x.from ? '▲' : '▼'} ${name(x.a)} и ${name(x.b)}: ${CMP.relName(x.to)} (${x.from > 0 ? '+' : ''}${x.from} → ${x.to > 0 ? '+' : ''}${x.to}) <small>${esc(x.why.join(', '))}</small>${x.to >= 3 && x.from < 3 ? ' — теперь их связывают <b>Узы</b>' : ''}</div>`).join('')}
         ${r.hint ? `<div class="rep-hint">${esc(r.hint)}</div>` : ''}
+        ${r.finalSale && r.finalSale.length ? `<div class="rep-bond">Скупщик в последний раз: ${r.finalSale.map((x) => `${name(x.hero)} +${x.price} 🎫`).join(', ')}</div>` : ''}
         <div class="rep-heroes">${Object.entries(r.heroes).filter(([id]) => CMP.hero(c, id)).map(([id, x]) => { const h = CMP.hero(c, id); return `<div><b>${name(id)}</b>: ${x.lines.map(esc).join(' · ') || '—'} <span class="rep-sum">→ ♥ ${CMP.hp(h)}/${CMP.baseHp(h)} · 🎫 ${h.talons} · мораль ${h.morale}</span></div>`; }).join('')}</div>`;
     },
     // отношения героя с остальными героями убежища
@@ -2202,6 +2205,7 @@
     },
   };
 
+  const lcFirst = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   function toast(text, ms) {
     const t = $('#toast');
     t.innerHTML = esc(text);

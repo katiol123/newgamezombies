@@ -68,7 +68,7 @@
     },
     // --- Мост (кампания, миссия 5): логово банды Лесника ---
     {
-      id: 'checkpoint', name: 'Блокпост у моста', num: 'М1', unique: true,
+      id: 'checkpoint', name: 'Блокпост у моста', num: 'Мс1', unique: true,
       map: ['A.#', '...', '...'], doors: [[0, 0, 0, 1], [0, 0, 1, 0]], search: [[0, 0, 'armory']],
       buildings: { A: { floor: 'wood', label: 'Будка' } },
       decor: [{ k: 'blocks', x: 2, y: 0 }, { k: 'sandbags', x: 1, y: 1 }, { k: 'sniper_tower', x: 0, y: 2 }, { k: 'barrier', x: 2, y: 1 }, { k: 'table', x: 0, y: 0 }],
@@ -77,7 +77,7 @@
       cover: [[1, 1]], // мешки с песком: укрытие от выстрелов
     },
     {
-      id: 'sawmill', name: 'Лесопилка', num: 'М2', unique: true, ground: 'dirt',
+      id: 'sawmill', name: 'Лесопилка', num: 'Мс2', unique: true, ground: 'dirt',
       map: ['A..', 'A..', '...'], doors: [[0, 0, 1, 0], [0, 1, 1, 1]], search: [],
       buildings: { A: { floor: 'wood', label: 'Изба Лесника' } },
       decor: [{ k: 'bed', x: 0, y: 0 }, { k: 'bearskin', x: 0, y: 0 }, { k: 'table', x: 0, y: 1 }, { k: 'logstack', x: 2, y: 0 }, { k: 'saw', x: 1, y: 1 }, { k: 'console', x: 2, y: 1 }, { k: 'woodpile', x: 1, y: 2 }],
@@ -88,35 +88,35 @@
     },
     // уникальные тайлы миссии 8: колхозный рынок (один тайл — поле 5×2; два — западные и восточные ряды, поле 4×2)
     {
-      id: 'kolhoz', name: 'Колхозный рынок', num: 'М8', unique: true,
+      id: 'kolhoz', name: 'Колхозный рынок', num: 'Р1', unique: true,
       map: ['...', '...', '...'], doors: [], search: [[0, 0, 'armory'], [2, 0, 'armory'], [1, 2, 'armory']],
       buildings: {},
       decor: [{ k: 'stall', x: 0, y: 0 }, { k: 'stall', x: 2, y: 0 }, { k: 'crates_pile', x: 1, y: 2 }, { k: 'stall', x: 0, y: 2 }, { k: 'stall', x: 2, y: 2 }, { k: 'cart', x: 0, y: 1 }],
       lair: [1, 1], // мясной ряд: здесь Мясник
     },
     {
-      id: 'kolhoz_w', name: 'Рынок · западные ряды', num: 'М8', unique: true,
+      id: 'kolhoz_w', name: 'Рынок · западные ряды', num: 'Р2', unique: true,
       map: ['...', '...', '...'], doors: [], search: [[1, 0, 'armory'], [1, 2, 'armory']],
       buildings: {},
       decor: [{ k: 'stall', x: 0, y: 0 }, { k: 'stall', x: 1, y: 0 }, { k: 'stall', x: 0, y: 2 }, { k: 'cart', x: 1, y: 2 }, { k: 'crates_pile', x: 2, y: 2 }],
       lair: [2, 1], // мясной ряд на стыке двух тайлов
     },
     {
-      id: 'kolhoz_e', name: 'Рынок · восточные ряды', num: 'М8', unique: true,
+      id: 'kolhoz_e', name: 'Рынок · восточные ряды', num: 'Р3', unique: true,
       map: ['...', '...', '...'], doors: [], search: [[1, 1, 'armory']],
       buildings: {},
       decor: [{ k: 'stall', x: 1, y: 0 }, { k: 'stall', x: 2, y: 0 }, { k: 'stall', x: 2, y: 2 }, { k: 'trash', x: 0, y: 2 }],
     },
     // уникальные тайлы миссии 7: ресторан, где играли свадьбу, и стоянка банды «Волки»
     {
-      id: 'banquet', name: 'Ресторан «Белый лебедь»', num: 'М7', unique: true,
+      id: 'banquet', name: 'Ресторан «Белый лебедь»', num: 'Б1', unique: true,
       map: ['AAA', 'AAA', '...'], doors: [[0, 1, 0, 2], [2, 1, 2, 2]], search: [[2, 0, 'armory']],
       buildings: { A: { floor: 'wood', label: 'Банкетный зал' } },
       decor: [{ k: 'table', x: 0, y: 0 }, { k: 'table', x: 1, y: 0 }, { k: 'table', x: 0, y: 1 }, { k: 'counter', x: 2, y: 1 }, { k: 'car', x: 1, y: 2 }],
       lair: [1, 1], // здесь бродит свадебная стая
     },
     {
-      id: 'wolfcamp', name: 'Стоянка «Волков»', num: 'М7', unique: true, ground: 'dirt',
+      id: 'wolfcamp', name: 'Стоянка «Волков»', num: 'В1', unique: true, ground: 'dirt',
       map: ['A..', '...', '...'], doors: [[0, 0, 1, 0]], search: [[0, 0, 'armory']],
       buildings: { A: { floor: 'wood', label: 'Сторожка' } },
       decor: [{ k: 'sniper_tower', x: 2, y: 0 }, { k: 'tires', x: 0, y: 2 }, { k: 'crates_pile', x: 2, y: 2 }, { k: 'woodpile', x: 1, y: 2 }, { k: 'barrier', x: 2, y: 1 }],

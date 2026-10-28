@@ -734,6 +734,12 @@
       // зомби снизу вверх по экрану, герои — всегда поверх зомби
       ents.sort((a, b) => (a.uid ? 0 : 1) - (b.uid ? 0 : 1) || a.y - b.y);
       ents.forEach((e) => (e.uid ? this._drawZombie(ctx, e) : this._drawHero(ctx, e)));
+      // подпись выхода — поверх фишек, если в зоне выхода кто-то стоит (иначе её не прочесть)
+      const g0 = this.g;
+      if (g0 && g0.exit != null && !this.hiddenCell(g0.exit) && (g0.zombies.some((z) => z.pos === g0.exit) || g0.heroes.some((h) => h.onBoard && h.pos === g0.exit))) {
+        const ex = this.cellXY(g0.exit), sc0 = ZG.Scenarios.get(g0.scenarioId);
+        this._label(ctx, ex.x, ex.y - this.cell * 0.44, (sc0.exitLabel || 'Выход').toUpperCase(), ZG.Engine.isComplete(g0) ? '#7dffa0' : '#e8dcc0');
+      }
       // удалить умерших
       let gone = false;
       this.zombies.forEach((e, uid) => { if (e.dying && this.time - e.dying.t0 > 0.6) { this.zombies.delete(uid); gone = true; } });

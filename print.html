@@ -254,6 +254,25 @@ tok('tok_door', 18, 'Дверь (закрыто)', 'small'); tok('tok_door', 1, 
   const campCards = ZG.Cards.all().filter((d) => !inBase.has(d.id) && d.kind !== 'wound' && d.kind !== 'infection' && !['cargo_fuel', 'cargo_meds', 'cargo_radio'].includes(d.id)
     && (d.campaignOnly || d.kind === 'cargo' || d.kind === 'junk' || d.kind === 'temp' || d.trophy || d.loot || d.trader) && !ZG.Heroes.all().some((h) => h.deck.includes(d.id)));
   cardSheets('Кампания: карты (грузы, трофеи, находки миссий, товар торговца, Ценности)', campCards.map((d) => ({ el: CV.card(d.id), count: campCount[d.id] || (d.trader ? 3 : 1) })));
+  // задания миссий кампании — с особыми условиями из цепочки
+  const chainCards = ZG.CAMPAIGN.chain.map((m, i) => ({ m, i })).filter(({ m }) => m.scenarioId && ZG.Scenarios.get(m.scenarioId).campaignOnly).map(({ m, i }) => {
+    const el = CV.scenarioCard(m.scenarioId);
+    el.querySelector('.scen-kicker').textContent = `МИССИЯ ${i + 1} · ${m.name.toUpperCase()}`;
+    if (m.special && m.special.length) { const d = document.createElement('div'); d.className = 'scen-setup'; d.innerHTML = '<b>⚠ Особые условия:</b> ' + m.special.join(' ') ; el.appendChild(d); }
+    return el;
+  });
+  if (chainCards.length) { for (let i = 0; i < chainCards.length; i += 2) { const sc = sheet('Кампания: задания миссий', 'Широкие карты: по 2 на лист — у кампании длинные тексты подготовки.'); const wc = document.createElement('div'); wc.className = 'wide-cards'; chainCards.slice(i, i + 2).forEach((e) => wc.appendChild(e)); sc.appendChild(wc); } }
+  // секретный герой — отдельный лист: не открывайте, пока не спасёте
+  const secret = ZG.Heroes.all().filter((h) => h.secret);
+  secret.forEach((h) => {
+    const s2 = sheet(`Кампания: секретный герой — ${h.name} (не открывайте, пока не спасёте)`, 'Планшет, фишка, оборот фишки и именные карты.');
+    const b = document.createElement('div'); b.className = 'hero-board';
+    b.appendChild(CV.heroCard(h.id, { talents: true, bio: true }));
+    const tw2 = document.createElement('div'); tw2.className = 'tokens';
+    [[h.art, h.name], ['z_turned_' + h.id, (ZG.Zombies.has('turned_' + h.id) ? ZG.Zombies.get('turned_' + h.id).name : 'Обращённый') + ' (оборот)']].forEach(([k, label]) => { const d = document.createElement('div'); d.className = 'tok big'; d.appendChild(canvasOf(k, 30)); d.appendChild(Object.assign(document.createElement('span'), { textContent: label })); tw2.appendChild(d); });
+    b.appendChild(tw2); s2.appendChild(b);
+    cardSheets(`Кампания: именные карты — ${h.name}`, h.deck.slice(6).map((id) => ({ el: CV.card(id), count: 1 })));
+  });
   const campSpawn = Array.from(new Set(ZG.Levels.all().filter((l) => l.campaignOnly).flatMap((l) => Object.keys(l.spawnDeck || {})))).filter((id) => !lvl.spawnDeck[id]);
   if (campSpawn.length) cardSheets('Кампания: карты появления миссий', campSpawn.map((id) => ({ el: CV.spawnCard(id), count: 1 })));
 
