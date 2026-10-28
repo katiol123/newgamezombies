@@ -97,9 +97,12 @@
       }
     }
     // заслон на выходе (сценарий с evacBlockedText): каждый враг-блокировщик в зоне выхода — помеха, его раны — прогресс
-    if (sc.evacBlockedText && E.isComplete(g)) {
-      g.zombies.forEach((z) => { if (z.pos === g.exit && E.isBandit(z)) { const d = ZG.Zombies.get(z.type); s -= 120; s += (z.dmg / d.hp) * 100; } });
-    }
+    // Штурм: задание выполнено, а выход держат враги — стоять рядом бессмысленно (время уходит), идём на прорыв:
+    // каждый блокировщик и его раны весят больше, а осторожность героев у выхода снижена.
+    const blockers = sc.evacBlockedText && E.isComplete(g) ? g.zombies.filter((z) => z.pos === g.exit && E.isBandit(z)) : [];
+    blockers.forEach((z) => { const d = ZG.Zombies.get(z.type); s -= 220; s += (z.dmg / d.hp) * 180; });
+    const exitD = blockers.length ? E.distV(g, g.exit) : null;
+    const alone = g.heroes.filter((o) => o.onBoard).length === 1;
     // ненавидит бандитов: на своём ходу живой бандит — заноза, его раны — радость; тянется к ближайшему видимому
     if (fh && fh.onBoard && ZG.Persona.get(fh.id).hatesBandits) {
       const bs = g.zombies.filter((z) => E.isBandit(z) && !E.hidden(g, z.pos));
@@ -141,7 +144,8 @@
       const wounds = E.hurtCount(g, h);
       // осторожность героя: чем меньше осталось Стойкости, тем дороже риск (0.55 — цел … 2 — на грани)
       const hpLeft = hp - wounds;
-      const risk = (hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp))) * (2 - ZG.Persona.get(h.id).bold); // смелый меньше бережётся
+      let risk = (hpLeft <= 1 ? 2 : hpLeft <= 2 ? 1.5 : 0.55 + 0.9 * (wounds / Math.max(1, hp))) * (2 - ZG.Persona.get(h.id).bold); // смелый меньше бережётся
+      if (exitD && exitD[h.pos] <= 3 && hpLeft > 1) risk *= alone ? 0.75 : 0.45; // штурм заслона: у выхода не прячемся (кроме тех, кто на последней ране; одиночка — осторожнее)
       s -= wounds * W.wound;
       if (hp - wounds <= 1) s -= W.nearDeath;
       // ожидаемая атака
