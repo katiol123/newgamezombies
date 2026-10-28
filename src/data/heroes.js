@@ -19,10 +19,10 @@
       id: 'boris', pic: 'art/heroes/boris.jpg', face: 'art/heroes/boris_face.jpg', turnedPic: 'art/heroes/boris_turned.jpg', turnedFace: 'art/heroes/boris_turned_face.jpg', name: 'Борис', nick: 'Кувалда', role: 'Танк', color: '#c0392b',
       hp: 7, hand: 4, energy: 3,
       bio: 'Прораб со стройки на окраине. Медленный, упрямый, непробиваемый.',
-      ability: 'Живой щит', abilityText: 'Зомби в его зоне атакуют только Бориса. Каждая карта, сброшенная им для защиты, блокирует +1, и ещё 1 урон за фазу он держит сам. Заражение у него — только на «1».',
+      ability: 'Живой щит', abilityText: 'Зомби в его зоне атакуют только Бориса. Каждая карта, сброшенная им для защиты, блокирует +1. Заражение у него — только на «1».',
       deck: STARTER.concat(['sledge', 'ram', 'stance', 'roar']),
       talents: [['thick_skin', 'heavy_hand'], ['rock', 'retaliate']],
-      mods: { taunt: 1, blockPerCard: 1, infectDie: -1, autoBlock: 1 },
+      mods: { taunt: 1, blockPerCard: 1, infectDie: -1 },
       art: 'hero_boris',
     },
     {
